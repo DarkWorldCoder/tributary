@@ -44,7 +44,7 @@ async function runTurn(opts) {
   const model = opts.model || gatewayModel || undefined;
 
   if (agent.protocol === 'acp') {
-    const r = await runAcp({ command: agent.path, args: [...(agent.acpArgs || []), ...(agent.extraArgs || [])], cwd, env, prompt, mode, resumeId, onEvent: emit, signal });
+    const r = await runAcp({ command: host ? remoteCommand(agent) : agent.path, args: [...(agent.acpArgs || []), ...(agent.extraArgs || [])], cwd, env: host ? changes : env, prompt, mode, resumeId, onEvent: emit, signal, host });
     return { ok: r.ok, sessionId: r.sessionId || sessionId, text };
   }
 

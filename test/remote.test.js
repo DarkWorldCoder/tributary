@@ -206,3 +206,110 @@ test('race: worktrees, agent turns and the test command run on the host, and the
   assert.strictEqual(fs.readFileSync(path.join(d, 'calc.js'), 'utf8'), 'module.exports = (a, b) => a + b;\n');
   assert.strictEqual(fs.readFileSync(path.join(d, 'notes.txt'), 'utf8'), 'uncommitted work\n');
 });
+
+const { TerminalManager } = require('../core/terminal');
+
+test('terminal: a remote terminal is ssh -tt into the project folder on the host', { skip, timeout: 20000 }, async () => {
+  const dir = tmp();
+  const tm = new TerminalManager();
+  const out = []; tm.on('data', ({ data }) => out.push(data));
+  const exited = new Promise((r) => tm.on('exit', r));
+  const id = tm.create({ remote: box(dir), cwd: dir, cols: 80, rows: 24 });
+  assert.match(tm.list()[0].title, /dev@buildbox/);
+  tm.write(id, 'echo "at:$(pwd) home:$HOME"\n');
+  tm.write(id, 'exit 4\n');
+  const e = await exited;
+  assert.ok(out.join('').includes(`at:${dir} home:${REMOTE_HOME}`), out.join(''));
+  assert.strictEqual(e.code, 4);
+  const call = sshCalls().pop();
+  assert.ok(call.t >= 2, 'forces a terminal on the host');
+  assert.ok(call.o.includes('ControlMaster=auto'));
+  assert.ok(!call.o.includes('BatchMode=yes'), 'a password or host-key prompt can be answered in the terminal');
+});
+
+const http = require('http');
+const { once } = require('events');
+const { listPorts, parseListening, PortForwards } = require('../core/ports');
+const hasSs = (() => { try { execFileSync('ss', ['-V'], { stdio: 'ignore' }); return true; } catch { return false; } })();
+
+test('ports: reads the host\'s listening sockets, keeping only the user\'s own processes', () => {
+  const ss = [
+    'State  Recv-Q Send-Q Local Address:Port  Peer Address:PortProcess',
+    'LISTEN 0      511          0.0.0.0:3000       0.0.0.0:*    users:(("next-server (v1",pid=1234,fd=21))',
+    'LISTEN 0      511             [::]:3000          [::]:*    users:(("next-server (v1",pid=1234,fd=22))',
+    'LISTEN 0      511                *:5173             *:*    users:(("node",pid=2345,fd=24))',
+    'LISTEN 0      511            [::1]:6006          [::]:*    users:(("node",pid=3456,fd=20))',
+    'LISTEN 0      4096   127.0.0.53%lo:53         0.0.0.0:*',
+    'LISTEN 0      128        127.0.0.1:22         0.0.0.0:*',
+  ].join('\n');
+  assert.deepStrictEqual(parseListening(ss), [
+    { port: 3000, address: '0.0.0.0', process: 'next-server (v1', pid: 1234 },
+    { port: 5173, address: '*', process: 'node', pid: 2345 },
+    { port: 6006, address: '::1', process: 'node', pid: 3456 },
+  ]);
+});
+
+test('ports: a dev server on the host is found and forwarded to this computer for the Preview tab', { skip: skip || !hasSs, timeout: 30000 }, async () => {
+  const server = http.createServer((req, res) => res.end('hello from the build host')).listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  const { port } = server.address();
+  try {
+    const found = (await listPorts(sshHost(box(tmp())))).find((p) => p.port === port);
+    assert.strictEqual(found.address, '127.0.0.1');
+    assert.strictEqual(found.pid, process.pid);
+    // ss names the thread (Node says "MainThread"), so the command line says which server it is.
+    assert.ok(found.command.startsWith(process.execPath), found.command);
+
+    const forwards = new PortForwards();
+    const f = await forwards.forward(box(tmp()), found);
+    assert.strictEqual(f.remotePort, port);
+    assert.notStrictEqual(f.localPort, port, 'the same port is busy on this computer, so another one is used');
+    assert.strictEqual(f.url, `http://localhost:${f.localPort}`);
+    assert.strictEqual(await (await fetch(`http://127.0.0.1:${f.localPort}/`)).text(), 'hello from the build host');
+    const call = sshCalls().filter((c) => c.N).pop();
+    assert.deepStrictEqual(call.L, [`${f.localPort}:127.0.0.1:${port}`]);
+    assert.ok(call.o.includes('ExitOnForwardFailure=yes'));
+    // Asking again reuses the forward.
+    assert.strictEqual((await forwards.forward(box(tmp()), port)).localPort, f.localPort);
+    assert.deepStrictEqual(forwards.list().map((x) => [x.target, x.remotePort, x.localPort]), [['dev@buildbox', port, f.localPort]]);
+
+    await forwards.close(f.localPort);
+    assert.deepStrictEqual(forwards.list(), []);
+    await assert.rejects(fetch(`http://127.0.0.1:${f.localPort}/`, { headers: { connection: 'close' } }));
+  } finally { server.close(); }
+});
+
+const { acpPool } = require('../core/acp');
+
+test('ACP agent: runs on the host, and its file reads and writes go to the host', { skip }, async () => {
+  const dir = fs.realpathSync(tmp());
+  fs.writeFileSync(path.join(dir, '.mcp.json'), JSON.stringify({ mcpServers: { docs: { command: 'docs-mcp', args: ['--stdio'] } } }));
+  const agent = { id: 'opencode', name: 'OpenCode', protocol: 'acp', available: false, remoteCommand: process.execPath, acpArgs: [path.join(__dirname, 'fake-acp.js')] };
+  const events = [];
+  try {
+    const { result: r, commands } = await sentOverSsh(() => runTurn({ agent, cwd: dir, prompt: 'hi', mode: 'edit', host: sshHost(box(dir)), onEvent: (e) => events.push(e) }));
+    assert.strictEqual(r.ok, true, JSON.stringify(events.filter((e) => e.kind === 'error')));
+    assert.match(r.text, /ECHO:hi\|outside:blocked/);
+    assert.strictEqual(fs.readFileSync(path.join(dir, 'notes.md'), 'utf8'), 'from acp\n');
+    assert.ok(events.some((e) => e.kind === 'file' && e.path === `${dir}/notes.md`));
+    assert.ok(commands.some((c) => c.includes('fake-acp.js')), 'the agent was started on the host');
+    assert.ok(commands.some((c) => c.includes('cat > ') && c.includes('notes.md')), 'the write went to the host');
+    assert.ok(commands.some((c) => c.includes('.mcp.json')), 'the project MCP servers were read on the host');
+  } finally { acpPool.closeAll(); }
+});
+
+test('ACP agent: on this computer it still gets the environment exactly as built, without variables a gateway removed', async () => {
+  const { runAcp } = require('../core/acp');
+  const agent = "require('readline').createInterface({ input: process.stdin }).on('line', (l) => { const m = JSON.parse(l); const send = (o) => process.stdout.write(JSON.stringify({ jsonrpc: '2.0', ...o }) + '\\n');"
+    + "if (m.method === 'initialize') send({ id: m.id, result: { protocolVersion: 1, agentCapabilities: {} } });"
+    + "else if (m.method === 'session/new') send({ id: m.id, result: { sessionId: 'e1' } });"
+    + "else if (m.method === 'session/prompt') { send({ method: 'session/update', params: { sessionId: 'e1', update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: String(process.env.TRIBUTARY_STORED_KEY) } } } }); send({ id: m.id, result: { stopReason: 'end_turn' } }); } });";
+  process.env.TRIBUTARY_STORED_KEY = 'stored-key';
+  const env = { ...process.env }; delete env.TRIBUTARY_STORED_KEY; // what buildEnv does for a gateway's null
+  let text = '';
+  try {
+    const r = await runAcp({ command: process.execPath, args: ['-e', agent], cwd: tmp(), env, prompt: 'x', mode: 'edit', onEvent: (e) => { if (e.kind === 'text') text += e.text; } });
+    assert.strictEqual(r.ok, true);
+    assert.strictEqual(text, 'undefined');
+  } finally { delete process.env.TRIBUTARY_STORED_KEY; acpPool.closeAll(); }
+});

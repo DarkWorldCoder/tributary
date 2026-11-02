@@ -3,6 +3,7 @@
 const crypto = require('crypto');
 const os = require('os');
 const { EventEmitter } = require('events');
+const ssh = require('./ssh');
 
 let pty = null;
 function loadPty() {
@@ -15,10 +16,20 @@ const defaultShell = () => (process.platform === 'win32' ? (process.env.COMSPEC 
 class TerminalManager extends EventEmitter {
   constructor() { super(); this.terms = new Map(); }
 
-  create({ cwd = os.homedir(), cols = 100, rows = 30, shell = defaultShell(), args = [], env } = {}) {
+  // remote: { target, port?, identityFile?, path? } opens the terminal on that SSH host, in cwd
+  // (a path on the host, default the remote project folder) using the user's login shell there.
+  create({ cwd, cols = 100, rows = 30, shell = defaultShell(), args = [], env, remote } = {}) {
     const id = crypto.randomUUID();
+    let title = shell.split(/[\\/]/).pop(); let spawnCwd = cwd || os.homedir();
+    if (remote) {
+      const r = ssh.checkRemote(remote);
+      cwd = cwd || r.path;
+      shell = 'ssh';
+      args = [...ssh.sshOptions(r, { batch: false }), '-tt', '--', r.target, `${cwd ? `cd ${ssh.quote(cwd)} 2>/dev/null; ` : ''}exec $SHELL -l`];
+      title = `ssh ${r.target}`; spawnCwd = os.homedir();
+    }
     const p = loadPty().spawn(shell, args, {
-      name: 'xterm-256color', cols, rows, cwd,
+      name: 'xterm-256color', cols, rows, cwd: spawnCwd,
       env: { ...process.env, ...env, TERM: 'xterm-256color', COLORTERM: 'truecolor', TERM_PROGRAM: 'Tributary' },
     });
     // Coalesce bursts of output into ~8 ms frames so heavy output does not flood the UI.
@@ -26,7 +37,7 @@ class TerminalManager extends EventEmitter {
     const flush = () => { timer = null; if (buf) { const data = buf; buf = ''; this.emit('data', { id, data }); } };
     p.onData((d) => { buf += d; if (buf.length > 65536) flush(); else if (!timer) timer = setTimeout(flush, 8); });
     p.onExit(({ exitCode }) => { if (timer) clearTimeout(timer); flush(); this.terms.delete(id); this.emit('exit', { id, code: exitCode }); });
-    this.terms.set(id, { id, p, cwd, shell, title: shell.split(/[\\/]/).pop() });
+    this.terms.set(id, { id, p, cwd, shell, title, remote: remote ? remote.target : undefined });
     return id;
   }
   get(id) { const t = this.terms.get(id); if (!t) throw new Error(`No terminal ${id}`); return t; }

@@ -13,14 +13,25 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-const { start, killTree, lines } = require('./proc');
+const { start, lines } = require('./proc');
 const { clip, EDIT_TOOLS } = require('./parsers');
+const { localHost } = require('./host');
 
-const inside = (root, p) => { const r = path.relative(root, path.resolve(root, p)); return r === '' || (!r.startsWith('..') && !path.isAbsolute(r)); };
+// pathMod: path.posix for a folder on an SSH host.
+const inside = (root, p, pathMod = path) => { const r = pathMod.relative(root, pathMod.resolve(root, p)); return r === '' || (!r.startsWith('..') && !pathMod.isAbsolute(r)); };
 
 // Project MCP servers (.mcp.json, the format Claude Code and others use) in ACP's shape.
 function projectMcpServers(cwd, caps = {}) {
-  let cfg; try { cfg = JSON.parse(fs.readFileSync(path.join(cwd, '.mcp.json'), 'utf8')); } catch { return []; }
+  let text; try { text = fs.readFileSync(path.join(cwd, '.mcp.json'), 'utf8'); } catch { return []; }
+  return mcpServersFrom(text, caps);
+}
+async function projectMcpServersOn(host, cwd, caps = {}) {
+  if (!host.remote) return projectMcpServers(cwd, caps);
+  let text; try { text = (await host.readFile(host.path.join(cwd, '.mcp.json'))).toString('utf8'); } catch { return []; }
+  return mcpServersFrom(text, caps);
+}
+function mcpServersFrom(text, caps) {
+  let cfg; try { cfg = JSON.parse(text); } catch { return []; }
   const pairs = (o) => Object.entries(o || {}).map(([name, value]) => ({ name, value: String(value) }));
   const out = [];
   for (const [name, s] of Object.entries((cfg && cfg.mcpServers) || {})) {
@@ -33,9 +44,11 @@ function projectMcpServers(cwd, caps = {}) {
 }
 
 class AcpConnection {
-  constructor(key, { command, args, cwd, env }, pool) {
-    this.key = key; this.cwd = cwd; this.pool = pool;
-    this.child = start(command, args, { cwd, env, stdin: null, keepOpen: true });
+  constructor(key, { command, args, cwd, env, host = localHost }, pool) {
+    this.key = key; this.cwd = cwd; this.pool = pool; this.host = host;
+    // A local agent gets the complete environment as built (gateways may have removed variables);
+    // a remote one gets only Tributary's changes on top of the host's own environment.
+    this.child = host.remote ? host.spawn(command, args, { cwd, env, keepOpen: true }) : start(command, args, { cwd, env, stdin: null, keepOpen: true });
     this.nextId = 1; this.pending = new Map(); this.handlers = new Map(); this.sessions = new Set();
     this.alive = true; this.busy = 0; this.stderrTail = ''; this.caps = {};
     lines(this.child.stdout, (l) => this.onLine(l));
@@ -78,8 +91,8 @@ class AcpConnection {
     } else if (msg.method && msg.id != null) this.onRequest(msg);
   }
 
-  onRequest(msg) {
-    const p = msg.params || {}; const h = this.handlerFor(p);
+  async onRequest(msg) {
+    const p = msg.params || {}; const h = this.handlerFor(p); const hp = this.host.path;
     const reply = (result) => this.send({ id: msg.id, result });
     const fail = (code, message) => this.send({ id: msg.id, error: { code, message } });
     if (!h) { fail(-32000, 'No active prompt for this session'); return; }
@@ -92,14 +105,14 @@ class AcpConnection {
         if (!allow) h.onEvent({ kind: 'notice', text: `Declined: ${(p.toolCall && p.toolCall.title) || 'tool'} (mode: ${h.mode})` });
         reply(pick ? { outcome: { outcome: 'selected', optionId: pick.optionId } } : { outcome: { outcome: 'cancelled' } });
       } else if (msg.method === 'fs/read_text_file') {
-        if (!inside(h.cwd, p.path)) throw new Error('Path outside project');
-        let text = fs.readFileSync(path.resolve(h.cwd, p.path), 'utf8');
+        if (!inside(h.cwd, p.path, hp)) throw new Error('Path outside project');
+        let text = (await this.host.readFile(hp.resolve(h.cwd, p.path))).toString('utf8');
         if (p.line || p.limit) { const ls = text.split('\n'); const s = Math.max(0, (p.line || 1) - 1); text = ls.slice(s, p.limit ? s + p.limit : undefined).join('\n'); }
         reply({ content: text });
       } else if (msg.method === 'fs/write_text_file') {
         if (h.mode === 'read') throw new Error('Read-only mode');
-        if (!inside(h.cwd, p.path)) throw new Error('Path outside project');
-        const abs = path.resolve(h.cwd, p.path); fs.mkdirSync(path.dirname(abs), { recursive: true }); fs.writeFileSync(abs, p.content);
+        if (!inside(h.cwd, p.path, hp)) throw new Error('Path outside project');
+        const abs = hp.resolve(h.cwd, p.path); await this.host.writeFile(abs, p.content);
         h.onEvent({ kind: 'file', path: abs, change: 'write' });
         reply(null);
       } else fail(-32601, `Unsupported: ${msg.method}`);
@@ -110,7 +123,7 @@ class AcpConnection {
   async session(resumeId) {
     await this.ready;
     if (resumeId && this.sessions.has(resumeId)) return { sessionId: resumeId, resumed: true };
-    const mcpServers = projectMcpServers(this.cwd, this.caps.mcpCapabilities || {});
+    const mcpServers = await projectMcpServersOn(this.host, this.cwd, this.caps.mcpCapabilities || {});
     if (resumeId && this.caps.loadSession) {
       await this.request('session/load', { sessionId: resumeId, cwd: this.cwd, mcpServers });
       this.sessions.add(resumeId); return { sessionId: resumeId, resumed: true };
@@ -120,7 +133,7 @@ class AcpConnection {
   }
 
   cancel(sessionId) { this.send({ method: 'session/cancel', params: { sessionId } }); }
-  kill() { this.alive = false; killTree(this.child); }
+  kill() { this.alive = false; this.host.kill(this.child); }
   // An idle agent must not keep the app (or a test run) from exiting.
   hold(on) {
     const m = on ? 'ref' : 'unref';
@@ -136,7 +149,7 @@ const envKey = (env) => {
 const acpPool = {
   conns: new Map(), timers: new Map(), idleMs: 10 * 60 * 1000,
   acquire(spec) {
-    const key = [spec.command, ...(spec.args || []), spec.cwd, envKey(spec.env)].join('\0');
+    const key = [spec.host && spec.host.remote ? `ssh:${spec.host.label}` : '', spec.command, ...(spec.args || []), spec.cwd, envKey(spec.env)].join('\0');
     let c = this.conns.get(key);
     if (!c || !c.alive) { c = new AcpConnection(key, spec, this); this.conns.set(key, c); }
     const t = this.timers.get(key); if (t) { clearTimeout(t); this.timers.delete(key); }
@@ -155,9 +168,10 @@ const acpPool = {
   closeAll() { for (const c of [...this.conns.values()]) { this.forget(c); c.kill(); } },
 };
 
-function runAcp({ command, args, cwd, env, prompt, mode, resumeId, onEvent, signal }) {
+// host: a remote host from core/host.js runs the agent there (cwd is a path on that host).
+function runAcp({ command, args, cwd, env, prompt, mode, resumeId, onEvent, signal, host }) {
   return new Promise((resolve) => {
-    const conn = acpPool.acquire({ command, args, cwd, env });
+    const conn = acpPool.acquire({ command, args, cwd, env, host: host || localHost });
     let sessionId = null; let finished = false;
     const finish = (ok, error) => {
       if (finished) return; finished = true;

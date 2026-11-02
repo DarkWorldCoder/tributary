@@ -56,3 +56,41 @@ Build an **SSH remote-host mode**, not a new distributed build system. Worktrees
 - Nx distributed task execution: https://nx.dev/docs/features/ci-features/distribute-task-execution
 - Next.js 16.3 Turbopack: https://nextjs.org/blog/next-16-3-turbopack
 - GitHub Codespaces billing: https://docs.github.com/en/billing/concepts/product-billing/github-codespaces
+
+## SSH remote-host mode (core in place, not wired into the app yet)
+
+The core modules now run a project on an SSH host. Only the system `ssh` binary is used, and there are no new dependencies.
+
+| Piece | Where | What it does |
+|---|---|---|
+| Connection | `core/ssh.js`, `core/host.js` | One OpenSSH ControlMaster connection per target (`ControlPersist=10m`, sockets in `~/.ssh/tributary/`). `connect(remote)` opens it and reports ssh's error. Arguments are single-quoted for the host's shell. Environment variables, including gateway keys, travel on stdin, so they never appear in a command line that other users of the host could read with `ps`. |
+| Host interface | `core/host.js` | `localHost` and `sshHost(remote)` expose the same interface: `exec`, `spawn`, `kill`, and file reads and writes. Git helpers, checkpoints, race and the runner take `{ host }`, so local and remote share one code path. |
+| Agent turns | `runTurn({ host })` | Runs the agent's own binary (`claude`, `codex`, ...) from the host's PATH and streams its output through the usual parsers. ACP agents run there too, and their file reads, file writes and `.mcp.json` go to the host. Stop kills the agent's whole process group on the host. |
+| Git and checkpoints | `core/git.js`, `core/checkpoint.js` | Status, diffs, commit and touched-file fingerprints run on the host. Checkpoint objects go to `~/.local/share/tributary/checkpoints` on the host. |
+| Race | `race(hub, { host })`, `applyDiff(root, diff, { host })` | Worktrees, agent turns, the test command and the merge all run on the host. |
+| Terminal | `TerminalManager.create({ remote })` | node-pty running `ssh -tt` into the project folder with the user's login shell. Password and host-key prompts work here. |
+| Ports | `core/ports.js` | `listPorts(host)` reads `ss -ltnp` for the user's own processes and adds each process's command line. `PortForwards.forward(remote, port)` runs `ssh -N -L` on a free local port and returns `http://localhost:<port>` for the Preview tab. |
+
+A remote is `{ target: 'user@host' or an ~/.ssh/config alias, port?, identityFile?, path: '/abs/folder/on/host' }`.
+
+Before using a host, check it from a terminal:
+
+```bash
+ssh buildbox 'command -v git node claude codex'
+```
+
+```bash
+node test/e2e/real-remote.js buildbox /home/dev/app
+```
+
+**Requirements:** key or agent authentication (calls use `BatchMode`, except terminals). The host should run Linux (the code uses GNU `find -printf`, `ss` and `mktemp`). The login shell should be bash, zsh or sh. Agents must be on the PATH for non-interactive SSH; the wrapper also adds `~/.local/bin`, `~/bin`, `/usr/local/bin`, `~/.cargo/bin` and nvm's bin folders. Each developer signs in to their agents on the host.
+
+**Tests:** `test/remote.test.js` (14 tests, part of `npm test`) uses a stand-in `ssh` (`test/fake-ssh.js`). It runs the remote command on this machine the way sshd would: through the login shell, in a fresh environment and in its own session. Quoting was also checked under bash, zsh and dash. Nothing has run against a real sshd yet; `test/e2e/real-remote.js` is the first check to run against a real host.
+
+**What is left:**
+- Hub and app wiring: a remote project record, an "Add remote project" dialog, `{ host }` passed at each hub call site, remote terminals, a port list with Forward buttons in Preview, and closing forwards on quit. This touches shared files (`core/hub.js`, `desktop/main.js`, `ui/src/*`), so it is waiting for approval.
+- Memory (`.tributary/memory.md`, the worklog) and the Files browser (`core/files.js`) still use local `fs`, so they need host versions.
+- Gemini CLI and Antigravity take the prompt as an argument. On a shared host without per-developer containers, other users can see the prompt in `ps`.
+- Restoring a checkpoint costs two round trips per file. A batched restore would help when many files change.
+- Windows laptops: Windows OpenSSH has no ControlMaster, so each call makes a new connection, and the hub still joins project paths with the native `path`.
+- Per-developer isolation stays with Coder or Docker, as recommended above. On a plain shared host, other users can reach each developer's dev-server ports on 127.0.0.1.
