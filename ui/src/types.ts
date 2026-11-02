@@ -37,7 +37,8 @@ export interface AppNotification { id: string; ts: number; read: boolean; kind: 
 export interface FileContent { rel: string; size: number; binary: boolean; truncated: boolean; content: string; mtime: number; base64?: string }
 export interface MemoryInfo { enabled: boolean; memory: string | null; worklog: string[] }
 export interface ThreadChange { rel: string; turns: { messageId: string; agent: string; ts?: number; change?: string; team?: string }[] }
-export interface ThreadSummary { id: string; title: string; updatedAt: number; lastAgent: string | null; count?: number; running?: boolean; agents: string[] }
+export type ThreadStatus = 'working' | 'review' | 'failed' | 'done';
+export interface ThreadSummary { id: string; title: string; updatedAt: number; lastAgent: string | null; count?: number; running?: boolean; agents: string[]; status?: ThreadStatus | null }
 export interface Tool { id?: string; name: string; input?: Record<string, unknown> & { command?: unknown }; status: 'running' | 'done' | 'error'; output?: string; files?: string[] }
 export interface FileChange { path: string; rel: string; external?: boolean; change?: string; viaGit?: boolean }
 export interface UserMessage { id: string; role: 'user'; text: string; target: string; ts?: number; kind?: 'chat' | 'plan' | 'implement' | 'race'; team?: { recipe: string; role: string } }

@@ -54,6 +54,7 @@ const API = {
   createThread: (p) => hub.createThread(p),
   renameThread: (id, t) => hub.renameThread(id, t),
   deleteThread: (id) => hub.deleteThread(id),
+  markThreadSeen: (id) => hub.markThreadSeen(id),
   removeProject: () => false,
   async pickProject() { const r = await vscode.window.showOpenDialog({ canSelectFolders: true, canSelectFiles: false, openLabel: 'Open folder in Tributary' }); if (!r?.[0]) return null; hub.addProject(r[0].fsPath); return r[0].fsPath; },
   send: (o) => hub.send(o).then((m) => ({ id: m.id, ok: m.ok })),

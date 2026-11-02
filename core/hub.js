@@ -23,6 +23,7 @@ const { TEMPLATES, taskPrompt } = require('./tasks');
 const documents = require('./documents');
 const folderFiles = require('./files');
 const registry = require('./registry');
+const { threadStatus } = require('./status');
 
 const uid = () => crypto.randomUUID();
 const PLAN_PREFIX = 'Plan only. Do not modify files or run commands that change anything. Investigate as needed, then reply with a concise numbered plan: the steps, the files you would change, and any risks or open questions.';
@@ -178,7 +179,16 @@ class Hub extends EventEmitter {
   threads(projectPath) {
     return this.store.data.threads.filter((t) => t.project === projectPath)
       .sort((a, b) => b.updatedAt - a.updatedAt)
-      .map((t) => ({ id: t.id, title: t.title, updatedAt: t.updatedAt, lastAgent: t.lastAgent, count: t.messages.length, running: this.running.has(t.id), agents: Object.keys(t.agentSessions || {}) }));
+      .map((t) => {
+        const running = this.running.has(t.id) || this.teams.has(t.id);
+        return { id: t.id, title: t.title, updatedAt: t.updatedAt, lastAgent: t.lastAgent, count: t.messages.length, running, agents: Object.keys(t.agentSessions || {}), status: threadStatus(t, { running }) };
+      });
+  }
+  // The person opened this thread: its finished changes no longer need review.
+  markThreadSeen(id) {
+    const t = this.thread(id);
+    if (!t || threadStatus(t, { running: this.running.has(id) }) !== 'review') return;
+    t.seenAt = now(); this.store.save(); this.emit('threads', t.project);
   }
   thread(id) { return this.store.data.threads.find((t) => t.id === id) || null; }
   createThread(projectPath, title) {
@@ -251,6 +261,7 @@ class Hub extends EventEmitter {
       this.workspaceReservations.delete(threadId);
       if (this.running.get(threadId) === ac) this.running.delete(threadId);
       this.emit('running', { threadId, running: false });
+      this.emit('threads', t.project); // its status changed from working
     }
   }
 

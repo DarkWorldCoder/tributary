@@ -13,6 +13,7 @@ It drives each agent through its own official headless or protocol mode, so your
   - **Race:** several agents attempt the same task, each in its own git worktree and branch. Your test command runs in each, you compare the diffs, and you apply one. Your files are untouched until then, and a conflict is reported instead of written into your files.
   - **Plan, build, review:** one agent plans, another builds, a third reviews until it approves. Build and review, and Ask everyone, follow the same pattern.
 - **Safety.** A git checkpoint is taken before every turn and can be restored. Permission modes are Read-only, Edit files and Full auto. Plan mode plans first and runs after you approve.
+- **Thread status:** the sidebar marks each thread as working, needs review (it finished with file changes you have not opened yet), failed, or done.
 - **Workspace panel:** Review (uncommitted changes and commit), Changes (exactly what each turn changed), Files (a CodeMirror code editor with previews for Markdown, images and HTML), Memory, and Preview (your local dev server).
 - **Terminal:** xterm.js with GPU rendering on real pseudo-terminals (node-pty).
 - **Shared memory:** `.tributary/memory.md` holds project facts, and `.tributary/worklog.md` logs who did what. AGENTS.md points every agent to both. "Remember this" on any reply adds a note.

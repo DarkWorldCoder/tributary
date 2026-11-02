@@ -60,12 +60,16 @@ function useStoreValue() {
   const loadThreads = React.useCallback(async (p: string) => { const list = await hub.call<ThreadSummary[]>('threads', p); setThreadsBy((m) => ({ ...m, [p]: list })); return list; }, []);
   const refreshGit = React.useCallback(async (p = projectRef.current) => { setGit(p ? await hub.call<GitInfo | null>('gitInfo', p) : null); }, []);
 
+  // Opening a thread (or watching it finish) clears its "needs review" badge.
+  const markSeen = React.useCallback((id: string) => { hub.call('markThreadSeen', id).catch(() => { /* older host */ }); }, []);
+
   const openThread = React.useCallback(async (id: string) => {
     const t = await hub.call<Thread | null>('thread', id);
     if (!t) return;
+    markSeen(t.id);
     threadRef.current = t; projectRef.current = t.project;
     setHome(false); setThread(t); setThreadIdRaw(t.id); setProjectRaw(t.project); refreshGit(t.project);
-  }, [refreshGit, setProjectRaw, setThreadIdRaw]);
+  }, [refreshGit, setProjectRaw, setThreadIdRaw, markSeen]);
 
   const newThread = React.useCallback((p?: string | null) => {
     const target = p ?? projectRef.current; if (!target) return;
@@ -83,6 +87,7 @@ function useStoreValue() {
       if (threadId) { t = await hub.call<Thread | null>('thread', threadId); if (t) p = t.project; }
       if (!t && p) { const first = (await hub.call<ThreadSummary[]>('threads', p))[0]; if (first) t = await hub.call<Thread | null>('thread', first.id); }
       setProjectRaw(p); setThread(t); setThreadIdRaw(t?.id ?? null);
+      if (t) markSeen(t.id);
       setLoaded(true);
       // Repository status may be slow on large projects; the conversation is already usable.
       refreshGit(p).catch((e) => toast.error(`Could not load repository status: ${e.message || e}`));
@@ -108,7 +113,7 @@ function useStoreValue() {
     hub.on('running', async ({ threadId: tid, running: r }) => {
       await refreshState();
       if (!r && threadRef.current?.id === tid) {
-        refreshGit();
+        refreshGit(); markSeen(tid);
         const last = threadRef.current.messages[threadRef.current.messages.length - 1] as AgentMessage | undefined;
         if (last && last.role === 'assistant' && last.ok === false && last.error) toast.error(last.error.split('\n')[0].slice(0, 140));
       }
@@ -117,7 +122,7 @@ function useStoreValue() {
     hub.on('open-thread', (id) => { if (id) openThread(id); });
     hub.on('notification', (n) => { (n.kind === 'failed' ? toast.error : toast.success)(n.title, { description: n.body }); });
     hub.on('focus-project', async (p) => { await refreshState(); await loadThreads(p); if (projectRef.current !== p) newThread(p); });
-  }, [loadThreads, newThread, refreshGit, refreshState, openThread]);
+  }, [loadThreads, newThread, refreshGit, refreshState, openThread, markSeen]);
 
   // Theme
   React.useEffect(() => {

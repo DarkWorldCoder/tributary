@@ -40,11 +40,12 @@ export function createMockHub(): HubBridge {
       files: [{ rel: 'test/rateLimit.test.ts', path: `${proj}/test/rateLimit.test.ts`, change: 'add' }] },
   ] };
   const threads: Record<string, Thread> = { t1 };
+  const seen = new Set<string>();
   const summaries = () => ({
-    [proj]: [{ id: 't1', title: t1.title, updatedAt: t1.updatedAt!, lastAgent: 'codex', agents: ['claude', 'codex'], running: st.running.includes('t1') },
-      { id: 't2', title: 'Fix flaky checkout test', updatedAt: now - 3 * 3600e3, lastAgent: 'gemini', agents: ['gemini'] },
-      { id: 't3', title: 'Upgrade to Node 24', updatedAt: now - 2 * 86400e3, lastAgent: 'antigravity', agents: ['claude', 'antigravity'] }],
-    '/home/me/projects/api': [{ id: 't4', title: 'Pagination for /orders', updatedAt: now - 5 * 86400e3, lastAgent: 'codex', agents: ['codex'] }],
+    [proj]: [{ id: 't1', title: t1.title, updatedAt: t1.updatedAt!, lastAgent: 'codex', agents: ['claude', 'codex'], running: st.running.includes('t1'), status: st.running.includes('t1') ? 'working' : seen.has('t1') ? 'done' : 'review' },
+      { id: 't2', title: 'Fix flaky checkout test', updatedAt: now - 3 * 3600e3, lastAgent: 'gemini', agents: ['gemini'], status: 'failed' },
+      { id: 't3', title: 'Upgrade to Node 24', updatedAt: now - 2 * 86400e3, lastAgent: 'antigravity', agents: ['claude', 'antigravity'], status: 'done' }],
+    '/home/me/projects/api': [{ id: 't4', title: 'Pagination for /orders', updatedAt: now - 5 * 86400e3, lastAgent: 'codex', agents: ['codex'], status: seen.has('t4') ? 'done' : 'review' }],
   } as Record<string, any[]>);
   const git = { root: proj, branch: 'main', changed: [{ code: 'M', path: 'src/routes/auth.ts' }, { code: '??', path: 'src/middleware/rateLimit.ts' }, { code: '??', path: 'test/rateLimit.test.ts' }] };
   const registry = [
@@ -59,6 +60,7 @@ export function createMockHub(): HubBridge {
     thread: (id: string) => threads[id] || { id, project: id === 't4' ? '/home/me/projects/api' : proj, title: summaries()[proj].find((x) => x.id === id)?.title || 'Thread', messages: [], agentSessions: {} },
     createThread: (p: string) => { const t: Thread = { id: `t${++seq}`, project: p, title: 'New thread', messages: [], agentSessions: {} }; threads[t.id] = t; return t; },
     renameThread: (id: string, title: string) => { if (threads[id]) threads[id].title = title; },
+    markThreadSeen: (id: string) => { const p = id === 't4' ? '/home/me/projects/api' : proj; if (!seen.has(id)) { seen.add(id); setTimeout(() => emit('threads', p)); } },
     deleteThread: () => undefined, gitInfo: () => git,
     fileDiff: (_p: string, r: string) => `diff --git a/${r} b/${r}\nindex 3f2a1b0..9c8d7e6 100644\n--- a/${r}\n+++ b/${r}\n@@ -1,5 +1,7 @@\n import express from "express";\n+import { rateLimit } from "../middleware/rateLimit";\n import { login } from "./handlers";\n \n-app.post("/login", login);\n+app.post("/login", rateLimit({ max: 5, windowMs: 60_000 }), login);\n+\n export default app;`,
     saveGateway: () => 'g3', deleteGateway: () => undefined, setSettings: () => undefined, syncInstructions: () => ['AGENTS.md', 'CLAUDE.md'],
