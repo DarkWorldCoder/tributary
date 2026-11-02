@@ -1,10 +1,11 @@
 import * as React from 'react';
 import { toast } from 'sonner';
-import { BookOpen, Cpu, FilePlus2, Info, KeyRound, Monitor, Moon, Palette, Pencil, Plug, Plus, RefreshCw, Share2, Sparkles, Sun, Trash2, Waypoints } from 'lucide-react';
+import { BookOpen, Cpu, Download, ExternalLink, FilePlus2, Info, KeyRound, LayoutGrid, Monitor, Moon, Palette, Pencil, Plug, Plus, RefreshCw, Share2, Sparkles, Sun, Trash2, Waypoints } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -16,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { AgentAvatar } from '@/components/agent-avatar';
 import { cn } from '@/lib/utils';
 import { useStore, type SettingsTab, type Theme, type InterfaceFont } from '@/store';
-import type { Gateway, Protocol } from '@/types';
+import type { Gateway, Protocol, RegistryAgent } from '@/types';
 import { Connections } from '@/components/connections';
 
 const NAV: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
@@ -42,15 +43,82 @@ function Section({ title, description, children, actions }: { title: string; des
   );
 }
 
+type Registry = { source: 'network' | 'cache'; agents: RegistryAgent[] };
+// Agents published in the Agent Client Protocol registry. npx and uvx agents run straight away; binaries need a manual download.
+function BrowseAgents({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const s = useStore(); const [reg, setReg] = React.useState<Registry | null>(null); const [error, setError] = React.useState('');
+  const [busy, setBusy] = React.useState<string | null>(null);
+  const load = React.useCallback(async (refresh = false) => {
+    setError(''); if (refresh) setReg(null);
+    try { setReg(await s.hub.call<Registry>('registry', { refresh })); } catch (e) { setError((e as Error).message); }
+  }, [s.hub]);
+  React.useEffect(() => { if (open) load(); }, [open, load]);
+  const toggle = async (a: RegistryAgent) => {
+    if (busy || (!a.installed && !a.install.runnable)) return;
+    setBusy(a.id);
+    try {
+      if (a.installed) { await s.hub.call('removeRegistryAgent', a.id); toast.success(`Removed ${a.name}`); }
+      else { await s.hub.call('installRegistryAgent', a.id); toast.success(`Added ${a.name}`, { description: `${a.install.kind} downloads it the first time you use it.` }); }
+      await s.refreshState(); await load();
+    } catch (e) { toast.error((e as Error).message); } finally { setBusy(null); }
+  };
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex h-[min(620px,85vh)] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl">
+        <DialogHeader className="px-4 pt-4 pb-3">
+          <DialogTitle>Browse agents</DialogTitle>
+          <DialogDescription>Agents from the Agent Client Protocol registry. Adding one puts it in your agents list; it runs through npx or uvx, which download it on first use.</DialogDescription>
+        </DialogHeader>
+        <Command className="min-h-0 flex-1 rounded-none! border-t bg-transparent" label="Registry agents">
+          <CommandInput placeholder="Search agents…" />
+          <CommandList className="max-h-none flex-1">
+            {!reg && !error && <div className="flex flex-col gap-2 p-2">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-14 rounded-lg" />)}</div>}
+            {error && <p className="p-4 text-sm text-destructive">Could not load the registry: {error}</p>}
+            {reg && <CommandEmpty>No agents match.</CommandEmpty>}
+            {reg && (
+              <CommandGroup>
+                {reg.agents.map((a) => (
+                  <CommandItem key={a.id} value={a.id} keywords={[a.name, a.description]} onSelect={() => toggle(a)} className="items-start gap-3 py-2.5 [&>svg:last-child]:hidden">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2 font-medium">
+                        {a.name}{a.version && <span className="text-xs font-normal text-muted-foreground">{a.version}</span>}
+                        {a.install.runnable ? <Badge variant="outline" className="font-mono font-normal">{a.install.kind}</Badge> : <Badge variant="secondary" className="font-normal">{a.install.kind === 'binary' ? 'binary: not supported yet' : 'not supported yet'}</Badge>}
+                        {a.installed && <Badge className="bg-success/15 text-success">Added</Badge>}
+                      </div>
+                      {a.description && <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{a.description}</p>}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1.5 self-center">
+                      {a.website && <Button size="xs" variant="ghost" onClick={(e) => { e.stopPropagation(); s.hub.call('openExternal', a.website); }} aria-label={`${a.name} website`}><ExternalLink /></Button>}
+                      {a.installed
+                        ? <Button size="xs" variant="outline" disabled={busy === a.id} onClick={(e) => { e.stopPropagation(); toggle(a); }}><Trash2 /> Remove</Button>
+                        : <Button size="xs" disabled={!a.install.runnable || busy === a.id} title={a.install.runnable ? undefined : 'Download it from the agent’s website, then add it as a custom agent'} onClick={(e) => { e.stopPropagation(); toggle(a); }}><Download /> Install</Button>}
+                    </div>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+          </CommandList>
+        </Command>
+        <div className="flex items-center gap-2 border-t px-4 py-2.5 text-xs text-muted-foreground">
+          <span className="flex-1">{reg?.source === 'cache' ? 'Offline: showing the saved copy of the registry.' : reg ? `${reg.agents.length} agents in the registry` : ''}</span>
+          <Button size="xs" variant="ghost" onClick={() => load(true)} disabled={!reg && !error}><RefreshCw /> Refresh</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function AgentsTab() {
-  const s = useStore(); const [busy, setBusy] = React.useState(false);
+  const s = useStore(); const [busy, setBusy] = React.useState(false); const [browsing, setBrowsing] = React.useState(false);
   const agents = [...(s.st?.agents ?? [])].sort((a, b) => Number(b.available && b.headless) - Number(a.available && a.headless));
   return (
     <Section title="Agents" description="Tributary finds coding agents installed on this computer and runs them through their own headless or Agent Client Protocol mode. Sign-ins, sessions and settings stay with each agent."
       actions={<>
         <Button variant="outline" size="sm" disabled={busy} onClick={async () => { setBusy(true); await s.hub.call('rescan'); await s.refreshState(); setBusy(false); toast.success('Agents rescanned'); }}><RefreshCw className={cn(busy && 'animate-spin')} /> Rescan</Button>
         <Button variant="outline" size="sm" onClick={() => s.hub.call('openAgentsFile')}><FilePlus2 /> Add a custom agent</Button>
+        <Button size="sm" onClick={() => setBrowsing(true)}><LayoutGrid /> Browse agents</Button>
       </>}>
+      <BrowseAgents open={browsing} onOpenChange={setBrowsing} />
       <div className="flex flex-col gap-2">
         {agents.map((a) => (
           <Item key={a.id} variant="outline" className="items-start">

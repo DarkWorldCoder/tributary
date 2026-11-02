@@ -17,6 +17,7 @@ It drives each agent through its own official headless or protocol mode, so your
 - **Terminal:** xterm.js with GPU rendering on real pseudo-terminals (node-pty).
 - **Shared memory:** `.tributary/memory.md` holds project facts, and `.tributary/worklog.md` logs who did what. AGENTS.md points every agent to both. "Remember this" on any reply adds a note.
 - **Model gateways:** point agents at LiteLLM, Ollama, LM Studio, DeepSeek, OpenRouter or any OpenAI, Anthropic or Gemini compatible endpoint. Keys are encrypted with the system keychain.
+- **Agent registry:** Settings, Agents, **Browse agents** lists the [Agent Client Protocol registry](https://agentclientprotocol.com). Agents published for npx or uvx install with one click and download on first use; binary-only agents are not supported yet.
 - **MCP and skills:** see every agent's MCP servers side by side and add one to several agents at once through each agent's own `mcp add` command. Skills are merged across agents and can be shared with all of them. Project `.mcp.json` servers are passed into ACP sessions.
 - **Tasks and documents:** guided tasks for non-coding work (summarize, compare, write, translate, study) and saved documents you can export.
 - **Also:** `@` file mentions, `/` commands and skills, a command palette (Ctrl+K), notifications, message queueing, retry, export to Markdown, extra project folders, and opening a file in VS Code, Cursor or Windsurf.

@@ -86,6 +86,7 @@ const API = {
   notifications: () => hub.notifications(), markRead: (id) => hub.markRead(id), clearNotifications: () => hub.clearNotifications(),
   skills: (p) => hub.skills(p), shareSkill: (n, p) => hub.shareSkill(n, p),
   mcp: (p) => hub.mcp(p), addMcp: (s, ids) => hub.addMcp(s, ids), removeMcp: (id, n) => hub.removeMcp(id, n),
+  registry: (o) => hub.registry(o), installRegistryAgent: (id) => hub.installRegistryAgent(id), removeRegistryAgent: (id) => hub.removeRegistryAgent(id),
   // VS Code does these natively.
   async openFile(p, rel, line) {
     const doc = await vscode.workspace.openTextDocument(fileUri(p, rel));

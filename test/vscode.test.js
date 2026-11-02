@@ -80,10 +80,24 @@ test('VS Code extension: activates, serves the UI with the bridge, and answers h
     assert.deepEqual(posted.find((m) => m.id === 10).result.entries, []);
     await onMsg({ type: 'call', id: 11, method: 'createTask', args: [{ templateId: 'write', goal: 'Draft a project note' }] });
     assert.ok(posted.find((m) => m.id === 11).result.thread.task);
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = async () => ({ ok: true, json: async () => JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'acp-registry.json'), 'utf8')) });
+    try { await onMsg({ type: 'call', id: 101, method: 'registry', args: [] }); } finally { globalThis.fetch = realFetch; }
+    const reg = posted.find((m) => m.id === 101);
+    assert.ok(reg && !reg.error && reg.result.agents.some((a) => a.id === 'qwen-code' && a.installed === false), JSON.stringify(reg));
+    await onMsg({ type: 'call', id: 102, method: 'removeRegistryAgent', args: ['qwen-code'] });
+    assert.strictEqual(posted.find((m) => m.id === 102).result, false);
     await onMsg({ type: 'call', id: 8, method: 'nope', args: [] });
     assert.match(posted.find((m) => m.id === 8).error, /Unknown method/);
     ext.deactivate();
   } finally {
     Module._resolveFilename = orig; delete require.cache.vscode;
+  }
+});
+
+test('the desktop app allows the same registry calls as the extension', () => {
+  const block = (file) => { const src = fs.readFileSync(path.join(__dirname, '..', file), 'utf8'); return src.slice(src.indexOf('const API = {'), src.indexOf('\n};', src.indexOf('const API = {'))); };
+  for (const file of ['desktop/main.js', 'vscode/extension.js']) {
+    for (const m of ['registry', 'installRegistryAgent', 'removeRegistryAgent']) assert.match(block(file), new RegExp(`\\b${m}: \\(`), `${file} exposes ${m}`);
   }
 });

@@ -4,7 +4,11 @@ export type Protocol = 'anthropic' | 'openai' | 'gemini' | 'ollama' | 'lmstudio'
 export interface Agent {
   id: string; name: string; vendor?: string; color: string; glyph?: string; docs?: string; login?: string;
   available: boolean; headless: boolean; protocol: string; verified?: boolean;
-  version?: string | null; path?: string | null; gateways?: Protocol[]; note?: string; custom?: boolean; connectionId?: string;
+  version?: string | null; path?: string | null; gateways?: Protocol[]; note?: string; custom?: boolean; connectionId?: string; registry?: string;
+}
+export interface RegistryAgent {
+  id: string; name: string; version: string; description: string; website: string; installed: boolean;
+  install: { kind: 'npx' | 'uvx' | 'binary' | 'unknown'; runnable: boolean; command?: string; args?: string[] };
 }
 export interface Project { path: string; name: string; trusted?: boolean; folders?: string[]; kind?: 'personal' }
 export interface Gateway { id: string; name: string; protocol: Protocol; baseUrl: string; model: string; wireApi?: 'chat' | 'responses'; hasKey?: boolean; apiKey?: string; clearKey?: boolean; direct?: boolean; maxOutputTokens?: number }

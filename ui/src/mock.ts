@@ -47,6 +47,11 @@ export function createMockHub(): HubBridge {
     '/home/me/projects/api': [{ id: 't4', title: 'Pagination for /orders', updatedAt: now - 5 * 86400e3, lastAgent: 'codex', agents: ['codex'] }],
   } as Record<string, any[]>);
   const git = { root: proj, branch: 'main', changed: [{ code: 'M', path: 'src/routes/auth.ts' }, { code: '??', path: 'src/middleware/rateLimit.ts' }, { code: '??', path: 'test/rateLimit.test.ts' }] };
+  const registry = [
+    { id: 'qwen-code', name: 'Qwen Code', version: '0.4.1', description: 'Alibaba\'s coding agent for Qwen3-Coder models.', website: 'https://github.com/QwenLM/qwen-code', install: { kind: 'npx' as const, runnable: true } },
+    { id: 'fast-agent', name: 'fast-agent', version: '0.3.2', description: 'Define, prompt and test MCP-enabled agents and workflows.', website: 'https://fast-agent.ai', install: { kind: 'uvx' as const, runnable: true } },
+    { id: 'goose', name: 'Goose', version: '1.9.0', description: 'An open source, extensible AI agent that goes beyond code suggestions.', website: 'https://block.github.io/goose', install: { kind: 'binary' as const, runnable: false } },
+  ];
   let seq = 10;
   const api: Record<string, (...a: any[]) => unknown> = {
     state: () => st, rescan: () => st.agents, pickProject: () => proj, removeProject: () => undefined,
@@ -63,6 +68,9 @@ export function createMockHub(): HubBridge {
     mcp: () => [{ agent: 'claude', name: 'github', scope: 'user', enabled: true, transport: 'stdio', target: 'github-mcp-server stdio', envKeys: ['GITHUB_TOKEN'] }, { agent: 'codex', name: 'github', scope: 'user', enabled: true, transport: 'stdio', target: 'github-mcp-server stdio' }, { agent: 'codex', name: 'Figma', scope: 'user', enabled: true, transport: 'http', target: 'https://mcp.figma.com/mcp' }, { agent: 'antigravity', name: 'StitchMCP', scope: 'user', enabled: true, transport: 'stdio', target: 'npx -y mcp-remote https://stitch.googleapis.com/mcp --header X-Goog-Api-Key: •••' }],
     addMcp: (srv: any, ids: string[]) => ids.map((agent) => ({ agent, ok: true, message: `Added ${srv.name}` })),
     removeMcp: (agent: string) => ({ agent, ok: true, message: 'Removed' }),
+    registry: () => ({ source: 'network', agents: registry.map((a) => ({ ...a, installed: st.agents.some((x) => x.id === `acp:${a.id}`) })) }),
+    installRegistryAgent: (id: string) => { const a = registry.find((x) => x.id === id)!; st.agents.push({ id: `acp:${id}`, name: a.name, color: '#0ea5e9', available: true, headless: true, protocol: 'acp', registry: id }); return { id: `acp:${id}` }; },
+    removeRegistryAgent: (id: string) => { st.agents = st.agents.filter((x) => x.id !== `acp:${id}`); return true; },
     commit: (_p: string, msg: string) => `[main 4f2c1aa] ${msg}`,
     restoreCheckpoint: () => ({ restored: 2, removed: 1 }),
     notifications: () => [

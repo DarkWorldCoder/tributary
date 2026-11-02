@@ -22,15 +22,17 @@ const { directAgents, connectionConfig, runDirectTurn } = require('./direct');
 const { TEMPLATES, taskPrompt } = require('./tasks');
 const documents = require('./documents');
 const folderFiles = require('./files');
+const registry = require('./registry');
 
 const uid = () => crypto.randomUUID();
 const PLAN_PREFIX = 'Plan only. Do not modify files or run commands that change anything. Investigate as needed, then reply with a concise numbered plan: the steps, the files you would change, and any risks or open questions.';
 const now = () => Date.now();
 
 class Hub extends EventEmitter {
-  constructor({ dataDir, secrets, home }) {
+  constructor({ dataDir, secrets, home, fetchImpl }) {
     super();
     this.home = home || os.homedir();
+    this.fetchImpl = fetchImpl; // registry downloads; tests pass a stand-in
     this.dataDir = dataDir;
     this.secrets = secrets;
     this.customAgentsFile = path.join(dataDir, 'agents.json');
@@ -532,6 +534,29 @@ class Hub extends EventEmitter {
     m.notices = [...(m.notices || []), `Files restored to before this turn (${r.restored} restored, ${r.removed} removed)`];
     this.store.save(); this.emit('message', { threadId, message: m });
     return r;
+  }
+  // ---- ACP registry (agentclientprotocol.com): installing adds the agent to agents.json
+  async registry({ refresh = false } = {}) {
+    if (refresh || !this.registryList) this.registryList = await registry.loadRegistry({ cacheFile: path.join(this.dataDir, 'acp-registry.json'), fetchImpl: this.fetchImpl || globalThis.fetch });
+    let custom = []; try { const d = JSON.parse(fs.readFileSync(this.customAgentsFile, 'utf8')); custom = Array.isArray(d) ? d : d.agents || []; } catch {}
+    const installed = new Set(custom.map((a) => a && a.registry).filter(Boolean));
+    return { source: this.registryList.source, agents: this.registryList.agents.map((a) => ({ ...a, installed: installed.has(a.id) })) };
+  }
+  async installRegistryAgent(id) {
+    const { agents } = await this.registry();
+    const a = agents.find((x) => x.id === id || `acp:${x.id}` === id);
+    if (!a) throw new Error(`${id} is not in the ACP registry.`);
+    const entry = registry.addRegistryAgent(this.customAgentsFile, a);
+    await this.rescan();
+    return entry;
+  }
+  async removeRegistryAgent(id) {
+    const full = String(id).startsWith('acp:') ? String(id) : `acp:${id}`;
+    const target = this.agent(full) || this.agent(String(id));
+    if (target && !target.registry) throw new Error(`${target.name} was not added from the ACP registry.`);
+    const removed = registry.removeRegistryAgent(this.customAgentsFile, full);
+    if (removed) await this.rescan();
+    return removed;
   }
   skills(project) { return listSkills({ home: this.home, project }); }
   shareSkill(name, project) { const r = shareSkill(name, { home: this.home, project }); return r; }

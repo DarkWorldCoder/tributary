@@ -148,6 +148,10 @@ const API = {
   mcp: (p) => hub.mcp(p),
   addMcp: (server, ids) => hub.addMcp(server, ids),
   removeMcp: (id, name) => hub.removeMcp(id, name),
+  // ACP registry
+  registry: (opts) => hub.registry(opts),
+  installRegistryAgent: (id) => hub.installRegistryAgent(id),
+  removeRegistryAgent: (id) => hub.removeRegistryAgent(id),
   // Editors and terminals
   editors: () => (editors = detectEditors()).map(({ id, name }) => ({ id, name })),
   openInEditor(editorId, p, rel, line) {
