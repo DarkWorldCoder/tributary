@@ -1,0 +1,219 @@
+{
+ "version": "1.0.0",
+ "agents": [
+  {
+   "id": "amp-acp",
+   "name": "Amp",
+   "version": "0.12.0",
+   "description": "ACP wrapper for Amp - the frontier coding agent",
+   "repository": "https://github.com/tao12345666333/amp-acp",
+   "authors": [
+    "tao12345666333"
+   ],
+   "license": "Apache-2.0",
+   "license_url": "https://github.com/tao12345666333/amp-acp/blob/main/LICENSE",
+   "icon": "https://cdn.agentclientprotocol.com/registry/v1/latest/amp-acp.svg",
+   "distribution": {
+    "binary": {
+     "darwin-aarch64": {
+      "archive": "https://github.com/tao12345666333/amp-acp/releases/download/v0.12.0/amp-acp-darwin-aarch64.tar.gz",
+      "cmd": "./amp-acp",
+      "sha256": "1c5f08f44f3711710769585855cefcdbaed53e4133c2263d59a368b5a1597151"
+     },
+     "darwin-x86_64": {
+      "archive": "https://github.com/tao12345666333/amp-acp/releases/download/v0.12.0/amp-acp-darwin-x86_64.tar.gz",
+      "cmd": "./amp-acp",
+      "sha256": "4245776441b18c05621dd66376064e66aebba90806a0d787592ea558207c5a68"
+     },
+     "linux-aarch64": {
+      "archive": "https://github.com/tao12345666333/amp-acp/releases/download/v0.12.0/amp-acp-linux-aarch64.tar.gz",
+      "cmd": "./amp-acp",
+      "sha256": "f75b1f4a2adc1c243601952070eb24bbcfecf328692f799815b59efeb9791528"
+     },
+     "linux-x86_64": {
+      "archive": "https://github.com/tao12345666333/amp-acp/releases/download/v0.12.0/amp-acp-linux-x86_64.tar.gz",
+      "cmd": "./amp-acp",
+      "sha256": "c25e3635159ee12f8a77bd775dd8a8fc21cc4d25a3a23483ffafec73ccb910fe"
+     },
+     "windows-x86_64": {
+      "archive": "https://github.com/tao12345666333/amp-acp/releases/download/v0.12.0/amp-acp-windows-x86_64.zip",
+      "cmd": "amp-acp.exe",
+      "sha256": "7377158ddac570d50f1eb98e0ce39ca6ecf18990bf917c1930bf628509ae12b4"
+     }
+    }
+   }
+  },
+  {
+   "id": "fast-agent",
+   "name": "fast-agent",
+   "version": "0.10.1",
+   "description": "Code and build agents with comprehensive multi-provider support",
+   "repository": "https://github.com/evalstate/fast-agent",
+   "website": "https://fast-agent.ai",
+   "authors": [
+    "enquiries@fast-agent.ai"
+   ],
+   "license": "Apache 2.0",
+   "license_url": "https://github.com/evalstate/fast-agent/blob/main/LICENSE",
+   "distribution": {
+    "uvx": {
+     "package": "fast-agent-acp==0.10.1",
+     "args": [
+      "-x"
+     ],
+     "env": {
+      "FAST_AGENT_MODEL": "codexplan"
+     }
+    }
+   },
+   "icon": "https://cdn.agentclientprotocol.com/registry/v1/latest/fast-agent.svg"
+  },
+  {
+   "id": "goose",
+   "name": "goose",
+   "version": "1.57.0",
+   "description": "A local, extensible, open source AI agent that automates engineering tasks",
+   "repository": "https://github.com/block/goose",
+   "website": "https://block.github.io/goose/",
+   "authors": [
+    "Block"
+   ],
+   "license": "Apache-2.0",
+   "license_url": "https://github.com/block/goose/blob/main/LICENSE",
+   "distribution": {
+    "binary": {
+     "darwin-aarch64": {
+      "archive": "https://github.com/block/goose/releases/download/v1.57.0/goose-aarch64-apple-darwin.tar.bz2",
+      "cmd": "./goose",
+      "args": [
+       "acp"
+      ],
+      "sha256": "2fbafa227ab28654c47065f1c9ebcd12f527f017e30c08e618bc6fcf363d7935"
+     },
+     "darwin-x86_64": {
+      "archive": "https://github.com/block/goose/releases/download/v1.57.0/goose-x86_64-apple-darwin.tar.bz2",
+      "cmd": "./goose",
+      "args": [
+       "acp"
+      ],
+      "sha256": "e48fe024891a4c272a89c74b9ae843d76a73229643c917b785b0680fef9c647a"
+     },
+     "linux-aarch64": {
+      "archive": "https://github.com/block/goose/releases/download/v1.57.0/goose-aarch64-unknown-linux-gnu.tar.bz2",
+      "cmd": "./goose",
+      "args": [
+       "acp"
+      ],
+      "sha256": "17c6b090db6acc5605da904bbe19cc2765bc7a6786019d85a6d0a361de06dbf7"
+     },
+     "linux-x86_64": {
+      "archive": "https://github.com/block/goose/releases/download/v1.57.0/goose-x86_64-unknown-linux-gnu.tar.bz2",
+      "cmd": "./goose",
+      "args": [
+       "acp"
+      ],
+      "sha256": "e54036f3b7f95d3b0d7854c09465af5ef52a28c7fa03d2497d0ea68a6382282d"
+     },
+     "windows-x86_64": {
+      "archive": "https://github.com/block/goose/releases/download/v1.57.0/goose-x86_64-pc-windows-msvc.zip",
+      "cmd": "./goose-package\\goose.exe",
+      "args": [
+       "acp"
+      ],
+      "sha256": "1ab2117ceec37f95be4d3ad0cdb921d3e97fd8b0fa244046631ecf4b7619d502"
+     }
+    }
+   },
+   "icon": "https://cdn.agentclientprotocol.com/registry/v1/latest/goose.svg"
+  },
+  {
+   "id": "opencode",
+   "name": "OpenCode",
+   "version": "2.2.5",
+   "description": "The open source coding agent",
+   "repository": "https://github.com/anomalyco/opencode",
+   "website": "https://opencode.ai",
+   "authors": [
+    "Anomaly"
+   ],
+   "license": "MIT",
+   "license_url": "https://github.com/anomalyco/opencode/blob/dev/LICENSE",
+   "icon": "https://cdn.agentclientprotocol.com/registry/v1/latest/opencode.svg",
+   "distribution": {
+    "binary": {
+     "darwin-aarch64": {
+      "archive": "https://github.com/anomalyco/opencode/releases/download/v2.2.5/opencode-darwin-arm64.zip",
+      "cmd": "./opencode",
+      "args": [
+       "acp"
+      ],
+      "sha256": "25ba9908979fa7d764792c82589b4b5768ab1511154e0317d98aa77d216ce767"
+     },
+     "darwin-x86_64": {
+      "archive": "https://github.com/anomalyco/opencode/releases/download/v2.2.5/opencode-darwin-x64.zip",
+      "cmd": "./opencode",
+      "args": [
+       "acp"
+      ],
+      "sha256": "4d4419022e6ffbd48afc97c5101bdf001d38b0499f516169b9a80a87a340fd56"
+     },
+     "linux-aarch64": {
+      "archive": "https://github.com/anomalyco/opencode/releases/download/v2.2.5/opencode-linux-arm64.tar.gz",
+      "cmd": "./opencode",
+      "args": [
+       "acp"
+      ],
+      "sha256": "5a528f42caf576c6cdece6a191eb273d3db54effa5518e0402684d8f8026aeb6"
+     },
+     "linux-x86_64": {
+      "archive": "https://github.com/anomalyco/opencode/releases/download/v2.2.5/opencode-linux-x64.tar.gz",
+      "cmd": "./opencode",
+      "args": [
+       "acp"
+      ],
+      "sha256": "09f44302c10fd036912f59c81fd1aef5df45dd06f649197f9dfc9bbe2a79614e"
+     },
+     "windows-aarch64": {
+      "archive": "https://github.com/anomalyco/opencode/releases/download/v2.2.5/opencode-windows-arm64.zip",
+      "cmd": "./opencode.exe",
+      "args": [
+       "acp"
+      ],
+      "sha256": "4e426a39d68516b036cd28b574c5ce5f3b50846ab460521f83f2458fe7f242d8"
+     },
+     "windows-x86_64": {
+      "archive": "https://github.com/anomalyco/opencode/releases/download/v2.2.5/opencode-windows-x64.zip",
+      "cmd": "./opencode.exe",
+      "args": [
+       "acp"
+      ],
+      "sha256": "2f3bfd6b3527c60c2a882557b20ddc9ba6bdff4b5a8fe61c853da8fcfb3076e8"
+     }
+    }
+   }
+  },
+  {
+   "id": "qwen-code",
+   "name": "Qwen Code",
+   "version": "0.26.5",
+   "description": "Alibaba's Qwen coding assistant",
+   "repository": "https://github.com/QwenLM/qwen-code",
+   "website": "https://qwenlm.github.io/qwen-code-docs/en/users/overview",
+   "authors": [
+    "Alibaba Qwen Team"
+   ],
+   "license": "Apache-2.0",
+   "license_url": "https://github.com/QwenLM/qwen-code/blob/main/LICENSE",
+   "distribution": {
+    "npx": {
+     "package": "@qwen-code/qwen-code@0.26.5",
+     "args": [
+      "--acp",
+      "--experimental-skills"
+     ]
+    }
+   },
+   "icon": "https://cdn.agentclientprotocol.com/registry/v1/latest/qwen-code.svg"
+  }
+ ]
+}

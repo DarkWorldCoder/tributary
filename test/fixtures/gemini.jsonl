@@ -1,0 +1,7 @@
+{"type":"init","timestamp":"2026-11-02T10:00:00.000Z","session_id":"9b0f8a52-1111-4c1e-9d55-000000000001","model":"gemini-2.5-pro"}
+{"type":"message","timestamp":"2026-11-02T10:00:00.100Z","role":"user","content":"Fix the typo"}
+{"type":"tool_use","timestamp":"2026-11-02T10:00:01.000Z","tool_name":"replace","tool_id":"replace-1","parameters":{"file_path":"/project/README.md","old_string":"teh","new_string":"the"}}
+{"type":"tool_result","timestamp":"2026-11-02T10:00:01.500Z","tool_id":"replace-1","status":"success","output":"Successfully modified file"}
+{"type":"message","timestamp":"2026-11-02T10:00:02.000Z","role":"assistant","content":"Fixed ","delta":true}
+{"type":"message","timestamp":"2026-11-02T10:00:02.100Z","role":"assistant","content":"the typo.","delta":true}
+{"type":"result","timestamp":"2026-11-02T10:00:02.200Z","status":"success","stats":{"total_tokens":120,"input_tokens":100,"output_tokens":20,"duration_ms":2200,"tool_calls":1}}

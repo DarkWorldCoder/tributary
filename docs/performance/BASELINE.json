@@ -1,0 +1,111 @@
+{
+  "measuredAt": "2026-11-02T11:38:12.941Z",
+  "environment": {
+    "node": "v24.21.0",
+    "platform": "linux",
+    "arch": "x64",
+    "cpuModel": "12th Gen Intel(R) Core(TM) i5-1235U",
+    "logicalCpus": 12
+  },
+  "sourceHashes": {
+    "core/store.js": "58ccba0bfd43ee6d25dfe6fe4fed35d8df7e7729c209db3efeb6f88ba17565fb",
+    "core/handoff.js": "37aa6fbf727d9a091c8de923ae6126b2b61b26bdc4aa97559bea2a0b0aca33f1",
+    "core/memory.js": "91d5a1f0f073b65d6c9ef49291c3d294d581b79cc3a804955312af7422464d20"
+  },
+  "limitations": [
+    "Synthetic fixtures; not a live Electron, provider, native-bridge, or coding-task benchmark.",
+    "Standalone Node runtime; warm filesystem/cache; temporary filesystem may differ from user data storage.",
+    "Store timings include synchronous stringify/write/rename, without fsync or a crash-durability claim.",
+    "IPC comparison uses JSON byte counts as a payload proxy; Electron uses structured cloning.",
+    "No proposed optimized or Rust implementation is measured."
+  ],
+  "store": [
+    {
+      "messages": 500,
+      "bytes": 1257338,
+      "medianMs": 5.245,
+      "minMs": 4.454,
+      "maxMs": 6.892,
+      "samples": 7
+    },
+    {
+      "messages": 2500,
+      "bytes": 6291088,
+      "medianMs": 31.514,
+      "minMs": 29.95,
+      "maxMs": 58.448,
+      "samples": 7
+    },
+    {
+      "messages": 10000,
+      "bytes": 25172338,
+      "medianMs": 107.308,
+      "minMs": 91.955,
+      "maxMs": 155.261,
+      "samples": 7
+    }
+  ],
+  "handoff": [
+    {
+      "messages": 500,
+      "medianMs": 0.583,
+      "minMs": 0.54,
+      "maxMs": 0.802,
+      "samples": 7,
+      "outputCharacters": 12928
+    },
+    {
+      "messages": 2500,
+      "medianMs": 3.573,
+      "minMs": 2.023,
+      "maxMs": 5.418,
+      "samples": 7,
+      "outputCharacters": 12929
+    },
+    {
+      "messages": 10000,
+      "medianMs": 7.984,
+      "minMs": 6.168,
+      "maxMs": 15.116,
+      "samples": 7,
+      "outputCharacters": 12929
+    }
+  ],
+  "worklog": [
+    {
+      "entries": 1000,
+      "bytes": 85901,
+      "returned": 60,
+      "medianMs": 0.183,
+      "minMs": 0.173,
+      "maxMs": 0.295,
+      "samples": 7
+    },
+    {
+      "entries": 10000,
+      "bytes": 868901,
+      "returned": 60,
+      "medianMs": 1.797,
+      "minMs": 1.687,
+      "maxMs": 1.932,
+      "samples": 7
+    },
+    {
+      "entries": 100000,
+      "bytes": 8788901,
+      "returned": 60,
+      "medianMs": 15.292,
+      "minMs": 13.236,
+      "maxMs": 31.464,
+      "samples": 7
+    }
+  ],
+  "streamPayload": {
+    "updates": 1000,
+    "charactersPerUpdate": 128,
+    "finalTextCharacters": 128000,
+    "snapshotBytes": 64177000,
+    "deltaBytes": 204893,
+    "payloadRatio": 313.22
+  }
+}

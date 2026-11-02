@@ -1,0 +1,229 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist/wght.css";
+@import "@fontsource/ibm-plex-sans/latin-400.css";
+@import "@fontsource/ibm-plex-sans/latin-500.css";
+@import "@fontsource/ibm-plex-sans/latin-600.css";
+@import "@fontsource/ibm-plex-mono/latin-400.css";
+@import "@fontsource/ibm-plex-mono/latin-500.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --font-heading: var(--font-sans);
+    --font-sans: var(--app-font, 'Geist Variable', ui-sans-serif, system-ui, sans-serif);
+    --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar: var(--sidebar);
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-brand: var(--brand);
+    --color-brand-2: var(--brand-2);
+    --color-success: var(--success);
+    --color-warning: var(--warning);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) * 1.4);
+    --radius-2xl: calc(var(--radius) * 1.8);
+    --radius-3xl: calc(var(--radius) * 2.2);
+    --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* Tributary palette: cool slate neutrals; brand indigo for focus and selection only.
+   Agent identity colors live on avatars and the thread's stream line. */
+:root {
+    --background: oklch(0.985 0.002 250);
+    --foreground: oklch(0.21 0.012 265);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.21 0.012 265);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.21 0.012 265);
+    --primary: oklch(0.23 0.014 265);
+    --primary-foreground: oklch(0.985 0.002 250);
+    --secondary: oklch(0.955 0.005 255);
+    --secondary-foreground: oklch(0.25 0.012 265);
+    --muted: oklch(0.955 0.005 255);
+    --muted-foreground: oklch(0.52 0.014 260);
+    --accent: oklch(0.945 0.008 265);
+    --accent-foreground: oklch(0.23 0.014 265);
+    --destructive: oklch(0.56 0.2 25);
+    --border: oklch(0.915 0.006 258);
+    --input: oklch(0.9 0.007 258);
+    --ring: oklch(0.55 0.2 275);
+    --brand: oklch(0.51 0.23 277);
+    --brand-2: oklch(0.6 0.12 215);
+    --success: oklch(0.55 0.14 150);
+    --warning: oklch(0.62 0.14 70);
+    --chart-1: oklch(0.51 0.23 277);
+    --chart-2: oklch(0.6 0.12 215);
+    --chart-3: oklch(0.55 0.14 150);
+    --chart-4: oklch(0.62 0.14 70);
+    --chart-5: oklch(0.56 0.2 25);
+    --radius: 0.625rem;
+    --sidebar: oklch(0.97 0.004 255);
+    --sidebar-foreground: oklch(0.25 0.012 265);
+    --sidebar-primary: oklch(0.51 0.23 277);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.93 0.008 262);
+    --sidebar-accent-foreground: oklch(0.21 0.012 265);
+    --sidebar-border: oklch(0.915 0.006 258);
+    --sidebar-ring: oklch(0.55 0.2 275);
+}
+
+.dark {
+    --background: oklch(0.185 0.012 265);
+    --foreground: oklch(0.94 0.006 260);
+    --card: oklch(0.215 0.013 265);
+    --card-foreground: oklch(0.94 0.006 260);
+    --popover: oklch(0.235 0.014 265);
+    --popover-foreground: oklch(0.94 0.006 260);
+    --primary: oklch(0.94 0.006 260);
+    --primary-foreground: oklch(0.2 0.012 265);
+    --secondary: oklch(0.27 0.014 265);
+    --secondary-foreground: oklch(0.94 0.006 260);
+    --muted: oklch(0.255 0.013 265);
+    --muted-foreground: oklch(0.7 0.014 260);
+    --accent: oklch(0.29 0.02 270);
+    --accent-foreground: oklch(0.96 0.005 260);
+    --destructive: oklch(0.68 0.19 25);
+    --border: oklch(0.31 0.014 265);
+    --input: oklch(0.34 0.015 265);
+    --ring: oklch(0.68 0.17 277);
+    --brand: oklch(0.68 0.17 277);
+    --brand-2: oklch(0.74 0.11 210);
+    --success: oklch(0.74 0.15 150);
+    --warning: oklch(0.8 0.14 75);
+    --chart-1: oklch(0.68 0.17 277);
+    --chart-2: oklch(0.74 0.11 210);
+    --chart-3: oklch(0.74 0.15 150);
+    --chart-4: oklch(0.8 0.14 75);
+    --chart-5: oklch(0.68 0.19 25);
+    --sidebar: oklch(0.165 0.012 265);
+    --sidebar-foreground: oklch(0.9 0.008 260);
+    --sidebar-primary: oklch(0.68 0.17 277);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.255 0.016 268);
+    --sidebar-accent-foreground: oklch(0.96 0.005 260);
+    --sidebar-border: oklch(0.27 0.013 265);
+    --sidebar-ring: oklch(0.68 0.17 277);
+}
+
+/* Inside VS Code, follow the editor theme. */
+.vscode {
+    --background: var(--vscode-editor-background);
+    --foreground: var(--vscode-foreground);
+    --card: var(--vscode-editorWidget-background, var(--vscode-editor-background));
+    --card-foreground: var(--vscode-foreground);
+    --popover: var(--vscode-quickInput-background, var(--vscode-editorWidget-background));
+    --popover-foreground: var(--vscode-quickInput-foreground, var(--vscode-foreground));
+    --primary: var(--vscode-button-background);
+    --primary-foreground: var(--vscode-button-foreground);
+    --secondary: var(--vscode-button-secondaryBackground, var(--vscode-input-background));
+    --secondary-foreground: var(--vscode-button-secondaryForeground, var(--vscode-foreground));
+    --muted: var(--vscode-input-background);
+    --muted-foreground: var(--vscode-descriptionForeground);
+    --accent: var(--vscode-list-hoverBackground);
+    --accent-foreground: var(--vscode-foreground);
+    --destructive: var(--vscode-errorForeground);
+    --border: var(--vscode-panel-border, var(--vscode-widget-border, #8884));
+    --input: var(--vscode-input-border, var(--vscode-panel-border, #8885));
+    --ring: var(--vscode-focusBorder);
+    --brand: var(--vscode-focusBorder);
+    --sidebar: var(--vscode-sideBar-background, var(--vscode-editor-background));
+    --sidebar-foreground: var(--vscode-sideBar-foreground, var(--vscode-foreground));
+    --sidebar-accent: var(--vscode-list-hoverBackground);
+    --sidebar-accent-foreground: var(--vscode-foreground);
+    --sidebar-border: var(--vscode-sideBar-border, var(--vscode-panel-border, #8884));
+    --font-sans: var(--vscode-font-family);
+    --font-mono: var(--vscode-editor-font-family);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    }
+  body {
+    @apply bg-background text-foreground;
+    }
+  button:not(:disabled), [role="button"]:not(:disabled) {
+    cursor: pointer;
+    }
+  html {
+    @apply font-sans;
+    }
+}
+@layer base {
+  html, body, #root { height: 100%; }
+  body { overflow: hidden; -webkit-font-smoothing: antialiased; font-kerning: normal; }
+  ::selection { background: color-mix(in oklch, var(--brand) 25%, transparent); }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; } }
+}
+
+/* Markdown replies */
+.prose-reply { font-size: var(--reading-size, 0.9375rem); line-height: 1.75; overflow-wrap: anywhere; }
+.prose-reply > :first-child { margin-top: 0; }
+.prose-reply > :last-child { margin-bottom: 0; }
+.prose-reply p { margin: 0 0 0.75rem; }
+.prose-reply h1, .prose-reply h2, .prose-reply h3, .prose-reply h4 { font-weight: 600; line-height: 1.35; margin: 1.25rem 0 0.5rem; font-size: 1rem; }
+.prose-reply h1 { font-size: 1.125rem; }
+.prose-reply ul, .prose-reply ol { margin: 0 0 0.75rem; padding-inline-start: 1.25rem; }
+.prose-reply ul { list-style: disc; } .prose-reply ol { list-style: decimal; }
+.prose-reply li { margin: 0.2rem 0; }
+.prose-reply li::marker { color: var(--muted-foreground); }
+.prose-reply :not(pre) > code { font-family: var(--font-mono); font-size: 0.85em; padding: 0.1em 0.35em; border-radius: 0.3rem; background: var(--muted); }
+.prose-reply a { color: var(--brand); text-decoration: underline; text-underline-offset: 2px; }
+.prose-reply blockquote { border-inline-start: 2px solid var(--border); padding-inline-start: 0.75rem; color: var(--muted-foreground); margin: 0 0 0.75rem; }
+.prose-reply table { width: 100%; border-collapse: collapse; margin: 0 0 0.75rem; font-size: 0.875rem; font-variant-numeric: tabular-nums; }
+.prose-reply th, .prose-reply td { border-bottom: 1px solid var(--border); padding: 0.4rem 0.5rem; text-align: start; }
+.prose-reply th { font-weight: 600; }
+.prose-reply hr { border: 0; border-top: 1px solid var(--border); margin: 1rem 0; }
+.prose-reply [data-slot="code-block"] { margin: 0 0 0.75rem; }
+
+/* Syntax colors for the code editor (tuned for contrast in both themes). */
+:root {
+  --syn-keyword: oklch(0.5 0.2 300); --syn-string: oklch(0.52 0.14 150); --syn-number: oklch(0.55 0.15 50);
+  --syn-comment: oklch(0.6 0.02 260); --syn-function: oklch(0.5 0.17 255); --syn-type: oklch(0.52 0.12 200);
+  --syn-property: oklch(0.48 0.1 230); --syn-tag: oklch(0.52 0.18 20);
+}
+.dark {
+  --syn-keyword: oklch(0.76 0.14 305); --syn-string: oklch(0.78 0.13 145); --syn-number: oklch(0.8 0.13 65);
+  --syn-comment: oklch(0.6 0.02 260); --syn-function: oklch(0.78 0.12 250); --syn-type: oklch(0.8 0.1 195);
+  --syn-property: oklch(0.8 0.08 225); --syn-tag: oklch(0.75 0.14 20);
+}
+.vscode {
+  --syn-keyword: var(--vscode-symbolIcon-keywordForeground, var(--vscode-editor-foreground));
+  --syn-string: var(--vscode-debugTokenExpression-string, var(--vscode-editor-foreground));
+  --syn-number: var(--vscode-debugTokenExpression-number, var(--vscode-editor-foreground));
+  --syn-comment: var(--vscode-descriptionForeground); --syn-function: var(--vscode-symbolIcon-functionForeground, var(--vscode-editor-foreground));
+  --syn-type: var(--vscode-symbolIcon-classForeground, var(--vscode-editor-foreground)); --syn-property: var(--vscode-symbolIcon-propertyForeground, var(--vscode-editor-foreground));
+  --syn-tag: var(--vscode-symbolIcon-keywordForeground, var(--vscode-editor-foreground));
+}

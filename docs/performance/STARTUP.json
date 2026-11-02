@@ -1,0 +1,52 @@
+{
+  "sourceSha256": "addf4b8d96bf3706875e6e07e08df67fc096cd5d3f253ec37912f812b72c76e4",
+  "conditions": [
+    "Linux x64; Electron 44.7.2; Xvfb with X11 explicitly selected; GPU disabled; fresh temporary app profile for each run.",
+    "Three runs per variant; warm system caches; not a cold-boot or supported-platform benchmark.",
+    "Before reconstructs the old await-init gate using the same current core, built UI, and assets; not a historical release binary.",
+    "Intervals begin at JavaScript main entry or app ready; exclude Electron work before main entry.",
+    "No provider requests; only discovery/version probes and existing desktop smoke flow."
+  ],
+  "runs": [
+    {
+      "variant": "before",
+      "mainEntryToReadyToShowMs": 3305.842477,
+      "appReadyToReadyToShowMs": 3185.0484189999997,
+      "run": 1
+    },
+    {
+      "variant": "after",
+      "mainEntryToReadyToShowMs": 771.781689,
+      "appReadyToReadyToShowMs": 618.872031,
+      "run": 2
+    },
+    {
+      "variant": "after",
+      "mainEntryToReadyToShowMs": 877.2583349999999,
+      "appReadyToReadyToShowMs": 726.1899359999999,
+      "run": 3
+    },
+    {
+      "variant": "before",
+      "mainEntryToReadyToShowMs": 3777.753029,
+      "appReadyToReadyToShowMs": 3586.144553,
+      "run": 4
+    },
+    {
+      "variant": "before",
+      "mainEntryToReadyToShowMs": 3117.2267,
+      "appReadyToReadyToShowMs": 3005.519669,
+      "run": 5
+    },
+    {
+      "variant": "after",
+      "mainEntryToReadyToShowMs": 854.4331480000001,
+      "appReadyToReadyToShowMs": 622.243567,
+      "run": 6
+    }
+  ],
+  "medianAppReadyToReadyToShowMs": {
+    "before": 3185.048,
+    "after": 622.244
+  }
+}

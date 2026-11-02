@@ -1,0 +1,16 @@
+node_modules/
+ui/node_modules/
+ui/dist/
+vscode/dist/
+*.vsix
+release/
+
+# local and build output
+.env
+.env.*
+*.log
+.DS_Store
+coverage/
+*.AppImage
+*.deb
+.vscode-test/

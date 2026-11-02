@@ -1,0 +1,90 @@
+{
+  "name": "tributary",
+  "productName": "Tributary",
+  "version": "0.1.0",
+  "description": "Every coding agent, one stream of work. Run Claude Code, Codex, Gemini, Antigravity and other local agents from one place.",
+  "main": "desktop/main.js",
+  "bin": {
+    "tributary": "cli/tributary.js"
+  },
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "npm run build:ui && electron .",
+    "dev": "electron .",
+    "build:ui": "npm --prefix ui run build",
+    "test": "node --test test/core.test.js test/features.test.js test/workspace.test.js test/race.test.js test/acp-pool.test.js test/registry.test.js test/vscode.test.js test/everyday.test.js test/collaboration.test.js test/cli.test.js test/files.test.js",
+    "test:e2e": "node test/e2e/real-handoff.js claude codex",
+    "ui:dev": "npm --prefix ui run dev",
+    "vscode:build": "npm run build:ui && node vscode/build.js",
+    "vscode:install": "npm run build:ui && node vscode/build.js --install",
+    "pretest": "node vscode/build.js",
+    "dist": "npm run build:ui && electron-builder",
+    "dist:linux": "npm run build:ui && electron-builder --linux AppImage deb",
+    "server": "node server/start.js"
+  },
+  "devDependencies": {
+    "electron": "44.7.2",
+    "electron-builder": "26.17.0"
+  },
+  "dependencies": {
+    "@lydell/node-pty": "1.1.0"
+  },
+  "author": {
+    "name": "Tributary contributors",
+    "email": "tributary@localhost"
+  },
+  "homepage": "https://github.com/tributary/tributary",
+  "build": {
+    "appId": "dev.tributary.app",
+    "productName": "Tributary",
+    "directories": {
+      "output": "release",
+      "buildResources": "assets"
+    },
+    "files": [
+      "core/**",
+      "desktop/**",
+      "ui/dist/**",
+      "assets/**",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "node_modules/@lydell/**"
+    ],
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Development",
+      "icon": "assets/icon-512.png",
+      "synopsis": "Every coding agent, one stream of work",
+      "desktop": {
+        "entry": {
+          "StartupWMClass": "Tributary"
+        }
+      },
+      "syncDesktopName": true
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.developer-tools",
+      "icon": "assets/icon-512.png"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "assets/icon-512.png"
+    },
+    "deb": {
+      "depends": [
+        "git"
+      ]
+    }
+  },
+  "desktopName": "tributary.desktop"
+}
