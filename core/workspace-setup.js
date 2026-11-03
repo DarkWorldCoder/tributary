@@ -69,4 +69,12 @@ async function unignoredCopies(dir, copied) {
   return copied.filter((rel) => !still.has(rel));
 }
 
-module.exports = { includedFiles, copyIncluded, unignoredCopies };
+// Each copy gets a block of ports, so dev servers in two copies don't both want 3000: TRIBUTARY_PORT to
+// TRIBUTARY_PORT + 9, with PORT set to the first. The project folder itself keeps its usual ports.
+const PORTS = { base: 4400, block: 10 };
+const freePort = (used) => { let port = PORTS.base; while (used.has(port)) port += PORTS.block; return port; };
+const copyEnv = (copy, root) => (copy && copy.port ? {
+  TRIBUTARY_PORT: String(copy.port), PORT: String(copy.port), TRIBUTARY_WORKSPACE: copy.path, TRIBUTARY_ROOT_PATH: copy.root || root,
+} : {});
+
+module.exports = { includedFiles, copyIncluded, unignoredCopies, freePort, copyEnv, PORTS };

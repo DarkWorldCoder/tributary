@@ -33,7 +33,7 @@ const { activityOf, watchActivity } = require('./activity');
 const { judgeRace } = require('./manager');
 const { lineAuthors, revertTurnHunk } = require('./attribution');
 const worktrees = require('./worktrees');
-const { copyIncluded } = require('./workspace-setup');
+const { copyIncluded, freePort, copyEnv } = require('./workspace-setup');
 
 const attachments = require('./attachments');
 const uid = () => crypto.randomUUID();
@@ -407,7 +407,7 @@ class Hub extends EventEmitter {
       this.store.save(false, t.id); // only this thread changed: don't re-serialize all history
     };
     try {
-      const r = await runTurn({ agent, cwd: dir, prompt: p.prompt, images, mode, resumeId: p.resumeId, gateway, model, trusted: proj.trusted !== false, extraDirs: proj.folders || [], onEvent, signal: ac.signal });
+      const r = await runTurn({ agent, cwd: dir, prompt: p.prompt, env: this.workspaceEnv(t), images, mode, resumeId: p.resumeId, gateway, model, trusted: proj.trusted !== false, extraDirs: proj.folders || [], onEvent, signal: ac.signal });
       if (r.sessionId) t.agentSessions = { ...t.agentSessions, [sessKey]: r.sessionId };
       msg.ok = r.ok;
     } catch (e) {
@@ -734,6 +734,16 @@ class Hub extends EventEmitter {
 
   // ---- separate working copies: a conversation's own git worktree and branch (core/worktrees.js)
   workdir(t) { return t.worktree ? t.worktree.cwd : t.project; }
+  // A copy's own ports and paths for the processes run in it (agents, terminals); {} for the project folder.
+  workspaceEnv(t) {
+    if (!t || !t.worktree) return {};
+    if (!t.worktree.port) { t.worktree.port = freePort(new Set(this.store.data.threads.map((x) => x.worktree?.port).filter(Boolean))); this.store.save(true); }
+    return copyEnv(t.worktree, t.project);
+  }
+  workspaceEnvFor(dir) {
+    const t = dir && this.store.data.threads.find((x) => x.worktree && (dir === x.worktree.path || dir.startsWith(x.worktree.path + path.sep)));
+    return t ? this.workspaceEnv(t) : {};
+  }
   // A project folder, or a conversation's separate copy of one.
   isWorkspace(dir) { return !!this.project(dir) || this.store.data.threads.some((t) => t.worktree && t.worktree.cwd === dir); }
   async changeCopy(threadId, { needCopy = true } = {}, work) {
@@ -761,7 +771,8 @@ class Hub extends EventEmitter {
       const w = await worktrees.createWorktree(root, { dir: path.join(this.dataDir, 'worktrees', `thread-${short}`, path.basename(repo)), branch: `tributary/thread-${short}` });
       // The project's gitignored .env files (or what .worktreeinclude lists) come along; commits leave them out.
       const copied = await copyIncluded(root, w.path).catch(() => []);
-      t.worktree = { ...w, cwd: path.join(w.path, path.relative(repo, fs.realpathSync(t.project))), createdAt: now(), copied };
+      t.worktree = { ...w, cwd: path.join(w.path, path.relative(repo, fs.realpathSync(t.project))), createdAt: now(), copied, root: repo };
+      this.workspaceEnv(t); // takes its block of ports
       // Agent sessions belong to the folder they ran in; the next turn joins with a summary instead.
       t.agentSessions = {};
       this.store.save(true);
@@ -772,7 +783,8 @@ class Hub extends EventEmitter {
     const t = this.thread(threadId); if (!t) throw new Error('Thread not found');
     if (!t.worktree) throw new Error('This conversation is not working in a separate copy.');
     const g = await gitInfo(t.project); if (!g) throw new Error('Not a git repository');
-    return { ...(await worktrees.worktreeStatus(g.root, t.worktree)), cwd: t.worktree.cwd, from: t.worktree.from, copied: t.worktree.copied || [] };
+    this.workspaceEnv(t); // a copy made before ports existed takes its block now
+    return { ...(await worktrees.worktreeStatus(g.root, t.worktree)), cwd: t.worktree.cwd, from: t.worktree.from, copied: t.worktree.copied || [], port: t.worktree.port };
   }
   // Into the project's current branch. Refused, with the files named, when it would conflict.
   async mergeWorktree(threadId) {

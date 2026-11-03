@@ -131,7 +131,7 @@ const API = {
   openExternal: (url) => (/^https?:\/\//.test(url) ? vscode.env.openExternal(vscode.Uri.parse(url)) : null),
   openAgentsFile: async () => { const doc = await vscode.workspace.openTextDocument(hub.customAgentsFile); await vscode.window.showTextDocument(doc); },
   createTerminal({ cwd, command } = {}) {
-    const term = vscode.window.createTerminal({ name: command ? `Tributary: ${command.split(' ')[0].split('/').pop()}` : 'Tributary', cwd: cwd && fs.existsSync(cwd) ? cwd : undefined });
+    const term = vscode.window.createTerminal({ name: command ? `Tributary: ${command.split(' ')[0].split('/').pop()}` : 'Tributary', cwd: cwd && fs.existsSync(cwd) ? cwd : undefined, env: hub.workspaceEnvFor(cwd) });
     term.show(); if (command) term.sendText(command, true); return 'vscode';
   },
   termWrite: () => false, termResize: () => false, termKill: () => false,

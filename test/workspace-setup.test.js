@@ -87,3 +87,22 @@ test('copied files are never committed, even after an agent un-ignores them', as
   assert.strictEqual(sh(d, 'ls-files', '.env', 'web/.env.local'), '');
   hub.store.save(true);
 });
+
+test('each copy gets its own block of ports, which its turns and terminals see', async () => {
+  const report = agent('env', "fs.writeFileSync('env.json', JSON.stringify({ port: process.env.TRIBUTARY_PORT, PORT: process.env.PORT, root: process.env.TRIBUTARY_ROOT_PATH, ws: process.env.TRIBUTARY_WORKSPACE }))");
+  const { d, hub } = await setup([report]);
+  const a = hub.createThread(d); const b = hub.createThread(d);
+  const sa = await hub.createWorktree(a.id); const sb = await hub.createWorktree(b.id);
+  assert.ok(sa.port >= 1024 && sb.port >= 1024 && Math.abs(sa.port - sb.port) >= 10, `${sa.port} ${sb.port}`);
+  await hub.send({ threadId: a.id, agentId: 'env', text: 'report' });
+  const seen = JSON.parse(fs.readFileSync(path.join(sa.cwd, 'env.json'), 'utf8'));
+  assert.deepStrictEqual(seen, { port: String(sa.port), PORT: String(sa.port), root: fs.realpathSync(d), ws: sa.path });
+  assert.strictEqual(hub.workspaceEnvFor(sa.cwd).TRIBUTARY_PORT, String(sa.port), 'a terminal in the copy gets the same ports');
+  assert.strictEqual(hub.workspaceEnvFor(path.join(sa.path, 'web')).TRIBUTARY_PORT, String(sa.port));
+  assert.deepStrictEqual(hub.workspaceEnvFor(d), {}, 'the project folder keeps its usual ports');
+  // A discarded copy's ports go to the next copy.
+  await hub.discardWorktree(a.id);
+  const c = hub.createThread(d);
+  assert.strictEqual((await hub.createWorktree(c.id)).port, sa.port);
+  hub.store.save(true);
+});

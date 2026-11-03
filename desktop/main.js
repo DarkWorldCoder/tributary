@@ -212,7 +212,7 @@ const API = {
   },
   createTerminal({ cwd, cols, rows, command } = {}) {
     const dir = cwd && hub.project(cwd) ? cwd : (cwd && fs.existsSync(cwd) ? cwd : app.getPath('home'));
-    const id = terminals.create({ cwd: dir, cols, rows });
+    const id = terminals.create({ cwd: dir, cols, rows, env: hub.workspaceEnvFor(dir) }); // a copy's own ports
     // Type the command once the shell has printed its prompt (or after 2 s), not after a fixed guess.
     if (command) {
       let sent = false; let timer = null;

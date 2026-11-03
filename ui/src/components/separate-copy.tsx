@@ -103,6 +103,12 @@ export function SeparateCopy() {
               </PopoverDescription>
             </PopoverHeader>
             <p className="truncate font-mono text-[11px] text-muted-foreground" title={copy.path}>{copy.path}</p>
+            {status && !status.missing && (status.port || status.copied?.length) ? (
+              <p className="text-xs text-muted-foreground" title={status.copied?.join('\n')}>
+                {status.copied?.length ? `Copied ${plural(status.copied.length, 'ignored file')} (${status.copied.slice(0, 3).join(', ')}${status.copied.length > 3 ? ', …' : ''}). ` : ''}
+                {status.port ? <>Ports <span className="font-mono">{status.port}–{status.port + 9}</span> ($TRIBUTARY_PORT, $PORT).</> : null}
+              </p>
+            ) : null}
             {files.length > 0 ? (
               <ul className="-mx-1 max-h-48 overflow-auto" aria-label="Changed files">
                 {files.map((f) => <li key={f.path} className="flex items-center gap-2 rounded-md px-1 py-0.5"><ChangeCode code={changeCode(f.code)} /><span className="truncate font-mono text-[12px]">{f.path}</span></li>)}
