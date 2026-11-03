@@ -107,6 +107,7 @@ const API = {
   worktreeStatus: (id) => hub.worktreeStatus(id),
   mergeWorktree: (id, opts) => hub.mergeWorktree(id, { allowSecrets: !!opts?.allowSecrets }),
   discardWorktree: (id) => hub.discardWorktree(id),
+  conversationDiff: (id, messageId, rel) => hub.conversationDiff(id, messageId, rel),
   runSetup: (id) => hub.runSetup(id),
   trustScript: (p, hash) => hub.trustScript(knownProject(p), hash),
   removeProject: (p) => hub.removeProject(p),

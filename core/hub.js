@@ -669,6 +669,15 @@ class Hub extends EventEmitter {
     return diffBetween(root, m.checkpoint, m.after || (next ? next.checkpoint : null), relRoot);
   }
 
+  // A file over the whole conversation: from before the first turn in the same folder that touched it, to now.
+  async conversationDiff(threadId, messageId, rel) {
+    const t = this.thread(threadId); if (!t) throw new Error('Thread not found');
+    const m = t.messages.find((x) => x.id === messageId); if (!m || !m.checkpoint) throw new Error('No checkpoint for this turn');
+    const first = t.messages.find((x) => x.role === 'assistant' && x.checkpoint && (x.workdir || null) === (m.workdir || null) && (x.files || []).some((f) => f.rel === rel)) || m;
+    const { dir, root } = await this.turnFolder(t, m);
+    return diffBetween(root, first.checkpoint, null, path.relative(root, path.resolve(dir, rel)));
+  }
+
   // Every file touched in a thread, by turn.
   threadChanges(threadId) {
     const t = this.thread(threadId); if (!t) throw new Error('Thread not found');

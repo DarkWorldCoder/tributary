@@ -3,9 +3,25 @@ import { WrapText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { diffRows, type DiffRow } from '../../../core/diff-view.mjs';
 import { cn } from '@/lib/utils';
+import { CommentForm, CommentNote, type ReviewComment } from '@/components/review-comments';
 
-export function FileDiff({ diff }: { diff: string }) {
+type Target = { side: 'before' | 'after'; line: number };
+// The line a comment refers to: the new line for added and unchanged rows, the old one for removed rows.
+const target = (row?: DiffRow): Target | null => row?.kind === 'add' || row?.kind === 'context' ? { side: 'after', line: row.after! } : row?.kind === 'remove' ? { side: 'before', line: row.before! } : null;
+
+/** onComment turns on a "+" beside each line to leave a comment for the agent; comments shows saved ones in place. */
+export function FileDiff({ diff, comments, onComment, onRemoveComment }: { diff: string; comments?: ReviewComment[]; onComment?: (c: Target & { quote: string; note: string }) => void; onRemoveComment?: (id: string) => void }) {
   const [split, setSplit] = React.useState(false); const [wrap, setWrap] = React.useState(false);
+  const [draft, setDraft] = React.useState<string | null>(null);
+  const keyOf = (t: Target) => `${t.side}:${t.line}`;
+  const plus = (row?: DiffRow) => { const t = target(row); return onComment && t ? <button type="button" aria-label={`Comment on ${t.side === 'before' ? 'removed ' : ''}line ${t.line}`} onClick={() => setDraft(keyOf(t))} className="absolute top-1 left-0.5 grid size-4 place-items-center rounded bg-brand font-sans text-[11px] leading-none text-white opacity-0 group-hover:opacity-100 focus-visible:opacity-100">+</button> : null; };
+  // Saved comments and the open comment box go right under their line.
+  const extras = (rows: (DiffRow | undefined)[]) => [...new Map(rows.map((row) => [target(row), row] as const).filter(([t]) => t).map(([t, row]) => [keyOf(t!), { t: t!, row: row! }])).values()].map(({ t, row }) => (
+    <div key={keyOf(t)} className="sticky left-0 max-w-2xl">
+      {comments?.filter((c) => c.side === t.side && c.line === t.line).map((c) => <CommentNote key={c.id} comment={c} onRemove={() => onRemoveComment?.(c.id)} />)}
+      {draft === keyOf(t) && <CommentForm onCancel={() => setDraft(null)} onAdd={(note) => { onComment?.({ ...t, quote: row.text, note }); setDraft(null); }} />}
+    </div>
+  ));
   const parsed = React.useMemo(() => diffRows(diff), [diff]);
   const content = parsed.rows.filter((row) => row.kind !== 'meta');
   const paired = parsed.split.filter((row) => row.left?.kind !== 'meta' || row.right?.kind !== 'meta');
@@ -13,13 +29,13 @@ export function FileDiff({ diff }: { diff: string }) {
   // One scrolling surface, one row per source line. Wrapped split cells stretch together.
   const splitWidth = Math.max(48, ...paired.map((row) => Math.max(row.left?.text.length ?? 0, row.right?.text.length ?? 0) + 9));
   const textClass = cn('block min-w-0 px-2', wrap ? 'whitespace-pre-wrap [overflow-wrap:anywhere]' : 'whitespace-pre');
-  const cell = (row: DiffRow | undefined, side: 'before' | 'after') => <div className={cn('grid min-w-0 grid-cols-[3rem_minmax(0,1fr)] border-r last:border-r-0', color(row))}><span aria-hidden="true" className="select-none border-r px-2 text-right text-muted-foreground">{row?.[side] ?? ''}</span><span className={textClass}>{row?.text || ' '}</span></div>;
+  const cell = (row: DiffRow | undefined, side: 'before' | 'after') => <div className={cn('group relative grid min-w-0 grid-cols-[3rem_minmax(0,1fr)] border-r last:border-r-0', color(row))}>{plus(row)}<span aria-hidden="true" className="select-none border-r px-2 text-right text-muted-foreground">{row?.[side] ?? ''}</span><span className={textClass}>{row?.text || ' '}</span></div>;
   return <section aria-label="File comparison" className="min-w-0 overflow-hidden rounded-lg border">
     <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-card px-3 py-2"><span className="text-xs tabular-nums"><span className="text-success">+{parsed.added}</span><span className="ml-2 text-destructive">−{parsed.removed}</span>{parsed.truncated ? ' (visible portion)' : ''}</span><div role="group" aria-label="Diff layout" className="flex flex-wrap items-center gap-1"><Button size="xs" variant={wrap ? 'secondary' : 'ghost'} aria-pressed={wrap} onClick={() => setWrap(!wrap)}><WrapText />Wrap lines</Button><Button size="xs" variant={split ? 'ghost' : 'secondary'} aria-pressed={!split} onClick={() => setSplit(false)}>Unified</Button><Button size="xs" variant={split ? 'secondary' : 'ghost'} aria-pressed={split} onClick={() => setSplit(true)}>Side by side</Button></div></div>
     {split && <div className="grid grid-cols-2 border-b bg-muted text-xs"><span className="border-r px-3 py-2">Original</span><span className="px-3 py-2">Working copy</span></div>}
     <div className="max-w-full overflow-auto font-mono text-xs leading-6" role="region" aria-label={split ? 'Original and working copy changes' : 'Unified file changes'} tabIndex={0}>
       <div className={wrap ? 'w-full' : 'w-max min-w-full'} style={split && !wrap ? { width: `${Math.min(splitWidth, 20000) * 2}ch` } : undefined}>
-        {split ? paired.map((row, i) => <div key={i} className="grid min-h-6 grid-cols-2">{cell(row.left, 'before')}{cell(row.right, 'after')}</div>) : content.map((row, i) => <div key={i} className={cn('grid min-h-6 grid-cols-[2.5rem_2.5rem_1.25rem_minmax(0,1fr)]', color(row))}><span aria-hidden="true" className="select-none border-r px-1 text-right text-muted-foreground">{row.before ?? ''}</span><span aria-hidden="true" className="select-none border-r px-1 text-right text-muted-foreground">{row.after ?? ''}</span><span className="select-none text-center">{row.kind === 'add' ? '+' : row.kind === 'remove' ? '−' : ''}</span><span className={textClass}>{row.text || ' '}</span></div>)}
+        {split ? paired.map((row, i) => <React.Fragment key={i}><div className="grid min-h-6 grid-cols-2">{cell(row.left, 'before')}{cell(row.right, 'after')}</div>{extras([row.left, row.right])}</React.Fragment>) : content.map((row, i) => <React.Fragment key={i}><div className={cn('group relative grid min-h-6 grid-cols-[2.5rem_2.5rem_1.25rem_minmax(0,1fr)]', color(row))}>{plus(row)}<span aria-hidden="true" className="select-none border-r px-1 text-right text-muted-foreground">{row.before ?? ''}</span><span aria-hidden="true" className="select-none border-r px-1 text-right text-muted-foreground">{row.after ?? ''}</span><span className="select-none text-center">{row.kind === 'add' ? '+' : row.kind === 'remove' ? '−' : ''}</span><span className={textClass}>{row.text || ' '}</span></div>{extras([row])}</React.Fragment>)}
       </div>
     </div>
     {!content.length && <p className="px-3 py-3 text-sm text-muted-foreground">{parsed.rows.map((row) => row.text).filter(Boolean).join('\n') || 'No text changes.'}</p>}

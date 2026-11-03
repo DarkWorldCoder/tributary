@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChangeCode } from '@/components/conversation';
 import { ChangeContext } from '@/components/change-context';
 import { FileDiff } from '@/components/file-diff';
+import { CommentTray, addComment, removeComment, useComments, useCommentsKey } from '@/components/review-comments';
 import { FileTypeIcon } from '@/components/file-type-icon';
 import { Input } from '@/components/ui/input';
 import { changeCode } from '@/lib/format';
@@ -18,6 +19,7 @@ export function ReviewTab() {
   const s = useStore(); const g = s.git; const { rel, diff } = s.review;
   const [msg, setMsg] = React.useState(''); const [busy, setBusy] = React.useState(false);
   const [filter, setFilter] = React.useState(''); const [error, setError] = React.useState(''); const [loading, setLoading] = React.useState(false);
+  const commentsKey = useCommentsKey(); const comments = useComments(commentsKey);
   const selected = React.useRef(rel); selected.current = rel;
   const activeProject = React.useRef(s.workdir); activeProject.current = s.workdir;
   const request = React.useRef(0);
@@ -70,6 +72,7 @@ export function ReviewTab() {
       </ScrollArea>
       <div className="min-h-0 flex-1 overflow-auto p-3">
         {error && <p role="alert" className="mb-3 text-sm text-destructive">{error}</p>}
+        <div className="mb-2 empty:hidden"><CommentTray commentsKey={commentsKey} /></div>
         {rel ? (
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
@@ -78,7 +81,7 @@ export function ReviewTab() {
               <Button size="xs" variant="ghost" disabled={localPath(rel) === null} onClick={() => s.hub.call('openFile', s.workdir, localPath(rel))} aria-label="Open with the system app"><ExternalLink /></Button>
             </div>
             {!loading && <ChangeContext rel={rel} projectRel={localPath(rel)} diff={diff} />}
-            {loading ? <p role="status" className="text-sm text-muted-foreground">Loading comparison…</p> : diff ? <FileDiff diff={diff} /> : <p className="text-sm text-muted-foreground">No changes in this file.</p>}
+            {loading ? <p role="status" className="text-sm text-muted-foreground">Loading comparison…</p> : diff ? <FileDiff diff={diff} comments={comments.filter((c) => c.file === (localPath(rel) ?? rel))} onComment={(c) => commentsKey && addComment(commentsKey, { ...c, file: localPath(rel) ?? rel })} onRemoveComment={(id) => commentsKey && removeComment(commentsKey, id)} /> : <p className="text-sm text-muted-foreground">No changes in this file.</p>}
           </div>
         ) : g.changed.length ? <p className="pt-6 text-center text-sm text-muted-foreground">Pick a file to see what changed.</p> : null}
       </div>

@@ -11,7 +11,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { AgentAvatar } from '@/components/agent-avatar';
 import { FilesTab } from '@/components/workspace-files';
 import { MemoryPanel } from '@/components/memory-panel';
-import { HighlightedCode } from '@/components/markdown';
+import { FileDiff } from '@/components/file-diff';
+import { CommentTray, addComment, removeComment, useComments, useCommentsKey } from '@/components/review-comments';
 import { ReviewTab } from '@/components/review-panel';
 import { ago } from '@/lib/format';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -32,12 +33,17 @@ function ChangesTab() {
   const [list, setList] = React.useState<ThreadChange[] | null>(null);
   const [sel, setSel] = React.useState<{ rel: string; messageId: string } | null>(null);
   const [diff, setDiff] = React.useState<string | null>(null);
+  // One turn's part of the change, or the file's whole change over the conversation.
+  const [scope, setScope] = React.useState<'turn' | 'conversation'>('turn');
+  const commentsKey = useCommentsKey(); const comments = useComments(commentsKey);
   const tid = s.thread?.id; const count = s.thread?.messages.length ?? 0;
   React.useEffect(() => { if (tid) s.hub.call<ThreadChange[]>('threadChanges', tid).then(setList).catch(() => setList([])); else setList([]); }, [tid, count, s.hub]);
   React.useEffect(() => {
     if (!sel || !tid) return; setDiff(null);
-    s.hub.call<string>('turnDiff', tid, sel.messageId, sel.rel).then(setDiff).catch((e) => setDiff(`Could not load this change: ${e.message}`));
-  }, [sel, tid, s.hub]);
+    s.hub.call<string>(scope === 'turn' ? 'turnDiff' : 'conversationDiff', tid, sel.messageId, sel.rel).then(setDiff).catch((e) => setDiff(`Could not load this change: ${e.message}`));
+  }, [sel, tid, s.hub, scope, count]);
+  // Comments go to the agent whose turn made the change.
+  const author = sel ? list?.find((f) => f.rel === sel.rel)?.turns.find((t) => t.messageId === sel.messageId)?.agent : undefined;
   if (!tid) return <p className="p-6 text-center text-sm text-muted-foreground">Start a thread to see every file the agents change.</p>;
   if (!list) return <div className="grid place-items-center p-8"><Spinner /></div>;
   if (!list.length) return <p className="p-6 text-center text-sm text-muted-foreground">No agent has changed a file in this thread yet.</p>;
@@ -60,8 +66,19 @@ function ChangesTab() {
       </ul>
       <div className="min-h-0 flex-1 overflow-auto p-3">
         {!sel ? <p className="pt-6 text-center text-sm text-muted-foreground">Pick a turn to see exactly what that agent changed.</p>
-          : diff == null ? <div className="grid place-items-center p-8"><Spinner /></div>
-            : diff ? <HighlightedCode code={diff} language="diff" title={<span className="font-mono text-xs">{sel.rel}</span>} /> : <p className="text-sm text-muted-foreground">This turn made no net change to the file.</p>}
+          : <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <span className="min-w-0 flex-1 truncate font-mono text-xs" title={sel.rel}>{sel.rel}</span>
+              <div role="group" aria-label="How much of the change" className="flex gap-1">
+                <Button size="xs" variant={scope === 'turn' ? 'secondary' : 'ghost'} aria-pressed={scope === 'turn'} onClick={() => setScope('turn')}>This turn</Button>
+                <Button size="xs" variant={scope === 'conversation' ? 'secondary' : 'ghost'} aria-pressed={scope === 'conversation'} onClick={() => setScope('conversation')}>Whole conversation</Button>
+              </div>
+            </div>
+            <CommentTray commentsKey={commentsKey} />
+            {diff == null ? <div className="grid place-items-center p-8"><Spinner /></div>
+              : diff ? <FileDiff diff={diff} comments={comments.filter((c) => c.file === sel.rel)} onComment={(c) => commentsKey && addComment(commentsKey, { ...c, file: sel.rel, agent: author })} onRemoveComment={(id) => commentsKey && removeComment(commentsKey, id)} />
+                : <p className="text-sm text-muted-foreground">{scope === 'turn' ? 'This turn made no net change to the file.' : 'The file is back to how it was before this conversation.'}</p>}
+          </div>}
       </div>
     </div>
   );
