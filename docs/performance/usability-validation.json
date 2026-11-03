@@ -1,0 +1,42 @@
+{
+  "date": "2026-11-03",
+  "surface": "isolated native Electron, X11",
+  "checks": [
+    "Worker formats draft and pins its tab",
+    "Formatting does not save to disk",
+    "Formatting is one undo step",
+    "Chat image thumbnail renders real pixels",
+    "Attachment opens zoomable image viewer",
+    "Clipboard paste attaches a visible image",
+    "Project name updates in explorer",
+    "Long diff lines scroll inside comparison",
+    "Split diff wraps within panel",
+    "Chat composer centers in remaining chat space",
+    "Share label is short and single-line",
+    "Chat stays within viewport at 320px",
+    "Chat stays within viewport at 390px",
+    "Chat stays within viewport at 768px",
+    "Chat stays within viewport at 900px",
+    "Chat stays within viewport at 1280px",
+    "Chat stays within viewport at 1920px",
+    "Idle activity opens compact searchable panel",
+    "Final single-asset formatter works from file origin",
+    "Final formatter remains undoable without saving",
+    "Lazy thumbnail renders visible image",
+    "Zoom changes displayed scale",
+    "Pasted image renders after final build",
+    "Top-bar Edit Undo reaches the code editor",
+    "Final chat stays centered after workspace closes",
+    "Top bar title is centered in window",
+    "File action opens a real terminal in containing folder",
+    "A kept hidden terminal accepts a new launch request",
+    "LAN discovery fills an HTTPS network address",
+    "Discovered certificate requires explicit verification"
+  ],
+  "limits": [
+    "No second physical device",
+    "No real model turn",
+    "No running VS Code webview",
+    "No native Windows or macOS window test"
+  ]
+}

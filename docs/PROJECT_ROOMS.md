@@ -68,7 +68,7 @@ Navigation takes cues from [VS Code's explorer/editor layout](https://code.visua
 
 ## Sharing the service with other computers
 
-People on the same LAN can use one service: each opens its reachable HTTPS address and joins with an individual invitation key. Being on the same network does not automatically discover the server, grant access or share a source folder.
+People on the same LAN can use one service: each opens its reachable HTTPS address and joins with an individual invitation key. The LAN host command now supports nearby discovery in desktop/VS Code. Discovery does not grant access or share a source folder. See [the LAN setup guide](USABILITY_2026-11-03.md#lan-setup).
 
 You can now host HTTPS directly, without a separate reverse proxy. Obtain a certificate valid for the host address and trusted by the participating devices, and keep its private key private. Example for a server whose actual LAN address is `192.168.1.20`:
 
@@ -81,7 +81,7 @@ TRIBUTARY_TLS_KEY=/path/to/server-key.pem \
 npm run server
 ```
 
-Replace the example address and paths with the server's actual values. The certificate must cover that address, including its IP subject alternative name when an IP is used. Each teammate opens `https://192.168.1.20:4318/room` in this example. Desktop/VS Code can connect to the same HTTPS origin using their Project room screen. Clients must trust the issuing certificate authority; the app does not disable certificate verification. Both certificate and key variables are required together. No certificates, machine trust settings or firewall rules are installed automatically.
+Replace the example address and paths with the server's actual values. The certificate must cover that address, including its IP subject alternative name when an IP is used. Each teammate opens `https://192.168.1.20:4318/room` in this example. Desktop/VS Code can connect to the same HTTPS origin using their Project room screen. Clients normally trust the issuing certificate authority. Desktop/VS Code also support an explicitly verified SHA-256 certificate fingerprint for private LAN certificates; a mismatched pin is rejected before sending the access key. Browser clients still require normal certificate trust. Both certificate and key variables are required together. No certificates, machine trust settings or firewall rules are installed automatically.
 
 The port must be reachable between those devices under the network's existing rules. The owner then creates a project and individual invitations as above. Each person uses their own working copy and installed agents; the room coordinates ownership and reported results. It does not synchronize source files or provide simultaneous same-file editing.
 

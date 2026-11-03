@@ -14,8 +14,8 @@ const BUILTIN = [
     id: 'claude', docs: 'https://code.claude.com/docs', login: 'claude', glyph: 'Cl', name: 'Claude Code', vendor: 'Anthropic', bins: ['claude'],
     protocol: 'claude-stream', gateways: ['anthropic'], verified: true, color: '#d97757',
     stdinPrompt: true,
-    args({ mode, resumeId, model, extraDirs = [] }) {
-      const a = ['-p', '--output-format', 'stream-json', '--verbose', '--include-partial-messages',
+    args({ mode, resumeId, model, extraDirs = [], images = [] }) {
+      const a = ['-p', ...(images.length ? ['--input-format', 'stream-json'] : []), '--output-format', 'stream-json', '--verbose', '--include-partial-messages',
         '--permission-mode', { read: 'plan', edit: 'acceptEdits', full: 'bypassPermissions' }[mode]];
       if (extraDirs.length) a.push('--add-dir', ...extraDirs);
       if (resumeId) a.push('--resume', resumeId);
@@ -29,14 +29,14 @@ const BUILTIN = [
       '/Applications/Codex.app/Contents/Resources/codex'],
     protocol: 'codex-exec', gateways: ['openai', 'ollama', 'lmstudio'], verified: true, color: '#10a37f',
     stdinPrompt: true,
-    args({ mode, resumeId, cwd, model, gatewayArgs = [], extraDirs = [] }) {
+    args({ mode, resumeId, cwd, model, gatewayArgs = [], extraDirs = [], images = [] }) {
       const policy = mode === 'full'
         ? ['--dangerously-bypass-approvals-and-sandbox']
         : ['-s', mode === 'read' ? 'read-only' : 'workspace-write'];
       const common = ['--json', '--skip-git-repo-check', ...policy, ...gatewayArgs, ...extraDirs.flatMap((d) => ['--add-dir', d])];
       if (model) common.push('-m', model);
       // `-` makes codex read the prompt from stdin.
-      return resumeId ? ['exec', 'resume', ...common, resumeId, '-'] : ['exec', ...common, '-C', cwd, '-'];
+      return resumeId ? ['exec', ...common, '-C', cwd, 'resume', ...images.flatMap((file) => ['-i', file.path]), resumeId, '-'] : ['exec', ...common, '-C', cwd, ...images.flatMap((file) => ['-i', file.path]), '-'];
     },
   },
   {

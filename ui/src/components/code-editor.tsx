@@ -2,7 +2,10 @@ import * as React from 'react';
 import { basicSetup } from 'codemirror';
 import { EditorState, Compartment, Transaction, type Extension } from '@codemirror/state';
 import { EditorView, keymap } from '@codemirror/view';
-import { indentWithTab } from '@codemirror/commands';
+import { formatInWorker } from '@/lib/formatter';
+import { formatParser } from '@/lib/format-document.mjs';
+import { minimalChange } from '@/lib/text-change.mjs';
+import { undo as undoEdit, redo as redoEdit, selectAll, isolateHistory, indentWithTab } from '@codemirror/commands';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { tags as t } from '@lezer/highlight';
 import { MessageSquare, Undo2 } from 'lucide-react';
@@ -99,6 +102,26 @@ export function CodeEditor({ project: documentProject, path, value, onChange, on
   const s = useStore(); const workspace = documentProject ?? s.workdir; const store = React.useRef(s); store.current = s;
   const [blameOn, setBlameOn] = React.useState(() => { try { return localStorage.getItem('tributary.blame') !== 'off'; } catch { return true; } });
   const [diskChanged, setDiskChanged] = React.useState(0);
+  const [formatting, setFormatting] = React.useState(false);
+  const formatBusy = React.useRef(false);
+  const format = React.useRef(async () => {});
+  format.current = async () => {
+    const v = view.current; if (!v || readOnly || formatBusy.current || !formatParser(path)) return;
+    const original = v.state.doc.toString(); formatBusy.current = true; setFormatting(true);
+    try {
+      const text = await formatInWorker(path, original);
+      if (view.current !== v) return;
+      if (v.state.doc.toString() !== original) { toast.message('Draft changed while formatting. Try again.'); return; }
+      const change = minimalChange(original, text);
+      if (change) v.dispatch({ changes: change, annotations: [Transaction.userEvent.of('input.format'), isolateHistory.of('full')] });
+      v.focus();
+    } catch (error) { if (view.current === v) toast.error('Could not format document', { description: (error as Error).message.slice(0, 220) }); }
+    finally { formatBusy.current = false; if (view.current === v) setFormatting(false); }
+  };
+  React.useEffect(() => {
+    const run = (event: Event) => { const target = (event as CustomEvent).detail; if (target.project === workspace && target.path === path) void format.current(); };
+    window.addEventListener('tributary:format-file', run); return () => window.removeEventListener('tributary:format-file', run);
+  }, [workspace, path]);
   // Undo one agent's change: click its blame bar for a menu, or press Mod-Alt-Z on a line it wrote. The hub puts back
   // what that turn replaced there; the editor takes the new text like an agent edit, and Mod-Z brings the change back.
   const [picked, setPicked] = React.useState<BlamePick | null>(null);
@@ -136,7 +159,7 @@ export function CodeEditor({ project: documentProject, path, value, onChange, on
           language.current.of([]),
           agentFlash,
           blameGutter((pick) => { const box = host.current!.getBoundingClientRect(); setPicked({ ...pick, x: pick.x - box.left, y: pick.y - box.top }); }),
-          keymap.of([{ key: 'Mod-Alt-z', run: (v) => { const head = v.state.selection.main.head; const turn = blameAt(v.state, head); if (!turn) return false; void undo.current(turn, v.state.doc.lineAt(head).number); return true; } }]),
+          keymap.of([{ key: 'Shift-Alt-f', run: () => { void format.current(); return !readOnly && !!formatParser(path); } }, { key: 'Mod-Alt-z', run: (v) => { const head = v.state.selection.main.head; const turn = blameAt(v.state, head); if (!turn) return false; void undo.current(turn, v.state.doc.lineAt(head).number); return true; } }]),
           askAboutSelection(({ text, fromLine, toLine }) => {
             const st = store.current; const fence = path.split('.').pop() || '';
             st.setDraft(`${st.draft ? `${st.draft}\n` : ''}In @${path}:${fromLine}${toLine > fromLine ? `-${toLine}` : ''}:\n\`\`\`${fence}\n${text}\n\`\`\`\n`);
@@ -152,6 +175,11 @@ export function CodeEditor({ project: documentProject, path, value, onChange, on
     // A new path means a new document; the value is synced below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path]);
+
+  React.useEffect(() => {
+    const run = (event: Event) => { const v = view.current; if (!v?.hasFocus) return; const action = (event as CustomEvent).detail; if (action === 'undo') undoEdit(v); else if (action === 'redo') redoEdit(v); else if (action === 'selectAll') selectAll(v); else document.execCommand(action); };
+    window.addEventListener('tributary:editor-command', run); return () => window.removeEventListener('tributary:editor-command', run);
+  }, []);
 
   // Replace the document when it changes from outside (reload after an agent edit).
   React.useEffect(() => {
@@ -192,6 +220,7 @@ export function CodeEditor({ project: documentProject, path, value, onChange, on
   return (
     <div className="relative h-full min-h-0 overflow-hidden">
       <div ref={host} className="h-full min-h-0" />
+      {formatting && <span role="status" className="pointer-events-none absolute right-3 bottom-3 rounded bg-popover px-2 py-1 text-xs text-muted-foreground">Formatting…</span>}
       {editing.length > 0 && (
         <div role="status" className="pointer-events-none absolute top-2 right-4 z-10 flex items-center gap-1.5 rounded-full border bg-popover/95 px-2.5 py-1 text-xs text-popover-foreground shadow-sm">
           <span className="size-2 animate-pulse rounded-full" style={{ backgroundColor: s.agentOf(editing[0]).color }} />

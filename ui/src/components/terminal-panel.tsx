@@ -3,6 +3,7 @@ import { Plus, SquareTerminal, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { XtermView, wire } from '@/components/terminal-view';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { hub, useStore } from '@/store';
 import { takePendingTerminalCommand } from '@/hooks/use-run-in-terminal';
@@ -18,23 +19,26 @@ export function TerminalPanel({ hidden = false }: { hidden?: boolean } = {}) {
   const [active, setActive] = React.useState<string | null>(null);
   const [height, setHeight] = React.useState(() => { try { return Number(localStorage.getItem('tributary.termHeight')) || 260; } catch { return 260; } });
   const desktop = s.hub.platform === 'desktop';
-  const create = React.useCallback(async (command?: string) => {
-    wire();
-    const id = await s.hub.call<string>('createTerminal', { cwd: s.workdir, command });
+  const creating = React.useRef(new Set<string | null>());
+  const create = React.useCallback(async (command?: string, cwd = s.workdir) => {
+    wire(); creating.current.add(s.workdir);
+    try {
+    const id = await s.hub.call<string>('createTerminal', { cwd, command });
     setTerms((t) => [...t, { id, project: s.workdir, title: command ? command.split(' ')[0] : `Terminal ${t.filter((x) => x.project === s.workdir).length + 1}` }]); setActive(id);
+    } catch (error) { toast.error((error as Error).message || 'Could not open terminal'); } finally { creating.current.delete(s.workdir); }
   }, [s.hub, s.workdir]);
   // The first terminal opens with the panel, running a pending setup command if there is one.
-  React.useEffect(() => { if (desktop && !terms.length) { create(takePendingTerminalCommand() ?? undefined); } // eslint-disable-next-line react-hooks/exhaustive-deps
+  React.useEffect(() => { if (desktop && !terms.length) { const pending = takePendingTerminalCommand(); void create(pending?.command, pending?.cwd ?? s.workdir); } // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [desktop]);
   React.useEffect(() => {
-    const h = (e: Event) => { takePendingTerminalCommand(); create((e as CustomEvent<string>).detail); };
+    const h = () => { const pending = takePendingTerminalCommand(); if (pending) void create(pending.command, pending.cwd); };
     window.addEventListener('tributary:run-in-terminal', h); return () => window.removeEventListener('tributary:run-in-terminal', h);
   }, [create]);
   const kill = (id: string) => { s.hub.call('termKill', id).catch(() => {}); setTerms((t) => { const rest = t.filter((x) => x.id !== id); const mine = rest.filter((x) => x.project === s.workdir); if (active === id) setActive(mine[mine.length - 1]?.id ?? null); return rest; }); };
   const visible = terms.filter((t) => t.project === s.workdir);
   // Each project keeps its own terminals: switching projects shows that project's, starting one if needed.
   React.useEffect(() => {
-    if (!desktop || hidden || !terms.length) return;
+    if (!desktop || hidden || !terms.length || creating.current.has(s.workdir)) return;
     if (!visible.length) create(); else if (!visible.some((t) => t.id === active)) setActive(visible[visible.length - 1].id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [s.workdir, hidden]);

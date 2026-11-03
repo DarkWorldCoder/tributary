@@ -34,7 +34,8 @@ export function KeyboardShortcuts() {
     };
     window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey);
   }, [s, toggleSidebar]);
-  const rows = SHORTCUTS.filter((item) => `${item.label} ${item.group}`.toLowerCase().includes(query.toLowerCase()));
+  const editorShortcuts = [{ id: 'format', label: 'Format document', group: 'Editor', keys: ['Shift', 'Alt', 'F'] }, { id: 'wrap', label: 'Wrap lines', group: 'Editor', keys: ['Alt', 'Z'] }];
+  const rows = [...SHORTCUTS, ...editorShortcuts].filter((item) => `${item.label} ${item.group}`.toLowerCase().includes(query.toLowerCase()));
   return <Dialog open={s.shortcutsOpen} onOpenChange={s.setShortcutsOpen}>
     <DialogContent className="max-h-[85dvh] sm:max-w-xl">
       <DialogHeader><DialogTitle>Keyboard shortcuts</DialogTitle><DialogDescription>Move around faster. Editor and terminal shortcuts stay with their tools.</DialogDescription></DialogHeader>

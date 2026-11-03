@@ -50,7 +50,8 @@ export interface PermissionRequest {
 export interface ThreadSummary { id: string; title: string; updatedAt: number; lastAgent: string | null; count?: number; running?: boolean; agents: string[]; status?: ThreadStatus | null; branch?: string }
 export interface Tool { id?: string; name: string; input?: Record<string, unknown> & { command?: unknown }; status: 'running' | 'done' | 'error'; output?: string; files?: string[] }
 export interface FileChange { path: string; rel: string; external?: boolean; change?: string; viaGit?: boolean }
-export interface UserMessage { id: string; role: 'user'; text: string; target: string; ts?: number; kind?: 'chat' | 'plan' | 'implement' | 'race'; team?: { recipe: string; role: string } }
+export interface Attachment { id: string; name: string; mime: string; size: number }
+export interface UserMessage { attachments?: Attachment[]; id: string; role: 'user'; text: string; target: string; ts?: number; kind?: 'chat' | 'plan' | 'implement' | 'race'; team?: { recipe: string; role: string } }
 export interface AgentMessage {
   memoryContext?: { characters: number; budget: number; sources: { source: string; line: number }[] };
   id: string; role: 'assistant'; model?: string | null; gatewayId?: string | null; agent: string; text: string; thinking?: string; tools: Tool[]; files: FileChange[];
@@ -69,6 +70,7 @@ export interface Thread { id: string; project: string; title: string; messages: 
 export interface GitInfo { root: string; branch: string; changed: { code: string; path: string; from?: string }[]; stat?: string }
 
 export interface HubEvents {
+  'window-state': { maximized: boolean; platform: string };
   'files-changed': { watchId: string; project: string; paths: string[]; error?: string };
   collaboration: import('../../core/collaboration/client.mjs').RoomState;
   state: undefined; threads: string; message: { threadId: string; message: Message }; 'message-patch': { threadId: string; id: string; patch: import('./lib/message-patch.mjs').MessagePatch };

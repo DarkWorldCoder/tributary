@@ -16,6 +16,11 @@ export interface RoomBridge {
 const initial: RoomState = { status: 'disconnected', endpoint: '', user: null, projects: [], snapshot: null, error: null };
 const labels: Record<RoomTask['status'], string> = { ready: 'Ready', claimed: 'Claimed', working: 'In progress', blocked: 'Blocked', review: 'Ready for review', done: 'Reported done' };
 export function ProjectRoom({ bridge, endpoint: defaultEndpoint = 'http://127.0.0.1:4318', agents = [], onUseTask }: { bridge: RoomBridge; endpoint?: string; agents?: { id: string; name: string }[]; onUseTask?: (task: RoomTask) => void }) {
+  const native = typeof window !== 'undefined' && !!window.hub;
+  const [peers, setPeers] = React.useState<{ name: string; endpoint: string; fingerprint: string }[]>([]);
+  const [searching, setSearching] = React.useState(false);
+  const [fingerprint, setFingerprint] = React.useState('');
+  const [verified, setVerified] = React.useState(false);
   const [state, setState] = React.useState<RoomState>(initial);
   const [endpoint, setEndpoint] = React.useState(defaultEndpoint); const [accessKey, setAccessKey] = React.useState('');
   const [error, setError] = React.useState(''); const [busy, setBusy] = React.useState(false);
@@ -40,7 +45,7 @@ export function ProjectRoom({ bridge, endpoint: defaultEndpoint = 'http://127.0.
   const filtered = snapshot?.tasks.filter((t) => `${t.title} ${t.description} ${labels[t.status]}`.toLowerCase().includes(filter.trim().toLowerCase())) || [];
   const connected = !!user && state.status !== 'disconnected';
   return (
-    <div role="main" className="flex h-full min-h-0 flex-col bg-background">
+    <main className="flex h-full min-h-0 flex-col bg-background max-sm:[&_button]:min-h-11 max-sm:[&_input:not([type=checkbox])]:min-h-11">
       <header className="flex shrink-0 flex-wrap items-center gap-3 border-b px-5 py-4 sm:px-7">
         <div className="grid size-9 place-items-center rounded-xl border bg-card"><Users className="size-4 text-brand" /></div>
         <div className="min-w-0 flex-1"><h1 className="text-lg font-semibold text-balance">Project room</h1><p className="text-xs text-muted-foreground">Your team, their agents, one shared plan.</p></div>
@@ -51,13 +56,15 @@ export function ProjectRoom({ bridge, endpoint: defaultEndpoint = 'http://127.0.
         <div className="min-h-0 flex-1 overflow-auto px-6 py-10 sm:px-10">
           <div className="mx-auto max-w-md">
             <h2 className="text-2xl font-semibold text-balance">Make room for your team.</h2>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">Share tasks and progress with teammates. Each person keeps their own agents and local files.</p>
-            <form className="mt-7 space-y-5" onSubmit={(e) => { e.preventDefault(); perform(async () => { await bridge.call('collaborationConnect', { endpoint, accessKey }); setAccessKey(''); }); }}>
-              <Field><FieldLabel htmlFor="room-address">Project service address</FieldLabel><Input id="room-address" type="url" required value={endpoint} onChange={(e) => setEndpoint(e.target.value)} placeholder="https://team.example.com" /></Field>
-              <Field><FieldLabel htmlFor="room-access-key">Your access key</FieldLabel><Input id="room-access-key" type="password" required autoComplete="off" value={accessKey} onChange={(e) => setAccessKey(e.target.value)} /><FieldDescription>Ask the owner for an invitation. The key stays in this session and is cleared when you disconnect.</FieldDescription></Field>
-              <Button type="submit" disabled={busy}>{busy ? 'Connecting…' : 'Join project room'}</Button>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground">Shared tasks. Your own agents and files.</p>
+            {native && <div className="mt-5 space-y-2"><Button variant="outline" size="sm" disabled={searching} onClick={async () => { setSearching(true); setError(''); try { const found = await bridge.call<typeof peers>('discoverPeers'); setPeers(found); if (!found.length) setError('No nearby rooms found. Enter the owner’s address below.'); } catch (e) { setError((e as Error).message); } finally { setSearching(false); } }}><Users />{searching ? 'Searching…' : 'Find nearby rooms'}</Button>{peers.map((peer) => <button key={peer.endpoint} className="flex w-full flex-col rounded-lg border px-3 py-2 text-left text-xs hover:bg-muted" onClick={() => { setEndpoint(peer.endpoint); setFingerprint(peer.fingerprint); setVerified(false); }}><span className="font-medium">{peer.name}</span><span className="text-muted-foreground">{peer.endpoint}</span></button>)}</div>}
+            <form className="mt-5 space-y-5" onSubmit={(e) => { e.preventDefault(); perform(async () => { await bridge.call('collaborationConnect', { endpoint, accessKey, ...(native && fingerprint ? { fingerprint } : {}) }); setAccessKey(''); }); }}>
+              <Field><FieldLabel htmlFor="room-address">Project service address</FieldLabel><Input id="room-address" type="url" required value={endpoint} onChange={(e) => { setEndpoint(e.target.value); setFingerprint(''); setVerified(false); }} placeholder="https://team.example.com" /><FieldDescription>{/^http:\/\/(localhost|127\.0\.0\.1|\[::1\])(:|\/|$)/i.test(endpoint) ? 'This computer only. Teammates need the host’s network HTTPS address.' : 'Use the address shared by the room owner.'}</FieldDescription></Field>
+              {native && <details open={fingerprint ? true : undefined} className="space-y-2 text-xs"><summary className="cursor-pointer text-muted-foreground">Private network certificate</summary><label className="mt-2 flex flex-col gap-2">Certificate fingerprint<Input aria-label="Certificate fingerprint" value={fingerprint} onChange={(e) => { setFingerprint(e.target.value.trim()); setVerified(false); }} placeholder="SHA-256 from the owner" className="font-mono text-xs" /></label>{fingerprint && <label className="flex items-start gap-2 leading-5"><input type="checkbox" checked={verified} onChange={(e) => setVerified(e.target.checked)} className="mt-1" />I verified this fingerprint with the owner.</label>}</details>}
+              <Field><FieldLabel htmlFor="room-access-key">Your access key</FieldLabel><Input id="room-access-key" type="password" required autoComplete="off" value={accessKey} onChange={(e) => setAccessKey(e.target.value)} /><FieldDescription>Use your invitation key. Kept for this session only.</FieldDescription></Field>
+              <Button type="submit" disabled={busy || (!!fingerprint && !verified)}>{busy ? 'Connecting…' : 'Join project room'}</Button>
             </form>
-            <details className="mt-8 border-t pt-4 text-sm"><summary className="cursor-pointer font-medium">Set up your own project service</summary><p className="mt-3 leading-6 text-muted-foreground">In the Tributary folder, run <code className="font-mono text-xs">npm run server</code> with Node.js 24. The service prints the private file location of your owner key. It starts on this computer; sharing it with other computers requires an HTTPS address.</p></details>
+            <details className="mt-8 border-t pt-4 text-sm"><summary className="cursor-pointer font-medium">Set up your own project service</summary><ol className="mt-3 list-decimal space-y-2 pl-5 text-xs leading-5 text-muted-foreground"><li>On the host, run <code>npm run server:lan</code> (Node.js 24 and OpenSSL).</li><li>Join using the printed address, fingerprint and private owner key.</li><li>Create a room, then People → + to create an invitation.</li><li>Teammates choose Find nearby rooms or enter the shared HTTPS address.</li></ol><p className="mt-3 text-xs text-muted-foreground">Same Wi-Fi or Ethernet. Guest-network isolation and firewalls can block access. Local only: <code>npm run server</code>.</p></details>
           </div>
         </div>
       ) : (
@@ -97,6 +104,6 @@ export function ProjectRoom({ bridge, endpoint: defaultEndpoint = 'http://127.0.
           </div>
         </div>
       )}
-    </div>
+    </main>
   );
 }

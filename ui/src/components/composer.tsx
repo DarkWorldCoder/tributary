@@ -12,7 +12,9 @@ import { FileTypeIcon } from '@/components/file-type-icon';
 import { ComposerTools } from '@/components/composer-tools';
 import { cn } from '@/lib/utils';
 import { useDraft, useStore } from '@/store';
-import type { Mode } from '@/types';
+import { ChatAttachments } from '@/components/chat-attachments';
+import { toast } from 'sonner';
+import type { Attachment, Mode } from '@/types';
 
 export const MODES: Record<Mode, { label: string; help: string; icon: React.ReactNode }> = {
   read: { label: 'Read-only', help: 'Answers and plans. Never changes files.', icon: <Eye /> },
@@ -116,6 +118,40 @@ export function Composer({ autoFocus, className }: { autoFocus?: boolean; classN
   const s = useStore();
   const everyday = !!s.thread?.task || !!s.agent.connectionId || s.st?.projects.find((p) => p.path === s.project)?.kind === 'personal';
   const ref = React.useRef<HTMLTextAreaElement>(null);
+  const [attachments, setAttachments] = React.useState<Attachment[]>([]);
+  const [uploading, setUploading] = React.useState(false);
+  const uploadBusy = React.useRef(false);
+  const context = `${s.project}:${s.thread?.id || 'new'}`; const contextRef = React.useRef(context); contextRef.current = context;
+  const attachmentDrafts = React.useRef(new Map<string, Attachment[]>());
+  const picker = React.useRef<HTMLInputElement>(null);
+  React.useEffect(() => {
+    const restore = async (event: Event) => {
+      const { project, threadId, ids } = (event as CustomEvent<{ project: string; threadId: string; ids: string[] }>).detail;
+      const target = `${project}:${threadId}`;
+      const values = await Promise.allSettled(ids.map((id) => s.hub.call<Attachment>('readAttachment', id)));
+      const files = values.flatMap((result) => result.status === 'fulfilled' ? [{ id: result.value.id, name: result.value.name, size: result.value.size, mime: result.value.mime }] : []);
+      const previous = attachmentDrafts.current.get(target) || [];
+      const next = [...previous, ...files.filter((file) => !previous.some((item) => item.id === file.id))];
+      attachmentDrafts.current.set(target, next); if (contextRef.current === target) setAttachments(next);
+    };
+    window.addEventListener('tributary:restore-attachments', restore); return () => window.removeEventListener('tributary:restore-attachments', restore);
+  }, [s.hub]);
+  React.useEffect(() => { setAttachments(attachmentDrafts.current.get(context) || []); }, [context]);
+  const changeAttachments = (next: Attachment[]) => { attachmentDrafts.current.set(context, next); setAttachments(next); };
+  const attach = async (incoming: File[]) => {
+    if (uploadBusy.current || !incoming.length) return;
+    const current = attachmentDrafts.current.get(context) || [];
+    if (incoming.length + current.length > 8) { toast.error('Attach up to 8 files.'); return; }
+    if (incoming.some((file) => !file.size || file.size > 16 * 1024 * 1024) || incoming.reduce((n, file) => n + file.size, current.reduce((n, file) => n + file.size, 0)) > 32 * 1024 * 1024) { toast.error('Up to 16 MB per file and 32 MB total.'); return; }
+    const target = context; uploadBusy.current = true; setUploading(true);
+    try {
+      const input = await Promise.all(incoming.map((file) => new Promise<{ name: string; base64: string }>((resolve, reject) => { const reader = new FileReader(); reader.onerror = () => reject(new Error('Could not read attachment.')); reader.onload = () => resolve({ name: file.name, base64: String(reader.result).split(',')[1] }); reader.readAsDataURL(file); })));
+      const added = await s.hub.call<Attachment[]>('addAttachments', input);
+      const next = [...(attachmentDrafts.current.get(target) || []), ...added]; attachmentDrafts.current.set(target, next);
+      if (contextRef.current === target) setAttachments(next);
+    } catch (error) { toast.error((error as Error).message); }
+    finally { uploadBusy.current = false; setUploading(false); }
+  };
   const [planOn, setPlanOn] = React.useState(false);
   const [files, setFiles] = React.useState<{ project: string; list: string[] } | null>(null);
   const [skills, setSkills] = React.useState<{ name: string; description: string }[] | null>(null);
@@ -161,8 +197,8 @@ export function Composer({ autoFocus, className }: { autoFocus?: boolean; classN
   React.useEffect(() => { setSel(0); }, [showSuggest, at?.[2], slash?.[1]]);
 
   const submit = async () => {
-    const raw = text.trim(); if (!raw || !s.ready.length) return;
-    let body = raw; let plan = !everyday && planOn; let mode: Mode | undefined = everyday ? 'read' : undefined;
+    const raw = text.trim(); if ((!raw && !attachments.length) || uploading || !s.ready.length) return;
+    let body = raw || 'Please inspect the attached files.'; let plan = !everyday && planOn; let mode: Mode | undefined = everyday ? 'read' : undefined;
     const m = everyday ? null : /^\/([\w-]+)\s*([\s\S]*)$/.exec(raw);
     if (m) {
       const c = COMMANDS.find((x) => x.name === m[1]);
@@ -170,8 +206,8 @@ export function Composer({ autoFocus, className }: { autoFocus?: boolean; classN
       else if (c?.text) { body = m[2].trim() ? `${c.text}\n\n${m[2].trim()}` : c.text; mode = c.mode; }
     }
     s.setDraft('');
-    const ok = await s.send(body, { plan, mode });
-    if (!ok) s.setDraft(raw); else setPlanOn(false);
+    const ok = await s.send(body, { plan, mode, attachments: attachments.map((file) => file.id) });
+    if (!ok) s.setDraft(raw); else { changeAttachments([]); setPlanOn(false); }
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -194,14 +230,17 @@ export function Composer({ autoFocus, className }: { autoFocus?: boolean; classN
           {!everyday && <><ModePicker />{planOn && <span className="px-2 text-xs text-muted-foreground">Plan first</span>}</>}</>;
   const sendActions = (<div className="ml-auto flex items-center gap-1">
             {s.running && <Button size="icon-sm" variant="secondary" className="rounded-full" onClick={s.stop} aria-label="Stop"><Square className="fill-current" /></Button>}
-            {(!s.running || text.trim()) && (
+            {(!s.running || text.trim() || attachments.length) && (
               <Tooltip><TooltipTrigger asChild>
-                <Button size="icon-sm" className="rounded-full" onClick={submit} disabled={!text.trim() || disabled} aria-label={s.running ? 'Queue message' : 'Send'}>{s.running ? <Clock /> : <ArrowUp />}</Button>
+                <Button size="icon-sm" className="rounded-full" onClick={submit} disabled={(!text.trim() && !attachments.length) || disabled || uploading} aria-label={s.running ? 'Queue message' : 'Send'}>{s.running ? <Clock /> : <ArrowUp />}</Button>
               </TooltipTrigger><TooltipContent>{s.running ? 'Send when the current turn ends' : 'Send (Enter)'}</TooltipContent></Tooltip>
             )}
           </div>);
   return (
-    <div className={cn('relative', className)}>
+    <div className={cn('relative min-w-0', className)} onDragOver={(event) => { if (event.dataTransfer.types.includes('Files')) { event.preventDefault(); event.dataTransfer.dropEffect = 'copy'; } }} onDrop={(event) => { if (event.dataTransfer.files.length) { event.preventDefault(); void attach([...event.dataTransfer.files]); } }}>
+      <input ref={picker} type="file" multiple className="sr-only" tabIndex={-1} aria-label="Attach files" onChange={(event) => { void attach([...(event.target.files || [])]); event.target.value = ''; }} />
+      {!!attachments.length && <ChatAttachments files={attachments} onRemove={(id) => changeAttachments(attachments.filter((file) => file.id !== id))} />}
+      {uploading && <p role="status" className="px-2 py-1 text-xs text-muted-foreground">Adding attachments…</p>}
       {s.queued.length > 0 && (
         <div className="mb-2 flex items-center gap-2 rounded-xl border bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground">
           <Clock className="size-3.5" /><span className="min-w-0 flex-1 truncate">{s.queued.length} message{s.queued.length > 1 ? 's' : ''} waiting: “{s.queued[0].text.slice(0, 80)}”</span>
@@ -223,12 +262,13 @@ export function Composer({ autoFocus, className }: { autoFocus?: boolean; classN
       )}
       {/* shadcn fades the group when any child is disabled; only fade it when the text box is. */}
       <InputGroup className={cn('composer-surface h-auto rounded-[22px] bg-card shadow-sm has-[[data-slot=input-group-control]:focus-visible]:ring-2 has-[[data-slot=input-group-control]:focus-visible]:ring-foreground/15 has-[[data-slot=input-group-control]:focus-visible]:border-foreground/40 transition-shadow has-disabled:bg-card has-disabled:opacity-100 has-[textarea:focus]:shadow-md dark:bg-card', disabled && 'opacity-60', (s.codeLayout || chatView) && 'rounded-xl shadow-none has-[textarea:focus]:shadow-none', chatView && 'chat-message-box')}>
-        {chatView && <InputGroupAddon align="inline-start" className="shrink-0 p-1"><ComposerTools everyday={everyday} planOn={planOn} setPlanOn={setPlanOn} focusMessage={() => ref.current?.focus()} /></InputGroupAddon>}
+        {chatView && <InputGroupAddon align="inline-start" className="shrink-0 p-1"><ComposerTools everyday={everyday} planOn={planOn} setPlanOn={setPlanOn} focusMessage={() => ref.current?.focus()} onAttach={() => picker.current?.click()} /></InputGroupAddon>}
         <InputGroupTextarea
           ref={ref}
           value={text}
           onChange={(e) => { s.setDraft(e.target.value); setCaret(e.target.selectionStart); }}
           onSelect={(e) => setCaret((e.target as HTMLTextAreaElement).selectionStart)}
+          onPaste={(event) => { const pasted = [...event.clipboardData.items].filter((item) => item.kind === 'file').map((item) => item.getAsFile()).filter((file): file is File => !!file); if (pasted.length) { event.preventDefault(); void attach(pasted); } }}
           onKeyDown={onKeyDown}
           disabled={disabled}
           rows={1}
@@ -237,7 +277,7 @@ export function Composer({ autoFocus, className }: { autoFocus?: boolean; classN
           className={cn("max-h-64 min-h-14 px-4 pt-3.5 text-[0.9375rem]", s.codeLayout && "min-h-11 px-3 pt-3 text-sm", chatView && "min-h-11 px-2 py-3 text-[13px]")}
         />
         {!chatView && <InputGroupAddon align="block-end" className={cn("flex-wrap gap-1 pb-2", s.codeLayout && "composer-toolbar px-2 pt-0 pb-1.5")}>
-          <ComposerTools everyday={everyday} planOn={planOn} setPlanOn={setPlanOn} focusMessage={() => ref.current?.focus()} />
+          <ComposerTools everyday={everyday} planOn={planOn} setPlanOn={setPlanOn} focusMessage={() => ref.current?.focus()} onAttach={() => picker.current?.click()} />
           {workspaceToggle}
           {agentControls}
           {sendActions}

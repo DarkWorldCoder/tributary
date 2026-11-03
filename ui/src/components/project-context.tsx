@@ -1,7 +1,8 @@
 import * as React from 'react';
-import { BookOpen, ChevronRight, Folder, GitBranch, Laptop, Plug, Users, X } from 'lucide-react';
+import { BookOpen, ChevronRight, Folder, GitBranch, Laptop, MoreHorizontal, Plug, Users, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
+import { ProjectMenu } from '@/components/project-menu';
 import { FileTypeIcon } from '@/components/file-type-icon';
 import { AgentAvatar } from '@/components/agent-avatar';
 import { useStore } from '@/store';
@@ -24,7 +25,7 @@ function ContextContents({ close, onNavigate = () => {} }: { close: () => void; 
     <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-4 text-[13px]">
       <div className="space-y-0.5 border-b pb-3">
         <p className="context-row"><Laptop /><span>This computer</span></p>
-        <button className="context-row w-full hover:bg-muted" title={s.workdir || ''} onClick={() => leave(() => s.openPanel('files'))}><Folder /><span className="min-w-0 truncate">{project?.name || 'Project files'}</span><ChevronRight className="ml-auto" /></button>
+        <div className="flex min-w-0 items-center gap-1"><button className="context-row min-w-0 flex-1 hover:bg-muted" title={s.workdir || ''} onClick={() => leave(() => s.openPanel('files'))}><Folder /><span className="min-w-0 truncate">{project?.name || 'Project files'}</span></button><ProjectMenu align="end"><Button size="icon-sm" variant="ghost" className="workbench-action" aria-label="Context project options"><MoreHorizontal /></Button></ProjectMenu></div>
         <p className="context-row" title={s.git?.root}><GitBranch /><span className="min-w-0 truncate">{s.git?.branch || (s.git ? 'No commits yet' : 'Not a Git project')}</span></p>
         <p className="context-row"><AgentAvatar agent={s.agent} size="xs" /><span className="min-w-0 truncate">{s.agent.name}</span><span className="ml-auto text-xs text-muted-foreground">{s.running ? 'Working' : 'Ready'}</span></p>
         <button className="context-row w-full hover:bg-muted" onClick={() => leave(() => s.setRoomOpen(true))}><Users /><span>Project room</span><ChevronRight className="ml-auto" /></button>

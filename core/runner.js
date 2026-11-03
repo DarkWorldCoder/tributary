@@ -54,10 +54,10 @@ async function runTurn(opts) {
     if (agent.custom && Array.isArray(agent.args)) args = agent.args.map((a) => a.replace(/\{prompt\}/g, prompt).replace(/\{cwd\}/g, cwd).replace(/\{mode\}/g, mode));
     else if (agent.textArgs) args = agent.textArgs({ mode, prompt, cwd, model });
     else { emit({ kind: 'error', message: `${agent.name} has no headless mode configured. Add it to agents.json.` }); emit({ kind: 'done', ok: false }); return { ok: false, sessionId, text }; }
-  } else args = agent.args({ mode, resumeId, cwd, prompt, model, gatewayArgs, extraDirs: opts.extraDirs || [] });
+  } else args = agent.args({ mode, resumeId, cwd, prompt, model, gatewayArgs, extraDirs: opts.extraDirs || [], images: opts.images || [] });
 
   return new Promise((resolve) => {
-    const stdin = agent.stdinPrompt ? prompt : null;
+    const stdin = agent.stdinPrompt ? agent.id === 'claude' && opts.images?.length ? JSON.stringify({ type: 'user', message: { role: 'user', content: [...opts.images.map((image) => ({ type: 'image', source: { type: 'base64', media_type: image.mime, data: image.base64 } })), { type: 'text', text: prompt }] } }) + '\n' : prompt : null;
     const child = host ? host.spawn(remoteCommand(agent), args, { cwd, env: changes, stdin }) : start(agent.path, args, { cwd, env, stdin });
     const parser = createParser(agent.protocol);
     let stderrTail = '';

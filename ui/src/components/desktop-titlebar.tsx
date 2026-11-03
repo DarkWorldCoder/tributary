@@ -1,0 +1,66 @@
+import * as React from 'react';
+import { ArrowLeft, ArrowRight, Minus, PanelLeft, Square, Copy, X } from 'lucide-react';
+import { Menubar } from 'radix-ui';
+import { useStore } from '@/store';
+import { useSidebar } from '@/components/ui/sidebar';
+import { toast } from 'sonner';
+
+/** Desktop-only window chrome; native Mac menus and the VS Code host remain in control there. */
+export function DesktopTitlebar() {
+  const s = useStore(); const { toggleSidebar } = useSidebar();
+  const [maximized, setMaximized] = React.useState(false);
+  const editTarget = React.useRef<HTMLElement | null>(null);
+  const history = React.useRef<string[]>([]); const position = React.useRef(-1); const navigating = React.useRef(false);
+  const [, refresh] = React.useReducer((n) => n + 1, 0);
+  const desktop = s.hub.platform === 'desktop' && !/Mac/.test(navigator.platform);
+  React.useEffect(() => {
+    const remember = (event: FocusEvent) => { if (event.target instanceof HTMLElement && event.target.matches('input,textarea,[contenteditable=true]')) editTarget.current = event.target; };
+    document.addEventListener('focusin', remember); return () => document.removeEventListener('focusin', remember);
+  }, []);
+  React.useEffect(() => {
+    if (!desktop) return;
+    s.hub.call<{ maximized: boolean }>('windowState').then((value) => setMaximized(value.maximized)).catch(() => {});
+    const off = s.hub.on('window-state', (value: { maximized: boolean }) => setMaximized(value.maximized));
+    return () => { if (typeof off === 'function') off(); };
+  }, [desktop, s.hub]);
+  React.useEffect(() => {
+    if (!s.thread?.id) return;
+    if (navigating.current) { navigating.current = false; return; }
+    if (history.current[position.current] === s.thread.id) return;
+    history.current = [...history.current.slice(0, position.current + 1), s.thread.id].slice(-50); position.current = history.current.length - 1; refresh();
+  }, [s.thread?.id]);
+  if (!desktop) return null;
+  const navigate = async (delta: number) => {
+    const next = position.current + delta; const id = history.current[next]; if (!id) return;
+    navigating.current = true;
+    try { await s.openThread(id); position.current = next; refresh(); } catch { navigating.current = false; toast.error('Could not open chat'); }
+  };
+  const windowAction = (action: string) => void s.hub.call('windowAction', action).catch(() => toast.error('Window action unavailable'));
+  const item = (label: string, action: () => void, disabled = false) => <Menubar.Item key={label} disabled={disabled} onSelect={action} className="flex min-h-8 cursor-default items-center rounded px-2.5 text-[13px] outline-none data-highlighted:bg-accent data-disabled:opacity-40">{label}</Menubar.Item>;
+  const menu = (label: string, children: React.ReactNode) => <Menubar.Menu><Menubar.Trigger className="h-7 rounded px-2 text-xs text-muted-foreground outline-none hover:bg-muted data-[state=open]:bg-muted focus-visible:ring-1 focus-visible:ring-ring">{label}</Menubar.Trigger><Menubar.Portal><Menubar.Content align="start" sideOffset={4} className="z-50 min-w-48 rounded-lg border bg-popover p-1 text-popover-foreground shadow-lg">{children}</Menubar.Content></Menubar.Portal></Menubar.Menu>;
+  const edit = (action: string) => {
+    // Let application editors handle their own history; native text inputs keep the OS edit commands.
+    if (editTarget.current?.isConnected) editTarget.current.focus({ preventScroll: true });
+    if (document.activeElement?.closest('.cm-editor')) window.dispatchEvent(new CustomEvent('tributary:editor-command', { detail: action }));
+    else void s.hub.call('editAction', action);
+  };
+  return <div className="desktop-titlebar flex h-8 shrink-0 select-none items-center gap-0.5 border-b bg-sidebar px-1 text-xs" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
+    <div className="flex items-center gap-0.5" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+      <button className="titlebar-button" aria-label="Previous chat" disabled={position.current < 1} onClick={() => void navigate(-1)}><ArrowLeft /></button>
+      <button className="titlebar-button" aria-label="Next chat" disabled={position.current >= history.current.length - 1} onClick={() => void navigate(1)}><ArrowRight /></button>
+      <button className="titlebar-button" aria-label="Toggle project sidebar" onClick={toggleSidebar}><PanelLeft /></button>
+      <Menubar.Root className="flex items-center" aria-label="Application menu" onPointerDownCapture={() => { if (document.activeElement instanceof HTMLElement && document.activeElement.matches('input,textarea,[contenteditable=true]')) editTarget.current = document.activeElement; }} onFocusCapture={(event) => { if (event.relatedTarget instanceof HTMLElement && event.relatedTarget.matches('input,textarea,[contenteditable=true]')) editTarget.current = event.relatedTarget; }}>
+        {menu('File', <>{item('New chat', () => s.newThread(), !s.project)}{item('Open project…', () => { void s.hub.call<string | null>('pickProject').then(async (path) => { if (path) { await s.refreshState(); s.newThread(path); } }).catch((e) => toast.error(e.message)); })}{item('Settings', () => s.openSettings('connections'))}</>)}
+        {menu('Edit', <>{['undo', 'redo', 'cut', 'copy', 'paste', 'selectAll'].map((action) => item(action === 'selectAll' ? 'Select all' : action[0].toUpperCase() + action.slice(1), () => edit(action)))}</>)}
+        {menu('View', <>{item('Project sidebar', toggleSidebar)}{item('Workspace', () => { s.setWorkspaceExpanded(false); s.openPanel('files'); }, !s.project)}{item('Terminal', () => s.setTerminalOpen(!s.terminalOpen), !s.project)}{item('Keyboard shortcuts', () => s.setShortcutsOpen(true))}</>)}
+        {menu('Help', <>{item('About Tributary', () => s.openSettings('about'))}{item('Project room', () => s.setRoomOpen(true))}</>)}
+      </Menubar.Root>
+    </div>
+    <span className="pointer-events-none min-w-0 flex-1 truncate px-3 text-center text-xs text-muted-foreground max-sm:hidden">{s.thread?.title || 'Tributary'}</span>
+    <div className="ml-auto flex h-full items-center" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+      <button className="titlebar-window-button" aria-label="Minimize window" onClick={() => windowAction('minimize')}><Minus /></button>
+      <button className="titlebar-window-button" aria-label={maximized ? 'Restore window' : 'Maximize window'} onClick={() => windowAction('maximize')}>{maximized ? <Copy /> : <Square />}</button>
+      <button className="titlebar-window-button hover:bg-destructive hover:text-destructive-foreground" aria-label="Close window" onClick={() => windowAction('close')}><X /></button>
+    </div>
+  </div>;
+}

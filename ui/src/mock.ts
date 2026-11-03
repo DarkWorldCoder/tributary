@@ -93,7 +93,8 @@ export function createMockHub(): HubBridge {
     memory: () => ({ enabled: true, memory: '# Project memory\n\n## Decisions\n- Use pnpm, not npm\n- Rate limits live in src/middleware\n\n## How to run and test\n- pnpm dev, pnpm test\n', worklog: ['- 2026-11-02 16:20 Claude Code: "Add rate limiting". Changed `src/routes/auth.ts`, `src/middleware/rateLimit.ts`', '- 2026-11-02 16:31 Codex: "Write tests". Changed `test/rateLimit.test.ts`'] }),
     enableMemory: () => ['.tributary/memory.md'], saveMemory: () => true, remember: () => 'ok',
     editors: () => [{ id: 'vscode', name: 'VS Code' }, { id: 'cursor', name: 'Cursor' }], openInEditor: () => true,
-    setProjectFolders: () => [], pickFolder: () => null,
+    setProjectFolders: (path: string, folders: string[]) => { const project = st.projects.find((entry) => entry.path === path); if (project) project.folders = folders; emit('state'); return folders; }, pickFolder: () => null,
+    renameProject: (path: string, name: string) => { const project = st.projects.find((entry) => entry.path === path); if (!project) throw new Error('Unknown project'); project.name = name.trim(); emit('state'); return project.name; },
     runTeam: () => ({}), applyRace: () => ({ applied: 'claude' }),
     createWorktree: (id: string) => {
       const t = threads[id] || (threads[id] = api.thread(id) as Thread); const branch = `tributary/thread-${id.padEnd(8, '0').slice(0, 8)}`;

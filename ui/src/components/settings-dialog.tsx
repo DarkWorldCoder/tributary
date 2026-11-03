@@ -1,11 +1,11 @@
 import * as React from 'react';
 import { toast } from 'sonner';
-import { BookOpen, Cpu, Download, ExternalLink, FilePlus2, Info, KeyRound, LayoutGrid, Monitor, Moon, Palette, Pencil, Plug, Plus, RefreshCw, Share2, Sparkles, Sun, Trash2, Waypoints } from 'lucide-react';
+import { BookOpen, Cpu, Download, ExternalLink, FilePlus2, Info, KeyRound, LayoutGrid, Monitor, Moon, Palette, Pencil, Plug, Plus, RefreshCw, Share2, X, Sparkles, Sun, Trash2, Waypoints } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,8 @@ import { AgentAvatar } from '@/components/agent-avatar';
 import { cn } from '@/lib/utils';
 import { useStore, type SettingsTab, type Theme, type InterfaceFont } from '@/store';
 import type { Gateway, Protocol, RegistryAgent, Thread, UiSkill } from '@/types';
+import { useRunInTerminal } from '@/hooks/use-run-in-terminal';
+import { setupCommand } from '@/lib/agent-setup.mjs';
 import { Connections } from '@/components/connections';
 
 const NAV: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
@@ -110,12 +112,13 @@ function BrowseAgents({ open, onOpenChange }: { open: boolean; onOpenChange: (op
 }
 
 function AgentsTab() {
+  const runInTerminal = useRunInTerminal();
   const s = useStore(); const [busy, setBusy] = React.useState(false); const [browsing, setBrowsing] = React.useState(false);
   const agents = [...(s.st?.agents ?? [])].sort((a, b) => Number(b.available && b.headless) - Number(a.available && a.headless));
   return (
     <Section title="Agents" description="Manage installed and custom coding agents."
       actions={<>
-        <Button variant="outline" size="sm" disabled={busy} onClick={async () => { setBusy(true); await s.hub.call('rescan'); await s.refreshState(); setBusy(false); toast.success('Agents rescanned'); }}><RefreshCw className={cn(busy && 'animate-spin')} /> Rescan</Button>
+        <Button variant="outline" size="sm" disabled={busy} onClick={async () => { setBusy(true); try { await s.hub.call('rescan'); await s.refreshState(); toast.success('Agents rescanned'); } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); } }}><RefreshCw className={cn(busy && 'animate-spin')} /> Rescan</Button>
         <Button variant="outline" size="sm" onClick={() => s.hub.call('openAgentsFile')}><FilePlus2 /> Add a custom agent</Button>
         <Button size="sm" onClick={() => setBrowsing(true)}><LayoutGrid /> Browse agents</Button>
       </>}>
@@ -127,11 +130,16 @@ function AgentsTab() {
             <ItemContent className="min-w-0">
               <ItemTitle className="flex flex-wrap items-center gap-2">
                 {a.name}<span className="font-normal text-muted-foreground">{a.vendor}</span>
-                {a.available ? (a.headless ? <Badge className="bg-success/15 text-success">Ready</Badge> : <Badge variant="secondary">Installed, needs setup</Badge>) : <Badge variant="outline" className="text-muted-foreground">Not installed</Badge>}
+                {a.available ? (a.headless ? <Badge className="bg-success/15 text-success">Installed</Badge> : <Badge variant="secondary">Installed, needs setup</Badge>) : <Badge variant="outline" className="text-muted-foreground">Not installed</Badge>}
                 {a.available && !a.verified && <Badge variant="outline" className="font-normal text-muted-foreground" title="Flags come from the project’s docs and have not been run on this computer yet">Unverified</Badge>}
               </ItemTitle>
-              {a.available && <ItemDescription className="font-mono text-xs break-all">{a.version} at {a.path}</ItemDescription>}
-              <ItemDescription className="text-xs">Talks over <span className="font-mono">{a.protocol}</span>{a.gateways?.length ? `. Can use ${a.gateways.join(', ')} gateways.` : '.'}</ItemDescription>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {a.available && a.headless && <Button size="xs" variant="outline" onClick={() => { s.setAgentId(a.id); s.setGatewayId(''); s.setSettings({ ...s.settings, open: false }); }}>Use agent</Button>}
+                {a.available && setupCommand(a, navigator.platform) && <Button size="xs" variant="outline" onClick={() => { const command = setupCommand(a, navigator.platform); if (!command) return; s.setSettings({ ...s.settings, open: false }); runInTerminal(command); }}>Set up</Button>}
+                {!!a.gateways?.length && <Button size="xs" variant="ghost" onClick={() => { s.setAgentId(a.id); s.openSettings('gateways'); }}>Model source</Button>}
+                {a.docs && <Button size="xs" variant="ghost" onClick={() => s.hub.call('openExternal', a.docs)}>{a.available ? 'Help' : 'Install guide'}<ExternalLink /></Button>}
+              </div>
+              {a.available && <details className="mt-2 text-xs text-muted-foreground"><summary className="cursor-pointer">Details</summary><p className="mt-1 break-all font-mono">{a.version} · {a.path}</p><p>{a.protocol}</p></details>}
               {a.note && <ItemDescription className="text-xs text-warning">{a.note}</ItemDescription>}
             </ItemContent>
           </Item>
@@ -140,7 +148,7 @@ function AgentsTab() {
       {s.project && (
         <Item variant="muted">
           <ItemMedia variant="icon"><BookOpen /></ItemMedia>
-          <ItemContent><ItemTitle>Share project instructions</ItemTitle><ItemDescription>Creates AGENTS.md, plus CLAUDE.md and GEMINI.md files that import it, so every agent follows the same rules in this project.</ItemDescription></ItemContent>
+          <ItemContent><ItemTitle>Share project instructions</ItemTitle><ItemDescription>Use the same project rules across agents.</ItemDescription></ItemContent>
           <ItemActions><Button size="sm" variant="outline" onClick={async () => { const c = await s.hub.call<string[]>('syncInstructions', s.project); toast.success(c.length ? `Created ${c.join(', ')}` : 'Already shared'); }}>Share</Button></ItemActions>
         </Item>
       )}
@@ -404,7 +412,7 @@ export function SettingsDialog() {
   const tab = query.trim() ? (matches.find((n) => n.id === s.settings.tab)?.id || matches[0]?.id) : s.settings.tab;
   return (
     <Dialog open={s.settings.open} onOpenChange={(open) => s.setSettings({ ...s.settings, open })}>
-      <DialogContent onOpenAutoFocus={() => { returnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; }} onCloseAutoFocus={(event) => { if (returnFocus.current?.isConnected && returnFocus.current !== document.body) { event.preventDefault(); returnFocus.current.focus(); } }} className="flex h-[min(720px,90vh)] w-[min(980px,calc(100vw-2rem))] max-w-none flex-col gap-0 overflow-hidden p-0 sm:max-w-none md:flex-row">
+      <DialogContent showCloseButton={false} onOpenAutoFocus={() => { returnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; }} onCloseAutoFocus={(event) => { if (returnFocus.current?.isConnected && returnFocus.current !== document.body) { event.preventDefault(); returnFocus.current.focus(); } }} className="flex h-[min(720px,90vh)] w-[min(980px,calc(100vw-2rem))] max-w-none flex-col gap-0 overflow-hidden p-0 sm:max-w-none md:flex-row">
         <DialogTitle className="sr-only">Settings</DialogTitle>
         <DialogDescription className="sr-only">Agents, model gateways, MCP servers, skills and appearance</DialogDescription>
         <nav className="flex shrink-0 gap-1 overflow-x-auto border-b bg-sidebar p-2 pr-10 md:pr-3 md:w-52 md:flex-col md:border-r md:border-b-0 md:p-3">
@@ -414,8 +422,9 @@ export function SettingsDialog() {
               className={cn('flex shrink-0 items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-foreground [&_svg]:size-4', tab === n.id && 'bg-sidebar-accent font-medium text-foreground')}>{n.icon}{n.label}</button>
           ))}
         </nav>
-        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-5 md:p-8">
-          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Find a settings section…" aria-label="Find a settings section" className="mb-6" />
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <header className="flex shrink-0 items-center gap-2 border-b px-4 py-3 md:px-6"><Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search settings…" aria-label="Find a settings section" className="min-w-0 flex-1 max-sm:h-11" /><DialogClose asChild><Button variant="ghost" size="icon-sm" aria-label="Close settings" className="shrink-0 max-sm:size-11"><X /></Button></DialogClose></header>
+          <div className="min-h-0 flex-1 overflow-y-auto p-5 md:p-6">
           {!tab && <p className="text-sm text-muted-foreground">No settings match “{query}”. Try font, appearance, agents or connections.</p>}
           {tab === 'connections' && <Connections />}
           {tab === 'agents' && <AgentsTab />}
@@ -424,6 +433,7 @@ export function SettingsDialog() {
           {tab === 'skills' && <SkillsTab />}
           {tab === 'appearance' && <AppearanceTab />}
           {tab === 'about' && <AboutTab />}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

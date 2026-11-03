@@ -1,3 +1,4 @@
+import { DesktopTitlebar } from '@/components/desktop-titlebar';
 import * as React from 'react';
 import { SidebarInset, SidebarProvider, useSidebar } from '@/components/ui/sidebar';
 import { Toaster } from '@/components/ui/sonner';
@@ -68,9 +69,10 @@ export default function App() {
   React.useEffect(() => { document.title = s.thread ? `${s.thread.title} · Tributary` : 'Tributary'; }, [s.thread?.title]);
   return (
     <TooltipProvider delayDuration={300}>
-      <SidebarProvider style={conversationLayout ? { '--sidebar-width': '18rem' } as React.CSSProperties : undefined} className={studio ? "developer-shell h-svh overflow-hidden" : conversationLayout ? "conversation-shell h-svh overflow-hidden" : "h-svh overflow-hidden"}>
+      <SidebarProvider style={conversationLayout ? { '--sidebar-width': '18rem' } as React.CSSProperties : undefined} className={studio ? "developer-shell app-frame h-svh overflow-hidden" : conversationLayout ? "conversation-shell app-frame h-svh overflow-hidden" : "app-frame h-svh overflow-hidden"}>
+        <DesktopTitlebar />
         <DeveloperEntry />
-        {studio && <DeveloperRail />}
+        {studio && <DeveloperRail workspaceVisible={workspaceVisible} />}
         <ProjectNavigation studio={studio} fullscreen={workspaceVisible} />
         <KeyboardShortcuts />
         <SidebarInset className="min-h-0 overflow-hidden">

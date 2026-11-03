@@ -1,6 +1,8 @@
 import * as React from 'react';
-import { Activity, CircleAlert, CircleCheck, FileCode2, GitBranch, Radio } from 'lucide-react';
+import { Activity, CircleAlert, CircleCheck, FileCode2, GitBranch, Radio, Search, MessageSquare } from 'lucide-react';
 import { AgentAvatar } from '@/components/agent-avatar';
+import { FileDiff } from '@/components/file-diff';
+import { Input } from '@/components/ui/input';
 import { HighlightedCode } from '@/components/markdown';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -53,7 +55,7 @@ function LiveDiff({ pick }: { pick: Pick }) {
   }, [s.hub, pick]);
   if (diff == null) return <div className="flex items-center gap-2 p-4 text-sm text-muted-foreground"><Spinner className="size-4" /> Loading the change…</div>;
   if (!diff.trim()) return <p className="p-4 text-sm text-muted-foreground">{pick.live ? 'This agent works in its own copy. Its changes show here when it finishes.' : 'No changes in this file yet.'}</p>;
-  return <HighlightedCode code={diff} language="diff" title={<span className="font-mono text-xs">{pick.rel}</span>} />;
+  return <><p className="truncate font-mono text-xs" title={pick.rel}>{pick.rel}</p><FileDiff diff={diff} /></>;
 }
 
 function WorkerRow({ entry, worker, pick, onPick }: { entry: ActivityEntry; worker: ActivityWorker; pick: Pick | null; onPick: (p: Pick) => void }) {
@@ -96,6 +98,8 @@ export function LiveActivity() {
   const [items, setItems] = React.useState<ActivityEntry[]>([]);
   const [finished, setFinished] = React.useState<Finished[]>([]);
   const [open, setOpen] = React.useState(false);
+  const [query, setQuery] = React.useState('');
+  const [filter, setFilter] = React.useState<'all' | 'running' | 'recent'>('all');
   const [pick, setPick] = React.useState<Pick | null>(null);
   const [, tick] = React.useState(0);
 
@@ -125,6 +129,9 @@ export function LiveActivity() {
   const workers = items.flatMap((e) => e.workers);
   const busy = workers.filter((w) => w.state === 'working' || w.state === 'testing' || w.state === 'merging');
   const recent = finished.filter((f) => Date.now() - f.endedAt < 10 * 60 * 1000);
+  const matches = (entry: ActivityEntry) => `${entry.title} ${entry.project} ${entry.workers.map((worker) => s.agentOf(worker.agent).name + ' ' + worker.files.map((file) => file.rel).join(' ')).join(' ')}`.toLowerCase().includes(query.trim().toLowerCase());
+  const shown = filter === 'recent' ? [] : items.filter(matches);
+  const shownRecent = filter === 'running' ? [] : recent.filter(matches);
   const openThread = (id: string) => { setOpen(false); s.openThread(id); };
 
   return (
@@ -137,19 +144,20 @@ export function LiveActivity() {
         </Button>
       )}
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="right" className="w-full gap-0 p-0 data-[side=right]:w-[min(1040px,100vw)] data-[side=right]:sm:max-w-none">
-          <SheetHeader className="border-b">
+        <SheetContent side="right" className={cn('w-full gap-0 p-0 data-[side=right]:sm:max-w-none', pick ? 'data-[side=right]:w-[min(1040px,100vw)]' : 'data-[side=right]:w-[min(560px,100vw)]')}>
+          <SheetHeader className="gap-1 border-b pr-12">
             <SheetTitle className="flex items-center gap-2"><Activity className="size-4" /> Live activity</SheetTitle>
-            <SheetDescription>{busy.length ? `${busy.length} agent${busy.length === 1 ? '' : 's'} working across ${items.length} conversation${items.length === 1 ? '' : 's'}. Pick a file to watch its changes.` : 'No agent is working right now.'}</SheetDescription>
+            <SheetDescription>{busy.length ? `${busy.length} agent${busy.length === 1 ? '' : 's'} working across ${items.length} conversation${items.length === 1 ? '' : 's'}.` : 'All quiet. Recent work appears below.'}</SheetDescription>
           </SheetHeader>
-          <div className="grid min-h-0 flex-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
-            <div className="min-h-0 overflow-y-auto border-b p-4 md:border-r md:border-b-0">
-              {!items.length && !recent.length && (
+          <div className="space-y-2 border-b px-4 py-3"><div className="relative"><Search className="pointer-events-none absolute top-2.5 left-2.5 size-4 text-muted-foreground" /><Input aria-label="Search activity" placeholder="Find a chat, agent or file…" value={query} onChange={(event) => setQuery(event.target.value)} className="pl-9" /></div><div role="group" aria-label="Activity filter" className="flex gap-1">{(['all', 'running', 'recent'] as const).map((value) => <Button key={value} size="xs" variant={filter === value ? 'secondary' : 'ghost'} aria-pressed={filter === value} onClick={() => setFilter(value)}>{value === 'all' ? 'All' : value === 'running' ? `Running ${busy.length}` : `Recent ${recent.length}`}</Button>)}</div></div>
+          <div className={cn('grid min-h-0 flex-1', pick && 'md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]')}>
+            <div className={cn('min-h-0 overflow-y-auto p-4', pick && 'border-b md:border-r md:border-b-0')}>
+              {!shown.length && !shownRecent.length && (
                 <Empty className="border"><EmptyHeader><EmptyMedia variant="icon"><Activity /></EmptyMedia><EmptyTitle>Nothing running</EmptyTitle>
-                  <EmptyDescription>Agents working in any conversation, team, race or managed run show up here as they work.</EmptyDescription></EmptyHeader></Empty>
+                  <EmptyDescription>Start a message or team task to see progress here.</EmptyDescription></EmptyHeader></Empty>
               )}
               <div className="flex flex-col gap-4">
-                {items.map((e) => (
+                {shown.map((e) => (
                   <section key={e.threadId} aria-label={e.title} className="flex flex-col gap-2">
                     <header className="flex min-w-0 items-center gap-2">
                       <button className="min-w-0 truncate text-left font-medium hover:underline" onClick={() => openThread(e.threadId)}>{e.title}</button>
@@ -163,31 +171,31 @@ export function LiveActivity() {
                     </ul>
                   </section>
                 ))}
-                {recent.length > 0 && (
+                {shownRecent.length > 0 && (
                   <section aria-label="Finished recently" className="flex flex-col gap-1.5">
                     <h3 className="text-xs font-medium text-muted-foreground">Finished recently</h3>
-                    {recent.map((f) => {
+                    {shownRecent.map((f) => {
                       const status = (s.threadsBy[f.project] || []).find((t) => t.id === f.threadId)?.status;
                       const changed = new Set(f.workers.flatMap((w) => w.files.map((x) => x.rel))).size;
                       return (
-                        <button key={f.threadId} onClick={() => openThread(f.threadId)} className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted">
+                        <div key={f.threadId} className="rounded-lg border bg-background/40 p-2"><div className="flex items-center gap-2 py-1">
                           {status === 'failed' ? <CircleAlert className="size-3.5 shrink-0 text-destructive" /> : <CircleCheck className="size-3.5 shrink-0 text-success" />}
-                          <span className="min-w-0 flex-1 truncate">{f.title}</span>
-                          <span className="shrink-0 text-xs text-muted-foreground">{changed ? `${changed} file${changed === 1 ? '' : 's'}` : KIND[f.kind]}</span>
-                        </button>
+                          <button onClick={() => openThread(f.threadId)} className="min-w-0 flex-1 truncate text-left text-[13px] font-medium hover:underline">{f.title}</button>
+                          <span className="shrink-0 text-xs text-muted-foreground">{changed ? `${changed} file${changed === 1 ? '' : 's'}` : KIND[f.kind]}</span><Button size="icon-sm" variant="ghost" aria-label={`Open ${f.title}`} onClick={() => openThread(f.threadId)}><MessageSquare /></Button>
+                        </div><ul className="mt-2 space-y-2">{f.workers.map((worker) => <WorkerRow key={worker.key} entry={f} worker={{ ...worker, state: status === 'failed' ? 'failed' : 'done' }} pick={pick} onPick={(value) => setPick({ ...value, live: false })} />)}</ul></div>
                       );
                     })}
                   </section>
                 )}
               </div>
             </div>
-            <div className="min-h-0 overflow-y-auto p-4">
+            <div className={cn("min-h-0 overflow-y-auto p-4", !pick && "hidden")}>
               {pick ? (
                 <div className="flex flex-col gap-2">
                   <p className="flex items-center gap-2 text-xs text-muted-foreground"><AgentAvatar agent={s.agentOf(pick.worker.agent)} size="xs" />{s.agentOf(pick.worker.agent).name}{pick.live && <><Spinner className="size-3" /> updating live</>}</p>
                   <LiveDiff pick={pick} />
                 </div>
-              ) : <p className="p-2 text-sm text-muted-foreground">Pick a changed file on the left to see its diff. A file an agent is editing in the project updates here as it changes.</p>}
+              ) : <p className="p-2 text-sm text-muted-foreground">Select a changed file.</p>}
             </div>
           </div>
         </SheetContent>

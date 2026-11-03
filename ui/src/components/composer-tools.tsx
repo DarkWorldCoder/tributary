@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { ArrowLeft, BookOpen, ChevronRight, FolderOpen, Keyboard, ListTodo, Plug, Plus, Search, Settings2, Sparkles, SquareTerminal, Users } from 'lucide-react';
+import { ArrowLeft, BookOpen, ChevronRight, FolderOpen, Keyboard, ListTodo, Plug, Plus, Search, Settings2, Sparkles, SquareTerminal, Users, Paperclip } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '@/components/ui/command';
 import { InputGroupButton } from '@/components/ui/input-group';
@@ -16,7 +16,7 @@ type Mcp = { name: string; agent: string; enabled: boolean };
 const TITLES: Record<Page, string> = { main: 'Tools and skills', files: 'Project files', skills: 'Skills', agents: 'Your agents', mcp: 'MCP tools' };
 
 /** Discover existing capabilities; choosing context only prepares the next message. */
-export function ComposerTools({ everyday, planOn, setPlanOn, focusMessage }: { everyday: boolean; planOn: boolean; setPlanOn: (value: boolean) => void; focusMessage: () => void }) {
+export function ComposerTools({ everyday, planOn, setPlanOn, focusMessage, onAttach }: { everyday: boolean; planOn: boolean; setPlanOn: (value: boolean) => void; focusMessage: () => void; onAttach?: () => void }) {
   const s = useStore(); const [open, setOpen] = React.useState(false); const [page, setPage] = React.useState<Page>('main');
   const [query, setQuery] = React.useState(''); const [width, setWidth] = React.useState(360);
   const [busy, setBusy] = React.useState(false); const [error, setError] = React.useState(''); const [retry, setRetry] = React.useState(0);
@@ -89,6 +89,7 @@ export function ComposerTools({ everyday, planOn, setPlanOn, focusMessage }: { e
           <CommandEmpty>{busy ? 'Loading…' : 'No matches.'}</CommandEmpty>
           {page === 'main' && <>
             <CommandGroup>
+              {onAttach && row('attach', 'Attach files or images', <Paperclip />, 'Paste or drop files', () => run(onAttach))}
               {row('files', 'Files and folders', <FolderOpen />, everyday ? 'Browse your project' : 'Reference project files', () => changePage('files'), { disabled: !s.project, next: true, keywords: 'reference context' })}
               {row('skills', 'Skills', <Sparkles />, 'Guidance for your next message', () => changePage('skills'), { next: true })}
               {!everyday && row('plan', 'Plan first', <ListTodo />, 'Review a plan before building', () => run(() => { setPlanOn(!planOn); focusMessage(); }), { checked: planOn })}

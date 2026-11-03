@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { toast } from 'sonner';
-import { Check, ChevronRight, Circle, Ellipsis, Eye, FolderOpen, Image as ImageIcon, PanelLeftClose, PanelLeftOpen, Pencil, Pin, RefreshCw, RotateCw, Save, Search, SquareArrowOutUpRight, WrapText, X } from 'lucide-react';
+import { Copy, SquareTerminal, WandSparkles, Check, ChevronRight, Circle, Ellipsis, Eye, FolderOpen, Image as ImageIcon, PanelLeftClose, PanelLeftOpen, Pencil, Pin, RefreshCw, RotateCw, Save, Search, SquareArrowOutUpRight, WrapText, X } from 'lucide-react';
 import type { PanelImperativeHandle } from 'react-resizable-panels';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
@@ -16,10 +16,13 @@ import { FileTypeIcon } from '@/components/file-type-icon';
 import { FolderTypeIcon } from '@/components/folder-type-icon';
 import { DirectoryTree } from '@/components/directory-tree';
 import { Markdown } from '@/components/markdown';
+import { ProjectMenu } from '@/components/project-menu';
 import { ImagePreview } from '@/components/image-preview';
 import { imageMime, imageSource } from '@/lib/image-preview.mjs';
 import { closeFileTabs, fileTabLabel, openFileTab } from '@/lib/workspace-tabs.mjs';
 import { cn } from '@/lib/utils';
+import { formatParser } from '@/lib/format-document.mjs';
+import { useRunInTerminal } from '@/hooks/use-run-in-terminal';
 import { useStore } from '@/store';
 import type { FileContent } from '@/types';
 
@@ -69,6 +72,7 @@ const previewable = (rel: string) => IMAGE.test(rel) || /\.(svg|md|mdx|markdown|
 // This component is kept mounted separately for every visited project in this session.
 export function FilesTab({ project, visible }: { project: string; visible: boolean }) {
   const s = useStore();
+  const runInTerminal = useRunInTerminal();
   const [files, setFiles] = React.useState<string[] | null>(null);
   const [directoryRevision, setDirectoryRevision] = React.useState(0);
   const [live, setLive] = React.useState('Connecting…');
@@ -92,7 +96,7 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
   const [small, setSmall] = React.useState(() => window.innerWidth < 640);
   const explorer = React.useRef<PanelImperativeHandle>(null);
   const fileGroup = React.useRef<HTMLDivElement>(null);
-  const explorerWidth = React.useRef(200);
+  const explorerWidth = React.useRef(224);
   const docsRef = React.useRef(docs); docsRef.current = docs;
   const activeRef = React.useRef(active); activeRef.current = active;
   const sequence = React.useRef(0);
@@ -268,6 +272,14 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
             {!docs.length && <DropdownMenuItem disabled>No open files</DropdownMenuItem>}
             {docs.map((item) => <DropdownMenuItem key={item.rel} title={item.rel} aria-label={`${item.rel}${item.dirty ? ', unsaved' : ''}`} onSelect={() => { void openDoc(item.rel); }}><Check className={cn('size-4', active !== item.rel && 'invisible')} /><span className={cn('max-w-64 truncate', !item.pinned && 'italic')}>{label(item.rel)}</span>{item.dirty && <Circle className="size-2 fill-current" />}</DropdownMenuItem>)}
             <DropdownMenuSeparator />
+            {doc && <>
+              <DropdownMenuItem disabled={doc.binary || doc.truncated || !formatParser(doc.rel)} onSelect={() => { setDocs((all) => all.map((item) => item.rel === doc.rel ? { ...item, mode: 'edit' } : item)); requestAnimationFrame(() => requestAnimationFrame(() => window.dispatchEvent(new CustomEvent('tributary:format-file', { detail: { project, path: doc.rel } })))); }}><WandSparkles />Format document<span className="ml-auto text-xs text-muted-foreground">⇧Alt F</span></DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => void navigator.clipboard.writeText(doc.rel).then(() => toast.success('Relative path copied'), () => toast.error('Could not copy path'))}><Copy />Copy relative path</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => { const separator = project.includes('\\') ? '\\' : '/'; void navigator.clipboard.writeText(project.replace(/[\\/]$/, '') + separator + doc.rel.replaceAll('/', separator)).then(() => toast.success('Full path copied'), () => toast.error('Could not copy path')); }}><Copy />Copy full path</DropdownMenuItem>
+              {s.hub.platform !== 'mock' && <DropdownMenuItem onSelect={() => void s.hub.call('revealFile', project, doc.rel).catch((e) => toast.error(e.message))}><FolderOpen />Reveal in folder</DropdownMenuItem>}
+              {s.hub.platform !== 'mock' && <DropdownMenuItem onSelect={() => { const parent = doc.rel.split('/').slice(0, -1).join('/'); runInTerminal('', parent ? `${project}/${parent}` : project); }}><SquareTerminal />Open terminal here</DropdownMenuItem>}
+              <DropdownMenuSeparator />
+            </>}
             <DropdownMenuItem disabled={!doc || doc.pinned} onSelect={() => doc && pin(doc.rel)}><Pin />Keep open</DropdownMenuItem>
             {doc?.mode === 'edit' && !doc.binary && <DropdownMenuCheckboxItem checked={!!doc.wrap} onCheckedChange={toggleWrap}>Wrap lines</DropdownMenuCheckboxItem>}
             {doc && IMAGE.test(doc.rel) && editors.map((editor) => <DropdownMenuItem key={editor.id} onSelect={() => s.hub.call('openInEditor', editor.id, project, doc.rel).catch((e) => toast.error(e.message))}><SquareArrowOutUpRight />Open in {editor.name}</DropdownMenuItem>)}
@@ -284,10 +296,10 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
       {busy && <span role="status" className="sr-only">Opening file…</span>}
       {error && <div role="alert" className="absolute inset-x-0 top-10 z-20 flex items-center gap-1 border-b bg-popover px-3 py-1 text-xs max-sm:top-11"><span className="min-w-0 flex-1 truncate" title={error.rel}>Couldn’t read {error.rel.split('/').pop()}.</span><Button variant="ghost" size="sm" onClick={() => { if (error.reload) { setError(null); void reload(error.rel); } else void openDoc(error.rel, error.intent, error.line); }}>Retry</Button><Button variant="ghost" size="icon-sm" aria-label="Dismiss file error" onClick={() => setError(null)}><X /></Button></div>}
       <ResizablePanelGroup id={`files-${project}`} elementRef={fileGroup} className="min-h-0 flex-1" disabled={small || collapsed} onLayoutChanged={(layout, meta) => { if (meta.isUserInteraction && !small && !collapsed && fileGroup.current) explorerWidth.current = Math.min(360, Math.max(176, layout[`explorer-${project}`] * (fileGroup.current.clientWidth - 1) / 100)); }}>
-        <ResizablePanel id={`explorer-${project}`} panelRef={explorer} defaultSize={small ? browse ? '100%' : 0 : 200} minSize={small ? browse ? '100%' : 0 : collapsed ? 0 : 176} maxSize={small ? browse ? '100%' : 0 : collapsed ? 0 : 360} groupResizeBehavior="preserve-pixel-size" className="h-full">
+        <ResizablePanel id={`explorer-${project}`} panelRef={explorer} defaultSize={small ? browse ? '100%' : 0 : 224} minSize={small ? browse ? '100%' : 0 : collapsed ? 0 : 176} maxSize={small ? browse ? '100%' : 0 : collapsed ? 0 : 360} groupResizeBehavior="preserve-pixel-size" className="h-full">
           <div className={cn('workspace-explorer flex h-full min-h-0 flex-col bg-background/50', (small ? !browse : collapsed) && 'hidden')}>
             <div role="group" aria-label="File explorer" className="workbench-toolbar gap-0.5 border-b pr-2 pl-3">
-              <span className="min-w-0 flex-1 truncate text-[13px] font-medium" title={project}>{s.st?.projects.find((entry) => entry.path === project)?.name || project.split('/').pop()}</span>
+              <ProjectMenu><button aria-label="Explorer project options" className="flex min-w-0 flex-1 items-center gap-1 rounded text-left text-[13px] font-medium focus-visible:outline-2 focus-visible:outline-ring" title={project}><span className="truncate">{s.st?.projects.find((entry) => entry.path === s.project)?.name || project.split('/').pop()}</span><ChevronRight className="size-3 shrink-0 rotate-90 text-muted-foreground" /></button></ProjectMenu>
               <Tooltip><TooltipTrigger asChild><Button ref={searchToggle} variant={searchOpen ? 'secondary' : 'ghost'} size="icon-sm" className={cn(iconButton, 'text-muted-foreground')} aria-label="Find a file" aria-expanded={searchOpen} aria-controls={searchOpen ? searchId : undefined} onClick={() => searchOpen ? closeSearch() : setSearchOpen(true)}><Search /></Button></TooltipTrigger><TooltipContent>Find a file</TooltipContent></Tooltip>
               <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon-sm" className={cn(iconButton, 'relative text-muted-foreground')} aria-label="Explorer options"><Ellipsis />{hidden && <span className="absolute top-1 right-1 size-1 rounded-full bg-foreground" />}</Button></DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48 max-sm:[&_[role^=menuitem]]:min-h-11">

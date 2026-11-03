@@ -424,8 +424,8 @@
 .context-summary { display: flex; min-height: 40px; align-items: center; gap: 4px; cursor: pointer; list-style: none; font-size: 12px; }
 .context-summary::-webkit-details-marker { display: none; }
 @media (min-width: 1536px) {
-  .conversation-shell [data-slot="message-scroller-content"] { margin-left: auto; margin-right: clamp(16px, calc((100vw - 1280px) * .175), 112px); padding-inline: 20px; }
-  .conversation-shell .chat-composer-host { margin-left: auto; margin-right: clamp(0px, calc((100vw - 1280px) * .175 - 24px), 88px); }
+  .conversation-shell [data-slot="message-scroller-content"] { margin-inline: auto; padding-inline: 20px; }
+  .conversation-shell .chat-composer-host { margin-inline: auto; }
 }
 @media (max-width: 639px) {
   .conversation-shell .prose-reply { font-size: max(14px, var(--coding-reading-size, 13px)); }
@@ -476,3 +476,23 @@
 @media (max-width: 639px) {
   .chat-toolbar .separate-copy-toggle, .chat-toolbar .separate-copy-branch { width: 44px; height: 44px; min-width: 44px; padding: 0; }
 }
+
+/* Window chrome shares the application's control sizing without taking editor space. */
+.app-frame:has(> .desktop-titlebar) { display: grid; grid-template-rows: 32px minmax(0, 1fr); grid-template-columns: auto auto minmax(0, 1fr); }
+.desktop-titlebar { grid-column: 1 / -1; grid-row: 1; }
+.app-frame:has(> .desktop-titlebar) > :not(.desktop-titlebar) { grid-row: 2; }
+.app-frame:has(> .desktop-titlebar) > [data-slot="sidebar-inset"] { grid-column: -2 / -1; }
+.titlebar-button, .titlebar-window-button { display: grid; place-items: center; height: 28px; width: 30px; border-radius: 4px; color: var(--muted-foreground); }
+.titlebar-button svg, .titlebar-window-button svg { width: 14px; height: 14px; }
+.titlebar-button:hover:not(:disabled), .titlebar-window-button:hover { background: var(--muted); color: var(--foreground); }
+.titlebar-button:disabled { opacity: .3; }
+.titlebar-button:focus-visible, .titlebar-window-button:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+.titlebar-window-button { width: 38px; border-radius: 0; }
+.titlebar-window-button:last-child:hover { background: var(--destructive); color: white; }
+
+.desktop-titlebar { position: relative; }
+.desktop-titlebar > span { position: absolute; left: 50%; transform: translateX(-50%); max-width: calc(100% - 640px); }
+.conversation-shell [data-slot="message-scroller-content"], .conversation-shell .chat-composer-host { margin-inline: auto; min-width: 0; max-width: 48rem; }
+
+.app-frame:has(> .desktop-titlebar) [data-slot="sidebar-container"] { top: 32px; height: calc(100svh - 32px); }
+@media (max-width: 639px) { .desktop-titlebar .titlebar-button:nth-child(-n+2) { display: none; } }

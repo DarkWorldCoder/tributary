@@ -54,6 +54,22 @@ function codexModels(agent, { timeoutMs = 12000 } = {}) {
   });
 }
 
+function antigravityModels(agent, { timeoutMs = 15000 } = {}) {
+  return new Promise((resolve, reject) => {
+    const child = start(agent.path, ['models'], { cwd: require('node:os').tmpdir(), env: { ...process.env, PATH: pathDirs(process.env).join(path.delimiter) } });
+    let output = ''; let finished = false;
+    const finish = (error) => { if (finished) return; finished = true; clearTimeout(timer); killTree(child); if (error) reject(error); else {
+      const rows = output.replace(/\x1b\[[0-9;]*m/g, '').split('\n').flatMap((line) => { const match = /^([A-Za-z0-9][A-Za-z0-9_.:/+-]*)\t+(.+)$/.exec(line.trim()); return match ? [{ id: match[1], displayName: match[2] }] : []; });
+      const models = normalize(rows); models.length ? resolve(models) : reject(new Error('Antigravity returned no models. Check its sign-in or use Automatic.'));
+    } };
+    const timer = setTimeout(() => finish(new Error('Antigravity model discovery timed out. Try Refresh.')), timeoutMs);
+    child.stdout.setEncoding('utf8'); child.stderr.resume();
+    child.stdout.on('data', (chunk) => { output += chunk; if (output.length > 2 * 1024 * 1024) finish(new Error('The model catalog exceeded its size limit.')); });
+    child.once('error', () => finish(new Error('Cannot start Antigravity model discovery. Check its installation.')));
+    child.once('close', (code) => finish(code === 0 ? null : new Error('Antigravity could not list models. Check its sign-in.')));
+  });
+}
+
 async function boundedJson(response) {
   if (!response.body) throw new Error('The provider returned an empty model catalog.');
   const reader = response.body.getReader(); let size = 0; const chunks = [];
@@ -100,7 +116,8 @@ async function catalog(agent, gateway, options = {}) {
   if (!result.supportsSelection) return { ...result, note: 'This integration uses the assistant’s own model settings. Model switching is not supported here yet.' };
   if (gateway) return { ...result, source: 'provider', models: await providerModels(gateway, options), note: 'Reported by this provider. A listed model may need additional access or may not support this assistant.' };
   if (agent.id === 'codex') return { ...result, source: 'codex', models: await codexModels(agent, options), note: 'Reported by installed Codex. Access and usage limits depend on your sign-in and provider.' };
+  if (agent.id === 'antigravity') return { ...result, source: 'antigravity', models: await antigravityModels(agent, options), note: 'Reported by installed Antigravity. Account access and limits apply.' };
   if (agent.id === 'claude') return { ...result, source: 'aliases', models: ['sonnet', 'opus', 'haiku', 'fable', 'best', 'sonnet[1m]', 'opus[1m]', 'opusplan'].map((id) => ({ id, name: { sonnet: 'Sonnet', opus: 'Opus', haiku: 'Haiku', fable: 'Fable', best: 'Best available', opusplan: 'Opus plan / Sonnet build' }[id] || id })), note: 'Claude model aliases, not an account access check. Version, plan, provider and organization restrictions apply.' };
   return { ...result, source: 'manual', note: 'Use Automatic or enter the model ID from your assistant or provider. Connect a gateway to discover its models.' };
 }
-module.exports = { validateModel, selectable, normalize, codexModels, providerModels, catalog };
+module.exports = { validateModel, selectable, normalize, codexModels, antigravityModels, providerModels, catalog };

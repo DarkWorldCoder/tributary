@@ -64,7 +64,7 @@ function useStoreValue() {
   const [fileToOpen, setFileToOpen] = React.useState<{ rel: string; line?: number; intent: 'preview' | 'pinned'; project: string | null; n: number } | null>(null);
   const [terminalOpen, setTerminalOpenRaw] = useStored<boolean>('terminal', false);
   const [teamOpen, setTeamOpen] = React.useState(false);
-  const [queue, setQueue] = React.useState<Record<string, { text: string; plan?: boolean; mode?: Mode; agentId: string; model?: string; gatewayId?: string | null }[]>>({});
+  const [queue, setQueue] = React.useState<Record<string, { text: string; attachments?: string[]; plan?: boolean; mode?: Mode; agentId: string; model?: string; gatewayId?: string | null }[]>>({});
   const [settings, setSettings] = React.useState<{ open: boolean; tab: SettingsTab }>({ open: false, tab: 'agents' });
   const [palette, setPalette] = React.useState(false);
   const [shortcutsOpen, setShortcutsOpen] = React.useState(false);
@@ -179,7 +179,7 @@ function useStoreValue() {
     apply(); mq.addEventListener('change', apply); return () => mq.removeEventListener('change', apply);
   }, [theme]);
 
-  const send = React.useCallback(async (text: string, opts: { plan?: boolean; mode?: Mode; agentId?: string } = {}) => {
+  const send = React.useCallback(async (text: string, opts: { plan?: boolean; mode?: Mode; agentId?: string; attachments?: string[] } = {}) => {
     const who = opts.agentId ?? agentId;
     if (!text.trim() || !who || !projectRef.current) return false;
     const source = who.startsWith('direct:') ? null : gatewayId || null;
@@ -188,15 +188,15 @@ function useStoreValue() {
     // While an agent is working in this thread, hold the message and send it when the turn ends.
     if (t && st?.running.includes(t.id)) {
       const id = t.id;
-      setQueue((q) => ({ ...q, [id]: [...(q[id] || []), { text: text.trim(), plan: opts.plan, mode: opts.mode ?? mode, agentId: who, model, gatewayId: source }] }));
+      setQueue((q) => ({ ...q, [id]: [...(q[id] || []), { text: text.trim(), attachments: opts.attachments, plan: opts.plan, mode: opts.mode ?? mode, agentId: who, model, gatewayId: source }] }));
       return true;
     }
     if (!t) {
       t = await hub.call<Thread>('createThread', projectRef.current);
       setThread(t); setThreadIdRaw(t.id);
     }
-    hub.call('send', { threadId: t.id, agentId: who, text: text.trim(), mode: opts.mode ?? mode, gatewayId: source, model: model || null, plan: !!opts.plan })
-      .catch((e: Error) => { toast.error(e.message || String(e)); setDraft(text); });
+    hub.call('send', { threadId: t.id, agentId: who, text: text.trim(), attachments: opts.attachments, mode: opts.mode ?? mode, gatewayId: source, model: model || null, plan: !!opts.plan })
+      .catch((e: Error) => { toast.error(e.message || String(e)); setDraft(text); if (opts.attachments?.length) window.dispatchEvent(new CustomEvent('tributary:restore-attachments', { detail: { project: t!.project, threadId: t!.id, ids: opts.attachments } })); });
     return true;
   }, [agentId, mode, gatewayId, models, setThreadIdRaw, st]);
 
@@ -206,7 +206,7 @@ function useStoreValue() {
     const q = queue[t.id]; if (!q || !q.length) return;
     const [next, ...rest] = q;
     setQueue((all) => ({ ...all, [t.id]: rest }));
-    hub.call('send', { threadId: t.id, agentId: next.agentId, text: next.text, mode: next.mode ?? mode, gatewayId: next.gatewayId ?? null, model: next.model || null, plan: !!next.plan })
+    hub.call('send', { threadId: t.id, agentId: next.agentId, text: next.text, attachments: next.attachments, mode: next.mode ?? mode, gatewayId: next.gatewayId ?? null, model: next.model || null, plan: !!next.plan })
       .catch((e: Error) => toast.error(e.message || String(e)));
   }, [st, thread, queue, mode, gatewayId]);
 

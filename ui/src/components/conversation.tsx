@@ -1,3 +1,5 @@
+import { AgentError } from '@/components/agent-error';
+import { ChatAttachments } from '@/components/chat-attachments';
 import * as React from 'react';
 import { toast } from 'sonner';
 import {
@@ -389,7 +391,7 @@ function AgentTurn({ m, agent, prompt }: { m: AgentMessage; agent: Agent; prompt
         {m.text && <div className={cn(live && 'after:ml-1 after:inline-block after:size-2 after:animate-pulse after:rounded-full after:bg-foreground/70')}><Markdown text={m.text} /></div>}
         {(m.notices || []).map((n, i) => <p key={i} className="flex items-center gap-1.5 text-sm text-warning"><Info className="size-3.5" /> {n}</p>)}
         {m.memoryContext && <details className="text-xs text-muted-foreground"><summary className="cursor-pointer">Project memory included · {m.memoryContext.characters.toLocaleString()} characters</summary><ul className="mt-2 space-y-1">{m.memoryContext.sources.map((source) => <li key={`${source.source}:${source.line}`}>{source.source}:{source.line}</li>)}</ul></details>}
-        {m.error && <Alert variant="destructive"><AlertCircle /><AlertDescription className="whitespace-pre-wrap">{m.error}</AlertDescription></Alert>}
+        {m.error && <AgentError text={m.error} agent={m.agent} />}
         <FilesChanged m={m} />
         <RunPlan m={m} />
         {!live && (
@@ -426,6 +428,7 @@ function UserTurn({ m, agent, showTarget }: { m: UserMessage; agent: Agent; show
         {m.kind === 'race' ? <>Race between {m.target.split(',').map((id) => <AgentAvatarName key={id} id={id} />)}</>
           : <>{m.team ? `${m.team.role === 'member' ? 'Question' : `To the ${m.team.role}`},` : m.kind === 'plan' ? 'Plan request for' : m.kind === 'implement' ? 'Run plan with' : 'To'} <AgentAvatar agent={agent} size="xs" /> {agent.name}</>}
       </span>}
+      {!!m.attachments?.length && <ChatAttachments files={m.attachments} />}
       <Bubble align="end" variant="secondary" className={cn('max-w-[85%]', s.codeLayout && 'max-w-[95%] rounded-xl bg-muted/70')}>
         <BubbleContent className="text-[0.9375rem] whitespace-pre-wrap">{m.text}</BubbleContent>
       </Bubble>
@@ -440,7 +443,7 @@ export function Conversation() {
   return (
     <MessageScrollerProvider autoScroll defaultScrollPosition="end">
       <MessageScroller className="flex-1">
-        <MessageScrollerViewport aria-label="Conversation">
+        <MessageScrollerViewport aria-label="Conversation" className="overflow-x-hidden">
           <MessageScrollerContent className={cn('mx-auto w-full max-w-3xl gap-0 px-4 py-6 sm:px-6', s.codeLayout && 'py-5 sm:px-4')}>
             {(() => { let lastUser: UserMessage | undefined; return msgs.map((m: Msg) => {
               if (m.role === 'user') lastUser = m;

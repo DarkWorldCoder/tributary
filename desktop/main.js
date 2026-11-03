@@ -71,6 +71,19 @@ let editors = [];
 const knownProject = (p) => { if (!hub.isWorkspace(p)) throw new Error('Unknown project'); return p; };
 
 const API = {
+  windowState: () => ({ maximized: win.isMaximized(), platform: process.platform }),
+  windowAction(action) {
+    if (action === 'minimize') win.minimize();
+    else if (action === 'maximize') win.isMaximized() ? win.unmaximize() : win.maximize();
+    else if (action === 'close') win.close();
+    else throw new Error('Unknown window action');
+  },
+  editAction(action) {
+    if (!['undo', 'redo', 'cut', 'copy', 'paste', 'selectAll'].includes(action)) throw new Error('Unknown edit action');
+    win.webContents[action]();
+  },
+  async revealFile(p, rel) { const abs = await require('../core/files').projectPath(knownProject(p), rel); shell.showItemInFolder(abs); return true; },
+  discoverPeers: () => require('../core/collaboration/peers').discover(),
   collaborationState: () => hub.collaborationState(),
   collaborationConnect: (input) => hub.collaborationConnect(input),
   collaborationDisconnect: () => hub.collaborationDisconnect(),
@@ -134,11 +147,14 @@ const API = {
   openExternal(url) { if (/^https?:\/\//.test(url)) return shell.openExternal(url); return null; },
   // Projects and files
   listFiles: (p) => hub.listFiles(p),
+  addAttachments: (files) => hub.addAttachments(files),
+  readAttachment: (id) => hub.readAttachment(id),
   readFile: (p, rel) => hub.readFile(p, rel),
   readDirectory: (p, rel, options) => hub.readDirectory(p, rel, options),
   writeFile: (p, rel, content, mtime) => hub.writeFile(p, rel, content, mtime),
   commit: (p, msg) => hub.commit(p, msg),
   setProjectFolders: (p, folders) => hub.setProjectFolders(p, folders),
+  renameProject: (p, name) => hub.renameProject(p, name),
   async pickFolder() {
     const r = await dialog.showOpenDialog(win, { title: 'Add a folder to this project', properties: ['openDirectory'] });
     return r.canceled ? null : r.filePaths[0] || null;
@@ -221,9 +237,10 @@ function createWindow() {
   const icon = nativeImage.createFromPath(path.join(__dirname, '..', 'assets', 'icon-512.png'));
   win = new BrowserWindow({
     width: 1280, height: 840, minWidth: 420, minHeight: 480, title: 'Tributary', icon, show: false,
-    backgroundColor: '#1c1b1a', autoHideMenuBar: true,
+    backgroundColor: '#1c1b1a', autoHideMenuBar: true, frame: process.platform === 'darwin',
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, sandbox: true, nodeIntegration: false, spellcheck: true },
   });
+  for (const event of ['maximize', 'unmaximize']) win.on(event, () => send('window-state', { maximized: win.isMaximized(), platform: process.platform }));
   win.webContents.setWindowOpenHandler(({ url }) => { if (/^https?:\/\//.test(url)) shell.openExternal(url); return { action: 'deny' }; });
   win.webContents.on('will-navigate', (ev) => ev.preventDefault());
   // Smoke runs stay hidden so they never take keyboard focus from whatever you are typing in.

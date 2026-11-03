@@ -21,7 +21,7 @@ The largest outstanding engineering work is shared source-file synchronization a
 | W05 | Search, rename, pin, archive, duplicate, and organize work with familiar controls | Partial | Conversation search, rename and deletion exist; full pin/archive/duplicate organization remains. |
 | W06 | Optional advanced controls for developers while preserving the everyday workflow | Partial | Everyday task entry and advanced tools coexist; no complete simplified-mode preference. |
 | D01 | Drag-and-drop PDF, DOCX, Markdown, and text with extraction status and limits | Partial | Text and Markdown attachments only; PDF/DOCX extraction remains. |
-| D02 | Images and scanned-document text extraction, with page references and quality warnings | Not built in | Remains in the roadmap; no dedicated end-to-end implementation verified. |
+| D02 | Images and scanned-document text extraction, with page references and quality warnings | Partial | Composer image picker/paste/drop, thumbnail and zoom previews, and supported-agent image transport are implemented. OCR, page references and quality warnings remain. |
 | D03 | CSV/XLSX import with worksheet selection, type preview, and original-file preservation | Not built in | Remains in the roadmap; no dedicated end-to-end implementation verified. |
 | D04 | Audio upload or explicit recording with a reviewable transcript | Not built in | Remains in the roadmap; no dedicated end-to-end implementation verified. |
 | D05 | Choose files or folders, see exactly what is accessible, and search permitted contents | Partial | Paged folder tree, file reads and bounded filename search; no full content index. |

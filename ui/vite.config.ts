@@ -7,6 +7,7 @@ import tailwindcss from '@tailwindcss/vite';
 // and from a VS Code webview, which rewrites asset URLs.
 export default defineConfig({
   base: './',
+  worker: { format: 'es', rolldownOptions: { output: { codeSplitting: false } } },
   plugins: [react(), tailwindcss()],
   resolve: { alias: { '@': path.resolve(import.meta.dirname, './src') } },
   build: {

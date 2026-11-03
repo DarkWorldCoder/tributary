@@ -17,7 +17,7 @@ export function DeveloperEntry() {
   return null;
 }
 
-export function DeveloperRail() {
+export function DeveloperRail({ workspaceVisible }: { workspaceVisible: boolean }) {
   const s = useStore(); const { toggleSidebar, open } = useSidebar();
   const tool = (label: string, icon: React.ReactNode, action: () => void, active?: boolean) => <Tooltip key={label}><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" className="activity-button relative size-9 rounded-md text-muted-foreground aria-pressed:bg-sidebar-accent aria-pressed:text-sidebar-accent-foreground hover:text-foreground [&_svg]:size-4" aria-label={label} aria-pressed={active} onClick={action}>{icon}</Button></TooltipTrigger><TooltipContent side="right">{label}</TooltipContent></Tooltip>;
   const panel = (tab: PanelTab) => { s.setWorkspaceExpanded(false); s.openPanel(tab); };
@@ -26,10 +26,12 @@ export function DeveloperRail() {
     {tool('New chat', <SquarePen />, () => s.newThread())}
     {tool('Search chats', <Search />, () => s.setPalette(true))}
     <div className="my-1 w-5 border-t" />
-    {tool('Files', <Files />, () => panel('files'), s.panel.open && s.panel.tab === 'files')}
-    {tool('Changes', <GitCompareArrows />, () => panel('review'), s.panel.open && ['review','changes'].includes(s.panel.tab))}
-    {tool('Memory', <BookOpen />, () => panel('memory'), s.panel.open && s.panel.tab === 'memory')}
-    {tool('Preview', <Globe />, () => panel('preview'), s.panel.open && s.panel.tab === 'preview')}
+    {!workspaceVisible && <>
+      {tool('Files', <Files />, () => panel('files'))}
+      {tool('Changes', <GitCompareArrows />, () => panel('review'))}
+      {tool('Memory', <BookOpen />, () => panel('memory'))}
+      {tool('Preview', <Globe />, () => panel('preview'))}
+    </>}
     {tool('Terminal', <SquareTerminal />, () => s.setTerminalOpen(!s.terminalOpen), s.terminalOpen)}
     <div className="flex-1" />
     <NotificationsBell />

@@ -20,3 +20,5 @@ if (service.bootstrapToken) {
 service.server.on('error', (error) => { console.error(`Project service could not listen: ${error.code || 'server error'}. Check the address and port.`); process.exitCode = 1; });
 service.server.listen(port, host, () => console.log(`Tributary project room: ${process.env.TRIBUTARY_PUBLIC_ORIGIN || `${tls ? 'https' : 'http'}://${host.includes(':') ? `[${host}]` : host}:${port}`}/room`));
 for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => service.close().then(() => process.exit(0)));
+
+module.exports = service;

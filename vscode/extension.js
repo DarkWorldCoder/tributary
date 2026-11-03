@@ -34,6 +34,7 @@ const fileUri = (p, rel) => { const abs = path.resolve(knownProject(p), rel); if
 
 const API = {
   state: () => ({ ...hub.state(), credentialStorage: 'encrypted' }),
+  discoverPeers: () => require('../core/collaboration/peers').discover(),
   collaborationState: () => hub.collaborationState(),
   collaborationConnect: (input) => hub.collaborationConnect(input),
   collaborationDisconnect: () => hub.collaborationDisconnect(),
@@ -74,13 +75,17 @@ const API = {
   setSettings: (s) => hub.setSettings(s),
   gitInfo: (p) => hub.gitInfo(p),
   fileDiff: (p, rel) => hub.fileDiff(p, rel),
+  async revealFile(p, rel) { const abs = await require('../core/files').projectPath(knownProject(p), rel); await vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(abs)); return true; },
   syncInstructions: (p) => hub.syncInstructions(p),
   listFiles: (p) => hub.listFiles(p),
+  addAttachments: (files) => hub.addAttachments(files),
+  readAttachment: (id) => hub.readAttachment(id),
   readFile: (p, rel) => hub.readFile(p, rel),
   readDirectory: (p, rel, options) => hub.readDirectory(p, rel, options),
   writeFile: (p, rel, c, m) => hub.writeFile(p, rel, c, m),
   commit: (p, msg) => hub.commit(p, msg),
   setProjectFolders: (p, f) => hub.setProjectFolders(p, f),
+  renameProject: (p, name) => hub.renameProject(p, name),
   async pickFolder() { const r = await vscode.window.showOpenDialog({ canSelectFolders: true, canSelectFiles: false, openLabel: 'Add folder' }); return r && r[0] ? r[0].fsPath : null; },
   restoreCheckpoint: (t, m) => hub.restoreCheckpoint(t, m),
   turnDiff: (t, m, rel) => hub.turnDiff(t, m, rel),
@@ -144,7 +149,7 @@ function html(webview, extUri) {
   let page = fs.readFileSync(path.join(DIST, 'ui', 'index.html'), 'utf8');
   const asset = (p) => webview.asWebviewUri(vscode.Uri.joinPath(root, p)).toString();
   page = page.replace(/(src|href)="\.\/([^"]+)"/g, (_, a, p) => `${a}="${asset(p)}"`);
-  const csp = `default-src 'none'; img-src ${webview.cspSource} data: blob:; style-src ${webview.cspSource} 'unsafe-inline'; script-src ${webview.cspSource}; font-src ${webview.cspSource} data:; frame-src blob:;`;
+  const csp = `default-src 'none'; img-src ${webview.cspSource} data: blob:; style-src ${webview.cspSource} 'unsafe-inline'; script-src ${webview.cspSource}; font-src ${webview.cspSource} data:; frame-src blob:; worker-src blob:; connect-src ${webview.cspSource};`;
   page = page.replace(/<meta http-equiv="Content-Security-Policy"[^>]*>/, `<meta http-equiv="Content-Security-Policy" content="${csp}">`);
   // The bridge must define window.hub before the app module runs.
   page = page.replace('<script type="module"', `<script src="${asset('vscode-bridge.js')}"></script>\n    <script type="module"`);

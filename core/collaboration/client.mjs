@@ -1,27 +1,30 @@
 // Shared browser/desktop client. Access keys stay in memory and never enter public state.
 export class CollaborationClient {
-  constructor(onChange = () => {}) {
+  constructor(onChange = () => {}, requestFetch = (...args) => fetch(...args)) {
+    this.requestFetch = requestFetch;
     this.onChange = onChange; this.generation = 0; this.token = ''; this.controller = null; this.pending = new Map();
     this.value = { status: 'disconnected', endpoint: '', user: null, projects: [], snapshot: null, error: null };
   }
   state() { return structuredClone(this.value); }
   emit() { this.onChange(this.state()); }
   async request(route, input, commandId, signal) {
-    const r = await fetch(this.value.endpoint + route, { method: input ? 'POST' : 'GET', redirect: 'error', signal: signal || AbortSignal.timeout(10000),
-      headers: { authorization: `Bearer ${this.token}`, ...(input ? { 'content-type': 'application/json', 'x-command-id': commandId } : {}) }, ...(input ? { body: JSON.stringify(input) } : {}) });
+    const r = await this.requestFetch(this.value.endpoint + route, { method: input ? 'POST' : 'GET', redirect: 'error', signal: signal || AbortSignal.timeout(10000),
+      headers: { authorization: `Bearer ${this.token}`, ...(input ? { 'content-type': 'application/json', 'x-command-id': commandId } : {}) }, ...(input ? { body: JSON.stringify(input) } : {}) }, this.fingerprint);
     if (!r.ok) {
       const data = await r.json().catch(() => ({}));
       throw Object.assign(new Error(typeof data.error === 'string' ? data.error.slice(0, 300) : `Project service returned ${r.status}.`), { status: r.status });
     }
     return r;
   }
-  async connect({ endpoint, accessKey }) {
+  async connect({ endpoint, accessKey, fingerprint }) {
     const url = new URL(endpoint);
     if (url.username || url.password || url.search || url.hash || url.pathname !== '/') throw new Error('Use the service address without a path, password or query.');
     if (url.protocol !== 'https:' && !(url.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname))) throw new Error('Use HTTPS for a shared server, or HTTP on this computer.');
     if (typeof accessKey !== 'string' || !/^[A-Za-z0-9_-]{32,256}$/.test(accessKey.trim())) throw new Error('Enter the access key from your invitation.');
     this.disconnect();
     const generation = this.generation;
+    if (fingerprint && !/^[a-fA-F0-9:]{64,95}$/.test(fingerprint)) throw new Error('Enter the certificate fingerprint from the owner.');
+    this.fingerprint = fingerprint || '';
     this.token = accessKey.trim(); this.value.endpoint = url.origin;
     this.value.status = 'connecting'; this.emit();
     try {
@@ -37,7 +40,7 @@ export class CollaborationClient {
   }
   disconnect() {
     this.generation++; this.controller?.abort(); this.controller = null; this.token = '';
-    this.pending.clear();
+    this.pending.clear(); this.fingerprint = '';
     this.value = { status: 'disconnected', endpoint: '', user: null, projects: [], snapshot: null, error: null }; this.emit();
   }
   async command(action, input, commandId = crypto.randomUUID()) {

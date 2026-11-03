@@ -2,6 +2,7 @@ import * as React from 'react';
 import { Check, ChevronRight, CircleAlert, Folder, FolderPlus, GitBranch, Home, Keyboard, MoreHorizontal, PanelLeftClose, Search, Settings, ShieldQuestion, SquarePen, Trash2, Users } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ProjectMenu } from '@/components/project-menu';
 import { modifierLabel } from '@/components/keyboard-shortcuts';
 import { Kbd } from '@/components/ui/kbd';
 import {
@@ -71,7 +72,7 @@ export function AppSidebar() {
         {!s.codeLayout && !s.thread?.messages.length && <SidebarGroup>
           <SidebarGroupLabel>Workspace</SidebarGroupLabel>
           <SidebarMenu>
-            <SidebarMenuItem><SidebarMenuButton disabled={!s.project} onClick={() => { s.openPanel('files'); s.setWorkspaceExpanded(false); if (isMobile) setOpenMobile(false); }}><Folder /><span>Project files</span></SidebarMenuButton></SidebarMenuItem>
+            {!(s.panel.open && s.project && !s.document) && <SidebarMenuItem><SidebarMenuButton disabled={!s.project} onClick={() => { s.openPanel('files'); s.setWorkspaceExpanded(false); if (isMobile) setOpenMobile(false); }}><Folder /><span>Project files</span></SidebarMenuButton></SidebarMenuItem>}
             <SidebarMenuItem><SidebarMenuButton onClick={() => { s.setRoomOpen(true); if (isMobile) setOpenMobile(false); }}><Users /><span>Project room</span></SidebarMenuButton></SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>}
@@ -90,13 +91,10 @@ export function AppSidebar() {
                           <Folder className="text-muted-foreground" /><span className="truncate">{p.name}</span>
                         </SidebarMenuButton>
                       </CollapsibleTrigger>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild><SidebarMenuAction showOnHover aria-label={`${p.name} options`}><MoreHorizontal /></SidebarMenuAction></DropdownMenuTrigger>
-                        <DropdownMenuContent side="right" align="start" className="w-52">
-                          <DropdownMenuItem onClick={() => newThread(p.path)}><SquarePen /> New thread here</DropdownMenuItem>
-                          {!vs && <><DropdownMenuSeparator /><DropdownMenuItem variant="destructive" onClick={async () => { await s.hub.call('removeProject', p.path); await s.refreshState(); if (s.project === p.path) s.newThread(projects.find((x) => x.path !== p.path)?.path ?? null); }}><Trash2 /> Remove from Tributary</DropdownMenuItem></>}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <ProjectMenu projectPath={p.path} side="right" before={<DropdownMenuItem onSelect={() => newThread(p.path)}><SquarePen />New chat here</DropdownMenuItem>}
+                        after={!vs && <><DropdownMenuSeparator /><DropdownMenuItem variant="destructive" onClick={async () => { await s.hub.call('removeProject', p.path); await s.refreshState(); if (s.project === p.path) s.newThread(projects.find((x) => x.path !== p.path)?.path ?? null); }}><Trash2 />Remove from Tributary</DropdownMenuItem></>}>
+                        <SidebarMenuAction showOnHover aria-label={`${p.name} options`}><MoreHorizontal /></SidebarMenuAction>
+                      </ProjectMenu>
                       <CollapsibleContent>
                         <SidebarMenuSub className="mr-0 pr-0">
                           {shown.map((t) => <ThreadRow key={t.id} t={t} />)}

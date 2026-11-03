@@ -126,7 +126,7 @@ export function WorkspacePanel() {
               </TabsTrigger>)}
             </TabsList>
           </div>
-          <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" className="workbench-action shrink-0 max-md:hidden [&_svg]:size-4" onClick={() => s.setWorkspaceExpanded(!s.workspaceExpanded)} aria-label={s.workspaceExpanded ? 'Restore split view' : 'Expand workspace'}>{s.workspaceExpanded ? <Minimize2 /> : <Maximize2 />}</Button></TooltipTrigger><TooltipContent>{s.workspaceExpanded ? 'Restore split view' : 'Expand workspace'}</TooltipContent></Tooltip>
+          {s.workspaceExpanded ? <Button variant="ghost" size="xs" className="hidden shrink-0 gap-1.5 md:inline-flex" onClick={() => s.setWorkspaceExpanded(false)} aria-label="Restore split view"><Minimize2 className="size-4" />Show chat</Button> : <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" className="workbench-action shrink-0 max-md:hidden [&_svg]:size-4" onClick={() => s.setWorkspaceExpanded(!s.workspaceExpanded)} aria-label={s.workspaceExpanded ? 'Restore split view' : 'Expand workspace'}>{s.workspaceExpanded ? <Minimize2 /> : <Maximize2 />}</Button></TooltipTrigger><TooltipContent>{s.workspaceExpanded ? 'Restore split view' : 'Expand workspace'}</TooltipContent></Tooltip>}
           <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" className="workbench-action shrink-0 [&_svg]:size-4" onClick={() => s.setPanel({ ...s.panel, open: false })} aria-label="Close workspace"><X /></Button></TooltipTrigger><TooltipContent>Close workspace</TooltipContent></Tooltip>
         </header>
         <div className="min-h-0 flex-1">
