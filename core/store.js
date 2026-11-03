@@ -123,8 +123,8 @@ class SqliteStore {
     this.data = data;
   }
 
-  // Every row of the in-memory data, keyed like the snapshot.
-  collect() {
+  // Every row of the in-memory data, keyed like the snapshot. With `only`, messages are read for those threads alone.
+  collect(only = null) {
     const out = new Map(); const d = this.data;
     const list = (coll, items, idOf, valueOf, order) => {
       let max = -1;
@@ -137,18 +137,21 @@ class SqliteStore {
     };
     for (const coll of Object.keys(LISTS)) list(coll, d[coll] || [], (x) => x[LISTS[coll]], JSON.stringify, ORDER[coll]);
     list('threads', d.threads || [], (t) => t.id, metaJson, ORDER.threads);
-    for (const t of d.threads || []) list(`m:${t.id}`, t.messages || [], (m) => m.id, JSON.stringify);
+    for (const t of d.threads || []) if (!only || only.has(t.id)) list(`m:${t.id}`, t.messages || [], (m) => m.id, JSON.stringify);
     for (const [k, v] of Object.entries(d.settings || {})) out.set(keyOf('settings', k), { coll: 'settings', id: k, pos: 0, json: JSON.stringify(v ?? null) });
     for (const [k, v] of Object.entries(d)) if (!KNOWN.has(k) && v !== undefined) out.set(keyOf('data', k), { coll: 'data', id: k, pos: 0, json: JSON.stringify(v) });
     return out;
   }
 
   // Write the rows that changed since they were last read or written, in one transaction.
-  flush() {
-    const rows = this.collect();
+  // `only` (a Set of thread ids) skips the messages of every other live thread, which is what keeps streaming cheap.
+  flush(only = null) {
+    const rows = this.collect(only);
+    const live = only && new Set((this.data.threads || []).map((t) => t.id));
+    const skipped = (k) => { if (!only || !k.startsWith('m:')) return false; const tid = k.slice(2, k.indexOf(SEP)); return live.has(tid) && !only.has(tid); };
     const writes = []; const gone = [];
     for (const [k, r] of rows) { const prev = this.snap.get(k); if (!prev || prev.json !== r.json || prev.pos !== r.pos) writes.push([k, r]); }
-    for (const [k, prev] of this.snap) if (!rows.has(k) && !prev.virtual) gone.push([k, prev]);
+    for (const [k, prev] of this.snap) if (!rows.has(k) && !prev.virtual && !skipped(k)) gone.push([k, prev]);
     if (!writes.length && !gone.length) return;
     this.tx(() => {
       const { rev } = this.q.tick.get();
@@ -159,15 +162,22 @@ class SqliteStore {
     for (const [k] of gone) this.snap.delete(k);
   }
 
-  save(now = false) {
+  // threadId says only that thread's messages changed (a streaming turn); without it everything is checked.
+  save(now = false, threadId) {
     if (this.closed) return; // quitting: turns still winding down have nothing left to write to
-    if (now) { if (this.timer) { clearTimeout(this.timer); this.timer = null; } this.flush(); return; }
+    if (threadId == null) this.dirtyAll = true; else if (!this.dirtyAll) (this.dirty ||= new Set()).add(threadId);
+    if (now) { if (this.timer) { clearTimeout(this.timer); this.timer = null; } this.flushPending(); return; }
     if (!this.timer) {
       this.timer = setTimeout(() => {
         this.timer = null;
-        try { this.flush(); } catch (e) { console.error(`Tributary could not save its data, retrying: ${e.message}`); this.save(); }
+        try { this.flushPending(); } catch (e) { console.error(`Tributary could not save its data, retrying: ${e.message}`); this.save(); }
       }, 300);
     }
+  }
+  flushPending() {
+    const only = this.dirtyAll || !this.dirty ? null : this.dirty;
+    this.dirtyAll = false; this.dirty = null;
+    try { this.flush(only); } catch (e) { this.dirtyAll = true; throw e; }
   }
 
   // Apply rows other processes wrote since the last look. Rows changed here and not yet saved win.

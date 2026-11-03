@@ -315,7 +315,7 @@ class Hub extends EventEmitter {
     const onEvent = (e) => {
       this.apply(t, msg, e);
       this.emit('event', { threadId, messageId: msg.id, event: e, message: msg });
-      this.store.save();
+      this.store.save(false, t.id); // only this thread changed: don't re-serialize all history
     };
     try {
       const r = await runTurn({ agent, cwd: t.project, prompt: p.prompt, mode, resumeId: p.resumeId, gateway, model, trusted: proj.trusted !== false, extraDirs: proj.folders || [], onEvent, signal: ac.signal });

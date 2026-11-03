@@ -119,3 +119,22 @@ test('the database keeps API keys out, like hub.json did, and only this user can
   assert.strictEqual(fs.statSync(path.join(dataDir, 'tributary.db')).mode & 0o077, 0);
   hub.store.close();
 });
+
+test('a save for one thread writes that thread without re-serializing the rest of the history', () => {
+  const dataDir = tmp(); const proj = tmp();
+  const hub = open(dataDir);
+  const busy = hub.createThread(proj, 'Busy'); const other = hub.createThread(proj, 'Other');
+  let reads = 0;
+  hub.thread(other.id).messages.push({ id: 'old', role: 'user', text: 'x', target: 'claude', toJSON() { reads++; return { id: 'old', role: 'user', text: 'x', target: 'claude' }; } });
+  hub.store.save(true);
+  const before = reads;
+  hub.thread(busy.id).messages.push(reply('streamed'));
+  hub.store.save(true, busy.id);
+  assert.strictEqual(reads, before, 'other threads are not serialized while one streams');
+  hub.store.save(false, busy.id); hub.store.save(); hub.store.save(true);
+  assert.ok(reads > before, 'a save without a thread checks everything');
+  const fresh = open(dataDir);
+  assert.deepStrictEqual(fresh.thread(busy.id).messages.map((m) => m.text), ['streamed']);
+  assert.strictEqual(fresh.thread(other.id).messages.length, 1, 'skipped threads are kept, not deleted');
+  for (const h of [hub, fresh]) h.store.close();
+});
