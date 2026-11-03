@@ -13,7 +13,7 @@ const memory = require('./memory');
 const memoryState = require('./memory-state');
 const { listSkills, shareSkill } = require('./skills');
 const { listUiSkills, readUiSkill } = require('./ui-skills');
-const { listMcp, addMcp, removeMcp, MCP_AGENTS } = require('./mcp');
+const { listMcp, addMcp, removeMcp, MCP_AGENTS, validServer, turnVar } = require('./mcp');
 const os = require('os');
 const { RECIPES, runTeam, validateTeam } = require('./teams');
 const { race, applyDiff } = require('./race');
@@ -404,6 +404,7 @@ class Hub extends EventEmitter {
     }
 
     await this.learnSecrets(git?.root);
+    const mcpEnv = t.host ? {} : await this.mcpEnv(agentId); // an agent on another host has its own MCP config
     const started = now();
     const onEvent = (e) => {
       if (e.kind === 'permission') { this.secretGuard.redactEvent(e.request); if (this.approvals) e.answer = this.askPermission(t, msg, agent, e.request, ac.signal); return; }
@@ -412,7 +413,7 @@ class Hub extends EventEmitter {
       this.store.save(false, t.id); // only this thread changed: don't re-serialize all history
     };
     try {
-      const r = await runTurn({ agent, cwd: dir, prompt: p.prompt, env: this.workspaceEnv(t), images, mode, resumeId: p.resumeId, gateway, model, trusted: proj.trusted !== false, extraDirs: proj.folders || [], onEvent, signal: ac.signal });
+      const r = await runTurn({ agent, cwd: dir, prompt: p.prompt, env: { ...mcpEnv, ...this.workspaceEnv(t) }, images, mode, resumeId: p.resumeId, gateway, model, trusted: proj.trusted !== false, extraDirs: proj.folders || [], onEvent, signal: ac.signal });
       if (r.sessionId) t.agentSessions = { ...t.agentSessions, [sessKey]: r.sessionId };
       msg.ok = r.ok;
     } catch (e) {
@@ -768,6 +769,7 @@ class Hub extends EventEmitter {
   // Values from the .env files a turn can see, so transcripts show [REDACTED] and merges refuse to commit them.
   get secretGuard() { return this._secretGuard || (this._secretGuard = new SecretGuard()); }
   async learnSecrets(root) {
+    await this.mcpEnv();
     if (!root) return;
     for (const rel of await includedFiles(root).catch(() => [])) if (ENV_NAME.test(path.basename(rel))) this.secretGuard.addEnvFile(path.join(root, rel), rel);
   }
@@ -933,12 +935,57 @@ class Hub extends EventEmitter {
   uiSkill(id) { return readUiSkill(id); }
   shareSkill(name, project) { const r = shareSkill(name, { home: this.home, project }); return r; }
   async mcp(project) { return listMcp({ agents: this.agents, home: this.home, project }); }
+  // MCP secrets: each value is in this.secrets as mcp:<server>:<VAR>, and agents' configs hold placeholders (core/mcp.js).
+  // store.data.mcpSecrets keeps no values, only { [server]: { agents, vars: [{ name, env | header }] } }, so mcpEnv knows
+  // what to give each agent's turn.
   async addMcp(server, agentIds) {
     const targets = this.agents.filter((a) => a.available && MCP_AGENTS.includes(a.id) && (!agentIds || agentIds.includes(a.id)));
     if (!targets.length) throw new Error('No installed agent supports adding MCP servers');
-    return addMcp({ agents: targets, server });
+    const secrets = validServer(server); const index = this.store.data.mcpSecrets || {};
+    for (const [name, other] of Object.entries(index)) {
+      if (name === server.name) continue;
+      for (const a of targets.filter((x) => other.agents.includes(x.id))) {
+        for (const x of secrets) {
+          const clash = other.vars.find((y) => turnVar(a.id, y) === turnVar(a.id, x));
+          if (clash && await this.secrets.get(`mcp:${name}:${clash.name}`) !== x.value) throw new Error(`${server.name} and ${name} would both give ${a.name} the variable ${turnVar(a.id, x)}, with different values.`);
+        }
+      }
+    }
+    const results = await addMcp({ agents: targets, server, home: this.home });
+    const added = results.filter((r) => r.ok).map((r) => r.agent); const prev = index[server.name];
+    if (!added.length || (!secrets.length && !prev)) return results;
+    for (const x of secrets) {
+      await this.secrets.set(`mcp:${server.name}:${x.name}`, x.value);
+      this.secretGuard.add(x.value, `${x.env || x.header} of the ${server.name} MCP server`);
+    }
+    const vars = secrets.map(({ name, env, header }) => (env ? { name, env } : { name, header }));
+    index[server.name] = { agents: [...new Set([...(prev?.agents || []), ...added])], vars: [...(prev?.vars || []).filter((v) => !vars.some((x) => x.name === v.name)), ...vars] };
+    this.store.data.mcpSecrets = index; this.store.save();
+    return results;
   }
-  async removeMcp(agentId, name) { const a = this.agent(agentId); if (!a || !a.available) throw new Error('Agent not installed'); return removeMcp({ agent: a, name }); }
+  async removeMcp(agentId, name) {
+    const a = this.agent(agentId); if (!a || !a.available) throw new Error('Agent not installed');
+    const r = await removeMcp({ agent: a, name });
+    const entry = this.store.data.mcpSecrets?.[name];
+    if (r.ok && entry?.agents.includes(agentId)) {
+      entry.agents = entry.agents.filter((x) => x !== agentId);
+      if (!entry.agents.length) { for (const v of entry.vars) await this.secrets.delete(`mcp:${name}:${v.name}`); delete this.store.data.mcpSecrets[name]; }
+      this.store.save();
+    }
+    return r;
+  }
+  /** The MCP secrets an agent's configs refer to (every agent's, with none), for its turn's environment. The secret guard learns each value. */
+  async mcpEnv(agentId) {
+    const env = {};
+    for (const [name, entry] of Object.entries(this.store.data.mcpSecrets || {})) {
+      if (agentId && !entry.agents.includes(agentId)) continue;
+      for (const v of entry.vars) {
+        const value = await this.secrets.get(`mcp:${name}:${v.name}`).catch(() => null); if (value == null) continue; // another host's store, or gone
+        env[turnVar(agentId, v)] = value; this.secretGuard.add(value, `${v.env || v.header} of the ${name} MCP server`);
+      }
+    }
+    return env;
+  }
   async fileDiff(dir, rel) { return fileDiff(dir, rel); }
 
   // Make every agent read the same instructions: CLAUDE.md and GEMINI.md import AGENTS.md.

@@ -196,6 +196,7 @@ Leave out `TRIBUTARY_SMOKE_CLICKS` to capture the request while it is still wait
 - Merges from a copy and **Commit all** are checked for secrets before anything is committed, and agent output is redacted (see **Secret guard**).
 - Setup and verify scripts from `.tributary/settings.json` never run until you have trusted their exact text.
 - MCP listings mask keys, tokens and header values.
+- An MCP server's environment and header values are stored in Tributary's secret store, never in an agent's config. Each config gets a placeholder in that agent's syntax: `${VAR}` for Claude Code, `$VAR` for Gemini CLI, `env_vars` or `bearer_token_env_var` for Codex. Tributary gives the values only to the turns it starts, and the secret guard redacts them. Antigravity has no documented placeholder, so servers with secrets are not added to it.
 - The window runs with context isolation and sandboxing, and the page can only call an allowlisted set of methods.
 
 ## Research

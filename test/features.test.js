@@ -8,7 +8,7 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const { createCheckpoint, restoreCheckpoint } = require('../core/checkpoint');
 const { listSkills, shareSkill } = require('../core/skills');
-const { addArgs, removeArgs, redact, listMcp, addMcp } = require('../core/mcp');
+const { addArgs, removeArgs, redact, listMcp, addMcp, placeholder, codexLines, codexConfig } = require('../core/mcp');
 const { listFiles, commitAll } = require('../core/git');
 const { Hub } = require('../core/hub');
 const { MemorySecrets } = require('../core/store');
@@ -80,15 +80,107 @@ test('mcp: redact masks keys, tokens and header values', () => {
 test('mcp: builds official CLI arguments per agent', () => {
   const stdio = { name: 'fs', transport: 'stdio', command: 'npx', args: ['-y', '@modelcontextprotocol/server-filesystem', '/work'], env: { ROOT: '/w' } };
   const http = { name: 'docs', transport: 'http', url: 'https://example.com/mcp', headers: { Authorization: 'Bearer T' } };
-  assert.deepStrictEqual(addArgs('claude', stdio), ['mcp', 'add', '-s', 'user', '-t', 'stdio', 'fs', '-e', 'ROOT=/w', '--', 'npx', '-y', '@modelcontextprotocol/server-filesystem', '/work']);
-  assert.deepStrictEqual(addArgs('claude', http), ['mcp', 'add', '-s', 'user', '-t', 'http', 'docs', '-H', 'Authorization: Bearer T', '--', 'https://example.com/mcp']);
-  assert.deepStrictEqual(addArgs('codex', stdio), ['mcp', 'add', 'fs', '--env', 'ROOT=/w', '--', 'npx', '-y', '@modelcontextprotocol/server-filesystem', '/work']);
-  assert.throws(() => addArgs('codex', http), /bearer/);
+  assert.deepStrictEqual(addArgs('claude', stdio), ['mcp', 'add', '-s', 'user', '-t', 'stdio', 'fs', '-e', 'ROOT=${MCP_FS_ROOT}', '--', 'npx', '-y', '@modelcontextprotocol/server-filesystem', '/work']);
+  assert.deepStrictEqual(addArgs('claude', http), ['mcp', 'add', '-s', 'user', '-t', 'http', 'docs', '-H', 'Authorization: Bearer ${MCP_DOCS_AUTHORIZATION}', '--', 'https://example.com/mcp']);
+  assert.deepStrictEqual(addArgs('codex', stdio), ['mcp', 'add', 'fs', '--', 'npx', '-y', '@modelcontextprotocol/server-filesystem', '/work']);
+  assert.deepStrictEqual(addArgs('codex', http), ['mcp', 'add', 'docs', '--url', 'https://example.com/mcp', '--bearer-token-env-var', 'MCP_DOCS_AUTHORIZATION']);
   assert.deepStrictEqual(addArgs('codex', { ...http, headers: {} }), ['mcp', 'add', 'docs', '--url', 'https://example.com/mcp']);
-  assert.deepStrictEqual(addArgs('gemini', stdio), ['mcp', 'add', '-s', 'user', '-t', 'stdio', '--env=ROOT=/w', 'fs', 'npx', '--', '-y', '@modelcontextprotocol/server-filesystem', '/work']);
-  assert.deepStrictEqual(addArgs('antigravity', stdio), ['mcp', 'add', '--env', 'ROOT=/w', 'fs', '--', 'npx', '-y', '@modelcontextprotocol/server-filesystem', '/work']);
-  assert.deepStrictEqual(addArgs('antigravity', http), ['mcp', 'add', '--header', 'Authorization: Bearer T', '--type', 'http', 'docs', 'https://example.com/mcp']);
+  assert.deepStrictEqual(addArgs('gemini', stdio), ['mcp', 'add', '-s', 'user', '-t', 'stdio', '--env=ROOT=$MCP_FS_ROOT', 'fs', 'npx', '--', '-y', '@modelcontextprotocol/server-filesystem', '/work']);
+  assert.deepStrictEqual(addArgs('gemini', http), ['mcp', 'add', '-s', 'user', '-t', 'http', '--header=Authorization: Bearer $MCP_DOCS_AUTHORIZATION', 'docs', 'https://example.com/mcp']);
+  assert.throws(() => addArgs('antigravity', stdio), /Antigravity has no documented way/);
+  assert.deepStrictEqual(addArgs('antigravity', { ...stdio, env: {} }), ['mcp', 'add', 'fs', '--', 'npx', '-y', '@modelcontextprotocol/server-filesystem', '/work']);
+  assert.deepStrictEqual(addArgs('antigravity', { ...http, headers: {} }), ['mcp', 'add', '--type', 'http', 'docs', 'https://example.com/mcp']);
   assert.deepStrictEqual(removeArgs('gemini', 'fs'), ['mcp', 'remove', '-s', 'user', 'fs']);
+});
+
+// Fake values, long enough for the secret guard (8+ characters).
+const MCP_TOKEN = 'ghp_' + 'f'.repeat(36); const MCP_KEY = 'key-value-12345'; const MCP_BEARER = 'tok-value-67890'; const MCP_HEADER = 'hdr-value-24680';
+const mcpServers = () => [
+  { name: 'gh', transport: 'stdio', command: 'gh-mcp', args: ['--stdio'], env: { GITHUB_TOKEN: MCP_TOKEN, API_KEY: MCP_KEY } },
+  { name: 'docs', transport: 'http', url: 'https://example.com/mcp', headers: { Authorization: `Bearer ${MCP_BEARER}`, 'X-Api-Key': MCP_HEADER } },
+];
+
+test('mcp: no env or header value ever reaches an agent\'s command line', () => {
+  const values = [MCP_TOKEN, MCP_KEY, MCP_BEARER, MCP_HEADER];
+  for (const agent of ['claude', 'codex', 'gemini']) {
+    for (const s of mcpServers()) {
+      const argv = addArgs(agent, s);
+      for (const v of values) assert.ok(!argv.some((a) => a.includes(v)), `${agent} ${s.name}: ${JSON.stringify(argv)}`);
+    }
+  }
+  for (const s of mcpServers()) assert.throws(() => addArgs('antigravity', s), (e) => /Antigravity/.test(e.message) && !values.some((v) => e.message.includes(v)));
+});
+
+test('mcp: placeholders use each agent\'s own syntax', () => {
+  assert.strictEqual(placeholder('claude', 'MCP_GH_GITHUB_TOKEN'), '${MCP_GH_GITHUB_TOKEN}');
+  assert.strictEqual(placeholder('gemini', 'MCP_GH_GITHUB_TOKEN'), '$MCP_GH_GITHUB_TOKEN');
+  assert.strictEqual(placeholder('cursor-agent', 'MCP_GH_GITHUB_TOKEN'), '${env:MCP_GH_GITHUB_TOKEN}');
+  assert.throws(() => placeholder('codex', 'X'), /no placeholder/);
+  const [gh, docs] = mcpServers();
+  assert.deepStrictEqual(addArgs('claude', gh).filter((a, i, all) => all[i - 1] === '-e'), ['GITHUB_TOKEN=${MCP_GH_GITHUB_TOKEN}', 'API_KEY=${MCP_GH_API_KEY}']);
+  assert.deepStrictEqual(addArgs('claude', docs).filter((a, i, all) => all[i - 1] === '-H'), ['Authorization: Bearer ${MCP_DOCS_AUTHORIZATION}', 'X-Api-Key: ${MCP_DOCS_X_API_KEY}']);
+  assert.deepStrictEqual(addArgs('gemini', gh).filter((a) => a.startsWith('--env=')), ['--env=GITHUB_TOKEN=$MCP_GH_GITHUB_TOKEN', '--env=API_KEY=$MCP_GH_API_KEY']);
+  assert.deepStrictEqual(addArgs('gemini', docs).filter((a) => a.startsWith('--header=')), ['--header=Authorization: Bearer $MCP_DOCS_AUTHORIZATION', '--header=X-Api-Key: $MCP_DOCS_X_API_KEY']);
+  // Codex: env_vars forward a stdio server's variables by their own name; HTTP headers name their variable
+  assert.deepStrictEqual(codexLines(gh), ['env_vars = ["GITHUB_TOKEN", "API_KEY"]']);
+  assert.deepStrictEqual(codexLines(docs), ['env_http_headers = { "X-Api-Key" = "MCP_DOCS_X_API_KEY" }']);
+  const toml = '[mcp_servers.other]\ncommand = "x"\n\n[mcp_servers.gh]\ncommand = "gh-mcp"\nargs = ["--stdio"]\nenv_vars = ["OLD"]\n\n[mcp_servers.gh.env]\nA = "b"\n';
+  assert.strictEqual(codexConfig(toml, 'gh', codexLines(gh)), '[mcp_servers.other]\ncommand = "x"\n\n[mcp_servers.gh]\nenv_vars = ["GITHUB_TOKEN", "API_KEY"]\ncommand = "gh-mcp"\nargs = ["--stdio"]\n\n[mcp_servers.gh.env]\nA = "b"\n');
+  assert.match(codexConfig('[mcp_servers."a.b"]\nurl = "u"\n', 'a.b', ['env_vars = ["X"]']), /^\[mcp_servers\."a\.b"\]\nenv_vars = \["X"\]\nurl/);
+  assert.strictEqual(codexConfig('[mcp_servers.other]\n', 'gh', ['env_vars = []']), null);
+  assert.throws(() => addArgs('claude', { name: 'x', transport: 'stdio', command: 'c', env: { 'BAD NAME': 'v' } }), /not a valid environment variable name/);
+});
+
+test('mcp: values go to the secret store, each agent\'s turn gets them in its environment, and transcripts show [REDACTED]', async () => {
+  const home = tmp(); const log = path.join(home, 'calls.log'); const codexHome = path.join(home, '.codex'); fs.mkdirSync(codexHome);
+  const savedCodexHome = process.env.CODEX_HOME; process.env.CODEX_HOME = codexHome;
+  try {
+    const cli = (file, extra = '') => { fs.writeFileSync(file, `#!/usr/bin/env node\nconst a=process.argv.slice(2);require('fs').appendFileSync(${JSON.stringify(log)}, JSON.stringify(a)+'\\n');${extra}console.log('Added');`); fs.chmodSync(file, 0o755); return file; };
+    const fakeCli = cli(path.join(home, 'fake-cli.js'));
+    const fakeCodex = cli(path.join(home, 'fake-codex.js'), `if(a[1]==='add')require('fs').appendFileSync(${JSON.stringify(path.join(codexHome, 'config.toml'))}, '[mcp_servers.'+a[2]+']\\ncommand = "x"\\n\\n');`);
+    const d = repo();
+    const hub = await new Hub({ dataDir: tmp(), secrets: new MemorySecrets(), home }).init();
+    hub.agents = ['claude', 'codex', 'gemini'].map((id) => ({ id, name: id, available: true, path: id === 'codex' ? fakeCodex : fakeCli }));
+    for (const s of mcpServers()) assert.ok((await hub.addMcp(s)).every((r) => r.ok));
+
+    const argv = fs.readFileSync(log, 'utf8');
+    for (const v of [MCP_TOKEN, MCP_KEY, MCP_BEARER, MCP_HEADER]) assert.ok(!argv.includes(v), 'no value on a command line');
+    assert.match(fs.readFileSync(path.join(codexHome, 'config.toml'), 'utf8'), /\[mcp_servers\.gh\]\nenv_vars = \["GITHUB_TOKEN", "API_KEY"\]\n/);
+    assert.strictEqual(await hub.secrets.get('mcp:gh:MCP_GH_GITHUB_TOKEN'), MCP_TOKEN);
+    assert.strictEqual(await hub.secrets.get('mcp:docs:MCP_DOCS_AUTHORIZATION'), MCP_BEARER, 'a bearer header keeps only the token');
+    const index = JSON.stringify(hub.store.data.mcpSecrets);
+    for (const v of [MCP_TOKEN, MCP_KEY, MCP_BEARER, MCP_HEADER]) assert.ok(!index.includes(v), 'the hub data holds names only');
+
+    // A turn: the agent prints the variables it was given; the reply is redacted, the file shows what it saw.
+    const seen = path.join(home, 'seen.json');
+    const turnAgent = (id) => ({ id, name: id, protocol: 'codex-exec', available: true, headless: true, path: process.execPath, stdinPrompt: true,
+      args: () => ['-e', `const e = process.env; const v = { scoped: e.MCP_GH_GITHUB_TOKEN || null, own: e.GITHUB_TOKEN === ${JSON.stringify(MCP_TOKEN)} ? e.GITHUB_TOKEN : null, bearer: e.MCP_DOCS_AUTHORIZATION || null, header: e.MCP_DOCS_X_API_KEY || null };
+        require('fs').writeFileSync(${JSON.stringify(seen)}, JSON.stringify(v));
+        console.log(JSON.stringify({type:'item.completed',item:{id:'i',type:'agent_message',text:'token ' + (v.scoped || v.own) + ' and bearer ' + v.bearer}})); console.log(JSON.stringify({type:'turn.completed'}));`] });
+    hub.agents = [turnAgent('claude'), turnAgent('codex')];
+    const t = hub.createThread(d);
+    const claudeReply = await hub.send({ threadId: t.id, agentId: 'claude', text: 'show the token', mode: 'read' });
+    assert.deepStrictEqual(JSON.parse(fs.readFileSync(seen, 'utf8')), { scoped: MCP_TOKEN, own: null, bearer: MCP_BEARER, header: MCP_HEADER }, 'Claude reads the server-named variables');
+    assert.strictEqual(claudeReply.text, 'token [REDACTED] and bearer [REDACTED]');
+    const codexReply = await hub.send({ threadId: t.id, agentId: 'codex', text: 'show the token', mode: 'read' });
+    assert.deepStrictEqual(JSON.parse(fs.readFileSync(seen, 'utf8')), { scoped: null, own: MCP_TOKEN, bearer: MCP_BEARER, header: MCP_HEADER }, 'Codex env_vars read the variable by its own name');
+    assert.strictEqual(codexReply.text, 'token [REDACTED] and bearer [REDACTED]');
+    const stored = JSON.stringify(hub.thread(t.id).messages);
+    for (const v of [MCP_TOKEN, MCP_BEARER]) assert.ok(!stored.includes(v), 'nothing stored holds a value');
+
+    // Another server can't give Codex the same variable with a different value; Claude's are named per server.
+    hub.agents = ['claude', 'codex'].map((id) => ({ id, name: id, available: true, path: id === 'codex' ? fakeCodex : fakeCli }));
+    await assert.rejects(hub.addMcp({ name: 'gh2', transport: 'stdio', command: 'x', env: { GITHUB_TOKEN: 'another-token-value' } }, ['codex']), /gh2 and gh would both give codex the variable GITHUB_TOKEN/);
+    assert.ok((await hub.addMcp({ name: 'gh2', transport: 'stdio', command: 'x', env: { GITHUB_TOKEN: 'another-token-value' } }, ['claude'])).every((r) => r.ok));
+
+    // Removed from every agent, a server's values leave the secret store and later turns.
+    for (const id of ['claude', 'codex', 'gemini']) { hub.agents = [{ id, name: id, available: true, path: fakeCli }]; await hub.removeMcp(id, 'gh'); }
+    assert.strictEqual(await hub.secrets.get('mcp:gh:MCP_GH_GITHUB_TOKEN'), undefined);
+    assert.strictEqual(hub.store.data.mcpSecrets.gh, undefined);
+    assert.deepStrictEqual(Object.keys(await hub.mcpEnv('claude')).sort(), ['MCP_DOCS_AUTHORIZATION', 'MCP_DOCS_X_API_KEY', 'MCP_GH2_GITHUB_TOKEN']);
+  } finally {
+    if (savedCodexHome === undefined) delete process.env.CODEX_HOME; else process.env.CODEX_HOME = savedCodexHome;
+  }
 });
 
 test('mcp: lists servers from each agent config with secrets masked, and adds via each CLI', async () => {
