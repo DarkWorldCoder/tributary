@@ -65,7 +65,11 @@ export interface AgentMessage {
 }
 export type Message = UserMessage | AgentMessage;
 /** A conversation's separate working copy: its own git worktree (path) and branch, made from the project's last commit on `from`. */
-export interface Worktree { path: string; cwd: string; branch: string; base: string; from: string; createdAt: number; mergedAt?: number }
+export interface Worktree { path: string; cwd: string; branch: string; base: string; from: string; createdAt: number; mergedAt?: number; pr?: PullRequest }
+/** A separate copy's GitHub pull request, made and read through the gh CLI. */
+export interface PullRequest { number: number; url: string; title: string; base: string | null; state: 'OPEN' | 'CLOSED' | 'MERGED'; createdAt: number; mergedAt?: number }
+export interface PullRequestCheck { name: string; workflow: string; state: string; bucket: 'pass' | 'fail' | 'pending' | 'skipping' | 'cancel'; link: string; description: string; runId?: string }
+export interface PullRequestStatus extends PullRequest { isDraft: boolean; checks: PullRequestCheck[]; unpushed: number }
 export interface WorktreeStatus { branch: string; path: string; cwd: string; into: string; ahead: number; behind: number; uncommitted: number; files: { path: string; code: string }[]; missing?: boolean; copied?: string[]; port?: number; setup?: CopySetup; conflicts?: string[]; merging?: boolean; unresolved?: string[] }
 /** The project's setup script in a separate copy (.tributary/settings.json scripts.setup). */
 export interface CopySetup { state: 'untrusted' | 'pending' | 'running' | 'done' | 'failed' | 'stopped'; command: string; hash: string; output?: string; ms?: number }

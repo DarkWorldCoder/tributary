@@ -67,6 +67,8 @@ const API = {
   conversationDiff: (id, messageId, rel) => hub.conversationDiff(id, messageId, rel), reviewChanges: (id, agentId) => hub.reviewChanges(id, agentId),
   resolveCopyConflicts: (id, agentId) => hub.resolveCopyConflicts(id, agentId), abortCopyMerge: (id) => hub.abortCopyMerge(id), runVerify: (id, messageId) => hub.runVerify(id, messageId), attention: () => hub.attention(),
   runSetup: (id) => hub.runSetup(id), trustScript: (p, hash) => hub.trustScript(knownProject(p), hash),
+  createPullRequest: (id, agentId, opts) => hub.createPullRequest(id, agentId, { allowSecrets: !!opts?.allowSecrets }), pushPullRequest: (id, opts) => hub.pushPullRequest(id, { allowSecrets: !!opts?.allowSecrets }),
+  pullRequestStatus: (id) => hub.pullRequestStatus(id), fixFailingChecks: (id, agentId) => hub.fixFailingChecks(id, agentId),
   removeProject: () => false,
   async pickProject() { const r = await vscode.window.showOpenDialog({ canSelectFolders: true, canSelectFiles: false, openLabel: 'Open folder in Tributary' }); if (!r?.[0]) return null; hub.addProject(r[0].fsPath); return r[0].fsPath; },
   send: (o) => hub.send(o).then((m) => ({ id: m.id, ok: m.ok })),

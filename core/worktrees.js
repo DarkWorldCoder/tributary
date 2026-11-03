@@ -165,4 +165,4 @@ async function removeWorktree(root, { path: dir, branch, copied }, { keepBranch 
   if (!keepBranch) await gitRaw(host, root, ['branch', '-D', branch]);
 }
 
-module.exports = { createWorktree, worktreeStatus, mergeWorktree, removeWorktree, mergeIntoCopy, finishCopyMerge, abortCopyMerge };
+module.exports = { createWorktree, worktreeStatus, mergeWorktree, removeWorktree, mergeIntoCopy, finishCopyMerge, abortCopyMerge, commitWork };
