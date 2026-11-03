@@ -1,8 +1,9 @@
 'use strict';
 // Agent blame: which agent's turn last changed each line of a file. Tributary takes a git checkpoint before every
 // turn; replaying the diffs between them, oldest first, gives every line added in a turn's window to that turn.
-// Lines from before any turn have no author. Like the Changes tab, a turn's window runs from its checkpoint to the
-// next turn's, so an edit made between two turns is credited to the earlier one.
+// Lines from before any turn have no author. Like the Changes tab, a turn's window runs from its checkpoint to the one
+// taken when it ended (m.after), so an edit made after it, by hand or otherwise, is nobody's. A turn recorded before
+// end checkpoints existed, or one still running, runs to the next turn's checkpoint or to now.
 const fs = require('fs');
 const path = require('path');
 const { createCheckpoint, diffBetween } = require('./checkpoint');
@@ -62,7 +63,8 @@ const lineCount = (text) => (text ? text.split('\n').length - (text.endsWith('\n
 
 // Every checkpointed turn that changed the file, oldest first, and the diffs that take it from before the first of
 // them to now: one segment per turn's window, and one with no author (-1) for each stretch between or after them.
-// Undoing a change ends the window it falls in (m.undone), so lines put back are nobody's, not the latest turn's.
+// A window ends at the next boundary: the turn's own end checkpoint, or anything that came first, such as an undo
+// (m.undone) made while it ran, so lines put back are nobody's.
 async function history(hub, project, rel) {
   const abs = path.resolve(project, rel);
   const g = await gitInfo(project);
@@ -76,7 +78,10 @@ async function history(hub, project, rel) {
       // Keep each checkpoint and undo in the working copy where the turn ran.
       const where = m.workdir || t.project;
       if (!(where === g.root || where.startsWith(`${g.root}${path.sep}`) || where === project)) return;
-      if (m.role === 'assistant' && m.checkpoint) all.push({ t, m, prompt: t.messages[i - 1], ts: m.ts || 0, checkpoint: m.checkpoint });
+      if (m.role === 'assistant' && m.checkpoint) {
+        all.push({ t, m, prompt: t.messages[i - 1], ts: m.ts || 0, checkpoint: m.checkpoint });
+        if (m.after) all.push({ ts: m.afterTs || m.ts || 0, checkpoint: m.after }); // where it ended
+      }
       for (const u of m.undone || []) if (u.rel === relRoot) all.push({ ts: u.ts, checkpoint: u.checkpoint });
     });
   }
@@ -85,13 +90,13 @@ async function history(hub, project, rel) {
   let last = null; // where the previous segment ended (a checkpoint, or null for the files now)
   all.forEach(({ t, m, prompt }, i) => {
     if (!m || !(m.files || []).some((f) => f.path === abs)) return;
-    const after = all[i + 1]?.checkpoint ?? null;
+    const end = all[i + 1]?.checkpoint ?? null;
     if (segments.length && last !== m.checkpoint) segments.push({ from: last, to: m.checkpoint, who: -1 });
     turns.push({ agent: m.agent, threadId: t.id, title: t.title, messageId: m.id, ts: m.ts, request: String(prompt?.role === 'user' ? prompt.text : '').slice(0, 200) });
-    segments.push({ from: m.checkpoint, to: after, who: turns.length - 1 });
-    last = after;
+    segments.push({ from: m.checkpoint, to: end, who: turns.length - 1 });
+    last = end;
   });
-  if (last) segments.push({ from: last, to: null, who: -1 }); // changes since the last turn that touched it
+  if (last) segments.push({ from: last, to: null, who: -1 }); // changes since the last turn that touched it ended
   let now = ''; let mtime = 0;
   try { now = fs.readFileSync(abs, 'utf8'); mtime = fs.statSync(abs).mtimeMs; } catch { return null; }
   for (const s of segments) s.diff = s.from ? await diffBetween(g.root, s.from, s.to, relRoot).catch(() => '') : '';
