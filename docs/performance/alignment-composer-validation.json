@@ -1,0 +1,508 @@
+{
+  "checks": [
+    "1920px: file icon, name and close share a centerline",
+    "1920px: breadcrumbs start at the file content edge",
+    "1920px: workspace rows use a consistent height",
+    "1920px: page stays inside viewport",
+    "1920px: breadcrumbs have a compact navigation row",
+    "1920px: file actions are below the editor",
+    "1280px: file icon, name and close share a centerline",
+    "1280px: breadcrumbs start at the file content edge",
+    "1280px: workspace rows use a consistent height",
+    "1280px: page stays inside viewport",
+    "1280px: breadcrumbs have a compact navigation row",
+    "1280px: file actions are below the editor",
+    "900px: file icon, name and close share a centerline",
+    "900px: breadcrumbs start at the file content edge",
+    "900px: workspace rows use a consistent height",
+    "900px: page stays inside viewport",
+    "900px: breadcrumbs have a compact navigation row",
+    "900px: file actions are below the editor",
+    "768px: file icon, name and close share a centerline",
+    "768px: breadcrumbs start at the file content edge",
+    "768px: workspace rows use a consistent height",
+    "768px: page stays inside viewport",
+    "768px: breadcrumbs have a compact navigation row",
+    "768px: file actions are below the editor",
+    "390px: file icon, name and close share a centerline",
+    "390px: breadcrumbs start at the file content edge",
+    "390px: workspace rows use a consistent height",
+    "390px: page stays inside viewport",
+    "390px: breadcrumbs have a compact navigation row",
+    "390px: file actions are below the editor",
+    "320px: file icon, name and close share a centerline",
+    "320px: breadcrumbs start at the file content edge",
+    "320px: workspace rows use a consistent height",
+    "320px: page stays inside viewport",
+    "320px: breadcrumbs have a compact navigation row",
+    "320px: file actions are below the editor",
+    "320px: tools menu fits on screen",
+    "320px: menu actions have 44px touch targets",
+    "320px: Escape returns focus to the tools button",
+    "390px: tools menu fits on screen",
+    "390px: menu actions have 44px touch targets",
+    "390px: Escape returns focus to the tools button",
+    "768px: tools menu fits on screen",
+    "768px: Escape returns focus to the tools button",
+    "1280px: tools menu fits on screen",
+    "1280px: Escape returns focus to the tools button",
+    "File selection preserves the draft and inserts its project reference",
+    "Inserting context returns focus to the message",
+    "Included skill adds full guidance while retaining the message draft",
+    "Files and skills do not send a model request",
+    "Searchable Plan first action changes the composer mode",
+    "Team action opens the real team setup",
+    "MCP action opens existing server settings",
+    "Agent menu switches to an installed coding agent",
+    "Terminal header shares the toolbar rhythm",
+    "Memory header uses the shared toolbar layout",
+    "Preview controls use the shared toolbar layout"
+  ],
+  "geometry": [
+    {
+      "actions": {
+        "center": 94,
+        "height": 28,
+        "width": 1088.15625,
+        "x": 269.03125,
+        "y": 80
+      },
+      "chat": {
+        "center": 20,
+        "height": 40,
+        "width": 561.8125,
+        "x": 1358.1875,
+        "y": 0
+      },
+      "close": {
+        "center": 59.5,
+        "height": 32,
+        "width": 32,
+        "x": 510.03125,
+        "y": 43.5
+      },
+      "crumb": {
+        "center": 93.5,
+        "height": 16,
+        "width": 1064.15625,
+        "x": 281.03125,
+        "y": 85.5
+      },
+      "explorer": {
+        "center": 60,
+        "height": 40,
+        "width": 224.03125,
+        "x": 44,
+        "y": 40
+      },
+      "fileRow": {
+        "center": 60,
+        "height": 40,
+        "width": 1088.15625,
+        "x": 269.03125,
+        "y": 40
+      },
+      "icon": {
+        "center": 59.5,
+        "height": 16,
+        "width": 16,
+        "x": 391.75,
+        "y": 51.5
+      },
+      "label": {
+        "center": 59.5,
+        "height": 20,
+        "width": 87.625,
+        "x": 413.75,
+        "y": 49.5
+      },
+      "page": 1920,
+      "tab": {
+        "center": 59.5,
+        "height": 39,
+        "width": 161.625,
+        "x": 379.75,
+        "y": 40
+      },
+      "tools": {
+        "center": 19.5,
+        "height": 39,
+        "width": 393.546875,
+        "x": 44,
+        "y": 0
+      },
+      "width": 1920
+    },
+    {
+      "actions": {
+        "center": 94,
+        "height": 28,
+        "width": 640.15625,
+        "x": 269.046875,
+        "y": 80
+      },
+      "chat": {
+        "center": 20,
+        "height": 40,
+        "width": 369.796875,
+        "x": 910.203125,
+        "y": 0
+      },
+      "close": {
+        "center": 59.5,
+        "height": 32,
+        "width": 32,
+        "x": 510.046875,
+        "y": 43.5
+      },
+      "crumb": {
+        "center": 93.5,
+        "height": 16,
+        "width": 616.15625,
+        "x": 281.046875,
+        "y": 85.5
+      },
+      "explorer": {
+        "center": 60,
+        "height": 40,
+        "width": 224.046875,
+        "x": 44,
+        "y": 40
+      },
+      "fileRow": {
+        "center": 60,
+        "height": 40,
+        "width": 640.15625,
+        "x": 269.046875,
+        "y": 40
+      },
+      "icon": {
+        "center": 59.5,
+        "height": 16,
+        "width": 16,
+        "x": 391.765625,
+        "y": 51.5
+      },
+      "label": {
+        "center": 59.5,
+        "height": 20,
+        "width": 87.625,
+        "x": 413.765625,
+        "y": 49.5
+      },
+      "page": 1280,
+      "tab": {
+        "center": 59.5,
+        "height": 39,
+        "width": 161.625,
+        "x": 379.765625,
+        "y": 40
+      },
+      "tools": {
+        "center": 19.5,
+        "height": 39,
+        "width": 393.546875,
+        "x": 44,
+        "y": 0
+      },
+      "width": 1280
+    },
+    {
+      "actions": {
+        "center": 94,
+        "height": 28,
+        "width": 270,
+        "x": 269,
+        "y": 80
+      },
+      "chat": {
+        "center": 20,
+        "height": 40,
+        "width": 360,
+        "x": 540,
+        "y": 0
+      },
+      "close": {
+        "center": 59.5,
+        "height": 32,
+        "width": 32,
+        "x": 468,
+        "y": 43.5
+      },
+      "crumb": {
+        "center": 93.5,
+        "height": 16,
+        "width": 246,
+        "x": 281,
+        "y": 85.5
+      },
+      "explorer": {
+        "center": 60,
+        "height": 40,
+        "width": 224,
+        "x": 44,
+        "y": 40
+      },
+      "fileRow": {
+        "center": 60,
+        "height": 40,
+        "width": 270,
+        "x": 269,
+        "y": 40
+      },
+      "icon": {
+        "center": 59.5,
+        "height": 16,
+        "width": 16,
+        "x": 349.71875,
+        "y": 51.5
+      },
+      "label": {
+        "center": 59.5,
+        "height": 20,
+        "width": 87.625,
+        "x": 371.71875,
+        "y": 49.5
+      },
+      "page": 900,
+      "tab": {
+        "center": 59.5,
+        "height": 39,
+        "width": 161.625,
+        "x": 337.71875,
+        "y": 40
+      },
+      "tools": {
+        "center": 19.5,
+        "height": 39,
+        "width": 393.546875,
+        "x": 44,
+        "y": 0
+      },
+      "width": 900
+    },
+    {
+      "actions": {
+        "center": 94,
+        "height": 28,
+        "width": 144,
+        "x": 263,
+        "y": 80
+      },
+      "chat": {
+        "center": 20,
+        "height": 40,
+        "width": 360,
+        "x": 408,
+        "y": 0
+      },
+      "close": {
+        "center": 59.5,
+        "height": 32,
+        "width": 32,
+        "x": 388.390625,
+        "y": 43.5
+      },
+      "crumb": {
+        "center": 93.5,
+        "height": 16,
+        "width": 120,
+        "x": 275,
+        "y": 85.5
+      },
+      "explorer": {
+        "center": 60,
+        "height": 40,
+        "width": 218,
+        "x": 44,
+        "y": 40
+      },
+      "fileRow": {
+        "center": 60,
+        "height": 40,
+        "width": 144,
+        "x": 263,
+        "y": 40
+      },
+      "icon": {
+        "center": 59.5,
+        "height": 16,
+        "width": 16,
+        "x": 268.890625,
+        "y": 51.5
+      },
+      "label": {
+        "center": 59.5,
+        "height": 20,
+        "width": 30.890625,
+        "x": 290.890625,
+        "y": 49.5
+      },
+      "page": 768,
+      "tab": {
+        "center": 59.5,
+        "height": 39,
+        "width": 104.890625,
+        "x": 256.890625,
+        "y": 40
+      },
+      "tools": {
+        "center": 19.5,
+        "height": 39,
+        "width": 255.796875,
+        "x": 44,
+        "y": 0
+      },
+      "width": 768
+    },
+    {
+      "actions": {
+        "center": 102,
+        "height": 28,
+        "width": 390,
+        "x": 0,
+        "y": 88
+      },
+      "chat": {
+        "center": 0,
+        "height": 0,
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      "close": {
+        "center": 65.5,
+        "height": 44,
+        "width": 44,
+        "x": 222.078125,
+        "y": 43.5
+      },
+      "crumb": {
+        "center": 101.5,
+        "height": 16,
+        "width": 366,
+        "x": 12,
+        "y": 93.5
+      },
+      "explorer": {
+        "center": 0,
+        "height": 0,
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      "fileRow": {
+        "center": 66,
+        "height": 44,
+        "width": 390,
+        "x": 0,
+        "y": 44
+      },
+      "icon": {
+        "center": 65.5,
+        "height": 16,
+        "width": 16,
+        "x": 174.71875,
+        "y": 57.5
+      },
+      "label": {
+        "center": 65.5,
+        "height": 20,
+        "width": 87.625,
+        "x": 196.71875,
+        "y": 55.5
+      },
+      "page": 390,
+      "tab": {
+        "center": 65.5,
+        "height": 43,
+        "width": 169.625,
+        "x": 162.71875,
+        "y": 44
+      },
+      "tools": {
+        "center": 21.5,
+        "height": 43,
+        "width": 272,
+        "x": 0,
+        "y": 0
+      },
+      "width": 390
+    },
+    {
+      "actions": {
+        "center": 102,
+        "height": 28,
+        "width": 320,
+        "x": 0,
+        "y": 88
+      },
+      "chat": {
+        "center": 0,
+        "height": 0,
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      "close": {
+        "center": 65.5,
+        "height": 44,
+        "width": 44,
+        "x": 289,
+        "y": 43.5
+      },
+      "crumb": {
+        "center": 101.5,
+        "height": 16,
+        "width": 296,
+        "x": 12,
+        "y": 93.5
+      },
+      "explorer": {
+        "center": 0,
+        "height": 0,
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      "fileRow": {
+        "center": 66,
+        "height": 44,
+        "width": 320,
+        "x": 0,
+        "y": 44
+      },
+      "icon": {
+        "center": 65.5,
+        "height": 16,
+        "width": 16,
+        "x": 174.71875,
+        "y": 57.5
+      },
+      "label": {
+        "center": 65.5,
+        "height": 20,
+        "width": 87.625,
+        "x": 196.71875,
+        "y": 55.5
+      },
+      "page": 320,
+      "tab": {
+        "center": 65.5,
+        "height": 43,
+        "width": 169.625,
+        "x": 162.71875,
+        "y": 44
+      },
+      "tools": {
+        "center": 21.5,
+        "height": 43,
+        "width": 270.3125,
+        "x": 0,
+        "y": 0
+      },
+      "width": 320
+    }
+  ],
+  "fixture": "Isolated local preview; no model prompt sent."
+}

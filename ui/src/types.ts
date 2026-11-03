@@ -1,5 +1,8 @@
 export type Mode = 'read' | 'edit' | 'full';
+export interface UiSkill { id: string; title: string; description: string; instructions?: string }
 export type Protocol = 'anthropic' | 'openai' | 'gemini' | 'ollama' | 'lmstudio';
+
+export interface ModelCatalog { supportsSelection: boolean; source: string; note: string; updatedAt: number; error?: string; models: { id: string; name: string; hidden?: boolean }[] }
 
 export interface Agent {
   id: string; name: string; vendor?: string; color: string; glyph?: string; docs?: string; login?: string;
@@ -35,7 +38,7 @@ export interface RaceCandidate {
 export interface RaceInfo { task: string; testCommand: string; agents: string[]; candidates: RaceCandidate[]; applied: string | null; base?: string; judge?: { agent: string; winner: string | null; messageId: string } }
 export interface AppNotification { id: string; ts: number; read: boolean; kind: 'done' | 'failed' | 'attention' | 'info'; threadId?: string; title: string; body?: string }
 export interface FileContent { rel: string; size: number; binary: boolean; truncated: boolean; content: string; mtime: number; base64?: string }
-export interface MemoryInfo { enabled: boolean; memory: string | null; worklog: string[] }
+export interface MemoryInfo { enabled: boolean; memory: string | null; worklog: string[]; revision?: string; bytes?: number; context?: { includeInPrompts: boolean; budget: number } }
 export interface ThreadChange { rel: string; turns: { messageId: string; agent: string; ts?: number; change?: string; team?: string }[] }
 export type ThreadStatus = 'working' | 'review' | 'failed' | 'done';
 export interface ThreadSummary { id: string; title: string; updatedAt: number; lastAgent: string | null; count?: number; running?: boolean; agents: string[]; status?: ThreadStatus | null }
@@ -43,7 +46,8 @@ export interface Tool { id?: string; name: string; input?: Record<string, unknow
 export interface FileChange { path: string; rel: string; external?: boolean; change?: string; viaGit?: boolean }
 export interface UserMessage { id: string; role: 'user'; text: string; target: string; ts?: number; kind?: 'chat' | 'plan' | 'implement' | 'race'; team?: { recipe: string; role: string } }
 export interface AgentMessage {
-  id: string; role: 'assistant'; agent: string; text: string; thinking?: string; tools: Tool[]; files: FileChange[];
+  memoryContext?: { characters: number; budget: number; sources: { source: string; line: number }[] };
+  id: string; role: 'assistant'; model?: string | null; gatewayId?: string | null; agent: string; text: string; thinking?: string; tools: Tool[]; files: FileChange[];
   plan?: { text: string; done: boolean }[] | null; notices: string[]; error?: string | null; ok: boolean | null;
   mode: Mode; gateway?: string | null; handoff?: 'new' | 'resume' | 'join' | 'catch-up'; resumed?: boolean;
   durationMs?: number; costUsd?: number; usage?: Record<string, number>; ts?: number;
@@ -52,9 +56,10 @@ export interface AgentMessage {
 }
 export type Message = UserMessage | AgentMessage;
 export interface Thread { id: string; project: string; title: string; messages: Message[]; agentSessions: Record<string, string>; lastAgent?: string | null; updatedAt?: number; task?: { templateId: string; material?: string }; documents?: SavedDocument[] }
-export interface GitInfo { root: string; branch: string; changed: { code: string; path: string }[]; stat?: string }
+export interface GitInfo { root: string; branch: string; changed: { code: string; path: string; from?: string }[]; stat?: string }
 
 export interface HubEvents {
+  'files-changed': { watchId: string; project: string; paths: string[]; error?: string };
   collaboration: import('../../core/collaboration/client.mjs').RoomState;
   state: undefined; threads: string; message: { threadId: string; message: Message }; 'message-patch': { threadId: string; id: string; patch: import('./lib/message-patch.mjs').MessagePatch };
   running: { threadId: string; running: boolean }; insert: string; 'focus-project': string;

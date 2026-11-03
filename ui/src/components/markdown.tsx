@@ -5,6 +5,13 @@ import { CodeBlock, CodeBlockActions, CodeBlockContent, CodeBlockCopyButton, Cod
 import { useHighlightedCode } from '@/hooks/use-highlighted-code';
 import { splitBlocks } from '@/lib/markdown-blocks.mjs';
 import { hub } from '@/store';
+import { MarkdownImage } from '@/components/markdown-image';
+
+const PreviewFile = React.createContext<string | undefined>(undefined);
+function ImageElement({ src, alt }: { src?: string | Blob; alt?: string }) {
+  const baseFile = React.useContext(PreviewFile);
+  return <MarkdownImage source={typeof src === 'string' ? src : ''} alt={alt} baseFile={baseFile} />;
+}
 
 export function HighlightedCode({ code, language, title, wrap, lineNumbers, size = 'sm' }: { code: string; language: string; title?: React.ReactNode; wrap?: boolean; lineNumbers?: boolean; size?: 'sm' | 'default' }) {
   const lines = useHighlightedCode(code, language);
@@ -26,6 +33,7 @@ export function HighlightedCode({ code, language, title, wrap, lineNumbers, size
 }
 
 const components: Components = {
+  img: ImageElement,
   pre: ({ children }) => <>{children}</>,
   code({ className, children }) {
     const text = String(children ?? '');
@@ -45,7 +53,7 @@ const Block = React.memo(function Block({ text }: { text: string }) {
 
 /** Agent replies as GitHub-flavored markdown. Raw HTML is never rendered. A long reply is parsed block by block,
  * so while it streams only the block being written is parsed again (a 9 KB reply: 28 ms per update down to about 1 ms). */
-export const Markdown = React.memo(function Markdown({ text }: { text: string }) {
+export const Markdown = React.memo(function Markdown({ text, baseFile }: { text: string; baseFile?: string }) {
   const blocks = React.useMemo(() => splitBlocks(text), [text]);
-  return <div className="prose-reply">{blocks.map((b, i) => <Block key={i} text={b} />)}</div>;
+  return <PreviewFile.Provider value={baseFile}><div className="prose-reply">{blocks.map((b, i) => <Block key={i} text={b} />)}</div></PreviewFile.Provider>;
 });

@@ -5,8 +5,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { XtermView, wire } from '@/components/terminal-view';
 import { cn } from '@/lib/utils';
 import { hub, useStore } from '@/store';
+import { takePendingTerminalCommand } from '@/hooks/use-run-in-terminal';
 
-let pendingCommand: string | null = null;
 
 type Term = { id: string; title: string; project: string | null; done?: boolean; named?: boolean; shellTitle?: string };
 
@@ -24,10 +24,10 @@ export function TerminalPanel({ hidden = false }: { hidden?: boolean } = {}) {
     setTerms((t) => [...t, { id, project: s.project, title: command ? command.split(' ')[0] : `Terminal ${t.filter((x) => x.project === s.project).length + 1}` }]); setActive(id);
   }, [s.hub, s.project]);
   // The first terminal opens with the panel, running a pending setup command if there is one.
-  React.useEffect(() => { if (desktop && !terms.length) { const c = pendingCommand; pendingCommand = null; create(c ?? undefined); } // eslint-disable-next-line react-hooks/exhaustive-deps
+  React.useEffect(() => { if (desktop && !terms.length) { create(takePendingTerminalCommand() ?? undefined); } // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [desktop]);
   React.useEffect(() => {
-    const h = (e: Event) => { pendingCommand = null; create((e as CustomEvent<string>).detail); };
+    const h = (e: Event) => { takePendingTerminalCommand(); create((e as CustomEvent<string>).detail); };
     window.addEventListener('tributary:run-in-terminal', h); return () => window.removeEventListener('tributary:run-in-terminal', h);
   }, [create]);
   const kill = (id: string) => { s.hub.call('termKill', id).catch(() => {}); setTerms((t) => { const rest = t.filter((x) => x.id !== id); const mine = rest.filter((x) => x.project === s.project); if (active === id) setActive(mine[mine.length - 1]?.id ?? null); return rest; }); };
@@ -55,7 +55,7 @@ export function TerminalPanel({ hidden = false }: { hidden?: boolean } = {}) {
       <div role="separator" aria-orientation="horizontal" aria-label="Resize terminal" tabIndex={0} aria-valuenow={height} aria-valuemin={120} aria-valuemax={maxHeight()}
         onKeyDown={(e) => { if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); setHeight((h) => Math.min(Math.max(120, h + (e.key === 'ArrowUp' ? 24 : -24)), maxHeight())); } }}
         onPointerDown={drag} className="absolute inset-x-0 -top-1 z-10 h-2 cursor-row-resize outline-none hover:bg-brand/30 focus-visible:bg-brand/40" />
-      <header className="flex h-9 shrink-0 items-center gap-1 border-b px-2">
+      <header className="workbench-toolbar gap-1 border-b px-2">
         <SquareTerminal className="size-4 text-muted-foreground" />
         <div role="tablist" aria-label="Terminals" className="flex min-w-0 flex-1 gap-0.5 overflow-x-auto">
           {visible.map((t) => (
@@ -69,8 +69,8 @@ export function TerminalPanel({ hidden = false }: { hidden?: boolean } = {}) {
             </div>
           ))}
         </div>
-        {desktop && <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-xs" onClick={() => create()} aria-label="New terminal"><Plus /></Button></TooltipTrigger><TooltipContent>New terminal</TooltipContent></Tooltip>}
-        <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-xs" onClick={() => s.setTerminalOpen(false)} aria-label="Hide terminal"><X /></Button></TooltipTrigger><TooltipContent>Hide (Ctrl+`)</TooltipContent></Tooltip>
+        {desktop && <Tooltip><TooltipTrigger asChild><Button className="workbench-action" variant="ghost" size="icon-sm" onClick={() => create()} aria-label="New terminal"><Plus /></Button></TooltipTrigger><TooltipContent>New terminal</TooltipContent></Tooltip>}
+        <Tooltip><TooltipTrigger asChild><Button className="workbench-action" variant="ghost" size="icon-sm" onClick={() => s.setTerminalOpen(false)} aria-label="Hide terminal"><X /></Button></TooltipTrigger><TooltipContent>Hide (Ctrl+`)</TooltipContent></Tooltip>
       </header>
       <div className="min-h-0 flex-1">
         {desktop ? terms.map((t) => (
@@ -85,14 +85,4 @@ export function TerminalPanel({ hidden = false }: { hidden?: boolean } = {}) {
       </div>
     </section>
   );
-}
-
-/** Run a command in a new terminal tab (for sign-in and setup steps), opening the panel if needed. */
-export function useRunInTerminal() {
-  const s = useStore();
-  return React.useCallback((command: string) => {
-    if (s.hub.platform === 'vscode') { s.hub.call('createTerminal', { cwd: s.project, command }); return; }
-    if (!s.terminalOpen) { pendingCommand = command; s.setTerminalOpen(true); return; }
-    window.dispatchEvent(new CustomEvent('tributary:run-in-terminal', { detail: command }));
-  }, [s]);
 }

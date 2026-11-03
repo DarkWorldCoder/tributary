@@ -1,6 +1,7 @@
 'use strict';
 // A single-process, self-hosted coordination service. It never executes agent commands.
 const http = require('node:http');
+const https = require('node:https');
 const fs = require('node:fs');
 const path = require('node:path');
 const { randomUUID, randomBytes, createHash } = require('node:crypto');
@@ -14,7 +15,13 @@ function text(value, label, max, required = true) {
 }
 const states = new Set(['claimed', 'working', 'blocked', 'review', 'done']);
 
-function createService({ dbPath, bootstrapToken, ownerName = 'Project owner', publicOrigin, uiDir = path.join(__dirname, '..', 'ui', 'dist') }) {
+function createService({ dbPath, bootstrapToken, ownerName = 'Project owner', publicOrigin, tls, uiDir = path.join(__dirname, '..', 'ui', 'dist') }) {
+  if (publicOrigin) {
+    const url = new URL(publicOrigin);
+    if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash || url.pathname !== '/') throw new Error('Use an HTTPS public origin without credentials, paths or query parameters.');
+    publicOrigin = url.origin;
+  }
+  if (tls && (!tls.cert || !tls.key)) throw new Error('TLS requires both a certificate and a private key.');
   fs.mkdirSync(path.dirname(dbPath), { recursive: true, mode: 0o700 });
   const db = new DatabaseSync(dbPath);
   fs.chmodSync(dbPath, 0o600);
@@ -83,14 +90,14 @@ function createService({ dbPath, bootstrapToken, ownerName = 'Project owner', pu
       return value;
     });
   }
-  const server = http.createServer(async (req, res) => {
+  const handler = async (req, res) => {
     res.setHeader('x-content-type-options', 'nosniff');
     res.setHeader('referrer-policy', 'no-referrer');
     try {
       const host = req.headers.host || '';
       const expected = publicOrigin ? new URL(publicOrigin) : null;
       if (expected ? host !== expected.host : !/^(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/.test(host)) fail(403, 'Unrecognized service host. Configure TRIBUTARY_PUBLIC_ORIGIN for a shared server.');
-      const origin = expected?.origin || `http://${host}`;
+      const origin = expected?.origin || `${req.socket.encrypted ? 'https' : 'http'}://${host}`;
       if (req.headers.origin && req.headers.origin !== origin) fail(403, 'This origin is not allowed.');
       const u = new URL(req.url, origin);
       const parts = u.pathname.split('/').filter(Boolean);
@@ -197,7 +204,8 @@ function createService({ dbPath, bootstrapToken, ownerName = 'Project owner', pu
       if (!res.headersSent) json(res, e.status || 500, { error: e.status ? e.message : 'The service could not complete this request.' });
       else res.end();
     }
-  });
+  };
+  const server = tls ? https.createServer({ cert: tls.cert, key: tls.key, minVersion: 'TLSv1.2' }, handler) : http.createServer(handler);
   server.requestTimeout = 15000;
   server.headersTimeout = 10000;
   return { server, bootstrapToken: bootstrap, async close() { for (const c of connections) c.res.destroy(); await new Promise((r) => { server.close(r); server.closeIdleConnections(); }); db.close(); } };

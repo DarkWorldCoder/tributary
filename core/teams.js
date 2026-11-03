@@ -34,15 +34,36 @@ const RECIPES = {
 };
 
 const verdict = (text) => {
-  const m = /VERDICT:\s*(APPROVED|CHANGES REQUESTED)/i.exec(String(text || '').slice(-400));
+  const m = /^VERDICT: (APPROVED|CHANGES REQUESTED)$/i.exec(String(text || '').trim().split('\n').pop()?.trim() || '');
   return m ? (m[1].toUpperCase() === 'APPROVED' ? 'approved' : 'changes') : 'unknown';
 };
+
+function validateTeam(hub, team) {
+  const recipe = RECIPES[team?.recipe]; if (!recipe) throw new Error('Unknown team recipe');
+  if (!String(team.task || '').trim()) throw new Error('Describe the task for the team');
+  if (typeof team.task !== 'string' || team.task.length > 12000) throw new Error('Keep the team task below 12,000 characters.');
+  if (team.maxRounds !== undefined && (!Number.isInteger(team.maxRounds) || team.maxRounds < 0 || team.maxRounds > 5)) throw new Error('Choose between zero and five repair rounds.');
+  for (const role of recipe.roles) {
+    const value = team.roles?.[role.id];
+    const ids = role.multi ? value : [value];
+    if (!Array.isArray(ids) || (role.multi && new Set(ids).size < 2)) throw new Error('Pick at least two different agents to ask');
+    if (ids.length > 8 || new Set(ids).size !== ids.length) throw new Error('Pick up to eight different agents.');
+    for (const id of ids) {
+      if (!id) throw new Error(`Pick an agent for ${role.id}`);
+      const agent = hub.agent(id);
+      if (!agent || !agent.available || agent.headless === false) throw new Error(`The selected ${role.id} agent is unavailable.`);
+      if (role.id === 'builder' && agent.protocol === 'direct-chat') throw new Error('Choose an installed coding agent for the builder. Direct text connections cannot change files.');
+    }
+  }
+  return team;
+}
 
 /**
  * Runs a recipe through hub.send(). team: { recipe, task, roles: { planner, builder, reviewer, members[], synthesizer },
  * mode (for build steps), maxRounds }. onStep(info) reports progress. Returns a summary.
  */
 async function runTeam(hub, threadId, team, { onStep, signal } = {}) {
+  validateTeam(hub, team);
   const r = RECIPES[team.recipe]; if (!r) throw new Error('Unknown team recipe');
   const roles = team.roles || {}; const buildMode = team.mode === 'full' ? 'full' : 'edit';
   const maxRounds = Math.max(0, Math.min(5, team.maxRounds ?? 2));
@@ -51,7 +72,9 @@ async function runTeam(hub, threadId, team, { onStep, signal } = {}) {
   const step = async (role, opts) => {
     if (stopped()) throw new Error('Team stopped');
     onStep && onStep({ role, agentId: opts.agentId, state: 'running' });
-    const m = await hub.send({ threadId, ...opts, team: { recipe: team.recipe, role } });
+    let m;
+    try { m = await hub.send({ threadId, ...opts, team: { recipe: team.recipe, role } }); }
+    catch (e) { onStep && onStep({ role, agentId: opts.agentId, state: 'failed', error: e.message }); throw e; }
     onStep && onStep({ role, agentId: opts.agentId, state: m.ok ? 'done' : 'failed', messageId: m.id });
     if (!m.ok) throw new Error(`${hub.agent(opts.agentId).name} (${role}) did not finish`);
     return m;
@@ -61,6 +84,7 @@ async function runTeam(hub, threadId, team, { onStep, signal } = {}) {
       const rev = await step('reviewer', { agentId: need('reviewer'), text: REVIEW_PROMPT, mode: 'read' });
       const v = verdict(rev.text);
       if (v === 'approved') return { verdict: 'approved', rounds: round };
+      if (v === 'unknown') return { verdict: 'unknown', rounds: round };
       if (round >= maxRounds) return { verdict: v === 'changes' ? 'changes' : 'unknown', rounds: round };
       await step('builder', { agentId: need('builder'), text: FIX_PROMPT, mode: buildMode });
     }
@@ -83,4 +107,4 @@ async function runTeam(hub, threadId, team, { onStep, signal } = {}) {
   return { verdict: 'answered', rounds: 0 };
 }
 
-module.exports = { RECIPES, runTeam, verdict, REVIEW_PROMPT, FIX_PROMPT, SYNTH_PROMPT };
+module.exports = { RECIPES, runTeam, validateTeam, verdict, REVIEW_PROMPT, FIX_PROMPT, SYNTH_PROMPT };

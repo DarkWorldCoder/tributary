@@ -4,6 +4,7 @@
 //   .tributary/worklog.md  one line per turn, written by Tributary: who did what, which files changed
 const fs = require('fs');
 const path = require('path');
+const state = require('./memory-state');
 
 const DIR = '.tributary';
 const MEMORY = path.join(DIR, 'memory.md');
@@ -28,6 +29,9 @@ Facts and decisions every agent should know. Keep each item to one line.
 `;
 
 function enableMemory(project) {
+  return state.locked(project, () => {
+  for (const rel of [DIR, MEMORY, WORKLOG, 'AGENTS.md']) state.location(project, rel);
+  state.ignorePrivateFiles(project);
   const created = [];
   fs.mkdirSync(path.join(project, DIR), { recursive: true });
   if (!fs.existsSync(path.join(project, MEMORY))) { fs.writeFileSync(path.join(project, MEMORY), MEMORY_TEMPLATE); created.push(MEMORY); }
@@ -36,24 +40,26 @@ function enableMemory(project) {
   const cur = fs.existsSync(agentsMd) ? fs.readFileSync(agentsMd, 'utf8') : '# Project instructions\n\nShared by every coding agent.\n';
   if (!cur.includes(POINTER_MARK)) { fs.writeFileSync(agentsMd, `${cur.replace(/\s*$/, '\n')}\n${POINTER}`); created.push('AGENTS.md'); }
   return created;
+  });
 }
-const enabled = (project) => fs.existsSync(path.join(project, MEMORY));
+const enabled = (project) => fs.existsSync(state.location(project, MEMORY));
 
 function readMemory(project) {
-  const read = (f) => { try { return fs.readFileSync(path.join(project, f), 'utf8'); } catch { return null; } };
-  const log = read(WORKLOG);
-  return { enabled: enabled(project), memory: read(MEMORY), worklog: log ? log.split('\n').filter((l) => l.startsWith('- ')).slice(-60) : [] };
+  const log = state.read(project, WORKLOG, { tail: true, max: 65536 }); const memory = state.read(project, MEMORY);
+  return { enabled: enabled(project), memory, revision: state.revision(memory), context: state.settings(project), bytes: Buffer.byteLength(memory || ''), worklog: log ? log.split('\n').filter((l) => l.startsWith('- ')).slice(-60) : [] };
 }
-function saveMemory(project, text) { fs.mkdirSync(path.join(project, DIR), { recursive: true }); fs.writeFileSync(path.join(project, MEMORY), String(text)); }
+function saveMemory(project, text, expected) { return state.save(project, text, expected); }
 function remember(project, note) {
   const line = String(note).replace(/\s+/g, ' ').trim().slice(0, 500);
   if (!line) throw new Error('Nothing to remember');
   if (!enabled(project)) enableMemory(project);
-  fs.appendFileSync(path.join(project, MEMORY), `- ${line}\n`);
+  const current = state.read(project, MEMORY) || '';
+  state.save(project, `${current}- ${line}\n`, state.revision(current));
   return line;
 }
 function logTurn(project, { agentName, request, files, ok, when = new Date() }) {
   if (!enabled(project)) return false;
+  state.location(project, WORKLOG);
   const stamp = when.toISOString().slice(0, 16).replace('T', ' ');
   const req = String(request || '').replace(/\s+/g, ' ').trim().slice(0, 120);
   const changed = (files || []).slice(0, 12).map((f) => `\`${f}\``).join(', ') + ((files || []).length > 12 ? ` and ${files.length - 12} more` : '');

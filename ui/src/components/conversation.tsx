@@ -22,6 +22,7 @@ import { HighlightedCode, Markdown } from '@/components/markdown';
 import { activitySummary, changeCode, duration, toolTarget, toolVerb } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/store';
+import { FileTypeIcon } from '@/components/file-type-icon';
 import type { Agent, AgentMessage, Message as Msg, RaceCandidate, Tool, UserMessage } from '@/types';
 
 const MODE_LABEL = { read: 'Read-only', edit: 'Edit files', full: 'Full auto' } as const;
@@ -112,6 +113,7 @@ function FilesChanged({ m }: { m: AgentMessage }) {
           <li key={f.path}>
             <div className="group/row flex items-center hover:bg-muted/60">
               <button className="flex min-w-0 flex-1 items-center gap-2.5 px-3 py-1.5 text-left text-sm" onClick={() => s.openReview(f.rel)} title="Show the diff">
+                <FileTypeIcon path={f.rel} />
                 <ChangeCode code={changeCode(f.change)} />
                 <span className="truncate font-mono text-[12.5px]">{f.rel}</span>
               </button>
@@ -141,7 +143,7 @@ function AskAnother({ m, prompt }: { m: AgentMessage; prompt?: UserMessage }) {
       <DropdownMenuContent align="start" className="w-56">
         <DropdownMenuLabel>Send the same request to…</DropdownMenuLabel>
         {others.map((a) => (
-          <DropdownMenuItem key={a.id} disabled={s.running} onClick={() => { s.setAgentId(a.id); s.hub.call('send', { threadId: s.thread!.id, agentId: a.id, text: prompt.text, mode: m.mode, gatewayId: null }).catch((e: Error) => toast.error(e.message)); }}>
+          <DropdownMenuItem key={a.id} disabled={s.running} onClick={() => { s.setAgentId(a.id); s.hub.call('send', { threadId: s.thread!.id, agentId: a.id, text: prompt.text, mode: m.mode, gatewayId: null, model: s.modelFor(a.id) || null }).catch((e: Error) => toast.error(e.message)); }}>
             <AgentAvatar agent={a} size="xs" /> {a.name}
           </DropdownMenuItem>
         ))}
@@ -178,7 +180,7 @@ function RunPlan({ m }: { m: AgentMessage }) {
   if (m.kind !== 'plan' || !m.ok || !m.text) return null;
   const run = (agentId: string) => {
     s.setAgentId(agentId); if (s.mode === 'read') s.setMode('edit');
-    s.hub.call('send', { threadId: s.thread!.id, agentId, text: '', mode: s.mode === 'read' ? 'edit' : s.mode, gatewayId: null, planFrom: m.id }).catch((e: Error) => toast.error(e.message));
+    s.hub.call('send', { threadId: s.thread!.id, agentId, text: '', mode: s.mode === 'read' ? 'edit' : s.mode, gatewayId: agentId === m.agent ? m.gatewayId || null : null, model: agentId === m.agent ? m.model || null : s.modelFor(agentId) || null, planFrom: m.id }).catch((e: Error) => toast.error(e.message));
   };
   return (
     <div className="flex items-center gap-1.5">
@@ -208,7 +210,7 @@ function Retry({ m, prompt }: { m: AgentMessage; prompt?: UserMessage }) {
   return (
     <Tooltip><TooltipTrigger asChild>
       <Button variant="ghost" size="icon-xs" aria-label="Try again" disabled={s.running}
-        onClick={() => s.hub.call('send', { threadId: s.thread!.id, agentId: m.agent, text: prompt.text, mode: m.mode, gatewayId: null, plan: m.kind === 'plan' }).catch((e: Error) => toast.error(e.message))}><RotateCcw /></Button>
+        onClick={() => s.hub.call('send', { threadId: s.thread!.id, agentId: m.agent, text: prompt.text, mode: m.mode, gatewayId: m.gatewayId || null, model: m.model || null, plan: m.kind === 'plan' }).catch((e: Error) => toast.error(e.message))}><RotateCcw /></Button>
     </TooltipTrigger><TooltipContent>Try again</TooltipContent></Tooltip>
   );
 }
@@ -338,8 +340,9 @@ function AgentTurn({ m, agent, prompt }: { m: AgentMessage; agent: Agent; prompt
     <Message>
       <MessageContent>
         <MessageHeader className="flex flex-wrap items-center gap-2">
-          <AgentAvatar agent={agent} size="md" />
+          <AgentAvatar agent={agent} size={s.codeLayout ? 'sm' : 'md'} />
           <span className="font-semibold">{agent.name}</span>
+          {m.model && <span className="max-w-48 truncate text-xs text-muted-foreground" title={`Requested model: ${m.model}`}>{m.model}</span>}
           {m.team && <Badge variant="secondary" className="capitalize">{m.team.role === 'member' ? 'Answering' : m.team.role}</Badge>}
           {m.kind === 'plan' ? <Badge variant="secondary">Plan</Badge> : <Badge variant="outline" className="font-normal text-muted-foreground">{MODE_LABEL[m.mode] ?? m.mode}</Badge>}
           {m.gateway && <Badge variant="outline" className="border-brand/30 font-normal text-brand">via {m.gateway}</Badge>}
@@ -348,6 +351,7 @@ function AgentTurn({ m, agent, prompt }: { m: AgentMessage; agent: Agent; prompt
         <Activity m={m} />
         {m.text && <div className={cn(live && 'after:ml-1 after:inline-block after:size-2 after:animate-pulse after:rounded-full after:bg-foreground/70')}><Markdown text={m.text} /></div>}
         {(m.notices || []).map((n, i) => <p key={i} className="flex items-center gap-1.5 text-sm text-warning"><Info className="size-3.5" /> {n}</p>)}
+        {m.memoryContext && <details className="text-xs text-muted-foreground"><summary className="cursor-pointer">Project memory included · {m.memoryContext.characters.toLocaleString()} characters</summary><ul className="mt-2 space-y-1">{m.memoryContext.sources.map((source) => <li key={`${source.source}:${source.line}`}>{source.source}:{source.line}</li>)}</ul></details>}
         {m.error && <Alert variant="destructive"><AlertCircle /><AlertDescription className="whitespace-pre-wrap">{m.error}</AlertDescription></Alert>}
         <FilesChanged m={m} />
         <RunPlan m={m} />
@@ -357,7 +361,7 @@ function AgentTurn({ m, agent, prompt }: { m: AgentMessage; agent: Agent; prompt
             {m.durationMs ? <span className="mr-3 tabular-nums">{duration(m.durationMs)}</span> : null}
             {m.costUsd ? <span className="mr-3 tabular-nums">${m.costUsd.toFixed(3)}</span> : null}
             {tokens ? <span className="mr-3 tabular-nums">{tokens.toLocaleString()} tokens</span> : null}
-            <span className="flex items-center opacity-70 transition-opacity group-hover/turn:opacity-100">
+            <span className="reply-actions flex items-center opacity-100 transition-opacity md:opacity-0 md:group-hover/turn:opacity-100 md:group-focus-within/turn:opacity-100">
               <Retry m={m} prompt={prompt} />
               {m.text && <CopyReply text={m.text} />}
               {m.text && m.ok === true && <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-xs" aria-label="Save as document" onClick={() => s.makeDocument(m.id).catch((e) => toast.error(e.message || String(e)))}><FileText /></Button></TooltipTrigger><TooltipContent>Save as editable document</TooltipContent></Tooltip>}
@@ -377,38 +381,38 @@ function AgentAvatarName({ id }: { id: string }) {
   return <span className="inline-flex items-center gap-1"><AgentAvatar agent={a} size="xs" />{a.name}</span>;
 }
 
-function UserTurn({ m, agent }: { m: UserMessage; agent: Agent }) {
+function UserTurn({ m, agent, showTarget }: { m: UserMessage; agent: Agent; showTarget: boolean }) {
+  const s = useStore();
   return (
     <div className="flex flex-col items-end gap-1">
-      <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      {showTarget && <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
         {m.kind === 'race' ? <>Race between {m.target.split(',').map((id) => <AgentAvatarName key={id} id={id} />)}</>
           : <>{m.team ? `${m.team.role === 'member' ? 'Question' : `To the ${m.team.role}`},` : m.kind === 'plan' ? 'Plan request for' : m.kind === 'implement' ? 'Run plan with' : 'To'} <AgentAvatar agent={agent} size="xs" /> {agent.name}</>}
-      </span>
-      <Bubble align="end" variant="secondary" className="max-w-[85%]">
+      </span>}
+      <Bubble align="end" variant="secondary" className={cn('max-w-[85%]', s.codeLayout && 'max-w-[95%] rounded-xl bg-muted/70')}>
         <BubbleContent className="text-[0.9375rem] whitespace-pre-wrap">{m.text}</BubbleContent>
       </Bubble>
     </div>
   );
 }
 
-/** The thread as one stream: a colored line beside each turn shows which agent was working. */
+/** A quiet conversation column; each response retains its assistant identity. */
 export function Conversation() {
   const s = useStore(); const msgs = s.thread?.messages ?? [];
+  const multipleTargets = new Set(msgs.filter((message) => message.role === 'user').map((message) => message.target)).size > 1;
   return (
     <MessageScrollerProvider autoScroll defaultScrollPosition="end">
       <MessageScroller className="flex-1">
         <MessageScrollerViewport aria-label="Conversation">
-          <MessageScrollerContent className="mx-auto w-full max-w-3xl gap-0 px-4 py-6 sm:px-6">
+          <MessageScrollerContent className={cn('mx-auto w-full max-w-3xl gap-0 px-4 py-6 sm:px-6', s.codeLayout && 'py-5 sm:px-4')}>
             {(() => { let lastUser: UserMessage | undefined; return msgs.map((m: Msg) => {
               if (m.role === 'user') lastUser = m;
               const agent = s.agentOf(m.role === 'user' ? m.target.split(',')[0] : m.agent);
               const prompt = m.role === 'assistant' ? lastUser : undefined;
               const race = m.role === 'assistant' && m.kind === 'race';
               return (
-                <MessageScrollerItem key={m.id} messageId={m.id} scrollAnchor={m.role === 'user'} className="group/turn relative pb-7 pl-6">
-                  <span aria-hidden className="absolute top-0 bottom-0 left-[7px] w-[2px] rounded-full" style={{ background: race ? 'linear-gradient(var(--brand), var(--brand-2))' : m.role === 'assistant' ? agent.color : 'var(--border)', opacity: m.role === 'assistant' ? 0.9 : 1 }} />
-                  {m.role === 'assistant' && <span aria-hidden className="absolute top-1.5 left-[3px] size-[10px] rounded-full border-2 border-background" style={{ background: race ? 'var(--brand)' : agent.color }} />}
-                  {m.role === 'user' ? <UserTurn m={m} agent={agent} /> : race ? <RaceTurn m={m} /> : <AgentTurn m={m} agent={agent} prompt={prompt} />}
+                <MessageScrollerItem key={m.id} messageId={m.id} scrollAnchor={m.role === 'user'} className={cn('group/turn relative pb-8', s.codeLayout && 'pb-6')}>
+                  {m.role === 'user' ? <UserTurn m={m} agent={agent} showTarget={!s.codeLayout || multipleTargets || !!m.team || (!!m.kind && m.kind !== 'chat')} /> : race ? <RaceTurn m={m} /> : <AgentTurn m={m} agent={agent} prompt={prompt} />}
                 </MessageScrollerItem>
               );
             }); })()}

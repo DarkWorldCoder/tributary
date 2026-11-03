@@ -1,0 +1,103 @@
+{
+  "axeVersion": "4.12.1",
+  "counts": {
+    "inapplicable": 46,
+    "incomplete": 1,
+    "passes": 43,
+    "violations": 0
+  },
+  "violations": [],
+  "incomplete": [
+    {
+      "help": "Elements must meet minimum color contrast ratio thresholds",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=axeAPI",
+      "id": "color-contrast",
+      "impact": "serious",
+      "nodeCount": 10,
+      "nodes": [
+        {
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element",
+          "html": "<span>Files</span>",
+          "target": [
+            "#radix-_r_5o_-trigger-files > span"
+          ]
+        },
+        {
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+          "html": "<span class=\"truncate\">Workspace.tsx</span>",
+          "target": [
+            "#radix-_r_5v_-trigger-src\\/Workspace\\.tsx > .truncate"
+          ]
+        },
+        {
+          "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters",
+          "html": "<span title=\"Fold line\">\u2304</span>",
+          "target": [
+            ".cm-gutterElement:nth-child(3) > span[title=\"Fold line\"]"
+          ]
+        },
+        {
+          "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters",
+          "html": "<span title=\"Fold line\">\u2304</span>",
+          "target": [
+            ".cm-gutterElement:nth-child(4) > span[title=\"Fold line\"]"
+          ]
+        },
+        {
+          "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters",
+          "html": "<span title=\"Fold line\">\u2304</span>",
+          "target": [
+            ".cm-gutterElement:nth-child(5) > span[title=\"Fold line\"]"
+          ]
+        },
+        {
+          "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters",
+          "html": "<span title=\"Fold line\">\u2304</span>",
+          "target": [
+            ".cm-gutterElement:nth-child(6) > span[title=\"Fold line\"]"
+          ]
+        },
+        {
+          "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters",
+          "html": "<span title=\"Fold line\">\u2304</span>",
+          "target": [
+            ".cm-gutterElement:nth-child(7) > span[title=\"Fold line\"]"
+          ]
+        },
+        {
+          "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters",
+          "html": "<span title=\"Fold line\">\u2304</span>",
+          "target": [
+            ".cm-gutterElement:nth-child(8) > span[title=\"Fold line\"]"
+          ]
+        },
+        {
+          "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters",
+          "html": "<span title=\"Fold line\">\u2304</span>",
+          "target": [
+            ".cm-gutterElement:nth-child(9) > span[title=\"Fold line\"]"
+          ]
+        },
+        {
+          "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters",
+          "html": "<span title=\"Fold line\">\u2304</span>",
+          "target": [
+            ".cm-gutterElement:nth-child(10) > span[title=\"Fold line\"]"
+          ]
+        }
+      ],
+      "tags": [
+        "cat.color",
+        "wcag2aa",
+        "wcag143",
+        "TTv5",
+        "TT13.c",
+        "EN-301-549",
+        "EN-9.1.4.3",
+        "ACT",
+        "RGAAv4",
+        "RGAA-3.2.1"
+      ]
+    }
+  ]
+}

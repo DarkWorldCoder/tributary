@@ -1,0 +1,5 @@
+{
+  "scope": "Isolated Electron renderer; final selector, image and reference Chat view interactions. No model calls.",
+  "errors": [],
+  "console": []
+}

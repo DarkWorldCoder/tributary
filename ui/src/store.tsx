@@ -45,18 +45,29 @@ function useStoreValue() {
   const [agentId, setAgentId] = useStored<string | null>('agent', null);
   const [mode, setMode] = useStored<Mode>('mode', 'edit');
   const [gatewayId, setGatewayId] = useStored<string>('gateway', '');
+  const [models, setModels] = useStored<Record<string, string>>('models', {});
+  const modelKey = (who: string, source?: string | null) => `${who}@${who.startsWith('direct:') ? who.slice(7) : source || 'default'}`;
+  const modelFor = (who: string, source?: string | null) => models[modelKey(who, source)] || '';
+  const selectedModel = agentId ? modelFor(agentId, gatewayId) : '';
+  const setSelectedModel = (model: string) => { if (agentId) setModels({ ...models, [modelKey(agentId, gatewayId)]: model }); };
   const [theme, setTheme] = useStored<Theme>('theme', 'system');
   const [interfaceFont, setInterfaceFont] = useStored<InterfaceFont>('interfaceFont', 'geist');
   const [readingSize, setReadingSize] = useStored<number>('readingSize', 15);
+  const [codingReadingSize, setCodingReadingSize] = useStored<number>('codingReadingSize', 13);
   const [roomOpen, setRoomOpen] = React.useState(false);
+  const [contextOpen, setContextOpen] = useStored<boolean>('contextOpen', true);
+  const [contextSheetOpen, setContextSheetOpen] = React.useState(false);
+  const [workspaceLayout, setWorkspaceLayout] = useStored<'editor' | 'chat'>('workspaceLayout', 'editor');
+  const [workspaceExpanded, setWorkspaceExpanded] = useStored<boolean>('workspaceExpanded', false);
   const [review, setReview] = React.useState<{ open: boolean; rel: string | null; diff: string }>({ open: false, rel: null, diff: '' });
   const [panel, setPanelRaw] = React.useState<{ open: boolean; tab: PanelTab }>(() => ({ open: false, tab: ls.get<PanelTab>('panelTab', 'review') }));
-  const [fileToOpen, setFileToOpen] = React.useState<{ rel: string; line?: number; n: number } | null>(null);
+  const [fileToOpen, setFileToOpen] = React.useState<{ rel: string; line?: number; intent: 'preview' | 'pinned'; project: string | null; n: number } | null>(null);
   const [terminalOpen, setTerminalOpenRaw] = useStored<boolean>('terminal', false);
   const [teamOpen, setTeamOpen] = React.useState(false);
-  const [queue, setQueue] = React.useState<Record<string, { text: string; plan?: boolean; mode?: Mode; agentId: string }[]>>({});
+  const [queue, setQueue] = React.useState<Record<string, { text: string; plan?: boolean; mode?: Mode; agentId: string; model?: string; gatewayId?: string | null }[]>>({});
   const [settings, setSettings] = React.useState<{ open: boolean; tab: SettingsTab }>({ open: false, tab: 'agents' });
   const [palette, setPalette] = React.useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = React.useState(false);
   const [loaded, setLoaded] = React.useState(false);
   const [home, setHome] = React.useState(false);
   const [activeDocument, setDocument] = React.useState<{ threadId: string; id: string } | null>(null);
@@ -70,7 +81,7 @@ function useStoreValue() {
 
   const refreshState = React.useCallback(async () => { const s = await hub.call<HubState>('state'); setSt(s); return s; }, []);
   const loadThreads = React.useCallback(async (p: string) => { const list = await hub.call<ThreadSummary[]>('threads', p); setThreadsBy((m) => ({ ...m, [p]: list })); return list; }, []);
-  const refreshGit = React.useCallback(async (p = projectRef.current) => { setGit(p ? await hub.call<GitInfo | null>('gitInfo', p) : null); }, []);
+  const refreshGit = React.useCallback(async (p = projectRef.current) => { const result = p ? await hub.call<GitInfo | null>('gitInfo', p) : null; if (p === projectRef.current) setGit(result); }, []);
 
   // Opening a thread (or watching it finish) clears its "needs review" badge.
   const markSeen = React.useCallback((id: string) => { hub.call('markThreadSeen', id).catch(() => { /* older host */ }); }, []);
@@ -80,14 +91,14 @@ function useStoreValue() {
     if (!t) return;
     markSeen(t.id);
     threadRef.current = t; projectRef.current = t.project;
-    setHome(false); setThread(t); setThreadIdRaw(t.id); setProjectRaw(t.project); refreshGit(t.project);
-  }, [refreshGit, setProjectRaw, setThreadIdRaw, markSeen]);
+    setWorkspaceExpanded(false); setHome(false); setThread(t); setThreadIdRaw(t.id); setProjectRaw(t.project); refreshGit(t.project);
+  }, [refreshGit, setProjectRaw, setThreadIdRaw, markSeen, setWorkspaceExpanded]);
 
   const newThread = React.useCallback((p?: string | null) => {
     const target = p ?? projectRef.current; if (!target) return;
     threadRef.current = null; projectRef.current = target;
-    setHome(false); setThread(null); setThreadIdRaw(null); setProjectRaw(target); refreshGit(target);
-  }, [refreshGit, setProjectRaw, setThreadIdRaw]);
+    setWorkspaceExpanded(false); setHome(false); setThread(null); setThreadIdRaw(null); setProjectRaw(target); refreshGit(target);
+  }, [refreshGit, setProjectRaw, setThreadIdRaw, setWorkspaceExpanded]);
 
   // First load
   React.useEffect(() => {
@@ -150,7 +161,8 @@ function useStoreValue() {
     const fonts = { geist: "'Geist Variable', ui-sans-serif, system-ui, sans-serif", plex: "'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif", system: 'ui-sans-serif, system-ui, sans-serif' };
     document.documentElement.style.setProperty('--app-font', fonts[interfaceFont] || fonts.geist);
     document.documentElement.style.setProperty('--reading-size', `${[14, 15, 16, 18, 20].includes(readingSize) ? readingSize : 15}px`);
-  }, [interfaceFont, readingSize]);
+    document.documentElement.style.setProperty('--coding-reading-size', `${[12, 13, 14, 15, 16, 18, 20].includes(codingReadingSize) ? codingReadingSize : 13}px`);
+  }, [interfaceFont, readingSize, codingReadingSize]);
   React.useEffect(() => {
     const root = document.documentElement;
     if (hub.platform === 'vscode') {
@@ -166,21 +178,23 @@ function useStoreValue() {
   const send = React.useCallback(async (text: string, opts: { plan?: boolean; mode?: Mode; agentId?: string } = {}) => {
     const who = opts.agentId ?? agentId;
     if (!text.trim() || !who || !projectRef.current) return false;
+    const source = who.startsWith('direct:') ? null : gatewayId || null;
+    const model = modelFor(who, source);
     let t = threadRef.current;
     // While an agent is working in this thread, hold the message and send it when the turn ends.
     if (t && st?.running.includes(t.id)) {
       const id = t.id;
-      setQueue((q) => ({ ...q, [id]: [...(q[id] || []), { text: text.trim(), plan: opts.plan, mode: opts.mode, agentId: who }] }));
+      setQueue((q) => ({ ...q, [id]: [...(q[id] || []), { text: text.trim(), plan: opts.plan, mode: opts.mode ?? mode, agentId: who, model, gatewayId: source }] }));
       return true;
     }
     if (!t) {
       t = await hub.call<Thread>('createThread', projectRef.current);
       setThread(t); setThreadIdRaw(t.id);
     }
-    hub.call('send', { threadId: t.id, agentId: who, text: text.trim(), mode: opts.mode ?? mode, gatewayId: who.startsWith('direct:') ? null : gatewayId || null, plan: !!opts.plan })
+    hub.call('send', { threadId: t.id, agentId: who, text: text.trim(), mode: opts.mode ?? mode, gatewayId: source, model: model || null, plan: !!opts.plan })
       .catch((e: Error) => { toast.error(e.message || String(e)); setDraft(text); });
     return true;
-  }, [agentId, mode, gatewayId, setThreadIdRaw, st]);
+  }, [agentId, mode, gatewayId, models, setThreadIdRaw, st]);
 
   // Send the next queued message once the thread is free.
   React.useEffect(() => {
@@ -188,13 +202,14 @@ function useStoreValue() {
     const q = queue[t.id]; if (!q || !q.length) return;
     const [next, ...rest] = q;
     setQueue((all) => ({ ...all, [t.id]: rest }));
-    hub.call('send', { threadId: t.id, agentId: next.agentId, text: next.text, mode: next.mode ?? mode, gatewayId: next.agentId.startsWith('direct:') ? null : gatewayId || null, plan: !!next.plan })
+    hub.call('send', { threadId: t.id, agentId: next.agentId, text: next.text, mode: next.mode ?? mode, gatewayId: next.gatewayId ?? null, model: next.model || null, plan: !!next.plan })
       .catch((e: Error) => toast.error(e.message || String(e)));
   }, [st, thread, queue, mode, gatewayId]);
 
   const setPanel = React.useCallback((p: { open: boolean; tab: PanelTab }) => { setPanelRaw(p); ls.set('panelTab', p.tab); }, []);
-  const openPanel = React.useCallback((tab: PanelTab) => setPanel({ open: true, tab }), [setPanel]);
-  const openFile = React.useCallback((rel: string, line?: number) => { setFileToOpen({ rel, line, n: Date.now() }); setPanel({ open: true, tab: 'files' }); }, [setPanel]);
+  const openPanel = React.useCallback((tab: PanelTab) => { setPanel({ open: true, tab }); }, [setPanel]);
+  const fileIntentId = React.useRef(0);
+  const openFile = React.useCallback((rel: string, line?: number, intent: 'preview' | 'pinned' = 'preview') => { setFileToOpen({ rel, line, intent, project: projectRef.current, n: ++fileIntentId.current }); setPanel({ open: true, tab: 'files' }); }, [setPanel]);
 
   const openReview = React.useCallback(async (rel?: string | null) => {
     const p = projectRef.current; if (!p) return;
@@ -225,9 +240,13 @@ function useStoreValue() {
   return {
     hub, loaded, st, threadsBy, project, thread, git, agentId, agent, mode, gatewayId, theme, review, settings, palette, ready, running,
     get draft() { return getDraft(); },
-    home, goHome: () => setHome(true), startTask, document: activeDocument, setDocument, makeDocument,
-    panel, setPanel, openPanel, fileToOpen, openFile, terminalOpen, teamOpen, setTeamOpen, roomOpen, setRoomOpen,
-    interfaceFont, setInterfaceFont, readingSize, setReadingSize,
+    home, goHome: () => { setHome(true); setPanelRaw((p) => ({ ...p, open: false })); }, startTask, document: activeDocument, setDocument, makeDocument,
+    shortcutsOpen, setShortcutsOpen, panel, setPanel, openPanel, fileToOpen, openFile, terminalOpen, teamOpen, setTeamOpen, roomOpen, setRoomOpen,
+    selectedModel, setSelectedModel, modelFor,
+    interfaceFont, setInterfaceFont, readingSize, setReadingSize, codingReadingSize, setCodingReadingSize,
+    workspaceExpanded, setWorkspaceExpanded, workspaceLayout, setWorkspaceLayout,
+    contextOpen, setContextOpen, contextSheetOpen, setContextSheetOpen,
+    codeLayout: workspaceLayout === 'editor' && !home && !!thread?.messages.length && st?.projects.find((p) => p.path === project)?.kind !== 'personal',
     queued: (thread && queue[thread.id]) || [], clearQueue: () => { if (thread) setQueue((q) => ({ ...q, [thread.id]: [] })); },
     setTerminalOpen: setTerminalOpenRaw,
     agentOf, refreshState, loadThreads, refreshGit, openThread, newThread, send, openReview,

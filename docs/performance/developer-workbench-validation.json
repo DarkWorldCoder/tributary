@@ -1,0 +1,134 @@
+{
+  "checks": [
+    "Coding chat automatically opens the editor and project rail",
+    "Editor sits left of chat with a 44px activity rail",
+    "Moving chat to the left preserves the file draft",
+    "Restoring editor-first layout preserves the draft",
+    "Double-click pins all twelve files without duplicate or skipped tabs",
+    "Overflow keeps the active file and close control visible",
+    "Bulk closing saved tabs preserves the unsaved draft",
+    "Closing the last dirty tab returns keyboard focus to the file menu",
+    "Review links recorded file activity to this chat",
+    "Explain change prepares a read-only question with the actual diff",
+    "Preparing an explanation sends no agent request",
+    "Tools menu exposes planning and team workflows",
+    "Editor-first 1920px: no clipping and all tools visible",
+    "Editor-first 1920px: editor left, chat at least 360px",
+    "Editor-first 1280px: no clipping and all tools visible",
+    "Editor-first 1280px: editor left, chat at least 360px",
+    "Editor-first 900px: no clipping and all tools visible",
+    "Editor-first 900px: editor left, chat at least 360px",
+    "Editor-first 768px: no clipping and all tools visible",
+    "Editor-first 768px: editor left, chat at least 360px",
+    "Editor-first 390px: no clipping and all tools visible",
+    "Editor-first 390px: full-width workspace",
+    "Editor-first 320px: no clipping and all tools visible",
+    "Editor-first 320px: full-width workspace",
+    "Phone chat retains project navigation and file access"
+  ],
+  "viewports": [
+    {
+      "chat": {
+        "right": 1920,
+        "width": 561.8125,
+        "x": 1358.1875
+      },
+      "iconStroke": "1.6px",
+      "pageWidth": 1920,
+      "scrollbar": "thin",
+      "toolsVisible": true,
+      "width": 1920,
+      "workspace": {
+        "right": 1357.1875,
+        "width": 1313.1875,
+        "x": 44
+      }
+    },
+    {
+      "chat": {
+        "right": 1280,
+        "width": 369.796875,
+        "x": 910.203125
+      },
+      "iconStroke": "1.6px",
+      "pageWidth": 1280,
+      "scrollbar": "thin",
+      "toolsVisible": true,
+      "width": 1280,
+      "workspace": {
+        "right": 909.203125,
+        "width": 865.203125,
+        "x": 44
+      }
+    },
+    {
+      "chat": {
+        "right": 900,
+        "width": 360,
+        "x": 540
+      },
+      "iconStroke": "1.6px",
+      "pageWidth": 900,
+      "scrollbar": "thin",
+      "toolsVisible": true,
+      "width": 900,
+      "workspace": {
+        "right": 539,
+        "width": 495,
+        "x": 44
+      }
+    },
+    {
+      "chat": {
+        "right": 768,
+        "width": 360,
+        "x": 408
+      },
+      "iconStroke": "1.6px",
+      "pageWidth": 768,
+      "scrollbar": "thin",
+      "toolsVisible": true,
+      "width": 768,
+      "workspace": {
+        "right": 407,
+        "width": 363,
+        "x": 44
+      }
+    },
+    {
+      "chat": {
+        "right": 390,
+        "width": 0,
+        "x": 390
+      },
+      "iconStroke": "1.6px",
+      "pageWidth": 390,
+      "scrollbar": "thin",
+      "toolsVisible": true,
+      "width": 390,
+      "workspace": {
+        "right": 390,
+        "width": 390,
+        "x": 0
+      }
+    },
+    {
+      "chat": {
+        "right": 320,
+        "width": 0,
+        "x": 320
+      },
+      "iconStroke": "1.6px",
+      "pageWidth": 320,
+      "scrollbar": "thin",
+      "toolsVisible": true,
+      "width": 320,
+      "workspace": {
+        "right": 320,
+        "width": 320,
+        "x": 0
+      }
+    }
+  ],
+  "fixture": "Isolated local preview messages; no model request sent."
+}

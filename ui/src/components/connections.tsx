@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { ConnectorReport } from '@/components/connector-report';
 import { Check, Plug, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
@@ -49,6 +50,7 @@ export function Connections() {
       {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
       {status && <p role="status" className="text-sm text-success">{status}</p>}
       <p className="text-xs text-muted-foreground">Direct connections support text. They cannot browse, read arbitrary files, edit your folders, or send messages.</p>
+      <ConnectorReport />
     </section>
   );
 }

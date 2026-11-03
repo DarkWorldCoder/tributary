@@ -44,3 +44,22 @@ test('host file APIs refuse symlink escapes for directory reads, file reads and 
   assert.equal(fs.readFileSync(path.join(outside, 'secret.txt'), 'utf8'), 'private');
   assert.equal(fs.existsSync(path.join(outside, 'new.txt')), false);
 });
+
+test('image reads keep complete bounded payloads separate from text and binary fallbacks', async (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-images-'));
+  const hub = new Hub({ dataDir: path.join(root, 'data'), secrets: new MemorySecrets() }); hub.addProject(root);
+  t.after(() => { hub.store.close(); fs.rmSync(root, { recursive: true, force: true }); });
+  const large = Buffer.alloc(2 * 1024 * 1024, 127); large.set([137, 80, 78, 71, 13, 10, 26, 10]);
+  fs.writeFileSync(path.join(root, 'photo.PNG'), large);
+  const image = await hub.readFile(root, 'photo.PNG');
+  assert.equal(image.binary, true); assert.equal(image.truncated, false); assert.equal(image.content, '');
+  assert.deepEqual(Buffer.from(image.base64, 'base64'), large);
+  fs.writeFileSync(path.join(root, 'oversized.webp'), Buffer.alloc(16 * 1024 * 1024 + 1));
+  const oversized = await hub.readFile(root, 'oversized.webp');
+  assert.equal(oversized.truncated, true); assert.equal(oversized.base64, undefined); assert.equal(oversized.content, '');
+  fs.writeFileSync(path.join(root, 'large.txt'), 'x'.repeat(2 * 1024 * 1024));
+  const text = await hub.readFile(root, 'large.txt');
+  assert.equal(text.content.length, 1024 * 1024); assert.equal(text.truncated, true); assert.equal(text.base64, undefined);
+  fs.writeFileSync(path.join(root, 'vector.svg'), '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"/>');
+  const vector = await hub.readFile(root, 'vector.svg'); assert.equal(vector.binary, false); assert.match(vector.content, /<svg/);
+});

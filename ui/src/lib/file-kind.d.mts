@@ -1,0 +1,2 @@
+export type FileKind = 'javascript' | 'typescript' | 'react' | 'python' | 'rust' | 'go' | 'java' | 'kotlin' | 'c' | 'cpp' | 'csharp' | 'swift' | 'ruby' | 'php' | 'vue' | 'svelte' | 'code' | 'json' | 'markup' | 'style' | 'markdown' | 'image' | 'audio' | 'video' | 'archive' | 'document' | 'sheet' | 'presentation' | 'config' | 'terminal' | 'database' | 'font' | 'binary' | 'lock' | 'container' | 'git' | 'file' | 'package' | 'certificate' | 'graph' | 'model' | 'data';
+export function fileKind(path: string): FileKind;

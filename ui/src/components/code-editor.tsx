@@ -1,13 +1,16 @@
 import * as React from 'react';
 import { basicSetup } from 'codemirror';
-import { EditorState, Compartment, type Extension } from '@codemirror/state';
+import { EditorState, Compartment, Transaction, type Extension } from '@codemirror/state';
 import { EditorView, keymap } from '@codemirror/view';
 import { indentWithTab } from '@codemirror/commands';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { tags as t } from '@lezer/highlight';
-import { agentFlash, applyRemoteText, askAboutSelection, blameGutter, showBlame, type Blame } from '@/lib/agent-editor';
+import { MessageSquare, Undo2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { agentFlash, applyRemoteText, askAboutSelection, blameAt, blameGutter, showBlame, type Blame, type BlamePick, type BlameTurn } from '@/lib/agent-editor';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useStore } from '@/store';
-import type { ActivityEntry } from '@/types';
+import type { ActivityEntry, FileContent } from '@/types';
 
 // Language support loads the first time a file of that kind opens, not with the app.
 const load = {
@@ -51,8 +54,11 @@ export async function languageFor(path: string): Promise<Extension | null> {
 // Colors come from CSS variables, so the editor follows the app (and VS Code) theme.
 const theme = EditorView.theme({
   '&': { height: '100%', fontSize: '13px', backgroundColor: 'var(--card)', color: 'var(--foreground)' },
+  '&.cm-focused': { outline: 'none' },
   '.cm-scroller': { fontFamily: 'var(--font-mono)', lineHeight: '1.6' },
   '.cm-content': { caretColor: 'var(--foreground)', padding: '8px 0' },
+  '.cm-line': { padding: '0 12px 0 8px' },
+  '.cm-lineNumbers .cm-gutterElement': { padding: '0 8px 0 12px', minWidth: '32px' },
   '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--foreground)' },
   '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection': { backgroundColor: 'color-mix(in oklch, var(--brand) 22%, transparent) !important' },
   '.cm-gutters': { backgroundColor: 'var(--card)', color: 'var(--muted-foreground)', border: 'none' },
@@ -77,19 +83,41 @@ const highlight = HighlightStyle.define([
   { tag: t.link, color: 'var(--brand)', textDecoration: 'underline' },
 ]);
 
+const undoKey = typeof navigator !== 'undefined' && /Mac/.test(navigator.platform) ? '⌘⌥Z' : 'Ctrl+Alt+Z';
+
 /** A real code editor (CodeMirror 6): multi-cursor, search, folding, bracket matching, undo history. */
-export function CodeEditor({ path, value, onChange, onSave, readOnly, line }: {
-  path: string; value: string; onChange?: (v: string) => void; onSave?: () => void; readOnly?: boolean; line?: number;
+export function CodeEditor({ path, value, onChange, onSave, readOnly, line, wrap = false, onCursorChange, onToggleWrap }: {
+  path: string; value: string; onChange?: (v: string) => void; onSave?: () => void; readOnly?: boolean; line?: number; wrap?: boolean; onCursorChange?: (position: { line: number; column: number }) => void; onToggleWrap?: () => void;
 }) {
   const host = React.useRef<HTMLDivElement>(null);
   const view = React.useRef<EditorView | null>(null);
   const ro = React.useRef(new Compartment());
   const language = React.useRef(new Compartment());
-  const cb = React.useRef({ onChange, onSave }); cb.current = { onChange, onSave };
+  const wrapping = React.useRef(new Compartment());
+  const cb = React.useRef({ onChange, onSave, onCursorChange, onToggleWrap }); cb.current = { onChange, onSave, onCursorChange, onToggleWrap };
   // Agent-aware editing: who wrote each line (Alt+B toggles it), agent edits highlighted, a selection handed to an agent.
   const s = useStore(); const store = React.useRef(s); store.current = s;
   const [blameOn, setBlameOn] = React.useState(() => { try { return localStorage.getItem('tributary.blame') !== 'off'; } catch { return true; } });
   const [diskChanged, setDiskChanged] = React.useState(0);
+  // Undo one agent's change: click its blame bar for a menu, or press Mod-Alt-Z on a line it wrote. The hub puts back
+  // what that turn replaced there; the editor takes the new text like an agent edit, and Mod-Z brings the change back.
+  const [picked, setPicked] = React.useState<BlamePick | null>(null);
+  const refocus = React.useRef(true);
+  const undo = React.useRef(async (_turn: BlameTurn, _line: number) => {});
+  undo.current = async (turn, line) => {
+    const v = view.current; const st = store.current; const project = st.project; if (!v || !project || readOnly) return;
+    const name = st.agentOf(turn.agent).name;
+    try {
+      // Line numbers and the text written back come from the saved file, so unsaved edits would be lost.
+      const disk = await st.hub.call<FileContent>('readFile', project, path);
+      if (disk.content !== v.state.doc.toString()) { toast.error('Save this file first', { description: `Undoing ${name}'s change works on the saved file.` }); return; }
+      const r = await st.hub.call<{ text: string }>('revertTurnHunk', project, path, turn.messageId, line);
+      if (view.current === v && applyRemoteText(v, r.text, undefined, true)) setDiskChanged((n) => n + 1);
+      toast.success(`Undid ${name}'s change`, { description: `${undoKey.replace(/Alt\+|⌥/, '')} brings it back as an unsaved edit.` });
+    } catch (e) {
+      toast.error(`Couldn't undo ${name}'s change`, { description: String((e as Error).message).replace(/^Error invoking remote method '[^']*': (Error: )?/, '') });
+    }
+  };
 
   React.useEffect(() => {
     const v = new EditorView({
@@ -97,12 +125,18 @@ export function CodeEditor({ path, value, onChange, onSave, readOnly, line }: {
       state: EditorState.create({
         doc: value,
         extensions: [
-          basicSetup, theme, syntaxHighlighting(highlight), keymap.of([indentWithTab, { key: 'Mod-s', preventDefault: true, run: () => { cb.current.onSave?.(); return true; } }]),
+          basicSetup, theme, syntaxHighlighting(highlight), keymap.of([indentWithTab, { key: 'Mod-s', preventDefault: true, run: () => { cb.current.onSave?.(); return true; } }, { key: 'Alt-z', run: () => { if (!cb.current.onToggleWrap) return false; cb.current.onToggleWrap(); return true; } }]),
+          EditorView.contentAttributes.of({ 'aria-label': `Edit ${path}`, tabindex: '0' }),
           ro.current.of([EditorState.readOnly.of(!!readOnly), EditorView.editable.of(!readOnly)]),
-          EditorView.updateListener.of((u) => { if (u.docChanged) cb.current.onChange?.(u.state.doc.toString()); }),
+          wrapping.current.of(wrap ? EditorView.lineWrapping : []),
+          EditorView.updateListener.of((u) => {
+            if (u.docChanged && u.transactions.some((transaction) => !transaction.annotation(Transaction.remote))) cb.current.onChange?.(u.state.doc.toString());
+            if (u.selectionSet || u.docChanged) { const head = u.state.selection.main.head; const current = u.state.doc.lineAt(head); cb.current.onCursorChange?.({ line: current.number, column: head - current.from + 1 }); }
+          }),
           language.current.of([]),
           agentFlash,
-          blameGutter((turn) => store.current.openThread(turn.threadId)),
+          blameGutter((pick) => { const box = host.current!.getBoundingClientRect(); setPicked({ ...pick, x: pick.x - box.left, y: pick.y - box.top }); }),
+          keymap.of([{ key: 'Mod-Alt-z', run: (v) => { const head = v.state.selection.main.head; const turn = blameAt(v.state, head); if (!turn) return false; void undo.current(turn, v.state.doc.lineAt(head).number); return true; } }]),
           askAboutSelection(({ text, fromLine, toLine }) => {
             const st = store.current; const fence = path.split('.').pop() || '';
             st.setDraft(`${st.draft ? `${st.draft}\n` : ''}In @${path}:${fromLine}${toLine > fromLine ? `-${toLine}` : ''}:\n\`\`\`${fence}\n${text}\n\`\`\`\n`);
@@ -113,6 +147,7 @@ export function CodeEditor({ path, value, onChange, onSave, readOnly, line }: {
     });
     view.current = v;
     languageFor(path).then((lang) => { if (lang && view.current === v) v.dispatch({ effects: language.current.reconfigure(lang) }); }).catch(() => { /* plain text */ });
+    cb.current.onCursorChange?.({ line: 1, column: 1 });
     return () => { v.destroy(); view.current = null; };
     // A new path means a new document; the value is synced below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -125,6 +160,7 @@ export function CodeEditor({ path, value, onChange, onSave, readOnly, line }: {
     if (applyRemoteText(v, value)) setDiskChanged((n) => n + 1);
   }, [value]);
   React.useEffect(() => { view.current?.dispatch({ effects: ro.current.reconfigure([EditorState.readOnly.of(!!readOnly), EditorView.editable.of(!readOnly)]) }); }, [readOnly]);
+  React.useEffect(() => { view.current?.dispatch({ effects: wrapping.current.reconfigure(wrap ? EditorView.lineWrapping : []) }); }, [wrap]);
   React.useEffect(() => {
     const v = view.current; if (!v || !line) return;
     const l = v.state.doc.line(Math.min(Math.max(1, line), v.state.doc.lines));
@@ -161,6 +197,20 @@ export function CodeEditor({ path, value, onChange, onSave, readOnly, line }: {
           <span className="size-2 animate-pulse rounded-full" style={{ backgroundColor: s.agentOf(editing[0]).color }} />
           {editing.map((id) => s.agentOf(id).name).join(', ')} {editing.length === 1 ? 'is' : 'are'} editing this file
         </div>
+      )}
+      {picked && (
+        <DropdownMenu open onOpenChange={(open) => { if (!open) setPicked(null); }}>
+          <DropdownMenuTrigger asChild><span aria-hidden="true" className="pointer-events-none absolute size-0" style={{ left: picked.x, top: picked.y }} /></DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-64" onCloseAutoFocus={(e) => { e.preventDefault(); if (refocus.current) view.current?.focus(); refocus.current = true; }}>
+            <DropdownMenuLabel className="flex flex-col gap-0.5">
+              <span className="truncate">{s.agentOf(picked.turn.agent).name}'s turn, line {picked.line}</span>
+              {picked.turn.request && <span className="truncate text-xs font-normal text-muted-foreground">{picked.turn.request.split('\n')[0]}</span>}
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => { refocus.current = false; s.openThread(picked.turn.threadId); }}><MessageSquare />Open conversation</DropdownMenuItem>
+            <DropdownMenuItem disabled={readOnly} onSelect={() => { void undo.current(picked.turn, picked.line); }}><Undo2 />Undo this change<DropdownMenuShortcut>{undoKey}</DropdownMenuShortcut></DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
     </div>
   );

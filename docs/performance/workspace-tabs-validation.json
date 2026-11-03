@@ -1,0 +1,225 @@
+{
+  "checks": [
+    "1920px: no page clipping and all workspace tools visible",
+    "1920px: active file and close control visible",
+    "1920px: chat keeps at least 360px",
+    "1920px: default workspace stays capped at 640px",
+    "1280px: no page clipping and all workspace tools visible",
+    "1280px: active file and close control visible",
+    "1280px: chat keeps at least 360px",
+    "1280px: default workspace stays capped at 640px",
+    "900px: no page clipping and all workspace tools visible",
+    "900px: active file and close control visible",
+    "900px: chat keeps at least 360px",
+    "900px: default workspace stays capped at 640px",
+    "768px: no page clipping and all workspace tools visible",
+    "768px: active file and close control visible",
+    "768px: chat keeps at least 360px",
+    "768px: default workspace stays capped at 640px",
+    "390px: no page clipping and all workspace tools visible",
+    "390px: active file and close control visible",
+    "390px: full-screen workspace with 44px controls",
+    "320px: no page clipping and all workspace tools visible",
+    "320px: active file and close control visible",
+    "320px: full-screen workspace with 44px controls",
+    "320px: long filename and close button stay within the strip",
+    "320px: browser uses full width",
+    "320px: selecting a file returns to full-width reading",
+    "Changes badge caps visually while retaining the full count"
+  ],
+  "viewports": [
+    {
+      "activeVisible": true,
+      "bodyWidth": 1920,
+      "chat": {
+        "height": 952,
+        "right": 1279,
+        "width": 1023,
+        "x": 256,
+        "y": 48
+      },
+      "count": "Changes, 118 changed files",
+      "explorer": {
+        "height": 872,
+        "right": 1504,
+        "width": 224,
+        "x": 1280,
+        "y": 128
+      },
+      "font": "13px",
+      "minButtonHeight": 16,
+      "toolbarHeight": 32,
+      "toolsVisible": true,
+      "visualCount": "Changes\n99+",
+      "width": 1920,
+      "workspace": {
+        "height": 952,
+        "right": 1920,
+        "width": 640,
+        "x": 1280,
+        "y": 48
+      }
+    },
+    {
+      "activeVisible": true,
+      "bodyWidth": 1280,
+      "chat": {
+        "height": 952,
+        "right": 705.5625,
+        "width": 449.5625,
+        "x": 256,
+        "y": 48
+      },
+      "count": "Changes, 118 changed files",
+      "explorer": {
+        "height": 872,
+        "right": 930.734375,
+        "width": 224.171875,
+        "x": 706.5625,
+        "y": 128
+      },
+      "font": "13px",
+      "minButtonHeight": 16,
+      "toolbarHeight": 32,
+      "toolsVisible": true,
+      "visualCount": "Changes\n99+",
+      "width": 1280,
+      "workspace": {
+        "height": 952,
+        "right": 1280,
+        "width": 573.4375,
+        "x": 706.5625,
+        "y": 48
+      }
+    },
+    {
+      "activeVisible": true,
+      "bodyWidth": 900,
+      "chat": {
+        "height": 852,
+        "right": 395,
+        "width": 395,
+        "x": 0,
+        "y": 48
+      },
+      "count": "Changes, 118 changed files",
+      "explorer": {
+        "height": 772,
+        "right": 620,
+        "width": 224,
+        "x": 396,
+        "y": 128
+      },
+      "font": "13px",
+      "minButtonHeight": 16,
+      "toolbarHeight": 32,
+      "toolsVisible": true,
+      "visualCount": "Changes\n99+",
+      "width": 900,
+      "workspace": {
+        "height": 852,
+        "right": 900,
+        "width": 504,
+        "x": 396,
+        "y": 48
+      }
+    },
+    {
+      "activeVisible": true,
+      "bodyWidth": 768,
+      "chat": {
+        "height": 852,
+        "right": 360,
+        "width": 360,
+        "x": 0,
+        "y": 48
+      },
+      "count": "Changes, 118 changed files",
+      "explorer": {
+        "height": 772,
+        "right": 585,
+        "width": 224,
+        "x": 361,
+        "y": 128
+      },
+      "font": "13px",
+      "minButtonHeight": 16,
+      "toolbarHeight": 32,
+      "toolsVisible": true,
+      "visualCount": "Changes\n99+",
+      "width": 768,
+      "workspace": {
+        "height": 852,
+        "right": 768,
+        "width": 407,
+        "x": 361,
+        "y": 48
+      }
+    },
+    {
+      "activeVisible": true,
+      "bodyWidth": 390,
+      "chat": {
+        "height": 844,
+        "right": 0,
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      "count": "Changes, 118 changed files",
+      "explorer": {
+        "height": 756,
+        "right": 0,
+        "width": 0,
+        "x": 0,
+        "y": 88
+      },
+      "font": "13px",
+      "minButtonHeight": 43.9375,
+      "toolbarHeight": 44,
+      "toolsVisible": true,
+      "visualCount": "Changes\n99+",
+      "width": 390,
+      "workspace": {
+        "height": 844,
+        "right": 390,
+        "width": 390,
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "activeVisible": true,
+      "bodyWidth": 320,
+      "chat": {
+        "height": 844,
+        "right": 0,
+        "width": 0,
+        "x": 0,
+        "y": 0
+      },
+      "count": "Changes, 118 changed files",
+      "explorer": {
+        "height": 756,
+        "right": 0,
+        "width": 0,
+        "x": 0,
+        "y": 88
+      },
+      "font": "13px",
+      "minButtonHeight": 44,
+      "toolbarHeight": 44,
+      "toolsVisible": true,
+      "visualCount": "Changes\n99+",
+      "width": 320,
+      "workspace": {
+        "height": 844,
+        "right": 320,
+        "width": 320,
+        "x": 0,
+        "y": 0
+      }
+    }
+  ],
+  "countLabel": "Changes, 118 changed files"
+}

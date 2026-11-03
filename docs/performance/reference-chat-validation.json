@@ -1,0 +1,58 @@
+{
+  "checks": [
+    "Reference layout has a 288px project sidebar and 320px context panel",
+    "Message box separates writing from model and permissions controls",
+    "Context uses actual environment and recorded project state",
+    "Context panel can be closed and reopened",
+    "Context opens actual project memory",
+    "Opening a workspace tool preserves the context preference",
+    "Workbench remains available and keeps the message draft",
+    "Unsaved file edits survive switching to Chat view and back",
+    "1920px: Chat view stays inside the viewport",
+    "1280px: Chat view stays inside the viewport",
+    "900px: Chat view stays inside the viewport",
+    "900px: context is collapsed instead of crowding chat",
+    "900px: context opens as a bounded drawer",
+    "900px: context Escape restores keyboard focus",
+    "768px: Chat view stays inside the viewport",
+    "768px: context is collapsed instead of crowding chat",
+    "768px: context opens as a bounded drawer",
+    "768px: context Escape restores keyboard focus",
+    "390px: Chat view stays inside the viewport",
+    "390px: context is collapsed instead of crowding chat",
+    "390px: context opens as a bounded drawer",
+    "390px: context Escape restores keyboard focus",
+    "320px: Chat view stays inside the viewport",
+    "320px: context is collapsed instead of crowding chat",
+    "320px: context opens as a bounded drawer",
+    "320px: context Escape restores keyboard focus",
+    "Reference UI changes do not send a prompt"
+  ],
+  "geometry": [
+    {
+      "width": 1920,
+      "body": 1920
+    },
+    {
+      "width": 1280,
+      "body": 1280
+    },
+    {
+      "width": 900,
+      "body": 900
+    },
+    {
+      "width": 768,
+      "body": 768
+    },
+    {
+      "width": 390,
+      "body": 390
+    },
+    {
+      "width": 320,
+      "body": 320
+    }
+  ],
+  "fixture": "Isolated explicitly labeled UI preview. No agent requests; temporary unsaved edit undone."
+}

@@ -100,11 +100,11 @@
 }
 
 .dark {
-    --background: oklch(0.185 0.012 265);
+    --background: oklch(0.245 0 0);
     --foreground: oklch(0.94 0.006 260);
-    --card: oklch(0.215 0.013 265);
+    --card: oklch(0.29 0 0);
     --card-foreground: oklch(0.94 0.006 260);
-    --popover: oklch(0.235 0.014 265);
+    --popover: oklch(0.28 0 0);
     --popover-foreground: oklch(0.94 0.006 260);
     --primary: oklch(0.94 0.006 260);
     --primary-foreground: oklch(0.2 0.012 265);
@@ -114,7 +114,7 @@
     --muted-foreground: oklch(0.7 0.014 260);
     --accent: oklch(0.29 0.02 270);
     --accent-foreground: oklch(0.96 0.005 260);
-    --destructive: oklch(0.68 0.19 25);
+    --destructive: oklch(0.72 0.17 25);
     --border: oklch(0.31 0.014 265);
     --input: oklch(0.34 0.015 265);
     --ring: oklch(0.68 0.17 277);
@@ -127,7 +127,7 @@
     --chart-3: oklch(0.74 0.15 150);
     --chart-4: oklch(0.8 0.14 75);
     --chart-5: oklch(0.68 0.19 25);
-    --sidebar: oklch(0.165 0.012 265);
+    --sidebar: oklch(0.205 0 0);
     --sidebar-foreground: oklch(0.9 0.008 260);
     --sidebar-primary: oklch(0.68 0.17 277);
     --sidebar-primary-foreground: oklch(0.985 0 0);
@@ -188,6 +188,48 @@
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; } }
 }
 
+/* Native scrolling stays keyboard-accessible; only the tab strip hides its bar. */
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklch, var(--muted-foreground) 75%, var(--background)) transparent;
+  }
+  *:hover, *:focus-within {
+    scrollbar-color: color-mix(in oklch, var(--muted-foreground) 90%, var(--background)) transparent;
+  }
+  @media (pointer: coarse), (forced-colors: active) {
+    * { scrollbar-width: auto; }
+  }
+  @media (forced-colors: active) {
+    * { scrollbar-color: auto; }
+  }
+  @supports not (scrollbar-color: auto) {
+    ::-webkit-scrollbar { width: 6px; height: 4px; }
+    ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+      border: 1px solid transparent;
+      border-radius: 999px;
+      background: color-mix(in oklch, var(--muted-foreground) 75%, var(--background));
+      background-clip: padding-box;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background-color: var(--muted-foreground);
+    }
+  }
+  @media (pointer: fine) and (forced-colors: none) {
+    @supports selector(::-webkit-scrollbar) {
+      .developer-shell *, .workspace-surface * { scrollbar-width: auto; scrollbar-color: auto; }
+      .developer-shell ::-webkit-scrollbar, .workspace-surface ::-webkit-scrollbar { width: 6px; height: 4px; }
+      .developer-shell ::-webkit-scrollbar-track, .workspace-surface ::-webkit-scrollbar-track,
+      .developer-shell ::-webkit-scrollbar-corner, .workspace-surface ::-webkit-scrollbar-corner { background: transparent; }
+      .developer-shell ::-webkit-scrollbar-thumb, .workspace-surface ::-webkit-scrollbar-thumb {
+        border-radius: 999px; background: color-mix(in oklch, var(--muted-foreground) 65%, var(--background));
+      }
+      .developer-shell ::-webkit-scrollbar-thumb:hover, .workspace-surface ::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
+    }
+  }
+}
+
 /* Markdown replies */
 .prose-reply { font-size: var(--reading-size, 0.9375rem); line-height: 1.75; overflow-wrap: anywhere; }
 .prose-reply > :first-child { margin-top: 0; }
@@ -211,12 +253,12 @@
 /* Syntax colors for the code editor (tuned for contrast in both themes). */
 :root {
   --syn-keyword: oklch(0.5 0.2 300); --syn-string: oklch(0.52 0.14 150); --syn-number: oklch(0.55 0.15 50);
-  --syn-comment: oklch(0.6 0.02 260); --syn-function: oklch(0.5 0.17 255); --syn-type: oklch(0.52 0.12 200);
+  --syn-comment: oklch(0.5 0.02 260); --syn-function: oklch(0.5 0.17 255); --syn-type: oklch(0.52 0.12 200);
   --syn-property: oklch(0.48 0.1 230); --syn-tag: oklch(0.52 0.18 20);
 }
 .dark {
   --syn-keyword: oklch(0.76 0.14 305); --syn-string: oklch(0.78 0.13 145); --syn-number: oklch(0.8 0.13 65);
-  --syn-comment: oklch(0.6 0.02 260); --syn-function: oklch(0.78 0.12 250); --syn-type: oklch(0.8 0.1 195);
+  --syn-comment: oklch(0.68 0.02 260); --syn-function: oklch(0.78 0.12 250); --syn-type: oklch(0.8 0.1 195);
   --syn-property: oklch(0.8 0.08 225); --syn-tag: oklch(0.75 0.14 20);
 }
 .vscode {
@@ -226,4 +268,202 @@
   --syn-comment: var(--vscode-descriptionForeground); --syn-function: var(--vscode-symbolIcon-functionForeground, var(--vscode-editor-foreground));
   --syn-type: var(--vscode-symbolIcon-classForeground, var(--vscode-editor-foreground)); --syn-property: var(--vscode-symbolIcon-propertyForeground, var(--vscode-editor-foreground));
   --syn-tag: var(--vscode-symbolIcon-keywordForeground, var(--vscode-editor-foreground));
+}
+
+/* Quiet editor chrome, scoped so VS Code retains its own host theme. */
+.dark:not(.vscode) .workspace-surface {
+    --background: oklch(0.19 0 0);
+    --card: oklch(0.215 0 0);
+    --muted: oklch(0.26 0.004 265);
+    --border: oklch(0.29 0.004 265);
+    --input: oklch(0.32 0.004 265);
+    --accent: oklch(0.28 0.008 265);
+}
+
+/* Coding conversations use an editor-first workbench with a compact chat pane. */
+.developer-shell [data-slot="sidebar-gap"] { width: 0; }
+.developer-shell [data-slot="sidebar"][data-state="expanded"] [data-slot="sidebar-container"] { left: 44px; z-index: 30; }
+.dark:not(.vscode) .developer-shell {
+    --background: oklch(0.19 0.004 85);
+    --card: oklch(0.215 0.004 85);
+    --muted: oklch(0.255 0.004 85);
+    --border: oklch(0.27 0.004 85);
+    --sidebar: oklch(0.17 0.003 85);
+}
+.dark:not(.vscode) .developer-shell .workspace-surface {
+    --background: oklch(0.155 0.003 85);
+    --card: oklch(0.17 0.003 85);
+    --muted: oklch(0.225 0.003 85);
+    --border: oklch(0.25 0.003 85);
+    --sidebar: oklch(0.16 0.003 85);
+    --accent: oklch(0.245 0.004 85);
+}
+.developer-shell [aria-label="Chat"] .prose-reply h1,
+.developer-shell [aria-label="Chat"] .prose-reply h2,
+.developer-shell [aria-label="Chat"] .prose-reply h3 { font-size: 0.9375rem; }
+.developer-shell svg.lucide,
+.workspace-surface svg.lucide { stroke-width: 1.6; }
+@media (min-width: 640px) {
+  .developer-shell [aria-label="Project files"] .explorer-row { min-height: 28px; border-radius: 4px; }
+}
+@media (max-width: 639px) {
+  .developer-shell [aria-label="Chat"] button[data-slot="button"],
+  .developer-shell [aria-label="Chat"] button[data-slot="input-group-button"] { min-height: 44px; }
+}
+@media (max-width: 639px) {
+  .developer-shell [aria-label="Chat"] button[data-size^="icon"],
+  .developer-shell [aria-label="Chat"] button[aria-label^="Permissions:"],
+  .developer-shell [aria-label="Chat"] button[aria-label="Choose agent and model source"] { min-width: 44px; }
+  .developer-shell #conversation-pane header button[data-slot="button"] { min-width: 44px; min-height: 44px; }
+}
+
+.workspace-file-tab[data-state="active"] { background: var(--card); }
+
+/* One row rhythm keeps labels, tab actions and neighboring panes on the same centerline. */
+:root, .developer-shell, .workspace-surface { --workbench-row-height: 36px; --workbench-action-size: 32px; }
+.workbench-toolbar {
+  display: flex; min-width: 0; height: var(--workbench-row-height, 40px);
+  flex-shrink: 0; align-items: center;
+}
+.workbench-toolbar-wrap { height: auto; min-height: var(--workbench-row-height, 40px); }
+.workbench-action, .chat-toolbar button {
+  width: var(--workbench-action-size, 32px); height: var(--workbench-action-size, 32px);
+  padding: 0; flex-shrink: 0; border-radius: 6px;
+  transition-property: color, background-color, border-color, box-shadow;
+}
+.workspace-file-strip { height: 100%; display: flex; align-items: center; }
+.workspace-file-list[data-slot="tabs-list"], .workspace-tool-list[data-slot="tabs-list"] {
+  height: 100%; align-items: stretch;
+}
+.workspace-file-tab[data-slot="tabs-trigger"], .workspace-tool-list > [data-slot="tabs-trigger"] {
+  height: 100%; align-items: center; line-height: 20px;
+}
+.workspace-file-close { top: 50%; transform: translate(-100%, -50%); }
+.composer-tool-item:not([data-checked]) > svg:last-child { display: none; }
+.workspace-file-footer { min-height: 36px; }
+.workspace-file-footer { container-type: inline-size; }
+@container (max-width: 420px) { .editor-file-details { display: none; } }
+@container (max-width: 220px) { .editor-wrap-control { display: none; } }
+.image-canvas {
+  background-color: var(--background);
+  background-image: repeating-conic-gradient(color-mix(in oklch, var(--muted) 55%, transparent) 0% 25%, transparent 0% 50%);
+  background-size: 16px 16px;
+}
+.image-preview-content { margin: 0; border-radius: 0; }
+.image-preview { container-type: inline-size; container-name: image-view; }
+.image-options { display: none; }
+@container image-view (max-width: 260px) {
+  .image-size-controls, .image-expand-control { display: none; }
+  .image-options { display: inline-flex; }
+  .image-zoom-label { width: 36px; }
+  .image-footer { padding-inline: 4px; }
+}
+.composer-surface { container-type: inline-size; }
+.composer-selector {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 32px; min-height: 32px; gap: 6px; padding: 0 8px; line-height: 20px;
+  transition-property: color, background-color, border-color, box-shadow;
+}
+.composer-selector > .composer-selector-label { line-height: 20px; }
+.composer-selector > svg { width: 16px; height: 16px; flex-shrink: 0; }
+.composer-selector > .composer-selector-chevron { width: 12px; height: 12px; }
+.composer-selector > .composer-agent-mark { width: 16px; height: 16px; font-size: 8px; line-height: 1; }
+.composer-selector-icon { width: 32px; padding-inline: 0; }
+.image-zoom-controls .workbench-action { border-radius: 50%; }
+.image-zoom-label { min-height: 32px; line-height: 20px; }
+.composer-model-trigger[data-compact="true"] > svg:first-child { display: none; }
+@container (max-width: 420px) {
+  .composer-toolbar { gap: 0; }
+  .composer-toolbar > span { display: none; }
+  .composer-model-trigger > span { max-width: 80px; }
+}
+.composer-toolbar button { height: 32px; min-height: 32px; transition-property: color, background-color, border-color, box-shadow; }
+.composer-toolbar button[data-size^="icon"], .composer-toolbar button[aria-label^="Permissions:"] { width: 32px; }
+@media (hover: none) { .reply-actions { opacity: 1; } }
+@media (max-width: 639px) {
+  :root, .developer-shell, .workspace-surface { --workbench-row-height: 44px; --workbench-action-size: 44px; }
+  .composer-toolbar button { height: 44px; min-height: 44px; }
+  .composer-toolbar button[data-size^="icon"], .composer-toolbar button[aria-label^="Permissions:"] { width: 44px; }
+  .workspace-file-footer { min-height: 48px; }
+  .composer-model-trigger { min-width: 44px; }
+  .composer-selector { height: 44px; min-height: 44px; }
+  .composer-selector-icon { width: 44px; }
+  .image-zoom-label { min-height: 44px; }
+  @container (max-width: 340px) {
+    .composer-model-trigger { width: 44px; padding-inline: 0; }
+    .composer-model-trigger > span, .composer-model-trigger > svg:last-child { display: none; }
+    .composer-model-trigger[data-compact] > svg:first-child { display: block; }
+  }
+  .composer-tools [data-slot="input-group"] { min-height: 44px; }
+  .composer-tools [cmdk-input] { min-height: 44px; }
+}
+
+/* Shared navigation hierarchy: quiet surfaces, crisp selection and visible keyboard focus. */
+.activity-rail { background: var(--sidebar); }
+.dark:not(.vscode) .conversation-shell {
+  --background: oklch(0.205 0 0);
+  --card: oklch(0.27 0 0);
+  --sidebar: oklch(0.22 0 0);
+  --border: oklch(0.29 0 0);
+}
+.conversation-shell .prose-reply { font-size: var(--coding-reading-size, 13px); line-height: 1.7; }
+.conversation-shell [data-slot="message-header"], .conversation-shell [data-slot="message-footer"] { padding-inline: 0; }
+.conversation-shell [data-slot="sidebar-header"] { padding: 4px 8px; gap: 0; }
+.conversation-shell [data-slot="sidebar-header"] > div:first-child { padding: 2px 4px; }
+.conversation-shell [aria-label="Chat actions"] { flex-direction: row; }
+.conversation-shell [aria-label="Chat actions"] > li { flex: 1; }
+.conversation-shell [aria-label="Chat actions"] button { justify-content: center; height: 36px; }
+.conversation-shell [aria-label="Chat actions"] button > span, .conversation-shell [aria-label="Chat actions"] kbd { display: none; }
+.chat-message-box { align-items: center; }
+.chat-message-box textarea { min-width: 0; }
+.chat-composer-options button { height: 32px; min-height: 32px; font-size: 12px; }
+.chat-composer-options [aria-label="Choose agent and model source"] > .composer-selector-label { max-width: 100px; }
+.context-row { display: flex; min-height: 32px; align-items: center; gap: 8px; border-radius: 4px; padding: 4px; }
+.context-row > svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--muted-foreground); }
+.context-section { border-bottom: 1px solid var(--border); padding-block: 4px; }
+.context-summary { display: flex; min-height: 40px; align-items: center; gap: 4px; cursor: pointer; list-style: none; font-size: 12px; }
+.context-summary::-webkit-details-marker { display: none; }
+@media (min-width: 1536px) {
+  .conversation-shell [data-slot="message-scroller-content"] { margin-left: auto; margin-right: clamp(16px, calc((100vw - 1280px) * .175), 112px); padding-inline: 20px; }
+  .conversation-shell .chat-composer-host { margin-left: auto; margin-right: clamp(0px, calc((100vw - 1280px) * .175 - 24px), 88px); }
+}
+@media (max-width: 639px) {
+  .conversation-shell .prose-reply { font-size: max(14px, var(--coding-reading-size, 13px)); }
+  .conversation-shell [aria-label="Chat actions"] button, .chat-message-box button, .chat-composer-options button, .context-row, .context-summary { min-height: 44px; }
+  .chat-message-box button[data-size^="icon"], .chat-composer-options button[data-size^="icon"] { min-width: 44px; }
+  .chat-composer-options [aria-label="Choose agent and model source"] > .composer-selector-label { display: none; }
+  .chat-composer-options .composer-model-trigger > span { max-width: 80px; }
+}
+.activity-button[aria-pressed="true"]::before {
+  content: ''; position: absolute; left: -4px; top: 10px; bottom: 10px;
+  width: 2px; border-radius: 2px; background: var(--foreground);
+}
+.workspace-explorer { background: var(--sidebar); }
+.workspace-explorer .explorer-row { position: relative; }
+.workspace-explorer .explorer-row[aria-current="page"] {
+  background: var(--sidebar-accent); color: var(--sidebar-accent-foreground);
+}
+.workspace-explorer .explorer-row:focus-visible {
+  outline: 2px solid var(--ring); outline-offset: -2px;
+}
+.project-sidebar [data-slot="sidebar-group"] { padding: 12px; }
+.project-sidebar [data-slot="sidebar-group-label"] { height: 32px; font-size: 11px; font-weight: 500; }
+.project-sidebar [data-slot="sidebar-menu-sub"] { border-color: var(--sidebar-border); margin-left: 15px; }
+.project-sidebar [data-slot="sidebar-menu-button"],
+.project-sidebar [data-slot="sidebar-menu-sub-button"] { font-size: 13px; }
+.developer-shell .chat-toolbar { background: var(--background); }
+.developer-shell [aria-label="Chat"] .prose-reply { font-size: var(--coding-reading-size, 13px); line-height: 1.75; }
+.developer-shell [aria-label="Chat"] [data-slot="bubble-content"] { font-size: var(--coding-reading-size, 13px); line-height: 1.65; }
+.developer-shell [aria-label="Chat"] .prose-reply h1,
+.developer-shell [aria-label="Chat"] .prose-reply h2,
+.developer-shell [aria-label="Chat"] .prose-reply h3 { font-size: calc(var(--coding-reading-size, 13px) + 1px); }
+@media (max-width: 639px) {
+  .project-sidebar [data-slot="sidebar-menu-button"],
+  .project-sidebar [data-slot="sidebar-menu-sub-button"] { min-height: 44px; }
+  .developer-shell [aria-label="Chat"] .prose-reply,
+  .developer-shell [aria-label="Chat"] [data-slot="bubble-content"] { font-size: max(14px, var(--coding-reading-size, 13px)); }
+}
+@media (forced-colors: active) {
+  .explorer-row[aria-current="page"], .project-sidebar [data-active="true"] { outline: 1px solid Highlight; }
+  .activity-button[aria-pressed="true"] { outline: 1px solid Highlight; }
 }

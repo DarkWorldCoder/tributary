@@ -1,6 +1,6 @@
-// Agent-aware editing for CodeMirror: which agent wrote each line (blame gutter), a short highlight on lines an
-// agent just changed (applied as the smallest change, so your cursor and scroll position stay put), and a way to
-// hand a selection to an agent.
+// Agent-aware editing for CodeMirror: which agent wrote each line (blame gutter, with a way to undo one agent's
+// change), a short highlight on lines an agent just changed (applied as the smallest change, so your cursor and scroll
+// position stay put), and a way to hand a selection to an agent.
 import { RangeSet, StateEffect, StateField, Transaction, type EditorState, type Extension } from '@codemirror/state';
 import { Decoration, EditorView, GutterMarker, gutter, keymap, showTooltip, type DecorationSet, type Tooltip } from '@codemirror/view';
 import { changedLines, minimalChange } from '@/lib/text-change.mjs';
@@ -9,6 +9,8 @@ export interface BlameTurn { agent: string; threadId: string; title: string; mes
 export interface Blame { authors: number[]; turns: BlameTurn[] }
 export interface AgentLook { name: string; color: string }
 export interface Selected { text: string; fromLine: number; toLine: number }
+/** A click on a blame bar: the turn that wrote the line, the line (1-based) and where the pointer was. */
+export interface BlamePick { turn: BlameTurn; line: number; x: number; y: number }
 
 const theme = EditorView.baseTheme({
   '.cm-agent-blame-gutter .cm-gutterElement': { padding: '0 1px 0 3px' },
@@ -50,18 +52,24 @@ const blameField = StateField.define<BlameState>({
   },
 });
 
-/** The blame gutter. Click a bar to open the conversation whose turn wrote that line. */
-export function blameGutter(onOpen: (turn: BlameTurn) => void): Extension {
+/** The turn that wrote the line at `pos`, or null for a line no agent wrote (or with blame off). */
+export function blameAt(state: EditorState, pos: number): BlameTurn | null {
+  const field = state.field(blameField, false); if (!field) return null;
+  const from = state.doc.lineAt(pos).from; let hit: number | null = null;
+  field.markers.between(from, from, (_f, _t, m) => { hit = m.turn; });
+  return hit == null ? null : field.turns[hit] ?? null;
+}
+
+/** The blame gutter. Clicking a bar hands its turn and line to onPick (a menu: open the conversation, undo the change). */
+export function blameGutter(onPick: (pick: BlamePick) => void): Extension {
   return [blameField, gutter({
     class: 'cm-agent-blame-gutter',
     markers: (view) => view.state.field(blameField).markers,
     domEventHandlers: {
-      mousedown(view, line) {
-        const { markers, turns } = view.state.field(blameField);
-        let hit: number | null = null;
-        markers.between(line.from, line.from, (_f, _t, m) => { hit = m.turn; });
-        if (hit == null) return false;
-        onOpen(turns[hit]); return true;
+      mousedown(view, line, event) {
+        const turn = blameAt(view.state, line.from); if (!turn) return false;
+        const e = event as MouseEvent;
+        onPick({ turn, line: view.state.doc.lineAt(line.from).number, x: e.clientX, y: e.clientY }); return true;
       },
     },
   }), theme];
@@ -74,7 +82,7 @@ export function showBlame(view: EditorView, blame: Blame | null, look: (agentId:
     for (let i = 0; i < blame.authors.length && i < doc.lines; i++) {
       const who = blame.authors[i]; const turn = blame.turns[who]; if (who < 0 || !turn) continue;
       const a = look(turn.agent);
-      const label = `Changed during ${a.name}'s turn${turn.request ? `: "${turn.request.split('\n')[0].slice(0, 80)}"` : ''}\n${turn.title}${turn.ts ? `, ${ago(turn.ts)}` : ''}. Click to open the conversation.`;
+      const label = `Changed during ${a.name}'s turn${turn.request ? `: "${turn.request.split('\n')[0].slice(0, 80)}"` : ''}\n${turn.title}${turn.ts ? `, ${ago(turn.ts)}` : ''}. Click to open the conversation or undo this change.`;
       ranges.push(new BlameMarker(who, a.color, label).range(doc.line(i + 1).from));
     }
   }
@@ -104,12 +112,13 @@ export const agentFlash: Extension = [flashField, theme];
 
 /**
  * Bring the editor up to date with the file on disk after someone else (an agent) changed it. Only the changed part
- * is replaced, outside the undo history, and those lines are highlighted for a moment. Returns false if unchanged.
+ * is replaced, outside the undo history unless `undoable`, and those lines are highlighted for a moment. Returns false
+ * if unchanged.
  */
-export function applyRemoteText(view: EditorView, text: string, color = 'var(--brand)') {
+export function applyRemoteText(view: EditorView, text: string, color = 'var(--brand)', undoable = false) {
   const change = minimalChange(view.state.doc.toString(), text);
   if (!change) return false;
-  view.dispatch({ changes: change, annotations: [Transaction.remote.of(true), Transaction.addToHistory.of(false)], effects: flash.of({ ...changedLines(text, change), color }) });
+  view.dispatch({ changes: change, annotations: [Transaction.remote.of(true), Transaction.addToHistory.of(undoable)], effects: flash.of({ ...changedLines(text, change), color }) });
   clearTimeout(flashTimers.get(view));
   flashTimers.set(view, window.setTimeout(() => { if (view.dom.isConnected) view.dispatch({ effects: flash.of(null) }); }, 2600));
   return true;

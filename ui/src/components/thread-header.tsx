@@ -1,12 +1,12 @@
 import * as React from 'react';
-import { BookOpen, Download, FolderPlus, FolderTree, MoreHorizontal, PanelRight, Pencil, SquareTerminal, Trash2, X } from 'lucide-react';
+import { BookOpen, Code2, Download, FolderPlus, FolderTree, MessageSquare, MoreHorizontal, PanelRight, Pencil, Search, SquareTerminal, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { AgentAvatar } from '@/components/agent-avatar';
 import { NotificationsBell } from '@/components/notifications';
@@ -23,7 +23,7 @@ function FoldersDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Folders in this project</DialogTitle>
-          <DialogDescription>Add other folders the agents may read and change, such as a shared library or a backend next to this frontend. Each agent gets them through its own add-folder option.</DialogDescription>
+          <DialogDescription>Add folders your agents can work with alongside this project.</DialogDescription>
         </DialogHeader>
         <ul className="flex flex-col gap-1.5">
           <li className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2 text-sm"><FolderTree className="size-4 text-muted-foreground" /><span className="min-w-0 flex-1 truncate font-mono text-xs">{s.project}</span><span className="text-xs text-muted-foreground">Main</span></li>
@@ -41,8 +41,14 @@ function FoldersDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v
   );
 }
 
-export function ThreadHeader() {
+export function ThreadHeader({ compact = false }: { compact?: boolean }) {
   const s = useStore(); const t = s.thread;
+  const { setOpen: setSidebarOpen } = useSidebar();
+  const conversationView = s.workspaceLayout === 'chat' && !!t?.messages.length && !s.home && !t.task;
+  const switchView = () => {
+    if (s.workspaceLayout === 'editor') { s.setWorkspaceLayout('chat'); s.setPanel({ ...s.panel, open: false }); setSidebarOpen(true); }
+    else { s.setWorkspaceLayout('editor'); s.setWorkspaceExpanded(false); s.openPanel('files'); setSidebarOpen(false); }
+  };
   const [rename, setRename] = React.useState(false); const [title, setTitle] = React.useState('');
   const [del, setDel] = React.useState(false); const [folders, setFolders] = React.useState(false);
   const [editors, setEditors] = React.useState<{ id: string; name: string }[]>([]);
@@ -59,36 +65,37 @@ export function ThreadHeader() {
     else toast.message('Export is available in the desktop app.');
   };
   return (
-    <header className="flex h-12 shrink-0 items-center gap-1.5 border-b px-3">
-      <SidebarTrigger className="-ml-1" />
-      <div className="flex min-w-0 flex-1 items-baseline gap-2">
-        <h1 className="truncate text-[0.9375rem] font-semibold">{s.home ? 'Start a task' : t ? t.title : project ? 'New conversation' : 'Tributary'}</h1>
-        {project && (
-          <button className="truncate text-sm text-muted-foreground hover:text-foreground" title={`${project.path}${project.folders?.length ? ` and ${project.folders.length} more folder${project.folders.length > 1 ? 's' : ''}` : ''}`} onClick={() => setFolders(true)}>
+    <header className={compact || conversationView ? "chat-toolbar workbench-toolbar gap-1 border-b px-2 [&_svg]:size-4" : "flex h-12 shrink-0 items-center gap-1.5 px-3"}>
+      <SidebarTrigger className={compact ? "-ml-1 md:hidden" : "-ml-1"} />{compact && <AgentAvatar agent={s.agent} size="xs" />}
+      <div className="flex min-w-0 flex-1 flex-col items-start justify-center gap-0">
+        <h1 className={compact || conversationView ? "max-w-full truncate text-[13px] font-medium" : "max-w-full truncate text-[0.9375rem] font-semibold"}>{s.home ? 'Start a task' : t ? t.title : project ? 'New chat' : 'Tributary'}</h1>
+        {project && !compact && !conversationView && (
+          <button className="max-w-full truncate text-xs text-muted-foreground hover:text-foreground" title={`${project.path}${project.folders?.length ? ` and ${project.folders.length} more folder${project.folders.length > 1 ? 's' : ''}` : ''}`} onClick={() => setFolders(true)}>
             {project.name}{project.folders?.length ? ` +${project.folders.length}` : ''}{s.git?.branch ? ` on ${s.git.branch}` : ''}
           </button>
         )}
       </div>
-      {team && <span className="hidden items-center gap-1.5 rounded-full bg-brand/10 px-2.5 py-0.5 text-xs text-brand sm:inline-flex">{s.st?.recipes?.[team.recipe]?.name ?? 'Team'}: step {team.steps.length}</span>}
-      {agentsHere.length > 0 && (
+      {!compact && team && <span className="hidden items-center gap-1.5 rounded-full bg-brand/10 px-2.5 py-0.5 text-xs text-brand sm:inline-flex">{s.st?.recipes?.[team.recipe]?.name ?? 'Team'}: step {team.steps.length}</span>}
+      {!compact && !conversationView && agentsHere.length > 0 && (
         <Tooltip><TooltipTrigger asChild>
           <span className="hidden items-center -space-x-1 sm:flex">{agentsHere.map((id) => <AgentAvatar key={id} agent={s.agentOf(id)} size="sm" className="ring-2 ring-background" />)}</span>
         </TooltipTrigger><TooltipContent>{agentsHere.map((id) => s.agentOf(id).name).join(', ')} worked in this thread{cost ? `. Cost so far $${cost.toFixed(2)}` : ''}</TooltipContent></Tooltip>
       )}
-      <NotificationsBell />
+      {!compact && <NotificationsBell />}
+      {compact && <div className="md:hidden"><NotificationsBell /></div>}
+      {compact && <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" aria-label="Search chats" onClick={() => s.setPalette(true)}><Search /></Button></TooltipTrigger><TooltipContent>Search chats</TooltipContent></Tooltip>}
       {s.project && (
         <>
-          <Tooltip><TooltipTrigger asChild>
-            <Button variant={s.terminalOpen ? 'secondary' : 'ghost'} size="icon-sm" aria-pressed={s.terminalOpen} aria-label="Terminal" onClick={() => s.setTerminalOpen(!s.terminalOpen)}><SquareTerminal /></Button>
-          </TooltipTrigger><TooltipContent>Terminal (Ctrl+`)</TooltipContent></Tooltip>
-          <Tooltip><TooltipTrigger asChild>
-            <Button variant={s.panel.open ? 'secondary' : 'ghost'} size="icon-sm" aria-pressed={s.panel.open} aria-label="Workspace: review, files, memory, preview" onClick={() => s.setPanel({ ...s.panel, open: !s.panel.open })}>
-              <PanelRight />{(s.git?.changed.length ?? 0) > 0 && !s.panel.open && <span className="absolute top-1 right-1 size-1.5 rounded-full bg-brand" />}
-            </Button>
-          </TooltipTrigger><TooltipContent>Workspace: review, files, memory, preview (Ctrl+J)</TooltipContent></Tooltip>
+          {!!t?.messages.length && !s.home && !t.task && <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" aria-label={s.workspaceLayout === 'editor' ? 'Switch to chat view' : 'Switch to workbench'} onClick={switchView}>{s.workspaceLayout === 'editor' ? <MessageSquare /> : <Code2 />}</Button></TooltipTrigger><TooltipContent>{s.workspaceLayout === 'editor' ? 'Chat view' : 'Workbench'}</TooltipContent></Tooltip>}
+          {conversationView && <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" aria-label="Project context" aria-pressed={s.contextOpen} onClick={() => window.innerWidth < 1200 ? s.setContextSheetOpen(true) : s.setContextOpen(!s.contextOpen)}><PanelRight /></Button></TooltipTrigger><TooltipContent>Project context</TooltipContent></Tooltip>}
           <DropdownMenu>
             <DropdownMenuTrigger asChild><Button variant="ghost" size="icon-sm" aria-label="More options"><MoreHorizontal /></Button></DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64">
+              {compact && team && <DropdownMenuLabel>{s.st?.recipes?.[team.recipe]?.name ?? 'Team'} · step {team.steps.length}</DropdownMenuLabel>}
+              <DropdownMenuItem onClick={() => { s.setWorkspaceExpanded(false); s.setPanel({ ...s.panel, open: !s.panel.open }); }}><PanelRight />{s.panel.open ? 'Hide workspace' : 'Open workspace'}</DropdownMenuItem>
+              <DropdownMenuItem onClick={switchView}>{s.workspaceLayout === 'editor' ? 'Chat view' : 'Workbench view'}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => s.setTerminalOpen(!s.terminalOpen)}><SquareTerminal />{s.terminalOpen ? 'Close terminal' : 'Open terminal'}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => s.setShortcutsOpen(true)}>Keyboard shortcuts</DropdownMenuItem>
               {t && <DropdownMenuItem onClick={() => { setTitle(t.title); setRename(true); }}><Pencil /> Rename thread</DropdownMenuItem>}
               {t && <DropdownMenuItem onClick={exportThread}><Download /> Export thread as Markdown</DropdownMenuItem>}
               <DropdownMenuItem onClick={() => setFolders(true)}><FolderTree /> Folders in this project…</DropdownMenuItem>

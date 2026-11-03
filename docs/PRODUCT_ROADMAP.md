@@ -2,6 +2,8 @@
 
 Prepared 2 November 2026. Status: product and implementation plan; new capabilities below are proposed unless explicitly identified as existing.
 
+Current implementation status for every candidate is tracked in [FEATURE_STATUS.md](FEATURE_STATUS.md). The latest memory, coordination, connector and live-file work is documented in [COORDINATION_AND_MEMORY.md](COORDINATION_AND_MEMORY.md).
+
 ## Product direction
 
 **Tributary is a workspace where people bring a task and their materials, work with the right AI assistance, and leave with a useful result they can review and keep.**

@@ -12,10 +12,16 @@ async function gitInfo(cwd, { host = localHost } = {}) {
   if (!top) return null;
   const [branch, status, stat] = await Promise.all([
     run(cwd, ['rev-parse', '--abbrev-ref', 'HEAD'], undefined, host),
-    run(cwd, ['status', '--short', '--untracked-files=all'], undefined, host),
+    run(cwd, ['status', '--porcelain=v1', '-z', '--untracked-files=all'], undefined, host),
     run(cwd, ['diff', 'HEAD', '--stat', '--stat-width=100'], undefined, host),
   ]);
-  const changed = (status || '').split('\n').filter(Boolean).map((l) => ({ code: l.slice(0, 2).trim(), path: l.slice(3).replace(/^"|"$/g, '') }));
+  const changed = []; const records = (status || '').split('\0');
+  for (let i = 0; i < records.length; i++) {
+    const record = records[i]; if (!record) continue;
+    const code = record.slice(0, 2).trim(); const entry = { code, path: record.slice(3) };
+    if (/[RC]/.test(code)) entry.from = records[++i];
+    changed.push(entry);
+  }
   return { root: top.trim(), branch: (branch || '').trim(), changed, stat: (stat || '').trim() };
 }
 
@@ -44,9 +50,18 @@ function touched(prev, after, now) {
 }
 
 async function fileDiff(cwd, rel, { host = localHost } = {}) {
+  if (typeof rel !== 'string' || !rel || host.path.isAbsolute(rel) || rel.includes('\0')) throw new Error('Choose a relative project file.');
+  const relative = host.path.relative(cwd, host.path.resolve(cwd, rel));
+  if (relative === '..' || relative.startsWith(`..${host.path.sep}`)) throw new Error('Path outside project');
+  if (!host.remote) await require('./files').projectPath(cwd, rel, true);
   const tracked = await run(cwd, ['ls-files', '--error-unmatch', '--', rel], undefined, host);
-  if (tracked) return (await run(cwd, ['diff', 'HEAD', '--', rel], 5_000_000, host)) || '';
-  try { const t = (await host.readFile(host.path.join(cwd, rel))).toString('utf8'); return `new file ${rel}\n` + t.split('\n').map((l) => `+${l}`).join('\n'); } catch { return ''; }
+  if (tracked) { const diff = await run(cwd, ['diff', 'HEAD', '--', rel], 5_000_000, host); if (diff !== null) return diff; }
+  try {
+    const data = await host.readFile(host.path.join(cwd, rel), { maxBytes: 1024 * 1024 + 1 });
+    if (data.length > 1024 * 1024) return 'File is larger than 1 MB. Open it in your editor for the complete comparison.';
+    if (data.includes(0)) return 'Binary file. Open it in a suitable viewer.';
+    const t = data.toString('utf8'); return `new file ${rel}\n` + (t ? t.replace(/\n$/, '').split('\n').map((l) => `+${l}`).join('\n') : '');
+  } catch { return ''; }
 }
 
 const headContent = (cwd, rel, { host = localHost } = {}) => run(cwd, ['show', `HEAD:${rel.replace(/\\/g, '/')}`], 5_000_000, host);

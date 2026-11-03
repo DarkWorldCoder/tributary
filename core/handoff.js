@@ -27,12 +27,18 @@ function fmt(m, names) {
 }
 
 function digest(messages, names, budget = BUDGET) {
+  budget = Math.max(0, Math.min(BUDGET, Number.isFinite(budget) ? Math.floor(budget) : BUDGET));
   const parts = messages.map((m) => fmt(m, names));
-  let total = 0; const kept = [];
-  for (let i = parts.length - 1; i >= 0; i--) { if (total + parts[i].length > budget && kept.length) break; kept.unshift(parts[i]); total += parts[i].length; }
-  const dropped = parts.length - kept.length;
-  if (dropped > 0 && parts.length) { kept.unshift(`${parts[0]}\n\n(… ${dropped - 1 > 0 ? dropped - 1 : 0} earlier messages omitted …)`); }
-  return kept.join('\n\n');
+  if (parts.join('\n\n').length <= budget) return parts.join('\n\n');
+  const first = (parts[0] || '').slice(0, Math.floor(budget / 3));
+  const kept = []; let remaining = Math.max(0, budget - first.length - 85);
+  for (let i = parts.length - 1; i >= 1 && remaining > 0; i--) {
+    const part = parts[i].slice(0, Math.max(0, remaining - 2));
+    if (!part) break;
+    kept.unshift(part); remaining -= part.length + 2;
+    if (part.length < parts[i].length) break;
+  }
+  return `${first}\n\n(… earlier messages omitted to fit the handoff budget …)\n\n${kept.join('\n\n')}`.slice(0, budget);
 }
 
 function gitBlock(git) {

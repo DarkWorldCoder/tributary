@@ -1,0 +1,890 @@
+{
+  "checks": [
+    "1920px: icon, text and chevron centers align within half a pixel",
+    "1920px: selectors share padding and icon sizes",
+    "1920px: controls fit on screen",
+    "1920px: controls use the expected target height",
+    "1920px: agent identity stays visible",
+    "1920px: chat title stays clear of header actions",
+    "1280px: icon, text and chevron centers align within half a pixel",
+    "1280px: selectors share padding and icon sizes",
+    "1280px: controls fit on screen",
+    "1280px: controls use the expected target height",
+    "1280px: agent identity stays visible",
+    "1280px: chat title stays clear of header actions",
+    "900px: icon, text and chevron centers align within half a pixel",
+    "900px: selectors share padding and icon sizes",
+    "900px: controls fit on screen",
+    "900px: controls use the expected target height",
+    "900px: agent identity stays visible",
+    "900px: chat title stays clear of header actions",
+    "768px: icon, text and chevron centers align within half a pixel",
+    "768px: selectors share padding and icon sizes",
+    "768px: controls fit on screen",
+    "768px: controls use the expected target height",
+    "768px: agent identity stays visible",
+    "768px: chat title stays clear of header actions",
+    "390px: icon, text and chevron centers align within half a pixel",
+    "390px: selectors share padding and icon sizes",
+    "390px: controls fit on screen",
+    "390px: controls use the expected target height",
+    "390px: agent identity stays visible",
+    "390px: chat title stays clear of header actions",
+    "320px: icon, text and chevron centers align within half a pixel",
+    "320px: selectors share padding and icon sizes",
+    "320px: controls fit on screen",
+    "320px: controls use the expected target height",
+    "320px: agent identity stays visible",
+    "320px: chat title stays clear of header actions",
+    "Choose agent and model source: Escape returns keyboard focus",
+    "Choose model for Claude Code: Automatic: Escape returns keyboard focus",
+    "Permissions: Read-only: Escape returns keyboard focus",
+    "Phone selector accessibility scan has no violations",
+    "1280px: zoom label and both icons share one centerline",
+    "1280px: zoom controls stay inside the footer",
+    "768px: zoom label and both icons share one centerline",
+    "768px: zoom controls stay inside the footer",
+    "390px: zoom label and both icons share one centerline",
+    "390px: zoom controls stay inside the footer",
+    "390px: zoom keeps 44px touch targets",
+    "320px: zoom label and both icons share one centerline",
+    "320px: zoom controls stay inside the footer",
+    "320px: zoom keeps 44px touch targets",
+    "Zoom plus changes the displayed scale",
+    "Phone image controls accessibility scan has no violations",
+    "Alignment checks send no agent prompt"
+  ],
+  "geometry": [
+    {
+      "page": 1920,
+      "selectors": [
+        {
+          "children": [
+            {
+              "cy": 1126,
+              "h": 16,
+              "kind": "badge",
+              "right": 1148.046875,
+              "w": 16,
+              "x": 1132.046875,
+              "y": 1118
+            },
+            {
+              "cy": 1126,
+              "h": 20,
+              "kind": "label",
+              "right": 1225.921875,
+              "w": 71.875,
+              "x": 1154.046875,
+              "y": 1116
+            },
+            {
+              "cy": 1126,
+              "h": 12,
+              "kind": "chevron",
+              "right": 1243.921875,
+              "w": 12,
+              "x": 1231.921875,
+              "y": 1120
+            }
+          ],
+          "cy": 1126,
+          "h": 32,
+          "label": "Choose agent and model source",
+          "padding": "8px",
+          "right": 1252.921875,
+          "w": 129.875,
+          "x": 1123.046875,
+          "y": 1110
+        },
+        {
+          "children": [
+            {
+              "cy": 1126,
+              "h": 16,
+              "kind": "icon",
+              "right": 1279.921875,
+              "w": 16,
+              "x": 1263.921875,
+              "y": 1118
+            },
+            {
+              "cy": 1126,
+              "h": 20,
+              "kind": "label",
+              "right": 1343.5,
+              "w": 57.578125,
+              "x": 1285.921875,
+              "y": 1116
+            },
+            {
+              "cy": 1126,
+              "h": 12,
+              "kind": "chevron",
+              "right": 1361.5,
+              "w": 12,
+              "x": 1349.5,
+              "y": 1120
+            }
+          ],
+          "cy": 1126,
+          "h": 32,
+          "label": "Choose model for Claude Code: Automatic",
+          "padding": "8px",
+          "right": 1370.5,
+          "w": 115.578125,
+          "x": 1254.921875,
+          "y": 1110
+        },
+        {
+          "children": [
+            {
+              "cy": 1126,
+              "h": 16,
+              "kind": "icon",
+              "right": 1397.5,
+              "w": 16,
+              "x": 1381.5,
+              "y": 1118
+            },
+            {
+              "cy": 1126,
+              "h": 20,
+              "kind": "label",
+              "right": 1461,
+              "w": 57.5,
+              "x": 1403.5,
+              "y": 1116
+            },
+            {
+              "cy": 1126,
+              "h": 12,
+              "kind": "chevron",
+              "right": 1479,
+              "w": 12,
+              "x": 1467,
+              "y": 1120
+            }
+          ],
+          "cy": 1126,
+          "h": 32,
+          "label": "Permissions: Read-only",
+          "padding": "8px",
+          "right": 1488,
+          "w": 115.5,
+          "x": 1372.5,
+          "y": 1110
+        }
+      ],
+      "width": 1920
+    },
+    {
+      "page": 1280,
+      "selectors": [
+        {
+          "children": [
+            {
+              "cy": 968,
+              "h": 16,
+              "kind": "badge",
+              "right": 596.046875,
+              "w": 16,
+              "x": 580.046875,
+              "y": 960
+            },
+            {
+              "cy": 968,
+              "h": 20,
+              "kind": "label",
+              "right": 673.921875,
+              "w": 71.875,
+              "x": 602.046875,
+              "y": 958
+            },
+            {
+              "cy": 968,
+              "h": 12,
+              "kind": "chevron",
+              "right": 691.921875,
+              "w": 12,
+              "x": 679.921875,
+              "y": 962
+            }
+          ],
+          "cy": 968,
+          "h": 32,
+          "label": "Choose agent and model source",
+          "padding": "8px",
+          "right": 700.921875,
+          "w": 129.875,
+          "x": 571.046875,
+          "y": 952
+        },
+        {
+          "children": [
+            {
+              "cy": 968,
+              "h": 16,
+              "kind": "icon",
+              "right": 727.921875,
+              "w": 16,
+              "x": 711.921875,
+              "y": 960
+            },
+            {
+              "cy": 968,
+              "h": 20,
+              "kind": "label",
+              "right": 791.5,
+              "w": 57.578125,
+              "x": 733.921875,
+              "y": 958
+            },
+            {
+              "cy": 968,
+              "h": 12,
+              "kind": "chevron",
+              "right": 809.5,
+              "w": 12,
+              "x": 797.5,
+              "y": 962
+            }
+          ],
+          "cy": 968,
+          "h": 32,
+          "label": "Choose model for Claude Code: Automatic",
+          "padding": "8px",
+          "right": 818.5,
+          "w": 115.578125,
+          "x": 702.921875,
+          "y": 952
+        },
+        {
+          "children": [
+            {
+              "cy": 968,
+              "h": 16,
+              "kind": "icon",
+              "right": 845.5,
+              "w": 16,
+              "x": 829.5,
+              "y": 960
+            },
+            {
+              "cy": 968,
+              "h": 20,
+              "kind": "label",
+              "right": 909,
+              "w": 57.5,
+              "x": 851.5,
+              "y": 958
+            },
+            {
+              "cy": 968,
+              "h": 12,
+              "kind": "chevron",
+              "right": 927,
+              "w": 12,
+              "x": 915,
+              "y": 962
+            }
+          ],
+          "cy": 968,
+          "h": 32,
+          "label": "Permissions: Read-only",
+          "padding": "8px",
+          "right": 936,
+          "w": 115.5,
+          "x": 820.5,
+          "y": 952
+        }
+      ],
+      "width": 1280
+    },
+    {
+      "page": 900,
+      "selectors": [
+        {
+          "children": [
+            {
+              "cy": 968,
+              "h": 16,
+              "kind": "badge",
+              "right": 536.046875,
+              "w": 16,
+              "x": 520.046875,
+              "y": 960
+            },
+            {
+              "cy": 968,
+              "h": 20,
+              "kind": "label",
+              "right": 613.921875,
+              "w": 71.875,
+              "x": 542.046875,
+              "y": 958
+            },
+            {
+              "cy": 968,
+              "h": 12,
+              "kind": "chevron",
+              "right": 631.921875,
+              "w": 12,
+              "x": 619.921875,
+              "y": 962
+            }
+          ],
+          "cy": 968,
+          "h": 32,
+          "label": "Choose agent and model source",
+          "padding": "8px",
+          "right": 640.921875,
+          "w": 129.875,
+          "x": 511.046875,
+          "y": 952
+        },
+        {
+          "children": [
+            {
+              "cy": 968,
+              "h": 16,
+              "kind": "icon",
+              "right": 667.921875,
+              "w": 16,
+              "x": 651.921875,
+              "y": 960
+            },
+            {
+              "cy": 968,
+              "h": 20,
+              "kind": "label",
+              "right": 731.5,
+              "w": 57.578125,
+              "x": 673.921875,
+              "y": 958
+            },
+            {
+              "cy": 968,
+              "h": 12,
+              "kind": "chevron",
+              "right": 749.5,
+              "w": 12,
+              "x": 737.5,
+              "y": 962
+            }
+          ],
+          "cy": 968,
+          "h": 32,
+          "label": "Choose model for Claude Code: Automatic",
+          "padding": "8px",
+          "right": 758.5,
+          "w": 115.578125,
+          "x": 642.921875,
+          "y": 952
+        },
+        {
+          "children": [
+            {
+              "cy": 968,
+              "h": 16,
+              "kind": "icon",
+              "right": 785.5,
+              "w": 16,
+              "x": 769.5,
+              "y": 960
+            },
+            {
+              "cy": 968,
+              "h": 20,
+              "kind": "label",
+              "right": 849,
+              "w": 57.5,
+              "x": 791.5,
+              "y": 958
+            },
+            {
+              "cy": 968,
+              "h": 12,
+              "kind": "chevron",
+              "right": 867,
+              "w": 12,
+              "x": 855,
+              "y": 962
+            }
+          ],
+          "cy": 968,
+          "h": 32,
+          "label": "Permissions: Read-only",
+          "padding": "8px",
+          "right": 876,
+          "w": 115.5,
+          "x": 760.5,
+          "y": 952
+        }
+      ],
+      "width": 900
+    },
+    {
+      "page": 768,
+      "selectors": [
+        {
+          "children": [
+            {
+              "cy": 968,
+              "h": 16,
+              "kind": "badge",
+              "right": 404.046875,
+              "w": 16,
+              "x": 388.046875,
+              "y": 960
+            },
+            {
+              "cy": 968,
+              "h": 20,
+              "kind": "label",
+              "right": 481.921875,
+              "w": 71.875,
+              "x": 410.046875,
+              "y": 958
+            },
+            {
+              "cy": 968,
+              "h": 12,
+              "kind": "chevron",
+              "right": 499.921875,
+              "w": 12,
+              "x": 487.921875,
+              "y": 962
+            }
+          ],
+          "cy": 968,
+          "h": 32,
+          "label": "Choose agent and model source",
+          "padding": "8px",
+          "right": 508.921875,
+          "w": 129.875,
+          "x": 379.046875,
+          "y": 952
+        },
+        {
+          "children": [
+            {
+              "cy": 968,
+              "h": 16,
+              "kind": "icon",
+              "right": 535.921875,
+              "w": 16,
+              "x": 519.921875,
+              "y": 960
+            },
+            {
+              "cy": 968,
+              "h": 20,
+              "kind": "label",
+              "right": 599.5,
+              "w": 57.578125,
+              "x": 541.921875,
+              "y": 958
+            },
+            {
+              "cy": 968,
+              "h": 12,
+              "kind": "chevron",
+              "right": 617.5,
+              "w": 12,
+              "x": 605.5,
+              "y": 962
+            }
+          ],
+          "cy": 968,
+          "h": 32,
+          "label": "Choose model for Claude Code: Automatic",
+          "padding": "8px",
+          "right": 626.5,
+          "w": 115.578125,
+          "x": 510.921875,
+          "y": 952
+        },
+        {
+          "children": [
+            {
+              "cy": 968,
+              "h": 16,
+              "kind": "icon",
+              "right": 653.5,
+              "w": 16,
+              "x": 637.5,
+              "y": 960
+            },
+            {
+              "cy": 968,
+              "h": 20,
+              "kind": "label",
+              "right": 717,
+              "w": 57.5,
+              "x": 659.5,
+              "y": 958
+            },
+            {
+              "cy": 968,
+              "h": 12,
+              "kind": "chevron",
+              "right": 735,
+              "w": 12,
+              "x": 723,
+              "y": 962
+            }
+          ],
+          "cy": 968,
+          "h": 32,
+          "label": "Permissions: Read-only",
+          "padding": "8px",
+          "right": 744,
+          "w": 115.5,
+          "x": 628.5,
+          "y": 952
+        }
+      ],
+      "width": 768
+    },
+    {
+      "page": 390,
+      "selectors": [
+        {
+          "children": [
+            {
+              "cy": 810,
+              "h": 16,
+              "kind": "badge",
+              "right": 115.921875,
+              "w": 16,
+              "x": 99.921875,
+              "y": 802
+            },
+            {
+              "cy": 810,
+              "h": 12,
+              "kind": "chevron",
+              "right": 133.921875,
+              "w": 12,
+              "x": 121.921875,
+              "y": 804
+            }
+          ],
+          "cy": 810,
+          "h": 44,
+          "label": "Choose agent and model source",
+          "padding": "8px",
+          "right": 142.921875,
+          "w": 52,
+          "x": 90.921875,
+          "y": 788
+        },
+        {
+          "children": [
+            {
+              "cy": 810,
+              "h": 16,
+              "kind": "icon",
+              "right": 169.921875,
+              "w": 16,
+              "x": 153.921875,
+              "y": 802
+            },
+            {
+              "cy": 810,
+              "h": 20,
+              "kind": "label",
+              "right": 233.5,
+              "w": 57.578125,
+              "x": 175.921875,
+              "y": 800
+            },
+            {
+              "cy": 810,
+              "h": 12,
+              "kind": "chevron",
+              "right": 251.5,
+              "w": 12,
+              "x": 239.5,
+              "y": 804
+            }
+          ],
+          "cy": 810,
+          "h": 44,
+          "label": "Choose model for Claude Code: Automatic",
+          "padding": "8px",
+          "right": 260.5,
+          "w": 115.578125,
+          "x": 144.921875,
+          "y": 788
+        },
+        {
+          "children": [
+            {
+              "cy": 810,
+              "h": 16,
+              "kind": "icon",
+              "right": 287.5,
+              "w": 16,
+              "x": 271.5,
+              "y": 802
+            },
+            {
+              "cy": 810,
+              "h": 20,
+              "kind": "label",
+              "right": 351,
+              "w": 57.5,
+              "x": 293.5,
+              "y": 800
+            },
+            {
+              "cy": 810,
+              "h": 12,
+              "kind": "chevron",
+              "right": 369,
+              "w": 12,
+              "x": 357,
+              "y": 804
+            }
+          ],
+          "cy": 810,
+          "h": 44,
+          "label": "Permissions: Read-only",
+          "padding": "8px",
+          "right": 378,
+          "w": 115.5,
+          "x": 262.5,
+          "y": 788
+        }
+      ],
+      "width": 390
+    },
+    {
+      "page": 320,
+      "selectors": [
+        {
+          "children": [
+            {
+              "cy": 810,
+              "h": 16,
+              "kind": "badge",
+              "right": 45.921875,
+              "w": 16,
+              "x": 29.921875,
+              "y": 802
+            },
+            {
+              "cy": 810,
+              "h": 12,
+              "kind": "chevron",
+              "right": 63.921875,
+              "w": 12,
+              "x": 51.921875,
+              "y": 804
+            }
+          ],
+          "cy": 810,
+          "h": 44,
+          "label": "Choose agent and model source",
+          "padding": "8px",
+          "right": 72.921875,
+          "w": 52,
+          "x": 20.921875,
+          "y": 788
+        },
+        {
+          "children": [
+            {
+              "cy": 810,
+              "h": 16,
+              "kind": "icon",
+              "right": 99.921875,
+              "w": 16,
+              "x": 83.921875,
+              "y": 802
+            },
+            {
+              "cy": 810,
+              "h": 20,
+              "kind": "label",
+              "right": 163.5,
+              "w": 57.578125,
+              "x": 105.921875,
+              "y": 800
+            },
+            {
+              "cy": 810,
+              "h": 12,
+              "kind": "chevron",
+              "right": 181.5,
+              "w": 12,
+              "x": 169.5,
+              "y": 804
+            }
+          ],
+          "cy": 810,
+          "h": 44,
+          "label": "Choose model for Claude Code: Automatic",
+          "padding": "8px",
+          "right": 190.5,
+          "w": 115.578125,
+          "x": 74.921875,
+          "y": 788
+        },
+        {
+          "children": [
+            {
+              "cy": 810,
+              "h": 16,
+              "kind": "icon",
+              "right": 217.5,
+              "w": 16,
+              "x": 201.5,
+              "y": 802
+            },
+            {
+              "cy": 810,
+              "h": 20,
+              "kind": "label",
+              "right": 281,
+              "w": 57.5,
+              "x": 223.5,
+              "y": 800
+            },
+            {
+              "cy": 810,
+              "h": 12,
+              "kind": "chevron",
+              "right": 299,
+              "w": 12,
+              "x": 287,
+              "y": 804
+            }
+          ],
+          "cy": 810,
+          "h": 44,
+          "label": "Permissions: Read-only",
+          "padding": "8px",
+          "right": 308,
+          "w": 115.5,
+          "x": 192.5,
+          "y": 788
+        }
+      ],
+      "width": 320
+    }
+  ],
+  "accessibility": [
+    {
+      "axeVersion": "4.12.1",
+      "counts": {
+        "inapplicable": 53,
+        "incomplete": 1,
+        "passes": 36,
+        "violations": 0
+      },
+      "incomplete": [
+        {
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=axeAPI",
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because element contains an image node",
+              "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+              "target": [
+                "text"
+              ]
+            }
+          ],
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ]
+        }
+      ],
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 18011897515091061429
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_configured"
+      },
+      "url": "file:///home/ayushniroula/Desktop/projects/tributary/ui/dist/index.html",
+      "violations": []
+    },
+    {
+      "axeVersion": "4.12.1",
+      "counts": {
+        "inapplicable": 50,
+        "incomplete": 1,
+        "passes": 39,
+        "violations": 0
+      },
+      "incomplete": [
+        {
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=axeAPI",
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodeCount": 1,
+          "nodes": [
+            {
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+              "html": "<span class=\"truncate\">workbench-reference.png</span>",
+              "target": [
+                "#radix-_r_5u_-trigger-images\\/workbench-reference\\.png > .truncate"
+              ]
+            }
+          ],
+          "tags": [
+            "cat.color",
+            "wcag2aa",
+            "wcag143",
+            "TTv5",
+            "TT13.c",
+            "EN-301-549",
+            "EN-9.1.4.3",
+            "ACT",
+            "RGAAv4",
+            "RGAA-3.2.1"
+          ]
+        }
+      ],
+      "lifecycle": {
+        "effectiveLaunch": {
+          "browserLaunched": true,
+          "engine": "chrome",
+          "launchHash": 18011897515091061429
+        },
+        "launched": false,
+        "relaunchedBrowser": false,
+        "restartedBackground": false,
+        "restoreStatus": "not_configured",
+        "reused": true,
+        "saveStatus": "not_configured"
+      },
+      "url": "file:///home/ayushniroula/Desktop/projects/tributary/ui/dist/index.html",
+      "violations": []
+    }
+  ],
+  "scope": "Actual isolated Electron renderer. No model calls."
+}

@@ -151,3 +151,7 @@ TRIBUTARY_DATA_DIR=/tmp/tributary-smoke TRIBUTARY_SMOKE_SHOT=/tmp/browse.png TRI
 
 - [docs/MULTI_AGENT_LANDSCAPE.md](docs/MULTI_AGENT_LANDSCAPE.md): competing apps, what makes multi-agent coordination work, and patterns read from open-source apps' source.
 - [docs/IMPROVEMENT_PLAN.md](docs/IMPROVEMENT_PLAN.md) and [docs/PERFORMANCE_ARCHITECTURE.md](docs/PERFORMANCE_ARCHITECTURE.md): product and performance plans.
+- [docs/UI_IMPROVEMENTS.md](docs/UI_IMPROVEMENTS.md): implemented interface polish, included UI skills, component references and screenshots.
+- [docs/PROJECT_ROOMS.md](docs/PROJECT_ROOMS.md): local shared-room setup, collaboration scope and current limits.
+- [docs/COORDINATION_AND_MEMORY.md](docs/COORDINATION_AND_MEMORY.md): conflict-aware memory, team history, live file views and connector diagnostics.
+- [docs/FEATURE_STATUS.md](docs/FEATURE_STATUS.md): all 80 roadmap candidates, their implemented scope and remaining work.

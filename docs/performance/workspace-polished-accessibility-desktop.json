@@ -1,0 +1,103 @@
+{
+  "counts": {
+    "inapplicable": 47,
+    "incomplete": 1,
+    "passes": 42,
+    "violations": 0
+  },
+  "violations": [],
+  "incomplete": [
+    {
+      "help": "Elements must meet minimum color contrast ratio thresholds",
+      "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=axeAPI",
+      "id": "color-contrast",
+      "impact": "serious",
+      "nodeCount": 20,
+      "nodes": [
+        {
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element",
+          "html": "<span>Files</span>",
+          "target": [
+            "#radix-_r_4k_-trigger-files > span"
+          ]
+        },
+        {
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+          "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+          "target": [
+            ".bg-accent > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+          ]
+        },
+        {
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+          "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+          "target": [
+            "button[title=\"example-00.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+          ]
+        },
+        {
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+          "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+          "target": [
+            "button[title=\"example-01.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+          ]
+        },
+        {
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+          "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+          "target": [
+            "button[title=\"example-02.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+          ]
+        },
+        {
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+          "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+          "target": [
+            "button[title=\"example-03.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+          ]
+        },
+        {
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+          "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+          "target": [
+            "button[title=\"example-04.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+          ]
+        },
+        {
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+          "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+          "target": [
+            "button[title=\"example-05.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+          ]
+        },
+        {
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+          "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+          "target": [
+            "button[title=\"example-06.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+          ]
+        },
+        {
+          "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+          "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+          "target": [
+            "button[title=\"example-07.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+          ]
+        }
+      ],
+      "tags": [
+        "cat.color",
+        "wcag2aa",
+        "wcag143",
+        "TTv5",
+        "TT13.c",
+        "EN-301-549",
+        "EN-9.1.4.3",
+        "ACT",
+        "RGAAv4",
+        "RGAA-3.2.1"
+      ]
+    }
+  ],
+  "fixture": "Isolated Tributary UI preview; automated check only."
+}

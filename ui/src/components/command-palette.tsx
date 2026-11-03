@@ -1,4 +1,4 @@
-import { FolderPlus, GitCompareArrows, ListTodo, MessageSquare, Plug, Settings, Sparkles, SquarePen, SunMoon } from 'lucide-react';
+import { BookOpen, FileImage, FolderPlus, Globe, Keyboard, GitCompareArrows, ListTodo, MessageSquare, Plug, Settings, Sparkles, SquarePen, SquareTerminal, SunMoon, Users } from 'lucide-react';
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator, CommandShortcut } from '@/components/ui/command';
 import { AgentAvatar } from '@/components/agent-avatar';
 import { ago } from '@/lib/format';
@@ -10,15 +10,22 @@ export function CommandPalette() {
   const run = (fn: () => void) => () => { close(); fn(); };
   const threads = (s.st?.projects ?? []).flatMap((p) => (s.threadsBy[p.path] || []).map((t) => ({ ...t, project: p })));
   return (
-    <CommandDialog open={s.palette} onOpenChange={s.setPalette} title="Search and commands" description="Jump to a thread, switch agent or run a command">
-      <CommandInput placeholder="Search threads, agents and commands…" />
+    <CommandDialog open={s.palette} onOpenChange={s.setPalette} title="Search and features" description="Find tools, workspace actions, agents and chats." className="feature-finder top-1/2 max-h-[calc(100dvh-32px)] -translate-y-1/2 max-sm:[&_[cmdk-item]]:min-h-11 max-sm:[&_[cmdk-input]]:min-h-11 max-sm:[&_[data-slot=input-group]]:min-h-11">
+      <CommandInput placeholder="Search features, agents and chats…" />
       <CommandList>
         <CommandEmpty>No results.</CommandEmpty>
         <CommandGroup heading="Actions">
-          <CommandItem disabled={!s.project} onSelect={run(() => s.newThread())}><SquarePen /> New thread<CommandShortcut>Ctrl N</CommandShortcut></CommandItem>
+          <CommandItem onSelect={run(() => s.setShortcutsOpen(true))}><Keyboard /> Keyboard shortcuts<CommandShortcut>Ctrl /</CommandShortcut></CommandItem>
+          <CommandItem disabled={!s.project} onSelect={run(() => s.newThread())}><SquarePen /> New chat<CommandShortcut>Ctrl N</CommandShortcut></CommandItem>
+          <CommandItem disabled={!s.project} onSelect={run(() => s.openPanel('files'))}><FileImage /> Files and image previews</CommandItem>
+          <CommandItem disabled={!s.project} onSelect={run(() => s.openPanel('memory'))}><BookOpen /> Project memory</CommandItem>
+          <CommandItem disabled={!s.project} onSelect={run(() => s.openPanel('preview'))}><Globe /> App preview</CommandItem>
+          <CommandItem disabled={!s.project} onSelect={run(() => s.setTerminalOpen(true))}><SquareTerminal /> Terminal</CommandItem>
+          <CommandItem disabled={!s.project || s.ready.length < 2 || !!s.running} onSelect={run(() => s.setTeamOpen(true))}><Users /> Work with a team</CommandItem>
           {s.git && <CommandItem onSelect={run(() => s.openReview(null))}><GitCompareArrows /> Review changes</CommandItem>}
           {s.hub.platform !== 'vscode' && <CommandItem onSelect={run(async () => { const p = await s.hub.call<string | null>('pickProject'); if (p) { await s.refreshState(); await s.loadThreads(p); s.newThread(p); } })}><FolderPlus /> Add project folder</CommandItem>}
           <CommandItem onSelect={run(() => s.openSettings('mcp'))}><Plug /> MCP servers</CommandItem>
+          <CommandItem onSelect={run(() => s.openSettings('connections'))}><Plug /> Apps and connections</CommandItem>
           <CommandItem onSelect={run(() => s.openSettings('skills'))}><Sparkles /> Skills</CommandItem>
           <CommandItem onSelect={run(() => s.openSettings('gateways'))}><ListTodo /> Model gateways</CommandItem>
           {s.hub.platform !== 'vscode' && <CommandItem onSelect={run(() => s.setTheme(s.theme === 'dark' ? 'light' : 'dark'))}><SunMoon /> Toggle light and dark</CommandItem>}

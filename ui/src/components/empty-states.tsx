@@ -4,7 +4,7 @@ import { BookOpen, Check, ExternalLink, FolderPlus, KeyRound, RefreshCw } from '
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { AgentAvatar } from '@/components/agent-avatar';
-import { useRunInTerminal } from '@/components/terminal-panel';
+import { useRunInTerminal } from '@/hooks/use-run-in-terminal';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/store';
 import type { Agent } from '@/types';
@@ -66,7 +66,7 @@ export function NoProject() {
             </div>
           </Step>
           <Step n={2} title="Choose the folder to work in">
-            <p className="mb-3 text-sm text-muted-foreground">Pick an existing project, or make an empty folder for something new. Agents only change files inside it, and every change can be undone.</p>
+            <p className="mb-3 text-sm text-pretty text-muted-foreground">Pick an existing project, or make an empty folder for something new. Review your assistant’s access mode before asking it to change files.</p>
             {s.hub.platform === 'vscode' ? <p className="text-sm text-muted-foreground">Open a folder in VS Code to continue.</p> : <Button onClick={add}><FolderPlus /> Choose a folder</Button>}
           </Step>
           <Step n={3} title="Ask for something">
@@ -89,7 +89,7 @@ const STARTERS = [
 export function Starters() {
   const s = useStore();
   return (
-    <div className="mt-4 flex flex-wrap justify-center gap-2">
+    <div className="mt-5 flex flex-wrap justify-center gap-2" role="group" aria-label="Suggested tasks">
       {STARTERS.map((x) => (
         <button key={x.label} onClick={() => { s.setDraft(x.text); if (x.mode) s.setMode(x.mode); }} className="rounded-full border bg-card px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
           {x.label}

@@ -24,6 +24,8 @@ Configuration:
 | `TRIBUTARY_SERVER_HOST` | `127.0.0.1` | Listening interface |
 | `TRIBUTARY_OWNER_NAME` | `Project owner` | Initial owner's display name |
 | `TRIBUTARY_PUBLIC_ORIGIN` | Unset | Exact HTTPS origin used by a reverse proxy for a shared deployment |
+| `TRIBUTARY_TLS_CERT` | Unset | PEM certificate/chain file for direct HTTPS hosting |
+| `TRIBUTARY_TLS_KEY` | Unset | PEM private-key file for direct HTTPS hosting; set with the certificate |
 
 Run one service process per database. This version uses Node's built-in SQLite driver, WAL, full synchronous durability and short transactions. It does not need a separate database installation. The larger [architecture plan](COLLABORATION_ARCHITECTURE.md) proposes PostgreSQL and project sharding for a later service; those are not part of this preview.
 
@@ -52,11 +54,13 @@ These mechanisms cover coordination records. They do not make arbitrary agent co
 
 ## Fonts, settings and folder browsing
 
+See [UI improvements and included skills](UI_IMPROVEMENTS.md) for text/layout changes, the four app-owned UI guides, component research, screenshots and validation.
+
 The interface now defaults to bundled **Geist Variable**, with **IBM Plex Mono** retained for code. In **Settings → Appearance**, select Geist, IBM Plex Sans or the system font and choose the response text size. A live sample previews the result. Preferences persist locally. Inside VS Code, the host's typography and theme remain authoritative. All bundled fonts work offline.
 
 Settings has a section search and a visible sidebar entry; **Ctrl/Cmd+,** opens Appearance. The search finds sections such as fonts, appearance, agents or connections, rather than searching every individual setting value.
 
-The **Files** tab now browses directories on expansion, with empty directories, generated directories, pagination and a **Show hidden files** toggle. It works without Git and is no longer limited to the mention index's depth. File search continues to use that bounded index and explains its exclusions. Refresh updates the listing. No live filesystem watcher is implemented in this release.
+The **Files** tab browses directories on expansion, with empty directories, generated directories, pagination and a **Show hidden files** toggle. It works without Git and is no longer limited to the mention index's depth. File search continues to use that bounded index and explains its exclusions. Open files now update from filesystem events, with two-second polling as a fallback. Unsaved drafts are preserved when disk content changes. Deep unopened folders are not recursively monitored. See [coordination and memory](COORDINATION_AND_MEMORY.md) for limits.
 
 Text editing, file tabs, Markdown/SVG/image previews and the existing restricted HTML preview remain available locally. HTML blob previews do not implement a complete folder-relative site server. PDF/DOCX/XLSX viewers, shared remote folder browsing and authenticated live application tunnels remain future work. Symbolic-link escapes are rejected by the file read/save and directory APIs; symlinked directories are displayed as links rather than recursively traversed. This is not an OS-level sandbox against hostile local processes changing files concurrently.
 
@@ -64,7 +68,24 @@ Navigation takes cues from [VS Code's explorer/editor layout](https://code.visua
 
 ## Sharing the service with other computers
 
-The default server listens only on this computer. For a controlled team deployment, place it behind an HTTPS reverse proxy, configure its exact public origin, and forward the matching Host header. The service refuses nonloopback listening without a public HTTPS origin. Preserve streaming responses and allow heartbeat traffic; disable proxy buffering for the event endpoint. Keep the data directory private and use a reliable local filesystem.
+People on the same LAN can use one service: each opens its reachable HTTPS address and joins with an individual invitation key. Being on the same network does not automatically discover the server, grant access or share a source folder.
+
+You can now host HTTPS directly, without a separate reverse proxy. Obtain a certificate valid for the host address and trusted by the participating devices, and keep its private key private. Example for a server whose actual LAN address is `192.168.1.20`:
+
+```sh
+TRIBUTARY_SERVER_HOST=0.0.0.0 \
+TRIBUTARY_SERVER_PORT=4318 \
+TRIBUTARY_PUBLIC_ORIGIN=https://192.168.1.20:4318 \
+TRIBUTARY_TLS_CERT=/path/to/server-cert.pem \
+TRIBUTARY_TLS_KEY=/path/to/server-key.pem \
+npm run server
+```
+
+Replace the example address and paths with the server's actual values. The certificate must cover that address, including its IP subject alternative name when an IP is used. Each teammate opens `https://192.168.1.20:4318/room` in this example. Desktop/VS Code can connect to the same HTTPS origin using their Project room screen. Clients must trust the issuing certificate authority; the app does not disable certificate verification. Both certificate and key variables are required together. No certificates, machine trust settings or firewall rules are installed automatically.
+
+The port must be reachable between those devices under the network's existing rules. The owner then creates a project and individual invitations as above. Each person uses their own working copy and installed agents; the room coordinates ownership and reported results. It does not synchronize source files or provide simultaneous same-file editing.
+
+The default server still listens only on this computer. A reverse proxy remains an alternative: configure its exact HTTPS public origin and forward the matching Host header. The service refuses nonloopback listening without a public HTTPS origin. Preserve streaming responses and allow heartbeat traffic; disable proxy buffering for the event endpoint. Keep the data directory private and use a reliable local filesystem.
 
 This turn did not deploy a public server, configure TLS, open a firewall or connect two physical computers. Internet latency, load capacity, backup/restore and a packaged cross-platform release have not been validated. Before relying on a shared deployment, add operational backup/restore, owner-key recovery/rotation, expired invitations, per-user rate limits and retention. The server is single-process and has a 1,000-task limit per project; it is not a horizontally scalable production service.
 

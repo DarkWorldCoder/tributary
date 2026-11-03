@@ -1,0 +1,22 @@
+{
+  "checks": [
+    "Team setup has five consistent workflow tiles",
+    "An empty task cannot start agents",
+    "Race shows a selected-agent count",
+    "Planner, builder and reviewer have separate selectors",
+    "Each role retains its own agent selection",
+    "A valid team can be reviewed before starting",
+    "1280px: team setup stays inside the viewport",
+    "900px: team setup stays inside the viewport",
+    "390px: team setup stays inside the viewport",
+    "390px: role selectors retain 44px targets",
+    "320px: team setup stays inside the viewport",
+    "320px: role selectors retain 44px targets",
+    "Ask everyone shows a read-only workflow and a summarizer",
+    "Optional checks retain their command when collapsed",
+    "Cancel does not send a model request",
+    "Changing menu pages focuses the search input",
+    "Keyboard search and Enter insert the matching file"
+  ],
+  "fixture": "Isolated local UI preview. Team configuration and keyboard interactions only; no agents executed."
+}

@@ -1,0 +1,134 @@
+{
+  "checks": [
+    "Explorer starts with a single header and no search or hidden-files row",
+    "Files begin immediately below the compact header",
+    "Desktop agent replies use the compact 13px size",
+    "Opening a file uses a background without a border or bright stripe",
+    "Focused editor has no surrounding outline",
+    "Desktop scrollbars are 4px high and 6px wide",
+    "Expandable search filters files",
+    "Escape restores the file list and returns focus to search",
+    "Hidden files remain available through explorer options",
+    "Explorer collapse and restore keep the current file",
+    "Chat expands and restores the editor without losing the document",
+    "Chat search opens command search",
+    "1920px: no page clipping and explorer actions fit",
+    "1280px: no page clipping and explorer actions fit",
+    "900px: no page clipping and explorer actions fit",
+    "768px: no page clipping and explorer actions fit",
+    "390px: no page clipping and explorer actions fit",
+    "320px: no page clipping and explorer actions fit",
+    "Phone search retains 44px targets",
+    "Phone chat keeps search and workspace restoration accessible",
+    "Phone agent replies retain a readable 14px minimum",
+    "Coding chat size updates actual reply text",
+    "Coding chat size persists after reload",
+    "Appearance omits explanatory paragraphs",
+    "Explorer header actions fit at the 176px minimum"
+  ],
+  "viewports": [
+    {
+      "chat": {
+        "right": 1920,
+        "width": 561.8125,
+        "x": 1358.1875
+      },
+      "hasPersistentSearch": false,
+      "headerFits": true,
+      "headerHeight": 40,
+      "pageWidth": 1920,
+      "width": 1920,
+      "workspace": {
+        "right": 1357.1875,
+        "width": 1313.1875,
+        "x": 44
+      }
+    },
+    {
+      "chat": {
+        "right": 1280,
+        "width": 369.796875,
+        "x": 910.203125
+      },
+      "hasPersistentSearch": false,
+      "headerFits": true,
+      "headerHeight": 40,
+      "pageWidth": 1280,
+      "width": 1280,
+      "workspace": {
+        "right": 909.203125,
+        "width": 865.203125,
+        "x": 44
+      }
+    },
+    {
+      "chat": {
+        "right": 900,
+        "width": 360,
+        "x": 540
+      },
+      "hasPersistentSearch": false,
+      "headerFits": true,
+      "headerHeight": 40,
+      "pageWidth": 900,
+      "width": 900,
+      "workspace": {
+        "right": 539,
+        "width": 495,
+        "x": 44
+      }
+    },
+    {
+      "chat": {
+        "right": 768,
+        "width": 360,
+        "x": 408
+      },
+      "hasPersistentSearch": false,
+      "headerFits": true,
+      "headerHeight": 40,
+      "pageWidth": 768,
+      "width": 768,
+      "workspace": {
+        "right": 407,
+        "width": 363,
+        "x": 44
+      }
+    },
+    {
+      "chat": {
+        "right": 390,
+        "width": 0,
+        "x": 390
+      },
+      "hasPersistentSearch": false,
+      "headerFits": true,
+      "headerHeight": 0,
+      "pageWidth": 390,
+      "width": 390,
+      "workspace": {
+        "right": 390,
+        "width": 390,
+        "x": 0
+      }
+    },
+    {
+      "chat": {
+        "right": 320,
+        "width": 0,
+        "x": 320
+      },
+      "hasPersistentSearch": false,
+      "headerFits": true,
+      "headerHeight": 0,
+      "pageWidth": 320,
+      "width": 320,
+      "workspace": {
+        "right": 320,
+        "width": 320,
+        "x": 0
+      }
+    }
+  ],
+  "fixture": "Isolated local preview messages; no model request sent."
+}

@@ -53,7 +53,7 @@ function wireEvents() {
     }, 80));
   });
   hub.on('message', (d) => { const t = pending.get(d.message.id); if (t) { clearTimeout(t); pending.delete(d.message.id); } patcher.full(d.message); send('message', d); });
-  for (const n of ['state', 'threads', 'running', 'notification', 'collaboration']) hub.on(n, (d) => send(n, d));
+  for (const n of ['state', 'threads', 'running', 'notification', 'collaboration', 'files-changed']) hub.on(n, (d) => send(n, d));
   hub.on('activity', (d) => send('activity', d)); // the live view
   // System notification when something finishes while the window is in the background.
   hub.on('notification', (n) => {
@@ -80,6 +80,7 @@ const API = {
   createTask: (input) => hub.createTask(input),
   personalWorkspace: () => hub.personalWorkspace(),
   testConnection: (id) => hub.testConnection(id),
+  modelCatalog: (agent, gateway) => hub.modelCatalog(agent, gateway),
   createDocument: (t, m) => hub.createDocument(t, m),
   document: (t, d) => hub.document(t, d),
   saveDocument: (t, d, patch) => hub.saveDocument(t, d, patch),
@@ -101,6 +102,7 @@ const API = {
   markThreadSeen: (id) => hub.markThreadSeen(id),
   activity: () => hub.activity(),
   lineAuthors: (p, rel) => hub.lineAuthors(p, rel),
+  revertTurnHunk: (p, rel, messageId, line) => hub.revertTurnHunk(p, rel, messageId, line),
   removeProject: (p) => hub.removeProject(p),
   send: (o) => hub.send(o).then((m) => ({ id: m.id, ok: m.ok })),
   stop: (id) => hub.stop(id),
@@ -152,7 +154,7 @@ const API = {
   // Memory
   memory: (p) => hub.memory(p),
   enableMemory: (p) => hub.enableMemory(p),
-  saveMemory: (p, text) => hub.saveMemory(p, text),
+  saveMemory: (p, text, revision) => hub.saveMemory(p, text, revision),
   remember: (p, note) => hub.remember(p, note),
   // Notifications
   notifications: () => hub.notifications(),
@@ -160,6 +162,16 @@ const API = {
   clearNotifications: () => hub.clearNotifications(),
   // Skills and MCP
   skills: (p) => hub.skills(p),
+  configureMemory: (p, input) => hub.configureMemory(p, input),
+  searchMemory: (p, query) => hub.searchMemory(p, query),
+  memoryHistory: (p) => hub.memoryHistory(p),
+  memoryVersion: (p, id) => hub.memoryVersion(p, id),
+  teamRuns: (id) => hub.teamRuns(id),
+  watchFiles: (p, files) => hub.watchFiles(p, files),
+  unwatchFiles: (id) => hub.unwatchFiles(id),
+  connectorReport: (p) => hub.connectorReport(p),
+  uiSkills: () => hub.uiSkills(),
+  uiSkill: (id) => hub.uiSkill(id),
   shareSkill: (name, p) => hub.shareSkill(name, p),
   mcp: (p) => hub.mcp(p),
   addMcp: (server, ids) => hub.addMcp(server, ids),
@@ -325,4 +337,4 @@ app.whenReady().then(async () => {
 });
 // Write anything still waiting in the store before the process ends.
 app.on('will-quit', () => { try { hub?.store.close(); } catch (e) { console.error(`Could not save on quit: ${e.message}`); } });
-app.on('window-all-closed', () => { if (hub) { for (const id of hub.running.keys()) hub.stop(id); hub.collaborationClient?.disconnect(); } terminals.killAll(); if (process.platform !== 'darwin' || SMOKE) app.quit(); });
+app.on('window-all-closed', () => { if (hub) { for (const id of hub.running.keys()) hub.stop(id); hub.collaborationClient?.disconnect(); hub.fileWatches.close(); } terminals.killAll(); if (process.platform !== 'darwin' || SMOKE) app.quit(); });

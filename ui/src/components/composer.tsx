@@ -1,12 +1,15 @@
 import * as React from 'react';
-import { ArrowUp, Check, ChevronDown, Clock, Cpu, Eye, FileText, ListTodo, PencilLine, Plug, Settings2, Sparkles, Square, Users, X, Zap } from 'lucide-react';
+import { ArrowUp, Check, ChevronDown, Clock, Cpu, Eye, ListTodo, PanelRight, PencilLine, Plug, Settings2, Sparkles, Square, X, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '@/components/ui/command';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupTextarea } from '@/components/ui/input-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ModelPicker } from '@/components/model-picker';
 import { AgentAvatar } from '@/components/agent-avatar';
+import { FileTypeIcon } from '@/components/file-type-icon';
+import { ComposerTools } from '@/components/composer-tools';
 import { cn } from '@/lib/utils';
 import { useDraft, useStore } from '@/store';
 import type { Mode } from '@/types';
@@ -35,11 +38,11 @@ function AgentPicker() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <InputGroupButton size="sm" className="gap-1.5 rounded-full pr-2 pl-1" aria-label="Choose agent and model source">
-          {s.ready.length ? <AgentAvatar agent={a} size="xs" /> : null}
-          <span className="font-medium">{s.ready.length ? a.name : 'Connect an assistant'}</span>
-          {gw && <span className="max-w-28 truncate text-muted-foreground">via {gw.name}</span>}
-          <ChevronDown className="text-muted-foreground" />
+        <InputGroupButton size="sm" className="composer-selector rounded-full" title={s.agent.name} aria-label="Choose agent and model source">
+          {s.ready.length ? <AgentAvatar agent={a} size="xs" className="composer-agent-mark" /> : null}
+          <span className={cn("composer-selector-label max-w-40 truncate font-medium", s.codeLayout && s.ready.length > 0 && "hidden")}>{s.ready.length ? a.name : 'Connect an assistant'}</span>
+          {gw && <span className={cn("composer-selector-label max-w-28 truncate text-muted-foreground", s.codeLayout && "hidden")}>via {gw.name}</span>}
+          <ChevronDown className="composer-selector-chevron text-muted-foreground" />
         </InputGroupButton>
       </PopoverTrigger>
       <PopoverContent align="start" side="top" className="w-80 p-0">
@@ -49,7 +52,7 @@ function AgentPicker() {
             <CommandEmpty>Nothing found.</CommandEmpty>
             <CommandGroup heading="Agents">
               {s.ready.map((x) => (
-                <CommandItem key={x.id} value={`${x.name} ${x.vendor}`} onSelect={() => { s.setAgentId(x.id); setOpen(false); }} className="gap-2.5">
+                <CommandItem key={x.id} value={`${x.name} ${x.vendor}`} onSelect={() => { s.setAgentId(x.id); s.setGatewayId(''); setOpen(false); }} className="gap-2.5">
                   <AgentAvatar agent={x} size="sm" />
                   <div className="min-w-0 flex-1"><div className="font-medium">{x.name}</div><div className="truncate text-xs text-muted-foreground">{[x.vendor, x.version].filter(Boolean).join(', ')}</div></div>
                   {x.id === s.agentId && <Check className="text-brand" />}
@@ -93,8 +96,8 @@ function ModePicker() {
   return (
     <DropdownMenu>
       <Tooltip><TooltipTrigger asChild><DropdownMenuTrigger asChild>
-        <InputGroupButton size="sm" className="gap-1.5 rounded-full px-2" aria-label={`Permissions: ${m.label}`}>{m.icon}<span>{m.label}</span><ChevronDown className="text-muted-foreground" /></InputGroupButton>
-      </DropdownMenuTrigger></TooltipTrigger><TooltipContent>{m.help}</TooltipContent></Tooltip>
+        <InputGroupButton size="sm" className={cn("composer-selector rounded-full", s.codeLayout && "composer-selector-icon [&>span]:hidden [&>svg:last-child]:hidden")} title={m.label} aria-label={`Permissions: ${m.label}`}>{m.icon}<span className="composer-selector-label">{m.label}</span><ChevronDown className="composer-selector-chevron text-muted-foreground" /></InputGroupButton>
+      </DropdownMenuTrigger></TooltipTrigger><TooltipContent>{m.label}</TooltipContent></Tooltip>
       <DropdownMenuContent align="start" side="top" className="w-72">
         <DropdownMenuLabel>What the agent may do</DropdownMenuLabel>
         <DropdownMenuRadioGroup value={s.mode} onValueChange={(v) => s.setMode(v as Mode)}>
@@ -182,6 +185,21 @@ export function Composer({ autoFocus, className }: { autoFocus?: boolean; classN
   };
 
   const disabled = !s.ready.length;
+  const chatView = !s.codeLayout && !!s.thread?.messages.length && !s.thread.task;
+  const workspaceToggle = (s.project && <Tooltip><TooltipTrigger asChild>
+            <InputGroupButton size="icon-sm" variant="ghost" aria-label="Workspace" aria-pressed={s.panel.open} onClick={() => { s.setWorkspaceExpanded(false); s.setPanel({ ...s.panel, open: !s.panel.open }); }}><PanelRight /></InputGroupButton>
+          </TooltipTrigger><TooltipContent>{s.panel.open ? 'Hide workspace' : 'Open workspace'} (Ctrl+J)</TooltipContent></Tooltip>);
+  const agentControls = <><AgentPicker />
+          <ModelPicker />
+          {!everyday && <><ModePicker />{planOn && <span className="px-2 text-xs text-muted-foreground">Plan first</span>}</>}</>;
+  const sendActions = (<div className="ml-auto flex items-center gap-1">
+            {s.running && <Button size="icon-sm" variant="secondary" className="rounded-full" onClick={s.stop} aria-label="Stop"><Square className="fill-current" /></Button>}
+            {(!s.running || text.trim()) && (
+              <Tooltip><TooltipTrigger asChild>
+                <Button size="icon-sm" className="rounded-full" onClick={submit} disabled={!text.trim() || disabled} aria-label={s.running ? 'Queue message' : 'Send'}>{s.running ? <Clock /> : <ArrowUp />}</Button>
+              </TooltipTrigger><TooltipContent>{s.running ? 'Send when the current turn ends' : 'Send (Enter)'}</TooltipContent></Tooltip>
+            )}
+          </div>);
   return (
     <div className={cn('relative', className)}>
       {s.queued.length > 0 && (
@@ -196,7 +214,7 @@ export function Composer({ autoFocus, className }: { autoFocus?: boolean; classN
           {suggestions.map((x, i) => (
             <button key={x.key} role="option" aria-selected={i === sel} onMouseDown={(e) => { e.preventDefault(); x.apply(); }} onMouseEnter={() => setSel(i)}
               className={cn('flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-sm', i === sel && 'bg-accent')}>
-              {x.kind === 'file' ? <FileText className="size-4 shrink-0 text-muted-foreground" /> : x.kind === 'skill' ? <Sparkles className="size-4 shrink-0 text-muted-foreground" /> : <ListTodo className="size-4 shrink-0 text-muted-foreground" />}
+              {x.kind === 'file' ? <FileTypeIcon path={x.label} /> : x.kind === 'skill' ? <Sparkles className="size-4 shrink-0 text-muted-foreground" /> : <ListTodo className="size-4 shrink-0 text-muted-foreground" />}
               <span className={cn('shrink-0', x.kind === 'file' && 'font-mono text-[12.5px]')}>{x.label}</span>
               {x.hint && <span className="truncate text-xs text-muted-foreground">{x.hint}</span>}
             </button>
@@ -204,7 +222,8 @@ export function Composer({ autoFocus, className }: { autoFocus?: boolean; classN
         </div>
       )}
       {/* shadcn fades the group when any child is disabled; only fade it when the text box is. */}
-      <InputGroup className={cn('h-auto rounded-[22px] bg-card shadow-sm transition-shadow has-disabled:bg-card has-disabled:opacity-100 has-[textarea:focus]:shadow-md dark:bg-card', disabled && 'opacity-60')}>
+      <InputGroup className={cn('composer-surface h-auto rounded-[22px] bg-card shadow-sm has-[[data-slot=input-group-control]:focus-visible]:ring-2 has-[[data-slot=input-group-control]:focus-visible]:ring-foreground/15 has-[[data-slot=input-group-control]:focus-visible]:border-foreground/40 transition-shadow has-disabled:bg-card has-disabled:opacity-100 has-[textarea:focus]:shadow-md dark:bg-card', disabled && 'opacity-60', (s.codeLayout || chatView) && 'rounded-xl shadow-none has-[textarea:focus]:shadow-none', chatView && 'chat-message-box')}>
+        {chatView && <InputGroupAddon align="inline-start" className="shrink-0 p-1"><ComposerTools everyday={everyday} planOn={planOn} setPlanOn={setPlanOn} focusMessage={() => ref.current?.focus()} /></InputGroupAddon>}
         <InputGroupTextarea
           ref={ref}
           value={text}
@@ -213,31 +232,19 @@ export function Composer({ autoFocus, className }: { autoFocus?: boolean; classN
           onKeyDown={onKeyDown}
           disabled={disabled}
           rows={1}
-          placeholder={disabled ? (s.st?.scanningAgents ? 'Finding assistants…' : 'Connect an assistant in Settings to begin.') : everyday ? 'Ask a follow-up or request a change…' : planOn ? `Describe the task. ${s.agent.name} will plan first…` : `Message ${s.agent.name}… Type @ for files, / for commands`}
+          placeholder={disabled ? (s.st?.scanningAgents ? 'Finding assistants…' : 'Connect an assistant in Settings to begin.') : everyday ? 'Ask a follow-up or request a change…' : planOn ? `Describe the task. ${s.agent.name} will plan first…` : 'Ask anything…'}
           aria-label="Message"
-          className="max-h-64 min-h-14 px-4 pt-3.5 text-[0.9375rem]"
+          className={cn("max-h-64 min-h-14 px-4 pt-3.5 text-[0.9375rem]", s.codeLayout && "min-h-11 px-3 pt-3 text-sm", chatView && "min-h-11 px-2 py-3 text-[13px]")}
         />
-        <InputGroupAddon align="block-end" className="gap-1 pb-2">
-          <AgentPicker />
-          {!everyday && <>
-          <ModePicker />
-          <Tooltip><TooltipTrigger asChild>
-            <InputGroupButton size="sm" aria-pressed={planOn} onClick={() => setPlanOn((v) => !v)} className={cn('gap-1.5 rounded-full px-2', planOn && 'bg-brand/12 text-brand hover:bg-brand/18 hover:text-brand')}><ListTodo /> Plan</InputGroupButton>
-          </TooltipTrigger><TooltipContent>Plan first in read-only mode, then approve to run</TooltipContent></Tooltip>
-          <Tooltip><TooltipTrigger asChild>
-            <InputGroupButton size="sm" onClick={() => s.setTeamOpen(true)} disabled={s.ready.length < 2} className="gap-1.5 rounded-full px-2"><Users /> Team</InputGroupButton>
-          </TooltipTrigger><TooltipContent>{s.ready.length < 2 ? 'Install a second agent to work as a team' : 'Race agents or run a plan, build and review team'}</TooltipContent></Tooltip>
-          </>}
-          <div className="ml-auto flex items-center gap-1">
-            {s.running && <Button size="icon-sm" variant="secondary" className="rounded-full" onClick={s.stop} aria-label="Stop"><Square className="fill-current" /></Button>}
-            {(!s.running || text.trim()) && (
-              <Tooltip><TooltipTrigger asChild>
-                <Button size="icon-sm" className="rounded-full" onClick={submit} disabled={!text.trim() || disabled} aria-label={s.running ? 'Queue message' : 'Send'}>{s.running ? <Clock /> : <ArrowUp />}</Button>
-              </TooltipTrigger><TooltipContent>{s.running ? 'Send when the current turn ends' : 'Send (Enter)'}</TooltipContent></Tooltip>
-            )}
-          </div>
-        </InputGroupAddon>
+        {!chatView && <InputGroupAddon align="block-end" className={cn("flex-wrap gap-1 pb-2", s.codeLayout && "composer-toolbar px-2 pt-0 pb-1.5")}>
+          <ComposerTools everyday={everyday} planOn={planOn} setPlanOn={setPlanOn} focusMessage={() => ref.current?.focus()} />
+          {workspaceToggle}
+          {agentControls}
+          {sendActions}
+        </InputGroupAddon>}
+        {chatView && <InputGroupAddon align="inline-end" className="shrink-0 p-1">{sendActions}</InputGroupAddon>}
       </InputGroup>
+      {chatView && <div className="chat-composer-options mt-1 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">{workspaceToggle}<div className="ml-auto flex flex-wrap items-center justify-end gap-0.5">{agentControls}</div></div>}
     </div>
   );
 }

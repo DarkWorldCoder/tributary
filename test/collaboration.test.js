@@ -9,6 +9,18 @@ const { createService } = require('../server/service');
 const { Hub, MemorySecrets } = require('../core');
 const ownerKey = 'test-owner-access-key-000000000000000000000';
 const waitFor = async (fn) => { const until = Date.now() + 5000; while (!fn()) { if (Date.now() > until) throw new Error('Condition timed out'); await new Promise((r) => setTimeout(r, 10)); } };
+test('project service supports directly hosted HTTPS with certificate verification', async (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-tls-')); t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const key = path.join(dir, 'key.pem'); const cert = path.join(dir, 'cert.pem');
+  require('node:child_process').execFileSync('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-keyout', key, '-out', cert, '-days', '1', '-subj', '/CN=localhost', '-addext', 'subjectAltName=DNS:localhost,IP:127.0.0.1'], { stdio: 'ignore' });
+  const service = createService({ dbPath: path.join(dir, 'db.sqlite'), bootstrapToken: ownerKey, tls: { key: fs.readFileSync(key), cert: fs.readFileSync(cert) } });
+  await new Promise((resolve) => service.server.listen(0, '127.0.0.1', resolve)); t.after(() => service.close());
+  const options = { hostname: '127.0.0.1', port: service.server.address().port, path: '/api/me', headers: { authorization: `Bearer ${ownerKey}` }, ca: fs.readFileSync(cert) };
+  const result = await new Promise((resolve, reject) => require('node:https').get(options, (response) => { let body = ''; response.on('data', (chunk) => { body += chunk; }); response.on('end', () => resolve({ status: response.statusCode, body: JSON.parse(body) })); }).on('error', reject));
+  assert.equal(result.status, 200); assert.equal(result.body.user.admin, true);
+  await assert.rejects(new Promise((resolve, reject) => require('node:https').get({ ...options, ca: undefined }, resolve).on('error', reject)), /self-signed certificate/);
+  assert.throws(() => createService({ dbPath: path.join(dir, 'bad.sqlite'), publicOrigin: 'https://example.com/path' }), /public origin/);
+});
 async function fixture(t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-room-'));
   let service; let url;

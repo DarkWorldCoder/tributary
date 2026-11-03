@@ -1,0 +1,66 @@
+{
+  "checks": [
+    "Raster images open in a viewer without text-editor or disabled Save clutter",
+    "Fit keeps the whole image visible",
+    "Zoom in increases the displayed scale",
+    "Actual size uses image pixels and allows scrolling",
+    "Keyboard 0 returns to fit",
+    "Full-screen viewer retains original image dimensions",
+    "Escape restores focus to Expand image",
+    "A complete image larger than 1 MB loads",
+    "Live disk updates replace the displayed image",
+    "SVG opens as an image preview by default",
+    "SVG source editing and preview remain available",
+    "Broken images show a short recoverable error",
+    "Oversized images show their size limit instead of a blank document",
+    "Markdown resolves images relative to the current document",
+    "Inline Markdown images use the same full-screen zoom viewer",
+    "Editor status tracks the real cursor position",
+    "Wrap changes presentation without dirtying the document",
+    "Alt+Z toggles line wrapping",
+    "Wrap preference survives switching file tabs",
+    "1920px: editor controls stay inside the reader",
+    "1920px: image controls fit without page overflow",
+    "1280px: editor controls stay inside the reader",
+    "1280px: image controls fit without page overflow",
+    "900px: editor controls stay inside the reader",
+    "900px: image controls fit without page overflow",
+    "768px: editor controls stay inside the reader",
+    "768px: image controls fit without page overflow",
+    "Narrow image viewer keeps fit controls in an overflow menu",
+    "390px: editor controls stay inside the reader",
+    "390px: image controls fit without page overflow",
+    "390px: image controls retain 44px touch targets",
+    "320px: editor controls stay inside the reader",
+    "320px: image controls fit without page overflow",
+    "320px: image controls retain 44px touch targets",
+    "Preview and editor UI checks send no model request"
+  ],
+  "geometry": [
+    {
+      "width": 1920,
+      "zoom": 100.0
+    },
+    {
+      "width": 1280,
+      "zoom": 63.0
+    },
+    {
+      "width": 900,
+      "zoom": 26.0
+    },
+    {
+      "width": 768,
+      "zoom": 13.0
+    },
+    {
+      "width": 390,
+      "zoom": 35.0
+    },
+    {
+      "width": 320,
+      "zoom": 28.0
+    }
+  ],
+  "fixture": "Isolated temporary files and the user-supplied reference screenshot; no model requests."
+}

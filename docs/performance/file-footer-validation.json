@@ -1,0 +1,465 @@
+{
+  "checks": [
+    "Breadcrumbs contain navigation without file action buttons",
+    "Save is in the editor footer",
+    "Open in editor is in the editor footer",
+    "A clean file disables Save",
+    "Footer Save writes the edited file",
+    "Keyboard Save remains available",
+    "Editor menu is anchored above the footer",
+    "Preview toggle is in the footer",
+    "Footer switches between Markdown preview and source",
+    "Workspace toggle sits beside the message",
+    "1920px: composer controls fit without clipping",
+    "1920px: model picker stays visible",
+    "1920px: all composer controls share the intended height",
+    "1280px: composer controls fit without clipping",
+    "1280px: model picker stays visible",
+    "1280px: all composer controls share the intended height",
+    "900px: composer controls fit without clipping",
+    "900px: model picker stays visible",
+    "900px: all composer controls share the intended height",
+    "768px: composer controls fit without clipping",
+    "768px: model picker stays visible",
+    "768px: all composer controls share the intended height",
+    "390px: composer controls fit without clipping",
+    "390px: model picker stays visible",
+    "390px: all composer controls share the intended height",
+    "390px: composer controls have 44px touch targets",
+    "320px: composer controls fit without clipping",
+    "320px: model picker stays visible",
+    "320px: all composer controls share the intended height",
+    "320px: composer controls have 44px touch targets",
+    "Workspace reopens the same pinned document",
+    "Phone file actions retain 44px touch targets"
+  ],
+  "geometry": [
+    {
+      "buttons": [
+        {
+          "bottom": 981,
+          "height": 32,
+          "right": 639,
+          "width": 32,
+          "x": 607,
+          "y": 949
+        },
+        {
+          "bottom": 981,
+          "height": 32,
+          "right": 675,
+          "width": 32,
+          "x": 643,
+          "y": 949
+        },
+        {
+          "bottom": 981,
+          "height": 32,
+          "right": 727,
+          "width": 48,
+          "x": 679,
+          "y": 949
+        },
+        {
+          "bottom": 981,
+          "height": 32,
+          "right": 838.171875,
+          "width": 107.171875,
+          "x": 731,
+          "y": 949
+        },
+        {
+          "bottom": 981,
+          "height": 32,
+          "right": 874.171875,
+          "width": 32,
+          "x": 842.171875,
+          "y": 949
+        },
+        {
+          "bottom": 981,
+          "height": 32,
+          "right": 1357,
+          "width": 32,
+          "x": 1325,
+          "y": 949
+        }
+      ],
+      "composer": {
+        "bottom": 988,
+        "height": 84,
+        "right": 1366,
+        "width": 768,
+        "x": 598,
+        "y": 904
+      },
+      "model": {
+        "bottom": 981,
+        "height": 32,
+        "right": 838.171875,
+        "width": 107.171875,
+        "x": 731,
+        "y": 949
+      },
+      "modelVisible": true,
+      "page": 1920,
+      "width": 1920
+    },
+    {
+      "buttons": [
+        {
+          "bottom": 981,
+          "height": 32,
+          "right": 319,
+          "width": 32,
+          "x": 287,
+          "y": 949
+        },
+        {
+          "bottom": 981,
+          "height": 32,
+          "right": 355,
+          "width": 32,
+          "x": 323,
+          "y": 949
+        },
+        {
+          "bottom": 981,
+          "height": 32,
+          "right": 407,
+          "width": 48,
+          "x": 359,
+          "y": 949
+        },
+        {
+          "bottom": 981,
+          "height": 32,
+          "right": 518.171875,
+          "width": 107.171875,
+          "x": 411,
+          "y": 949
+        },
+        {
+          "bottom": 981,
+          "height": 32,
+          "right": 554.171875,
+          "width": 32,
+          "x": 522.171875,
+          "y": 949
+        },
+        {
+          "bottom": 981,
+          "height": 32,
+          "right": 1037,
+          "width": 32,
+          "x": 1005,
+          "y": 949
+        }
+      ],
+      "composer": {
+        "bottom": 988,
+        "height": 84,
+        "right": 1046,
+        "width": 768,
+        "x": 278,
+        "y": 904
+      },
+      "model": {
+        "bottom": 981,
+        "height": 32,
+        "right": 518.171875,
+        "width": 107.171875,
+        "x": 411,
+        "y": 949
+      },
+      "modelVisible": true,
+      "page": 1280,
+      "width": 1280
+    },
+    {
+      "buttons": [
+        {
+          "bottom": 981,
+          "height": 32,
+          "right": 129,
+          "width": 32,
+          "x": 97,
+          "y": 949
+        },
+        {
+          "bottom": 981,
+          "height": 32,
+          "right": 165,
+          "width": 32,
+          "x": 133,
+          "y": 949
+        },
+        {
+          "bottom": 981,
+          "height": 32,
+          "right": 217,
+          "width": 48,
+          "x": 169,
+          "y": 949
+        },
+        {
+          "bottom": 981,
+          "height": 32,
+          "right": 328.171875,
+          "width": 107.171875,
+          "x": 221,
+          "y": 949
+        },
+        {
+          "bottom": 981,
+          "height": 32,
+          "right": 364.171875,
+          "width": 32,
+          "x": 332.171875,
+          "y": 949
+        },
+        {
+          "bottom": 981,
+          "height": 32,
+          "right": 847,
+          "width": 32,
+          "x": 815,
+          "y": 949
+        }
+      ],
+      "composer": {
+        "bottom": 988,
+        "height": 84,
+        "right": 856,
+        "width": 768,
+        "x": 88,
+        "y": 904
+      },
+      "model": {
+        "bottom": 981,
+        "height": 32,
+        "right": 328.171875,
+        "width": 107.171875,
+        "x": 221,
+        "y": 949
+      },
+      "modelVisible": true,
+      "page": 900,
+      "width": 900
+    },
+    {
+      "buttons": [
+        {
+          "bottom": 981,
+          "height": 32,
+          "right": 97,
+          "width": 32,
+          "x": 65,
+          "y": 949
+        },
+        {
+          "bottom": 981,
+          "height": 32,
+          "right": 133,
+          "width": 32,
+          "x": 101,
+          "y": 949
+        },
+        {
+          "bottom": 981,
+          "height": 32,
+          "right": 185,
+          "width": 48,
+          "x": 137,
+          "y": 949
+        },
+        {
+          "bottom": 981,
+          "height": 32,
+          "right": 296.171875,
+          "width": 107.171875,
+          "x": 189,
+          "y": 949
+        },
+        {
+          "bottom": 981,
+          "height": 32,
+          "right": 332.171875,
+          "width": 32,
+          "x": 300.171875,
+          "y": 949
+        },
+        {
+          "bottom": 981,
+          "height": 32,
+          "right": 747,
+          "width": 32,
+          "x": 715,
+          "y": 949
+        }
+      ],
+      "composer": {
+        "bottom": 988,
+        "height": 84,
+        "right": 756,
+        "width": 700,
+        "x": 56,
+        "y": 904
+      },
+      "model": {
+        "bottom": 981,
+        "height": 32,
+        "right": 296.171875,
+        "width": 107.171875,
+        "x": 189,
+        "y": 949
+      },
+      "modelVisible": true,
+      "page": 768,
+      "width": 768
+    },
+    {
+      "buttons": [
+        {
+          "bottom": 825,
+          "height": 44,
+          "right": 65,
+          "width": 44,
+          "x": 21,
+          "y": 781
+        },
+        {
+          "bottom": 825,
+          "height": 44,
+          "right": 109,
+          "width": 44,
+          "x": 65,
+          "y": 781
+        },
+        {
+          "bottom": 825,
+          "height": 44,
+          "right": 157,
+          "width": 48,
+          "x": 109,
+          "y": 781
+        },
+        {
+          "bottom": 825,
+          "height": 44,
+          "right": 201,
+          "width": 44,
+          "x": 157,
+          "y": 781
+        },
+        {
+          "bottom": 825,
+          "height": 44,
+          "right": 245,
+          "width": 44,
+          "x": 201,
+          "y": 781
+        },
+        {
+          "bottom": 825,
+          "height": 44,
+          "right": 369,
+          "width": 44,
+          "x": 325,
+          "y": 781
+        }
+      ],
+      "composer": {
+        "bottom": 832,
+        "height": 96,
+        "right": 378,
+        "width": 366,
+        "x": 12,
+        "y": 736
+      },
+      "model": {
+        "bottom": 825,
+        "height": 44,
+        "right": 201,
+        "width": 44,
+        "x": 157,
+        "y": 781
+      },
+      "modelVisible": true,
+      "page": 390,
+      "width": 390
+    },
+    {
+      "buttons": [
+        {
+          "bottom": 825,
+          "height": 44,
+          "right": 65,
+          "width": 44,
+          "x": 21,
+          "y": 781
+        },
+        {
+          "bottom": 825,
+          "height": 44,
+          "right": 109,
+          "width": 44,
+          "x": 65,
+          "y": 781
+        },
+        {
+          "bottom": 825,
+          "height": 44,
+          "right": 157,
+          "width": 48,
+          "x": 109,
+          "y": 781
+        },
+        {
+          "bottom": 825,
+          "height": 44,
+          "right": 201,
+          "width": 44,
+          "x": 157,
+          "y": 781
+        },
+        {
+          "bottom": 825,
+          "height": 44,
+          "right": 245,
+          "width": 44,
+          "x": 201,
+          "y": 781
+        },
+        {
+          "bottom": 825,
+          "height": 44,
+          "right": 299,
+          "width": 44,
+          "x": 255,
+          "y": 781
+        }
+      ],
+      "composer": {
+        "bottom": 832,
+        "height": 96,
+        "right": 308,
+        "width": 296,
+        "x": 12,
+        "y": 736
+      },
+      "model": {
+        "bottom": 825,
+        "height": 44,
+        "right": 201,
+        "width": 44,
+        "x": 157,
+        "y": 781
+      },
+      "modelVisible": true,
+      "page": 320,
+      "width": 320
+    }
+  ],
+  "fixture": "Isolated temporary project. Local file writes only; no model requests."
+}

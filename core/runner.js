@@ -40,7 +40,8 @@ async function runTurn(opts) {
     onEvent(e);
   };
   if (!agent.available && !host) { emit({ kind: 'error', message: `${agent.name} is not installed` }); emit({ kind: 'done', ok: false }); return { ok: false, sessionId, text }; }
-  const { env, changes, gatewayArgs, gatewayModel } = buildEnv(agent, { gateway, trusted, extraEnv: opts.env });
+  const selectedGateway = opts.model && gateway ? { ...gateway, model: opts.model } : gateway;
+  const { env, changes, gatewayArgs, gatewayModel } = buildEnv(agent, { gateway: selectedGateway, trusted, extraEnv: opts.env });
   const model = opts.model || gatewayModel || undefined;
 
   if (agent.protocol === 'acp') {

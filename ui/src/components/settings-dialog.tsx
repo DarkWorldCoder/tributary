@@ -18,7 +18,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { AgentAvatar } from '@/components/agent-avatar';
 import { cn } from '@/lib/utils';
 import { useStore, type SettingsTab, type Theme, type InterfaceFont } from '@/store';
-import type { Gateway, Protocol, RegistryAgent } from '@/types';
+import type { Gateway, Protocol, RegistryAgent, Thread, UiSkill } from '@/types';
 import { Connections } from '@/components/connections';
 
 const NAV: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
@@ -36,7 +36,7 @@ function Section({ title, description, children, actions }: { title: string; des
   return (
     <section className="flex flex-col gap-4">
       <div className="flex flex-wrap items-start gap-3">
-        <div className="min-w-0 flex-1"><h2 className="text-lg font-semibold tracking-tight">{title}</h2>{description && <p className="mt-1 max-w-prose text-sm text-muted-foreground">{description}</p>}</div>
+        <div className="min-w-0 flex-1"><h2 className="text-lg font-semibold text-balance">{title}</h2>{description && <p className="mt-1 max-w-prose text-sm leading-6 text-pretty text-muted-foreground">{description}</p>}</div>
         {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
       </div>
       {children}
@@ -68,7 +68,7 @@ function BrowseAgents({ open, onOpenChange }: { open: boolean; onOpenChange: (op
       <DialogContent className="flex h-[min(620px,85vh)] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl">
         <DialogHeader className="px-4 pt-4 pb-3">
           <DialogTitle>Browse agents</DialogTitle>
-          <DialogDescription>Agents from the Agent Client Protocol registry. Adding one puts it in your agents list; it runs through npx or uvx, which download it on first use.</DialogDescription>
+          <DialogDescription>Add ACP agents. Runnable agents download on first use.</DialogDescription>
         </DialogHeader>
         <Command className="min-h-0 flex-1 rounded-none! border-t bg-transparent" label="Registry agents">
           <CommandInput placeholder="Search agents…" />
@@ -113,7 +113,7 @@ function AgentsTab() {
   const s = useStore(); const [busy, setBusy] = React.useState(false); const [browsing, setBrowsing] = React.useState(false);
   const agents = [...(s.st?.agents ?? [])].sort((a, b) => Number(b.available && b.headless) - Number(a.available && a.headless));
   return (
-    <Section title="Agents" description="Tributary finds coding agents installed on this computer and runs them through their own headless or Agent Client Protocol mode. Sign-ins, sessions and settings stay with each agent."
+    <Section title="Agents" description="Manage installed and custom coding agents."
       actions={<>
         <Button variant="outline" size="sm" disabled={busy} onClick={async () => { setBusy(true); await s.hub.call('rescan'); await s.refreshState(); setBusy(false); toast.success('Agents rescanned'); }}><RefreshCw className={cn(busy && 'animate-spin')} /> Rescan</Button>
         <Button variant="outline" size="sm" onClick={() => s.hub.call('openAgentsFile')}><FilePlus2 /> Add a custom agent</Button>
@@ -165,7 +165,7 @@ function GatewaysTab() {
     await s.hub.call('saveGateway', form); setForm(null); await s.refreshState(); toast.success('Gateway saved');
   };
   return (
-    <Section title="Model gateways" description="Point an agent at a local or third-party model endpoint, such as LiteLLM, Ollama, LM Studio, DeepSeek or OpenRouter. Pick a gateway from the agent menu in the message box. API keys are encrypted with the system keychain when one is available and never written to Tributary’s data file."
+    <Section title="Model gateways" description="Use a local or third-party model endpoint with your agents."
       actions={!form && <Button size="sm" onClick={() => setForm({ protocol: 'openai', wireApi: 'chat' })}><Plus /> Add gateway</Button>}>
       {form && (
         <div className="rounded-xl border p-4">
@@ -241,7 +241,7 @@ function McpTab() {
     } catch (e) { toast.error((e as Error).message); }
   };
   return (
-    <Section title="MCP servers" description="Each agent keeps its own list of MCP servers. Here you can see them side by side and add a server to several agents at once. Changes go through each agent’s own mcp command, so their config files stay valid. Secret values are hidden."
+    <Section title="MCP servers" description="Manage the tool servers configured for each agent."
       actions={<><Button variant="outline" size="sm" onClick={load}><RefreshCw /> Refresh</Button>{!adding && <Button size="sm" onClick={() => setAdding(true)}><Plus /> Add server</Button>}</>}>
       {adding && (
         <div className="rounded-xl border p-4">
@@ -296,21 +296,46 @@ function McpTab() {
 type Skill = { name: string; title: string; description: string; agents: string[] };
 function SkillsTab() {
   const s = useStore(); const [list, setList] = React.useState<Skill[] | null>(null); const [q, setQ] = React.useState('');
+  const [guides, setGuides] = React.useState<UiSkill[]>([]); const [guideError, setGuideError] = React.useState('');
+  const [loadError, setLoadError] = React.useState(''); const [using, setUsing] = React.useState<string | null>(null); const [limit, setLimit] = React.useState(50);
   const load = React.useCallback(async () => setList(await s.hub.call<Skill[]>('skills', s.project)), [s.hub, s.project]);
-  React.useEffect(() => { load().catch(() => setList([])); }, [load]);
+  React.useEffect(() => { setLoadError(''); load().catch((e: Error) => setLoadError(e.message)); }, [load]);
+  React.useEffect(() => { s.hub.call<UiSkill[]>('uiSkills').then(setGuides).catch((e: Error) => setGuideError(e.message)); }, [s.hub]);
+  const useGuide = async (id: string) => {
+    if (using) return;
+    setUsing(id); setGuideError('');
+    try {
+      const guide = await s.hub.call<UiSkill>('uiSkill', id);
+      if (!guide.instructions) throw new Error('This guidance could not be loaded.');
+      if (s.home || !s.project) {
+        const project = s.project || await s.hub.call<string>('personalWorkspace');
+        const thread = await s.hub.call<Thread>('createThread', project);
+        await s.refreshState(); await s.loadThreads(project); await s.openThread(thread.id);
+      }
+      s.setDraft(`${guide.instructions}\n\n${s.draft}`);
+      s.setSettings({ ...s.settings, open: false });
+      toast.success('UI guidance added to your message', { description: 'Add your task, review the message, then send it when ready.' });
+    } catch (e) { setGuideError((e as Error).message); } finally { setUsing(null); }
+  };
   const all = ['antigravity', 'claude', 'codex', 'gemini'].filter((id) => s.agentOf(id).available);
   const shown = (list ?? []).filter((k) => !q || `${k.name} ${k.description}`.toLowerCase().includes(q.toLowerCase()));
   return (
-    <Section title="Skills" description="Skills are folders of instructions agents load when a task calls for them. Each agent has its own skills folder; this list merges them. Sharing links a skill into every agent’s folder without copying or overwriting anything.">
-      <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Search ${list?.length ?? ''} skills…`} aria-label="Search skills" />
-      {list == null ? <div className="flex flex-col gap-2">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-14 rounded-xl" />)}</div> : (
+    <Section title="Skills" description="Add guidance to your message or manage installed skills.">
+      <Input value={q} onChange={(e) => { setQ(e.target.value); setLimit(50); }} placeholder="Search skills…" aria-label="Search skills" />
+      <section aria-labelledby="built-in-ui-skills" className="space-y-3">
+        <div><h3 id="built-in-ui-skills" className="text-sm font-semibold">UI skills included with Tributary</h3><p className="mt-1 text-sm text-pretty text-muted-foreground">Add the full guidance to your next message. Works with any assistant; nothing runs until you send.</p></div>
+        <div className="grid gap-3 lg:grid-cols-2">{guides.filter((g) => `${g.title} ${g.description}`.toLowerCase().includes(q.toLowerCase())).map((g) => <div key={g.id} className="flex min-w-0 flex-col items-start gap-3 rounded-xl border bg-card p-4"><div><h4 className="text-sm font-medium text-balance">{g.title}</h4><p className="mt-1 text-sm leading-5 text-pretty text-muted-foreground">{g.description}</p></div><Button size="sm" variant="outline" className="mt-auto" disabled={!!using} onClick={() => useGuide(g.id)} aria-label={`Use ${g.title} guidance`}>{using === g.id ? 'Adding…' : 'Use guidance'}</Button></div>)}</div>
+        {guideError && <p role="alert" className="text-sm text-destructive">{guideError}</p>}
+      </section>
+      <div className="border-t pt-5"><h3 className="text-sm font-semibold">Installed agent skills</h3><p className="mt-1 text-sm text-pretty text-muted-foreground">Each agent has its own skills folder. “Share with all” creates links in the other agents’ folders without overwriting existing skills.</p></div>
+      {loadError ? <div role="alert" className="text-sm"><p className="text-destructive">{loadError}</p><Button size="sm" variant="outline" className="mt-2" onClick={() => { setLoadError(''); load().catch((e: Error) => setLoadError(e.message)); }}>Try again</Button></div> : list == null ? <div className="flex flex-col gap-2">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-14 rounded-xl" />)}</div> : (
         <div className="flex flex-col gap-2">
-          {shown.slice(0, 200).map((k) => {
+          {shown.slice(0, limit).map((k) => {
             const missing = all.filter((id) => !k.agents.includes(id));
             return (
-              <Item key={k.name} variant="outline" size="sm">
+              <Item key={k.name} variant="outline" size="sm" className="flex-wrap">
                 <ItemContent className="min-w-0">
-                  <ItemTitle className="font-mono text-[13px]">{k.name}</ItemTitle>
+                  <ItemTitle className="break-words text-sm">{k.title || k.name}</ItemTitle>
                   {k.description && <ItemDescription className="line-clamp-2 text-xs">{k.description}</ItemDescription>}
                 </ItemContent>
                 <ItemActions className="shrink-0">
@@ -323,6 +348,7 @@ function SkillsTab() {
               </Item>
             );
           })}
+          {shown.length > limit && <Button variant="outline" size="sm" onClick={() => setLimit((n) => n + 50)}>Show more ({shown.length - limit} remaining)</Button>}
           {!shown.length && <Empty className="border"><EmptyHeader><EmptyTitle>{q ? 'No skills match' : 'No skills found'}</EmptyTitle></EmptyHeader></Empty>}
         </div>
       )}
@@ -340,12 +366,14 @@ function AppearanceTab() {
         <Field><FieldLabel htmlFor="interface-font">Interface font</FieldLabel>
           <NativeSelect id="interface-font" value={s.interfaceFont} onChange={(e) => s.setInterfaceFont(e.target.value as InterfaceFont)}>
             <NativeSelectOption value="geist">Geist — clean and compact</NativeSelectOption><NativeSelectOption value="plex">IBM Plex Sans — familiar and open</NativeSelectOption><NativeSelectOption value="system">System font</NativeSelectOption>
-          </NativeSelect><FieldDescription>Fonts are included in the app. Code keeps its own monospaced font.</FieldDescription>
+          </NativeSelect>
         </Field>
         <Field><FieldLabel htmlFor="reading-size">Response text size</FieldLabel>
           <NativeSelect id="reading-size" value={s.readingSize} onChange={(e) => s.setReadingSize(Number(e.target.value))}>{[14, 15, 16, 18, 20].map((n) => <NativeSelectOption key={n} value={n}>{n} px</NativeSelectOption>)}</NativeSelect>
         </Field>
-        <div className="rounded-lg border bg-card px-4 py-3"><p className="mb-1 text-sm font-semibold">A clearer space to work together</p><p className="prose-reply text-muted-foreground">Keep your tasks, decisions and progress in one place.</p></div>
+        <Field><FieldLabel htmlFor="coding-reading-size">Coding chat text size</FieldLabel>
+          <NativeSelect id="coding-reading-size" value={s.codingReadingSize} onChange={(e) => s.setCodingReadingSize(Number(e.target.value))}>{[12, 13, 14, 15, 16, 18, 20].map((n) => <NativeSelectOption key={n} value={n}>{n} px</NativeSelectOption>)}</NativeSelect>
+        </Field>
       </FieldGroup>
       <ToggleGroup type="single" variant="outline" spacing={2} value={s.theme} onValueChange={(v) => { if (v) s.setTheme(v as Theme); }} aria-label="Theme" className="grid w-full max-w-md grid-cols-3">
         {opts.map((o) => (
@@ -369,22 +397,24 @@ function AboutTab() {
 
 export function SettingsDialog() {
   const s = useStore(); const [query, setQuery] = React.useState('');
-  const keywords: Record<string, string> = { connections: 'assistant provider local model account', agents: 'coding install custom', gateways: 'model endpoint api', mcp: 'tools servers', skills: 'instructions extensions', appearance: 'font typography reading size theme dark light system', about: 'version information' };
+  const returnFocus = React.useRef<HTMLElement | null>(null);
+  React.useEffect(() => { if (s.settings.open) setQuery(''); }, [s.settings.open]);
+  const keywords: Record<string, string> = { connections: 'assistant provider local model account', agents: 'coding install custom', gateways: 'model endpoint api', mcp: 'tools servers', skills: 'instructions extensions ui layout writing components usability design accessibility', appearance: 'font typography reading size theme dark light system', about: 'version information' };
   const matches = NAV.filter((n) => `${n.label} ${keywords[n.id] || ''}`.toLowerCase().includes(query.trim().toLowerCase()));
   const tab = query.trim() ? (matches.find((n) => n.id === s.settings.tab)?.id || matches[0]?.id) : s.settings.tab;
   return (
     <Dialog open={s.settings.open} onOpenChange={(open) => s.setSettings({ ...s.settings, open })}>
-      <DialogContent className="flex h-[min(720px,90vh)] w-[min(980px,calc(100vw-2rem))] max-w-none flex-col gap-0 overflow-hidden p-0 sm:max-w-none md:flex-row">
+      <DialogContent onOpenAutoFocus={() => { returnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; }} onCloseAutoFocus={(event) => { if (returnFocus.current?.isConnected && returnFocus.current !== document.body) { event.preventDefault(); returnFocus.current.focus(); } }} className="flex h-[min(720px,90vh)] w-[min(980px,calc(100vw-2rem))] max-w-none flex-col gap-0 overflow-hidden p-0 sm:max-w-none md:flex-row">
         <DialogTitle className="sr-only">Settings</DialogTitle>
         <DialogDescription className="sr-only">Agents, model gateways, MCP servers, skills and appearance</DialogDescription>
-        <nav className="flex shrink-0 gap-1 overflow-x-auto border-b bg-sidebar p-2 md:w-52 md:flex-col md:border-r md:border-b-0 md:p-3">
+        <nav className="flex shrink-0 gap-1 overflow-x-auto border-b bg-sidebar p-2 pr-10 md:pr-3 md:w-52 md:flex-col md:border-r md:border-b-0 md:p-3">
           <div className="hidden px-2 pt-1 pb-3 font-semibold md:block">Settings</div>
           {matches.map((n) => (
             <button key={n.id} onClick={() => s.setSettings({ open: true, tab: n.id })} aria-current={tab === n.id ? 'page' : undefined}
               className={cn('flex shrink-0 items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-foreground [&_svg]:size-4', tab === n.id && 'bg-sidebar-accent font-medium text-foreground')}>{n.icon}{n.label}</button>
           ))}
         </nav>
-        <div className="min-h-0 flex-1 overflow-y-auto p-6 md:p-8">
+        <div className="min-h-0 min-w-0 flex-1 overflow-y-auto p-5 md:p-8">
           <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Find a settings section…" aria-label="Find a settings section" className="mb-6" />
           {!tab && <p className="text-sm text-muted-foreground">No settings match “{query}”. Try font, appearance, agents or connections.</p>}
           {tab === 'connections' && <Connections />}

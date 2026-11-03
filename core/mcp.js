@@ -9,13 +9,16 @@ const path = require('path');
 // Mask anything secret-looking before it reaches the UI.
 function redact(s) {
   return String(s || '')
+    .replace(/(https?:\/\/)[^/\s@]+@/gi, '$1•••@')
+    .replace(/(\b[\w-]*(?:token|secret|password|api[_-]?key)[\w-]*\s*[=:]\s*)("[^"]*"|'[^']*'|[^\s&,;]+)/gi, '$1•••')
+    .replace(/(--(?:token|secret|password|api[_-]?key)\s+)("[^"]*"|'[^']*'|\S+)/gi, '$1•••')
     .replace(/((?:--header|-H)[ =])(\S+:?)\s+\S+/gi, '$1$2 •••')
     .replace(/(authorization:?\s*(?:bearer|basic)?\s*)\S+/gi, '$1•••')
     .replace(/(x-[\w-]*(?:key|token|secret)[\w-]*:?\s*)\S+/gi, '$1•••')
     .replace(/([?&](?:key|token|api[_-]?key|access[_-]?token|secret|sig)=)[^&\s]+/gi, '$1•••')
     .replace(/\b(sk|pk|rk|ghp|gho|ghs|glpat|xox[abpr]|AQ|AIza)[-_.]?[A-Za-z0-9_.-]{12,}/g, '•••');
 }
-const readJson = (p) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return null; } };
+const readJson = (p, warnings = []) => { try { if (fs.statSync(p).size > 1024 * 1024) throw new Error('too large'); return JSON.parse(fs.readFileSync(p, 'utf8')); } catch (e) { if (e.code !== 'ENOENT') warnings.push(`A ${path.basename(p)} connector configuration could not be read. Check its JSON format, size and file permissions.`); return null; } };
 const fromJson = (agent, scope, servers) => Object.entries(servers || {}).map(([name, c]) => ({
   agent, name, scope, enabled: !(c.disabled || c.enabled === false),
   transport: c.url || c.httpUrl || c.serverUrl ? (c.type || 'http') : 'stdio',
@@ -28,23 +31,24 @@ function runCli(bin, args, { timeout = 20000, env } = {}) {
     resolve({ ok: !err, stdout: String(stdout || ''), stderr: String(stderr || '') || (err ? err.message : '') })));
 }
 
-async function listMcp({ agents, home = os.homedir(), project }) {
+async function listMcp({ agents, home = os.homedir(), project, warnings = [] }) {
+  const read = (p) => readJson(p, warnings);
   const out = []; const has = (id) => agents.find((a) => a.id === id && a.available);
   if (has('claude')) {
-    const cj = readJson(path.join(home, '.claude.json')) || {};
+    const cj = read(path.join(home, '.claude.json')) || {};
     out.push(...fromJson('claude', 'user', cj.mcpServers));
     if (project) {
       out.push(...fromJson('claude', 'local', ((cj.projects || {})[project] || {}).mcpServers));
-      out.push(...fromJson('claude', 'project', (readJson(path.join(project, '.mcp.json')) || {}).mcpServers));
+      out.push(...fromJson('claude', 'project', (read(path.join(project, '.mcp.json')) || {}).mcpServers));
     }
   }
   if (has('gemini')) {
-    out.push(...fromJson('gemini', 'user', (readJson(path.join(home, '.gemini', 'settings.json')) || {}).mcpServers));
-    if (project) out.push(...fromJson('gemini', 'project', (readJson(path.join(project, '.gemini', 'settings.json')) || {}).mcpServers));
+    out.push(...fromJson('gemini', 'user', (read(path.join(home, '.gemini', 'settings.json')) || {}).mcpServers));
+    if (project) out.push(...fromJson('gemini', 'project', (read(path.join(project, '.gemini', 'settings.json')) || {}).mcpServers));
   }
   if (has('antigravity')) {
     const f = [path.join(home, '.gemini', 'config', 'mcp_config.json'), path.join(home, '.gemini', 'antigravity', 'mcp_config.json')].find((p) => fs.existsSync(p));
-    if (f) out.push(...fromJson('antigravity', 'user', (readJson(f) || {}).mcpServers));
+    if (f) out.push(...fromJson('antigravity', 'user', (read(f) || {}).mcpServers));
   }
   const codex = has('codex');
   if (codex) {
@@ -55,7 +59,7 @@ async function listMcp({ agents, home = os.homedir(), project }) {
         out.push({ agent: 'codex', name: s.name, scope: 'user', enabled: s.enabled !== false, transport: t.type === 'stdio' ? 'stdio' : 'http',
           target: redact(t.url || [t.command, ...(t.args || [])].filter(Boolean).join(' ')), envKeys: Object.keys(t.env || {}) });
       }
-    } catch { /* older codex without --json */ }
+    } catch { warnings.push('Codex connector inventory could not be read. Check the installed CLI and its MCP configuration.'); }
   }
   return out;
 }

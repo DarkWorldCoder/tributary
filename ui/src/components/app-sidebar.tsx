@@ -1,23 +1,17 @@
 import * as React from 'react';
-import { Check, ChevronRight, CircleAlert, Folder, FolderPlus, Home, MoreHorizontal, Search, Settings, SquarePen, Trash2, Users } from 'lucide-react';
+import { Check, ChevronRight, CircleAlert, Folder, FolderPlus, Home, Keyboard, MoreHorizontal, PanelLeftClose, Search, Settings, SquarePen, Trash2, Users } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { modifierLabel } from '@/components/keyboard-shortcuts';
 import { Kbd } from '@/components/ui/kbd';
 import {
-  Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupAction, SidebarGroupLabel, SidebarHeader, SidebarInput,
+  Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupAction, SidebarGroupLabel, SidebarHeader,
   SidebarMenu, SidebarMenuAction, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem, SidebarRail, useSidebar,
 } from '@/components/ui/sidebar';
 import { Spinner } from '@/components/ui/spinner';
-import { AgentAvatar } from '@/components/agent-avatar';
 import { ago } from '@/lib/format';
 import { useStore } from '@/store';
 import type { ThreadStatus, ThreadSummary } from '@/types';
-
-function ThreadDots({ t }: { t: ThreadSummary }) {
-  const s = useStore();
-  const ids = [...new Set((t.agents?.length ? t.agents : [t.lastAgent]).filter(Boolean).map((a) => String(a).split('@')[0]))].slice(0, 3);
-  return <span className="flex -space-x-1">{ids.map((id) => <AgentAvatar key={id} agent={s.agentOf(id)} size="xs" className="ring-2 ring-sidebar" />)}</span>;
-}
 
 // Working, needs review (finished with changes you have not opened), failed, done.
 function StatusBadge({ status }: { status?: ThreadStatus | null }) {
@@ -36,52 +30,47 @@ function ThreadRow({ t }: { t: ThreadSummary }) {
     <SidebarMenuSubItem>
       <SidebarMenuSubButton isActive={active} onClick={() => { s.openThread(t.id); if (isMobile) setOpenMobile(false); }} className="h-8 gap-2 pr-1.5" title={t.title}>
         <span className="min-w-0 flex-1 truncate">{t.title}</span>
-        {status === 'working' ? <StatusBadge status={status} /> : <><StatusBadge status={status} /><ThreadDots t={t} /><span className="w-7 text-right text-[11px] tabular-nums text-muted-foreground">{ago(t.updatedAt)}</span></>}
+        {status === 'working' ? <StatusBadge status={status} /> : <><StatusBadge status={status} /><span className="w-7 shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">{ago(t.updatedAt)}</span></>}
       </SidebarMenuSubButton>
     </SidebarMenuSubItem>
   );
 }
 
 export function AppSidebar() {
-  const s = useStore(); const [q, setQ] = React.useState(''); const [more, setMore] = React.useState<Record<string, boolean>>({});
-  const { isMobile, setOpenMobile } = useSidebar();
+  const s = useStore(); const [more, setMore] = React.useState<Record<string, boolean>>({});
+  const { isMobile, setOpenMobile, toggleSidebar } = useSidebar();
   const vs = s.hub.platform === 'vscode';
   const projects = s.st?.projects ?? [];
-  const query = q.trim().toLowerCase();
-  const results = query ? projects.flatMap((p) => (s.threadsBy[p.path] || []).filter((t) => t.title.toLowerCase().includes(query)).map((t) => ({ ...t, project: p.name }))) : [];
   const ready = s.ready;
   const addProject = async () => { const p = await s.hub.call<string | null>('pickProject'); if (p) { await s.refreshState(); await s.loadThreads(p); s.newThread(p); } };
   const newThread = (p?: string) => { s.newThread(p); if (isMobile) setOpenMobile(false); };
 
   return (
-    <Sidebar collapsible="offcanvas">
-      <SidebarHeader className="gap-1.5 pb-0">
+    <Sidebar collapsible="offcanvas" className="project-sidebar">
+      <SidebarHeader className="gap-1.5 border-b px-3 pt-3 pb-3">
         <div className="flex items-center gap-2 px-1.5 pt-1 pb-1.5">
           <img src="./logo.svg" alt="" className="size-6 rounded-[7px]" />
           <span className="flex-1 text-[15px] font-semibold tracking-tight">Tributary</span>
-          <button className="rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-foreground" onClick={() => s.setPalette(true)} aria-label="Search and commands" title="Search and commands (Ctrl+K)"><Search className="size-4" /></button>
+          <button className="flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-foreground max-sm:size-11" onClick={toggleSidebar} aria-label="Collapse project list" title="Collapse project list"><PanelLeftClose className="size-4" /></button>
         </div>
-        <SidebarMenu>
-          <SidebarMenuItem><SidebarMenuButton onClick={s.goHome} isActive={s.home || !s.project}><Home /><span>Start a task</span></SidebarMenuButton></SidebarMenuItem>
-          <SidebarMenuItem><SidebarMenuButton onClick={() => s.setRoomOpen(true)}><Users /><span>Project room</span></SidebarMenuButton></SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton onClick={() => newThread()} disabled={!s.project} className="font-medium">
-              <SquarePen /> <span>New conversation</span> <Kbd className="ml-auto">Ctrl N</Kbd>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+        <SidebarMenu aria-label="Chat actions">
+          <SidebarMenuItem><SidebarMenuButton aria-label="New chat" onClick={() => newThread()} disabled={!s.project} className="h-10 font-medium"><SquarePen /><span>New chat</span><Kbd className="ml-auto opacity-0 group-hover/menu-item:opacity-100">{modifierLabel()} N</Kbd></SidebarMenuButton></SidebarMenuItem>
+          <SidebarMenuItem><SidebarMenuButton aria-label="Search chats" onClick={() => { s.setPalette(true); if (isMobile) setOpenMobile(false); }} className="h-10"><Search /><span>Search chats</span></SidebarMenuButton></SidebarMenuItem>
+          <SidebarMenuItem><SidebarMenuButton aria-label="Start a task" onClick={() => { s.goHome(); if (isMobile) setOpenMobile(false); }} isActive={s.home || !s.project} className="h-10"><Home /><span>Start a task</span></SidebarMenuButton></SidebarMenuItem>
         </SidebarMenu>
-        <SidebarInput value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search threads…" aria-label="Search threads" className="mt-1" />
+
       </SidebarHeader>
 
       <SidebarContent>
-        {query ? (
+        {!s.codeLayout && !s.thread?.messages.length && <SidebarGroup>
+          <SidebarGroupLabel>Workspace</SidebarGroupLabel>
+          <SidebarMenu>
+            <SidebarMenuItem><SidebarMenuButton disabled={!s.project} onClick={() => { s.openPanel('files'); s.setWorkspaceExpanded(false); if (isMobile) setOpenMobile(false); }}><Folder /><span>Project files</span></SidebarMenuButton></SidebarMenuItem>
+            <SidebarMenuItem><SidebarMenuButton onClick={() => { s.setRoomOpen(true); if (isMobile) setOpenMobile(false); }}><Users /><span>Project room</span></SidebarMenuButton></SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>}
           <SidebarGroup>
-            <SidebarGroupLabel>{results.length ? `${results.length} result${results.length > 1 ? 's' : ''}` : 'No threads match'}</SidebarGroupLabel>
-            <SidebarMenu><SidebarMenuSub className="mx-0 border-0 px-0">{results.map((t) => <ThreadRow key={t.id} t={t} />)}</SidebarMenuSub></SidebarMenu>
-          </SidebarGroup>
-        ) : (
-          <SidebarGroup>
-            <SidebarGroupLabel>My work</SidebarGroupLabel>
+            <SidebarGroupLabel>Projects & chats</SidebarGroupLabel>
             {!vs && <SidebarGroupAction onClick={addProject} title="Add project folder" aria-label="Add project folder"><FolderPlus /></SidebarGroupAction>}
             <SidebarMenu>
               {projects.map((p) => {
@@ -118,13 +107,14 @@ export function AppSidebar() {
               {!projects.length && <li className="px-2 py-1 text-sm text-muted-foreground">No projects yet.</li>}
             </SidebarMenu>
           </SidebarGroup>
-        )}
       </SidebarContent>
 
-      <SidebarFooter>
+      <SidebarFooter className="border-t px-3 py-2">
         <SidebarMenu>
+          {s.codeLayout && <SidebarMenuItem><SidebarMenuButton onClick={() => { s.setRoomOpen(true); if (isMobile) setOpenMobile(false); }}><Users /><span>Project room</span></SidebarMenuButton></SidebarMenuItem>}
+          <SidebarMenuItem><SidebarMenuButton onClick={() => { s.setShortcutsOpen(true); if (isMobile) setOpenMobile(false); }}><Keyboard /><span>Keyboard shortcuts</span></SidebarMenuButton></SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={() => s.openSettings('appearance')} className="h-9">
+            <SidebarMenuButton onClick={() => { s.openSettings('appearance'); if (isMobile) setOpenMobile(false); }} className="h-9">
               <Settings className="text-muted-foreground" /><span>Settings</span>
               <span className="ml-auto text-xs text-muted-foreground">{s.st?.scanningAgents && !ready.length ? 'Finding agents…' : `${ready.length} ready`}</span>
             </SidebarMenuButton>

@@ -1,0 +1,824 @@
+{
+  "surfaces": [
+    {
+      "surface": "desktop workspace and composer",
+      "audit": {
+        "axeVersion": "4.12.1",
+        "counts": {
+          "inapplicable": 46,
+          "incomplete": 1,
+          "passes": 43,
+          "violations": 0
+        },
+        "incomplete": [
+          {
+            "help": "Elements must meet minimum color contrast ratio thresholds",
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=axeAPI",
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodeCount": 28,
+            "nodes": [
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element",
+                "html": "<span>Files</span>",
+                "target": [
+                  "#radix-_r_6g_-trigger-files > span"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "button[title=\"src/index.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  ".explorer-row.min-h-9[title=\"app.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "button[title=\"example-00.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "button[title=\"example-01.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "button[title=\"example-02.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "button[title=\"example-03.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "button[title=\"example-04.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "button[title=\"example-05.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "button[title=\"example-06.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              }
+            ],
+            "tags": [
+              "cat.color",
+              "wcag2aa",
+              "wcag143",
+              "TTv5",
+              "TT13.c",
+              "EN-301-549",
+              "EN-9.1.4.3",
+              "ACT",
+              "RGAAv4",
+              "RGAA-3.2.1"
+            ]
+          }
+        ],
+        "lifecycle": {
+          "effectiveLaunch": {
+            "browserLaunched": true,
+            "engine": "chrome",
+            "launchHash": 18011897515091061429
+          },
+          "launched": false,
+          "relaunchedBrowser": false,
+          "restartedBackground": false,
+          "restoreStatus": "not_configured",
+          "reused": true,
+          "saveStatus": "not_configured"
+        },
+        "url": "file:///home/ayushniroula/Desktop/projects/tributary/ui/dist/index.html",
+        "violations": []
+      }
+    },
+    {
+      "surface": "searchable tools menu",
+      "audit": {
+        "axeVersion": "4.12.1",
+        "counts": {
+          "inapplicable": 43,
+          "incomplete": 3,
+          "passes": 46,
+          "violations": 0
+        },
+        "incomplete": [
+          {
+            "help": "Elements must only use permitted ARIA attributes",
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/aria-prohibited-attr?application=axeAPI",
+            "id": "aria-prohibited-attr",
+            "impact": "serious",
+            "nodeCount": 1,
+            "nodes": [
+              {
+                "failureSummary": "Fix all of the following:\n  aria-label attribute is not well supported on a div with no valid role attribute.",
+                "html": "<div tabindex=\"-1\" data-slot=\"command\" class=\"flex size-full flex-col overflow-hidden rounded-xl! bg-popover text-popover-foreground rounded-xl p-1\" aria-label=\"Tools and skills\" cmdk-root=\"\">",
+                "target": [
+                  ".rounded-xl\\!"
+                ]
+              }
+            ],
+            "tags": [
+              "cat.aria",
+              "wcag2a",
+              "wcag412",
+              "EN-301-549",
+              "EN-9.4.1.2",
+              "RGAAv4",
+              "RGAA-7.1.1"
+            ]
+          },
+          {
+            "help": "ARIA attributes must conform to valid values",
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/aria-valid-attr-value?application=axeAPI",
+            "id": "aria-valid-attr-value",
+            "impact": "critical",
+            "nodeCount": 1,
+            "nodes": [
+              {
+                "failureSummary": "Fix all of the following:\n  Unable to determine if aria-controls referenced ID exists on the page while using aria-haspopup: aria-controls=\"radix-_r_2h_\"",
+                "html": "<button data-slot=\"popover-trigger\" data-variant=\"ghost\" data-size=\"icon-sm\" class=\"group/button shrink-...\" type=\"button\" aria-label=\"Tools and planning\" title=\"Tools and skills\" aria-haspopup=\"dialog\" aria-expanded=\"true\" data-state=\"open\" aria-controls=\"radix-_r_2h_\" ...>",
+                "target": [
+                  "button[aria-label=\"Tools and planning\"]"
+                ]
+              }
+            ],
+            "tags": [
+              "cat.aria",
+              "wcag2a",
+              "wcag412",
+              "EN-301-549",
+              "EN-9.4.1.2",
+              "RGAAv4",
+              "RGAA-7.1.1"
+            ]
+          },
+          {
+            "help": "Elements must meet minimum color contrast ratio thresholds",
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=axeAPI",
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodeCount": 28,
+            "nodes": [
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element",
+                "html": "<span>Files</span>",
+                "target": [
+                  "#radix-_r_6g_-trigger-files > span"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "button[title=\"src/index.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  ".explorer-row.hover\\:bg-muted\\/70[title=\"app.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "button[title=\"example-00.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "button[title=\"example-01.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "button[title=\"example-02.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "button[title=\"example-03.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "button[title=\"example-04.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "button[title=\"example-05.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "button[title=\"example-06.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              }
+            ],
+            "tags": [
+              "cat.color",
+              "wcag2aa",
+              "wcag143",
+              "TTv5",
+              "TT13.c",
+              "EN-301-549",
+              "EN-9.1.4.3",
+              "ACT",
+              "RGAAv4",
+              "RGAA-3.2.1"
+            ]
+          }
+        ],
+        "lifecycle": {
+          "effectiveLaunch": {
+            "browserLaunched": true,
+            "engine": "chrome",
+            "launchHash": 18011897515091061429
+          },
+          "launched": false,
+          "relaunchedBrowser": false,
+          "restartedBackground": false,
+          "restoreStatus": "not_configured",
+          "reused": true,
+          "saveStatus": "not_configured"
+        },
+        "url": "file:///home/ayushniroula/Desktop/projects/tributary/ui/dist/index.html",
+        "violations": []
+      }
+    },
+    {
+      "surface": "team setup",
+      "audit": {
+        "axeVersion": "4.12.1",
+        "counts": {
+          "inapplicable": 54,
+          "incomplete": 2,
+          "passes": 35,
+          "violations": 0
+        },
+        "incomplete": [
+          {
+            "help": "ARIA hidden element must not be focusable or contain focusable elements",
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/aria-hidden-focus?application=axeAPI",
+            "id": "aria-hidden-focus",
+            "impact": "serious",
+            "nodeCount": 11,
+            "nodes": [
+              {
+                "failureSummary": "Fix all of the following:\n  Check that focusable elements are not tabbable in the current state",
+                "html": "<span data-radix-focus-guard=\"\" tabindex=\"0\" data-aria-hidden=\"true\" aria-hidden=\"true\" style=\"outline: none; opacity: 0; position: fixed; pointer-events: none;\"></span>",
+                "target": [
+                  "span[data-radix-focus-guard=\"\"][data-aria-hidden=\"true\"][aria-hidden=\"true\"]:nth-child(1)"
+                ]
+              },
+              {
+                "failureSummary": "Fix all of the following:\n  Check that focusable elements are not tabbable in the current state",
+                "html": "<nav aria-label=\"Project tools\" class=\"activity-rail flex h-full w-11 shrink-0 flex-col items-center gap-1 border-r bg-sidebar py-1.5 max-md:hidden\" data-aria-hidden=\"true\" aria-hidden=\"true\">",
+                "target": [
+                  ".activity-rail"
+                ]
+              },
+              {
+                "failureSummary": "Fix all of the following:\n  Check that focusable elements are not tabbable in the current state",
+                "html": "<header class=\"workbench-toolbar @container border-b bg-background/60 pr-2\" data-aria-hidden=\"true\" aria-hidden=\"true\">",
+                "target": [
+                  ".group\\/tabs.data-horizontal\\:flex-col[data-slot=\"tabs\"] > header"
+                ]
+              },
+              {
+                "failureSummary": "Fix all of the following:\n  Check that focusable elements are not tabbable in the current state",
+                "html": "<div data-slot=\"resizable-panel\" data-panel=\"true\" data-testid=\"explorer-/tmp/tribut...\" id=\"explorer-/tmp/tribut...\" style=\"min-height: 0px; max...\" data-aria-hidden=\"true\" aria-hidden=\"true\">",
+                "target": [
+                  "#explorer-\\/tmp\\/tributary-tabs-qa"
+                ]
+              },
+              {
+                "failureSummary": "Fix all of the following:\n  Check that focusable elements are not tabbable in the current state",
+                "html": "<div data-slot=\"resizable-handle\" aria-label=\"Resize file explorer\" aria-orientation=\"vertical\" class=\"relative flex w-px i...\" data-separator=\"inactive\" id=\"_r_6u_\" role=\"separator\" tabindex=\"0\" aria-controls=\"explorer-/tmp/tribut...\" aria-valuemax=\"41.667\" aria-valuemin=\"20.37\" ...>",
+                "target": [
+                  "#_r_6u_"
+                ]
+              },
+              {
+                "failureSummary": "Fix all of the following:\n  Check that focusable elements are not tabbable in the current state",
+                "html": "<div class=\"workbench-toolbar workspace-file-navigation border-b bg-background/60 pr-2\" data-aria-hidden=\"true\" aria-hidden=\"true\">",
+                "target": [
+                  ".workspace-file-navigation"
+                ]
+              },
+              {
+                "failureSummary": "Fix all of the following:\n  Check that focusable elements are not tabbable in the current state",
+                "html": "<div tabindex=\"-1\" class=\"cm-scroller\" data-aria-hidden=\"true\" aria-hidden=\"true\">",
+                "target": [
+                  ".cm-scroller"
+                ]
+              },
+              {
+                "failureSummary": "Fix all of the following:\n  Check that focusable elements are not tabbable in the current state",
+                "html": "<div class=\"workspace-file-footer flex min-w-0 shrink-0 items-center gap-1 border-t pr-2 pl-3\" data-aria-hidden=\"true\" aria-hidden=\"true\">",
+                "target": [
+                  ".workspace-file-footer"
+                ]
+              },
+              {
+                "failureSummary": "Fix all of the following:\n  Check that focusable elements are not tabbable in the current state",
+                "html": "<div data-slot=\"resizable-handle\" aria-label=\"Resize workspace\" aria-orientation=\"vertical\" class=\"relative flex w-px i...\" data-separator=\"inactive\" id=\"_r_j_\" role=\"separator\" tabindex=\"0\" aria-controls=\"workspace-pane\" aria-valuemax=\"70.85\" aria-valuemin=\"25.911\" aria-valuenow=\"70.057\" ...>",
+                "target": [
+                  "#_r_j_"
+                ]
+              },
+              {
+                "failureSummary": "Fix all of the following:\n  Check that focusable elements are not tabbable in the current state",
+                "html": "<div data-slot=\"resizable-panel\" data-panel=\"true\" data-testid=\"conversation-pane\" id=\"conversation-pane\" style=\"min-height: 0px; max...\" data-aria-hidden=\"true\" aria-hidden=\"true\">",
+                "target": [
+                  "#conversation-pane"
+                ]
+              }
+            ],
+            "tags": [
+              "cat.name-role-value",
+              "wcag2a",
+              "wcag412",
+              "TTv5",
+              "TT6.a",
+              "EN-301-549",
+              "EN-9.4.1.2",
+              "RGAAv4",
+              "RGAA-10.8.1"
+            ]
+          },
+          {
+            "help": "Elements must meet minimum color contrast ratio thresholds",
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=axeAPI",
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodeCount": 29,
+            "nodes": [
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a pseudo element",
+                "html": "<span>Files</span>",
+                "target": [
+                  "#radix-_r_6g_-trigger-files > span"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "button[title=\"src/index.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  ".explorer-row.min-h-9[title=\"app.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "button[title=\"example-00.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "button[title=\"example-01.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "button[title=\"example-02.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "button[title=\"example-03.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "button[title=\"example-04.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "button[title=\"example-05.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "button[title=\"example-06.ts\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              }
+            ],
+            "tags": [
+              "cat.color",
+              "wcag2aa",
+              "wcag143",
+              "TTv5",
+              "TT13.c",
+              "EN-301-549",
+              "EN-9.1.4.3",
+              "ACT",
+              "RGAAv4",
+              "RGAA-3.2.1"
+            ]
+          }
+        ],
+        "lifecycle": {
+          "effectiveLaunch": {
+            "browserLaunched": true,
+            "engine": "chrome",
+            "launchHash": 18011897515091061429
+          },
+          "launched": false,
+          "relaunchedBrowser": false,
+          "restartedBackground": false,
+          "restoreStatus": "not_configured",
+          "reused": true,
+          "saveStatus": "not_configured"
+        },
+        "url": "file:///home/ayushniroula/Desktop/projects/tributary/ui/dist/index.html",
+        "violations": []
+      }
+    },
+    {
+      "surface": "phone workspace footer",
+      "audit": {
+        "axeVersion": "4.12.1",
+        "counts": {
+          "inapplicable": 52,
+          "incomplete": 1,
+          "passes": 37,
+          "violations": 0
+        },
+        "incomplete": [
+          {
+            "help": "Elements must meet minimum color contrast ratio thresholds",
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=axeAPI",
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodeCount": 8,
+            "nodes": [
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "#radix-_r_6o_-trigger-app\\.ts > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<span class=\"truncate\">app.ts</span>",
+                "target": [
+                  "#radix-_r_6o_-trigger-app\\.ts > .truncate"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because it is overlapped by another element",
+                "html": "<span class=\"truncate\">Workspace.tsx</span>",
+                "target": [
+                  "#radix-_r_6o_-trigger-src\\/Workspace\\.tsx > .truncate"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters",
+                "html": "<span title=\"Fold line\">\u2304</span>",
+                "target": [
+                  ".cm-gutterElement:nth-child(3) > span[title=\"Fold line\"]"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters",
+                "html": "<span title=\"Fold line\">\u2304</span>",
+                "target": [
+                  ".cm-gutterElement:nth-child(4) > span[title=\"Fold line\"]"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters",
+                "html": "<span title=\"Fold line\">\u2304</span>",
+                "target": [
+                  ".cm-gutterElement:nth-child(5) > span[title=\"Fold line\"]"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters",
+                "html": "<span title=\"Fold line\">\u2304</span>",
+                "target": [
+                  ".cm-gutterElement:nth-child(6) > span[title=\"Fold line\"]"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element content contains only non-text characters",
+                "html": "<span title=\"Fold line\">\u2304</span>",
+                "target": [
+                  ".cm-gutterElement:nth-child(7) > span[title=\"Fold line\"]"
+                ]
+              }
+            ],
+            "tags": [
+              "cat.color",
+              "wcag2aa",
+              "wcag143",
+              "TTv5",
+              "TT13.c",
+              "EN-301-549",
+              "EN-9.1.4.3",
+              "ACT",
+              "RGAAv4",
+              "RGAA-3.2.1"
+            ]
+          }
+        ],
+        "lifecycle": {
+          "effectiveLaunch": {
+            "browserLaunched": true,
+            "engine": "chrome",
+            "launchHash": 18011897515091061429
+          },
+          "launched": false,
+          "relaunchedBrowser": false,
+          "restartedBackground": false,
+          "restoreStatus": "not_configured",
+          "reused": true,
+          "saveStatus": "not_configured"
+        },
+        "url": "file:///home/ayushniroula/Desktop/projects/tributary/ui/dist/index.html",
+        "violations": []
+      }
+    },
+    {
+      "surface": "phone chat and composer",
+      "audit": {
+        "axeVersion": "4.12.1",
+        "counts": {
+          "inapplicable": 53,
+          "incomplete": 1,
+          "passes": 36,
+          "violations": 0
+        },
+        "incomplete": [
+          {
+            "help": "Elements must meet minimum color contrast ratio thresholds",
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=axeAPI",
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodeCount": 1,
+            "nodes": [
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because element contains an image node",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "button[title=\"Show the diff\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              }
+            ],
+            "tags": [
+              "cat.color",
+              "wcag2aa",
+              "wcag143",
+              "TTv5",
+              "TT13.c",
+              "EN-301-549",
+              "EN-9.1.4.3",
+              "ACT",
+              "RGAAv4",
+              "RGAA-3.2.1"
+            ]
+          }
+        ],
+        "lifecycle": {
+          "effectiveLaunch": {
+            "browserLaunched": true,
+            "engine": "chrome",
+            "launchHash": 18011897515091061429
+          },
+          "launched": false,
+          "relaunchedBrowser": false,
+          "restartedBackground": false,
+          "restoreStatus": "not_configured",
+          "reused": true,
+          "saveStatus": "not_configured"
+        },
+        "url": "file:///home/ayushniroula/Desktop/projects/tributary/ui/dist/index.html",
+        "violations": []
+      }
+    },
+    {
+      "surface": "phone project file menu",
+      "audit": {
+        "axeVersion": "4.12.1",
+        "counts": {
+          "inapplicable": 48,
+          "incomplete": 3,
+          "passes": 41,
+          "violations": 0
+        },
+        "incomplete": [
+          {
+            "help": "Elements must only use permitted ARIA attributes",
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/aria-prohibited-attr?application=axeAPI",
+            "id": "aria-prohibited-attr",
+            "impact": "serious",
+            "nodeCount": 1,
+            "nodes": [
+              {
+                "failureSummary": "Fix all of the following:\n  aria-label attribute is not well supported on a div with no valid role attribute.",
+                "html": "<div tabindex=\"-1\" data-slot=\"command\" class=\"flex size-full flex-col overflow-hidden rounded-xl! bg-popover text-popover-foreground rounded-xl p-1\" aria-label=\"Project files\" cmdk-root=\"\">",
+                "target": [
+                  ".rounded-xl\\!"
+                ]
+              }
+            ],
+            "tags": [
+              "cat.aria",
+              "wcag2a",
+              "wcag412",
+              "EN-301-549",
+              "EN-9.4.1.2",
+              "RGAAv4",
+              "RGAA-7.1.1"
+            ]
+          },
+          {
+            "help": "ARIA attributes must conform to valid values",
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/aria-valid-attr-value?application=axeAPI",
+            "id": "aria-valid-attr-value",
+            "impact": "critical",
+            "nodeCount": 1,
+            "nodes": [
+              {
+                "failureSummary": "Fix all of the following:\n  Unable to determine if aria-controls referenced ID exists on the page while using aria-haspopup: aria-controls=\"radix-_r_2h_\"",
+                "html": "<button data-slot=\"popover-trigger\" data-variant=\"ghost\" data-size=\"icon-sm\" class=\"group/button shrink-...\" type=\"button\" aria-label=\"Tools and planning\" title=\"Tools and skills\" aria-haspopup=\"dialog\" aria-expanded=\"true\" data-state=\"open\" aria-controls=\"radix-_r_2h_\" ...>",
+                "target": [
+                  "button[aria-label=\"Tools and planning\"]"
+                ]
+              }
+            ],
+            "tags": [
+              "cat.aria",
+              "wcag2a",
+              "wcag412",
+              "EN-301-549",
+              "EN-9.4.1.2",
+              "RGAAv4",
+              "RGAA-7.1.1"
+            ]
+          },
+          {
+            "help": "Elements must meet minimum color contrast ratio thresholds",
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=axeAPI",
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodeCount": 8,
+            "nodes": [
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because element contains an image node",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "button[title=\"Show the diff\"] > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because element contains an image node",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "#radix-_r_9l_ > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because element contains an image node",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "#radix-_r_9n_ > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because element contains an image node",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "#radix-_r_9o_ > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because element contains an image node",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "#radix-_r_9p_ > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because element contains an image node",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "#radix-_r_9q_ > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because element contains an image node",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "#radix-_r_9r_ > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              },
+              {
+                "failureSummary": "Fix any of the following:\n  Element's background color could not be determined because element contains an image node",
+                "html": "<text x=\"10\" y=\"13.5\" text-anchor=\"middle\" fill=\"currentColor\" font-family=\"var(--font-mono)\" font-weight=\"600\" font-size=\"10\">TS</text>",
+                "target": [
+                  "#radix-_r_9s_ > .text-blue-700[data-file-kind=\"typescript\"][viewBox=\"0 0 20 20\"] > text"
+                ]
+              }
+            ],
+            "tags": [
+              "cat.color",
+              "wcag2aa",
+              "wcag143",
+              "TTv5",
+              "TT13.c",
+              "EN-301-549",
+              "EN-9.1.4.3",
+              "ACT",
+              "RGAAv4",
+              "RGAA-3.2.1"
+            ]
+          }
+        ],
+        "lifecycle": {
+          "effectiveLaunch": {
+            "browserLaunched": true,
+            "engine": "chrome",
+            "launchHash": 18011897515091061429
+          },
+          "launched": false,
+          "relaunchedBrowser": false,
+          "restartedBackground": false,
+          "restoreStatus": "not_configured",
+          "reused": true,
+          "saveStatus": "not_configured"
+        },
+        "url": "file:///home/ayushniroula/Desktop/projects/tributary/ui/dist/index.html",
+        "violations": []
+      }
+    }
+  ],
+  "scope": "Automated local renderer checks only. Incomplete items require manual review."
+}

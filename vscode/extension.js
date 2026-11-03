@@ -42,6 +42,7 @@ const API = {
   createTask: (input) => hub.createTask(input),
   personalWorkspace: () => hub.personalWorkspace(),
   testConnection: (id) => hub.testConnection(id),
+  modelCatalog: (agent, gateway) => hub.modelCatalog(agent, gateway),
   createDocument: (t, m) => hub.createDocument(t, m),
   document: (t, d) => hub.document(t, d),
   saveDocument: (t, d, patch) => hub.saveDocument(t, d, patch),
@@ -60,6 +61,7 @@ const API = {
   markThreadSeen: (id) => hub.markThreadSeen(id),
   activity: () => hub.activity(),
   lineAuthors: (p, rel) => hub.lineAuthors(p, rel),
+  revertTurnHunk: (p, rel, messageId, line) => hub.revertTurnHunk(p, rel, messageId, line),
   removeProject: () => false,
   async pickProject() { const r = await vscode.window.showOpenDialog({ canSelectFolders: true, canSelectFiles: false, openLabel: 'Open folder in Tributary' }); if (!r?.[0]) return null; hub.addProject(r[0].fsPath); return r[0].fsPath; },
   send: (o) => hub.send(o).then((m) => ({ id: m.id, ok: m.ok })),
@@ -89,9 +91,18 @@ const API = {
     const uri = await vscode.window.showSaveDialog({ defaultUri: vscode.Uri.file(path.join(t.project, `${t.title.replace(/[^\w.-]+/g, '-').slice(0, 60) || 'thread'}.md`)), filters: { Markdown: ['md'] } });
     if (!uri) return null; fs.writeFileSync(uri.fsPath, hub.exportMarkdown(id)); return uri.fsPath;
   },
-  memory: (p) => hub.memory(p), enableMemory: (p) => hub.enableMemory(p), saveMemory: (p, t) => hub.saveMemory(p, t), remember: (p, n) => hub.remember(p, n),
+  memory: (p) => hub.memory(p), enableMemory: (p) => hub.enableMemory(p), saveMemory: (p, t, revision) => hub.saveMemory(p, t, revision), remember: (p, n) => hub.remember(p, n),
   notifications: () => hub.notifications(), markRead: (id) => hub.markRead(id), clearNotifications: () => hub.clearNotifications(),
   skills: (p) => hub.skills(p), shareSkill: (n, p) => hub.shareSkill(n, p),
+  configureMemory: (p, input) => hub.configureMemory(p, input),
+  searchMemory: (p, query) => hub.searchMemory(p, query),
+  memoryHistory: (p) => hub.memoryHistory(p),
+  memoryVersion: (p, id) => hub.memoryVersion(p, id),
+  teamRuns: (id) => hub.teamRuns(id),
+  watchFiles: (p, files) => hub.watchFiles(p, files),
+  unwatchFiles: (id) => hub.unwatchFiles(id),
+  connectorReport: (p) => hub.connectorReport(p),
+  uiSkills: () => hub.uiSkills(), uiSkill: (id) => hub.uiSkill(id),
   mcp: (p) => hub.mcp(p), addMcp: (s, ids) => hub.addMcp(s, ids), removeMcp: (id, n) => hub.removeMcp(id, n),
   registry: (o) => hub.registry(o), installRegistryAgent: (id) => hub.installRegistryAgent(id), removeRegistryAgent: (id) => hub.removeRegistryAgent(id),
   // VS Code does these natively.
@@ -138,6 +149,7 @@ function html(webview, extUri) {
 }
 
 function attach(webview, extUri) {
+  const fileWatches = new Set(); let disposed = false;
   webview.options = { enableScripts: true, localResourceRoots: [vscode.Uri.joinPath(extUri, 'dist')] };
   webview.html = html(webview, extUri);
   webviews.add(webview);
@@ -146,10 +158,12 @@ function attach(webview, extUri) {
     try {
       if (!Object.prototype.hasOwnProperty.call(API, msg.method)) throw new Error(`Unknown method ${msg.method}`);
       const result = await API[msg.method](...(msg.args || []));
+      if (msg.method === 'watchFiles') { if (disposed) hub.unwatchFiles(result); else fileWatches.add(result); }
+      if (msg.method === 'unwatchFiles') fileWatches.delete(msg.args?.[0]);
       webview.postMessage({ type: 'result', id: msg.id, result: result === undefined ? null : result });
     } catch (e) { webview.postMessage({ type: 'result', id: msg.id, error: e.message || String(e) }); }
   });
-  return () => webviews.delete(webview);
+  return () => { disposed = true; webviews.delete(webview); for (const id of fileWatches) hub.unwatchFiles(id); fileWatches.clear(); };
 }
 
 class ChatView {
@@ -182,7 +196,7 @@ async function activate(context) {
     }, 80));
   });
   hub.on('message', (d) => { const t = pending.get(d.message.id); if (t) { clearTimeout(t); pending.delete(d.message.id); } patcher.full(d.message); post('message', d); });
-  for (const n of ['state', 'threads', 'running', 'notification', 'collaboration']) hub.on(n, (d) => post(n, d));
+  for (const n of ['state', 'threads', 'running', 'notification', 'collaboration', 'files-changed']) hub.on(n, (d) => post(n, d));
   hub.on('activity', (d) => post('activity', d)); // the live view
 
   const status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
@@ -239,6 +253,6 @@ async function activate(context) {
   );
 }
 
-function deactivate() { if (hub) { for (const id of hub.running.keys()) hub.stop(id); hub.collaborationClient?.disconnect(); try { hub.store.close(); } catch {} } }
+function deactivate() { if (hub) { for (const id of hub.running.keys()) hub.stop(id); hub.collaborationClient?.disconnect(); hub.fileWatches.close(); try { hub.store.close(); } catch {} } }
 
 module.exports = { activate, deactivate };
