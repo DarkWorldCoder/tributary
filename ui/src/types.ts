@@ -38,7 +38,7 @@ export interface FileContent { rel: string; size: number; binary: boolean; trunc
 export interface MemoryInfo { enabled: boolean; memory: string | null; worklog: string[] }
 export interface ThreadChange { rel: string; turns: { messageId: string; agent: string; ts?: number; change?: string; team?: string }[] }
 export type ThreadStatus = 'working' | 'review' | 'failed' | 'done';
-export interface ThreadSummary { id: string; title: string; updatedAt: number; lastAgent: string | null; count?: number; running?: boolean; agents: string[]; status?: ThreadStatus | null }
+export interface ThreadSummary { id: string; title: string; updatedAt: number; lastAgent: string | null; count?: number; running?: boolean; agents: string[]; status?: ThreadStatus | null; branch?: string }
 export interface Tool { id?: string; name: string; input?: Record<string, unknown> & { command?: unknown }; status: 'running' | 'done' | 'error'; output?: string; files?: string[] }
 export interface FileChange { path: string; rel: string; external?: boolean; change?: string; viaGit?: boolean }
 export interface UserMessage { id: string; role: 'user'; text: string; target: string; ts?: number; kind?: 'chat' | 'plan' | 'implement' | 'race'; team?: { recipe: string; role: string } }
@@ -51,7 +51,11 @@ export interface AgentMessage {
   team?: { recipe: string; role: string }; race?: RaceInfo;
 }
 export type Message = UserMessage | AgentMessage;
-export interface Thread { id: string; project: string; title: string; messages: Message[]; agentSessions: Record<string, string>; lastAgent?: string | null; updatedAt?: number; task?: { templateId: string; material?: string }; documents?: SavedDocument[] }
+/** A conversation's separate working copy: its own git worktree (path) and branch, made from the project's last commit on `from`. */
+export interface Worktree { path: string; cwd: string; branch: string; base: string; from: string; createdAt: number; mergedAt?: number }
+export interface WorktreeStatus { branch: string; path: string; cwd: string; into: string; ahead: number; behind: number; uncommitted: number; files: { path: string; code: string }[]; missing?: boolean }
+export interface MergeResult { into: string; branch: string; commit: string; files: string[] }
+export interface Thread { id: string; project: string; title: string; messages: Message[]; agentSessions: Record<string, string>; lastAgent?: string | null; updatedAt?: number; task?: { templateId: string; material?: string }; documents?: SavedDocument[]; worktree?: Worktree }
 export interface GitInfo { root: string; branch: string; changed: { code: string; path: string }[]; stat?: string }
 
 export interface HubEvents {

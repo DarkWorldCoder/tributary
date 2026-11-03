@@ -20,9 +20,9 @@ export function TerminalPanel({ hidden = false }: { hidden?: boolean } = {}) {
   const desktop = s.hub.platform === 'desktop';
   const create = React.useCallback(async (command?: string) => {
     wire();
-    const id = await s.hub.call<string>('createTerminal', { cwd: s.project, command });
+    const id = await s.hub.call<string>('createTerminal', { cwd: s.workdir, command });
     setTerms((t) => [...t, { id, project: s.project, title: command ? command.split(' ')[0] : `Terminal ${t.filter((x) => x.project === s.project).length + 1}` }]); setActive(id);
-  }, [s.hub, s.project]);
+  }, [s.hub, s.project, s.workdir]);
   // The first terminal opens with the panel, running a pending setup command if there is one.
   React.useEffect(() => { if (desktop && !terms.length) { const c = pendingCommand; pendingCommand = null; create(c ?? undefined); } // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [desktop]);

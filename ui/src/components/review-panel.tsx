@@ -14,10 +14,10 @@ import { useStore } from '@/store';
 export function ReviewTab() {
   const s = useStore(); const g = s.git; const { rel, diff } = s.review;
   const [msg, setMsg] = React.useState(''); const [busy, setBusy] = React.useState(false);
-  const pick = async (r: string) => { if (s.hub.platform === 'vscode') s.hub.call('openDiff', s.project, r); s.setReview({ open: true, rel: r, diff: await s.hub.call<string>('fileDiff', s.project, r) }); };
+  const pick = async (r: string) => { if (s.hub.platform === 'vscode') s.hub.call('openDiff', s.workdir, r); s.setReview({ open: true, rel: r, diff: await s.hub.call<string>('fileDiff', s.workdir, r) }); };
   const commit = async () => {
     setBusy(true);
-    try { const r = await s.hub.call<string>('commit', s.project, msg); toast.success(`Committed: ${r || msg}`); setMsg(''); await s.refreshGit(); s.setReview({ open: true, rel: null, diff: '' }); }
+    try { const r = await s.hub.call<string>('commit', s.workdir, msg); toast.success(`Committed: ${r || msg}`); setMsg(''); await s.refreshGit(); s.setReview({ open: true, rel: null, diff: '' }); }
     catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
   if (!g) return <p className="p-6 text-center text-sm text-muted-foreground">This project is not a git repository, so there is nothing to review. Run “git init” in the terminal to start tracking changes.</p>;
@@ -41,7 +41,7 @@ export function ReviewTab() {
             <div className="flex items-center gap-2">
               <span className="min-w-0 flex-1 truncate font-mono text-[12.5px]">{rel}</span>
               <Button size="xs" variant="outline" onClick={() => s.openFile(rel)}><FileCode2 /> Edit</Button>
-              <Button size="xs" variant="ghost" onClick={() => s.hub.call('openFile', s.project, rel)} aria-label="Open with the system app"><ExternalLink /></Button>
+              <Button size="xs" variant="ghost" onClick={() => s.hub.call('openFile', s.workdir, rel)} aria-label="Open with the system app"><ExternalLink /></Button>
             </div>
             {diff ? <HighlightedCode code={diff} language="diff" /> : <p className="text-sm text-muted-foreground">No changes in this file.</p>}
           </div>

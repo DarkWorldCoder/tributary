@@ -61,6 +61,9 @@ function useStoreValue() {
   const [activeDocument, setDocument] = React.useState<{ threadId: string; id: string } | null>(null);
   const threadRef = React.useRef<Thread | null>(null); threadRef.current = thread;
   const projectRef = React.useRef<string | null>(null); projectRef.current = project;
+  // Where this conversation's files are: its separate working copy, or the project folder.
+  const workdir = thread?.worktree?.cwd ?? project;
+  const workdirRef = React.useRef<string | null>(null); workdirRef.current = workdir;
 
   const ready = React.useMemo(() => (st ? st.agents.filter((a) => a.available && a.headless) : []), [st]);
   const agentOf = React.useCallback((id?: string | null): Agent => (st?.agents.find((a) => a.id === id)) ?? { id: id || '?', name: id || 'Agent', color: '#8a8f98', available: false, headless: false, protocol: '' }, [st]);
@@ -69,7 +72,7 @@ function useStoreValue() {
 
   const refreshState = React.useCallback(async () => { const s = await hub.call<HubState>('state'); setSt(s); return s; }, []);
   const loadThreads = React.useCallback(async (p: string) => { const list = await hub.call<ThreadSummary[]>('threads', p); setThreadsBy((m) => ({ ...m, [p]: list })); return list; }, []);
-  const refreshGit = React.useCallback(async (p = projectRef.current) => { setGit(p ? await hub.call<GitInfo | null>('gitInfo', p) : null); }, []);
+  const refreshGit = React.useCallback(async (p = workdirRef.current) => { setGit(p ? await hub.call<GitInfo | null>('gitInfo', p) : null); }, []);
 
   // Opening a thread (or watching it finish) clears its "needs review" badge.
   const markSeen = React.useCallback((id: string) => { hub.call('markThreadSeen', id).catch(() => { /* older host */ }); }, []);
@@ -78,13 +81,13 @@ function useStoreValue() {
     const t = await hub.call<Thread | null>('thread', id);
     if (!t) return;
     markSeen(t.id);
-    threadRef.current = t; projectRef.current = t.project;
-    setHome(false); setThread(t); setThreadIdRaw(t.id); setProjectRaw(t.project); refreshGit(t.project);
+    threadRef.current = t; projectRef.current = t.project; workdirRef.current = t.worktree?.cwd ?? t.project;
+    setHome(false); setThread(t); setThreadIdRaw(t.id); setProjectRaw(t.project); refreshGit(workdirRef.current);
   }, [refreshGit, setProjectRaw, setThreadIdRaw, markSeen]);
 
   const newThread = React.useCallback((p?: string | null) => {
     const target = p ?? projectRef.current; if (!target) return;
-    threadRef.current = null; projectRef.current = target;
+    threadRef.current = null; projectRef.current = target; workdirRef.current = target;
     setHome(false); setThread(null); setThreadIdRaw(null); setProjectRaw(target); refreshGit(target);
   }, [refreshGit, setProjectRaw, setThreadIdRaw]);
 
@@ -101,7 +104,7 @@ function useStoreValue() {
       if (t) markSeen(t.id);
       setLoaded(true);
       // Repository status may be slow on large projects; the conversation is already usable.
-      refreshGit(p).catch((e) => toast.error(`Could not load repository status: ${e.message || e}`));
+      refreshGit(t?.worktree?.cwd ?? p).catch((e) => toast.error(`Could not load repository status: ${e.message || e}`));
     })().catch((e) => toast.error(`Could not load: ${e.message || e}`));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -187,7 +190,7 @@ function useStoreValue() {
   const openFile = React.useCallback((rel: string, line?: number) => { setFileToOpen({ rel, line, n: Date.now() }); setPanel({ open: true, tab: 'files' }); }, [setPanel]);
 
   const openReview = React.useCallback(async (rel?: string | null) => {
-    const p = projectRef.current; if (!p) return;
+    const p = workdirRef.current; if (!p) return;
     await refreshGit(p);
     if (rel && hub.platform === 'vscode') hub.call('openDiff', p, rel);
     setPanel({ open: true, tab: 'review' });
@@ -213,7 +216,7 @@ function useStoreValue() {
   }, []);
 
   return {
-    hub, loaded, st, threadsBy, project, thread, git, agentId, agent, mode, gatewayId, theme, review, settings, palette, ready, running,
+    hub, loaded, st, threadsBy, project, workdir, thread, git, agentId, agent, mode, gatewayId, theme, review, settings, palette, ready, running,
     get draft() { return getDraft(); },
     home, goHome: () => setHome(true), startTask, document: activeDocument, setDocument, makeDocument,
     panel, setPanel, openPanel, fileToOpen, openFile, terminalOpen, teamOpen, setTeamOpen, roomOpen, setRoomOpen,

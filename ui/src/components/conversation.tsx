@@ -39,7 +39,7 @@ function Step({ t }: { t: Tool }) {
     <TraceLine status={t.status === 'running' ? 'running' : t.status === 'error' ? 'error' : undefined}>
       <TraceIcon>{t.status === 'running' ? <Spinner /> : toolIcon(t)}</TraceIcon>
       <TraceTitle>{toolVerb(t)}</TraceTitle>
-      <TraceDescription className="font-mono text-[12.5px]">{toolTarget(t, s.project)}</TraceDescription>
+      <TraceDescription className="font-mono text-[12.5px]">{toolTarget(t, s.workdir)}</TraceDescription>
     </TraceLine>
   );
   if (!t.output) return <div>{line}</div>;

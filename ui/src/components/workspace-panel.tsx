@@ -124,7 +124,7 @@ function FilesTab() {
   const [mode, setMode] = React.useState<'edit' | 'preview'>('edit');
   const [line, setLine] = React.useState<number | undefined>();
   const [editors, setEditors] = React.useState<{ id: string; name: string }[]>([]);
-  const project = s.project;
+  const project = s.workdir; // the conversation's separate copy, when it has one
   const load = React.useCallback(() => { if (project) s.hub.call<string[]>('listFiles', project).then(setFiles).catch(() => setFiles([])); }, [project, s.hub]);
   React.useEffect(() => { setDocs([]); setActive(null); load(); }, [project, load]);
   React.useEffect(() => { if (s.hub.platform === 'desktop') s.hub.call<{ id: string; name: string }[]>('editors').then(setEditors).catch(() => {}); }, [s.hub]);
