@@ -58,11 +58,11 @@ export function SeparateCopy() {
       if (st.setup?.state === 'untrusted') setConfirm('setup'); // the project's setup script runs only once you've read it
     } catch (e) { toast.error(message(e)); } finally { setBusy(null); }
   };
-  const merge = async () => {
+  const merge = async (allowSecrets = false) => {
     if (!t) return;
     setBusy('merge'); setProblem(null);
     try {
-      const r = await s.hub.call<MergeResult>('mergeWorktree', t.id);
+      const r = await s.hub.call<MergeResult>('mergeWorktree', t.id, { allowSecrets });
       toast.success(r.files.length ? `Merged ${plural(r.files.length, 'file')} into ${r.into}` : `Nothing new to merge from ${r.branch}`);
       s.refreshState();
     } catch (e) { setProblem(message(e)); setOpen(true); } finally { setBusy(null); load(); } // a refused merge still commits the copy's work
@@ -145,6 +145,7 @@ export function SeparateCopy() {
               <Alert variant="destructive">
                 <AlertTitle>Not merged</AlertTitle>
                 <AlertDescription className="break-words">{problem}</AlertDescription>
+                {/looks like a secret/.test(problem) && <Button size="xs" variant="outline" className="mt-2 w-fit" disabled={!!busy} onClick={() => merge(true)}>Merge anyway</Button>}
               </Alert>
             )}
             <div className="flex justify-end gap-2">
@@ -163,7 +164,7 @@ export function SeparateCopy() {
               The work on {copy?.branch} is committed there and merged into {into} in your project folder{files.length ? ` (${plural(files.length, 'file')})` : ''}. If a file conflicts with changes made on {into}, or with uncommitted changes in your folder, nothing is merged and the files are listed.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={merge}>Merge</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => merge()}>Merge</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
       <AlertDialog open={confirm === 'setup'} onOpenChange={(v) => setConfirm(v ? 'setup' : null)}>

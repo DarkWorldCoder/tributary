@@ -88,4 +88,4 @@ function projectScripts(dir) {
 }
 const scriptHash = (command) => crypto.createHash('sha256').update(command).digest('hex');
 
-module.exports = { includedFiles, copyIncluded, unignoredCopies, freePort, copyEnv, PORTS, projectScripts, scriptHash };
+module.exports = { includedFiles, copyIncluded, unignoredCopies, freePort, copyEnv, PORTS, projectScripts, scriptHash, ENV_NAME };

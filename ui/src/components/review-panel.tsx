@@ -42,10 +42,15 @@ export function ReviewTab() {
     return () => { active = false; clearInterval(timer); };
   }, [s.workdir, g?.root]);
   const shown = (g?.changed || []).filter((file) => `${file.path} ${label(file.code)}`.toLowerCase().includes(filter.toLowerCase()));
-  const commit = async () => {
+  const commit = async (allowSecrets = false) => {
     setBusy(true);
-    try { const r = await s.hub.call<string>('commit', s.workdir, msg); toast.success(`Committed: ${r || msg}`); setMsg(''); await s.refreshGit(); s.setReview({ open: true, rel: null, diff: '' }); }
-    catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+    try { const r = await s.hub.call<string>('commit', s.workdir, msg, { allowSecrets }); toast.success(`Committed: ${r || msg}`); setMsg(''); await s.refreshGit(); s.setReview({ open: true, rel: null, diff: '' }); }
+    catch (e) {
+      const text = (e as Error).message.replace(/^Error invoking remote method '[^']*': (Error: )?/, '');
+      // A change that holds what looks like a secret is held back until you say so.
+      if (/looks like a secret/.test(text)) toast.error('Not committed', { description: text, duration: 12000, action: { label: 'Commit anyway', onClick: () => commit(true) } });
+      else toast.error(text);
+    } finally { setBusy(false); }
   };
   if (!g) return <p className="p-6 text-center text-sm text-muted-foreground">This folder has no Git comparison baseline yet. Use Files to browse and watch live edits. Initialize Git when you want a version history and before/after comparisons.</p>;
   return (
@@ -82,7 +87,7 @@ export function ReviewTab() {
           <InputGroup>
             <InputGroupInput className="placeholder:text-foreground" value={msg} onChange={(e) => setMsg(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && msg.trim()) commit(); }} placeholder="Commit message…" aria-label="Commit message" autoComplete="off" spellCheck />
             <InputGroupAddon align="inline-end">
-              <InputGroupButton variant="default" size="sm" disabled={!msg.trim() || busy} onClick={commit}><GitCommitHorizontal /> Commit all</InputGroupButton>
+              <InputGroupButton variant="default" size="sm" disabled={!msg.trim() || busy} onClick={() => commit()}><GitCommitHorizontal /> Commit all</InputGroupButton>
             </InputGroupAddon>
           </InputGroup>
           <p className="mt-1.5 text-xs text-muted-foreground">Stages every change above and commits on {g.branch || 'the current branch'}.</p>

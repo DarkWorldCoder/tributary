@@ -72,10 +72,11 @@ const conflictError = (message, conflicts) => Object.assign(new Error(message), 
 /**
  * Merge the copy's branch into the project's current branch. Work not yet committed in the copy is committed
  * on its branch first. Conflicts are found with git merge-tree, which touches no files; a merge that would
- * conflict, or overwrite uncommitted changes in the project folder, is refused with the files named.
+ * conflict, or overwrite uncommitted changes in the project folder, is refused with the files named; so is one that
+ * `scan` objects to.
  * -> { into, branch, commit, files } (files: paths the merge changed in the project, [] when there was nothing new)
  */
-async function mergeWorktree(root, { path: dir, branch, copied }, { message = DEFAULT_MESSAGE, host = localHost } = {}) {
+async function mergeWorktree(root, { path: dir, branch, copied }, { message = DEFAULT_MESSAGE, host = localHost, scan } = {}) {
   if (!(await host.exists(dir))) throw new Error(`The separate copy at ${dir} is gone. Discard it to work in the project folder again.`);
   await commitWork(host, dir, message, copied);
   const into = await currentBranch(host, root);
@@ -90,6 +91,9 @@ async function mergeWorktree(root, { path: dir, branch, copied }, { message = DE
     throw conflictError(`Can't merge cleanly: these files conflict with changes made on ${into} since this conversation started: ${files.join(', ')}. ${kept}`, files);
   }
   if (m.code) throw new Error(`Could not merge the changes: ${m.stderr.trim()}`);
+  // scan(diff of what the merge adds) -> an error to refuse with, e.g. a secret about to be committed.
+  const refused = scan && await scan(await git(host, root, ['diff', '--no-color', '--no-ext-diff', ours, out[0]]));
+  if (refused) throw refused;
   const files = paths(await git(host, root, ['diff', '--name-only', '-z', ours, out[0]]));
   const dirty = new Set(paths(await git(host, root, ['status', '--porcelain', '-z', '--untracked-files=all', '--no-renames'])).map((l) => l.slice(3)));
   const blocked = files.filter((f) => dirty.has(f));

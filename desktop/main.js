@@ -119,7 +119,7 @@ const API = {
   // A conversation's separate working copy (its own git worktree and branch)
   createWorktree: (id) => hub.createWorktree(id),
   worktreeStatus: (id) => hub.worktreeStatus(id),
-  mergeWorktree: (id) => hub.mergeWorktree(id),
+  mergeWorktree: (id, opts) => hub.mergeWorktree(id, { allowSecrets: !!opts?.allowSecrets }),
   discardWorktree: (id) => hub.discardWorktree(id),
   runSetup: (id) => hub.runSetup(id),
   trustScript: (p, hash) => hub.trustScript(knownProject(p), hash),
@@ -154,7 +154,7 @@ const API = {
   readFile: (p, rel) => hub.readFile(p, rel),
   readDirectory: (p, rel, options) => hub.readDirectory(p, rel, options),
   writeFile: (p, rel, content, mtime) => hub.writeFile(p, rel, content, mtime),
-  commit: (p, msg) => hub.commit(p, msg),
+  commit: (p, msg, opts) => hub.commit(p, msg, { allowSecrets: !!opts?.allowSecrets }),
   setProjectFolders: (p, folders) => hub.setProjectFolders(p, folders),
   renameProject: (p, name) => hub.renameProject(p, name),
   async pickFolder() {
@@ -324,7 +324,7 @@ app.whenReady().then(async () => {
           const name = (b) => { if (b.getAttribute('aria-label')) return b.getAttribute('aria-label').trim().toLowerCase(); const c = b.cloneNode(true); c.querySelectorAll('[aria-hidden="true"]').forEach((x) => x.remove()); return (c.textContent || '').trim().toLowerCase(); };
           // Look in the topmost open dialog first: clicking behind it would close it.
           const pick = (root) => { const all = [...root.querySelectorAll('button, a, [role="button"], [role="menuitem"], [role="tab"], [role="radio"], [role="option"]')]; return all.find((b) => name(b) === want) || all.find((b) => name(b).startsWith(want)); };
-          const top = [...document.querySelectorAll('[role="dialog"]')].pop();
+          const top = [...document.querySelectorAll('[role="dialog"], [role="alertdialog"]')].pop();
           const el = (top && pick(top)) || pick(document);
           if (!el) throw new Error('smoke: no button ' + want);
           // Menus open on pointerdown, so send the whole sequence a mouse would.

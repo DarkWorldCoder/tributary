@@ -33,7 +33,8 @@ const { activityOf, watchActivity } = require('./activity');
 const { judgeRace } = require('./manager');
 const { lineAuthors, revertTurnHunk } = require('./attribution');
 const worktrees = require('./worktrees');
-const { copyIncluded, freePort, copyEnv, projectScripts, scriptHash } = require('./workspace-setup');
+const { copyIncluded, freePort, copyEnv, projectScripts, scriptHash, includedFiles, ENV_NAME } = require('./workspace-setup');
+const { SecretGuard, secretError, pendingChanges } = require('./secret-guard');
 const { runScript } = require('./run-script');
 
 const attachments = require('./attachments');
@@ -401,9 +402,10 @@ class Hub extends EventEmitter {
       this.emit('message', { threadId, message: msg });
     }
 
+    await this.learnSecrets(git?.root);
     const started = now();
     const onEvent = (e) => {
-      if (e.kind === 'permission') { if (this.approvals) e.answer = this.askPermission(t, msg, agent, e.request, ac.signal); return; }
+      if (e.kind === 'permission') { this.secretGuard.redactEvent(e.request); if (this.approvals) e.answer = this.askPermission(t, msg, agent, e.request, ac.signal); return; }
       this.apply(t, msg, e);
       this.emit('event', { threadId, messageId: msg.id, event: e, message: msg });
       this.store.save(false, t.id); // only this thread changed: don't re-serialize all history
@@ -442,8 +444,9 @@ class Hub extends EventEmitter {
   }
 
   apply(t, msg, e) {
+    this.secretGuard.redactEvent(e); // in place, so the event the window gets is redacted too
     switch (e.kind) {
-      case 'text': msg.text += e.text; break;
+      case 'text': msg.text = this.secretGuard.redactTail(msg.text + e.text, e.text.length); break;
       case 'thinking': msg.thinking = (msg.thinking + e.text).slice(-20000); break;
       case 'tool': {
         const i = msg.tools.findIndex((x) => x.id === e.id && e.id != null);
@@ -711,9 +714,13 @@ class Hub extends EventEmitter {
 
   async gitInfo(dir) { return gitInfo(dir); }
   async listFiles(dir) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return listFiles(dir); }
-  async commit(dir, message) {
+  async commit(dir, message, { allowSecrets = false } = {}) {
     if (!this.isWorkspace(dir)) throw new Error('Unknown project');
     if (!String(message || '').trim()) throw new Error('Write a commit message first');
+    if (!allowSecrets) {
+      const g = await gitInfo(dir); await this.learnSecrets(g?.root);
+      const refused = await this.checkSecrets(await pendingChanges(dir)); if (refused) throw refused;
+    }
     const r = await commitAll(dir, String(message).trim()); this.emit('state'); return r;
   }
   async restoreCheckpoint(threadId, messageId) {
@@ -742,6 +749,13 @@ class Hub extends EventEmitter {
     if (!t.worktree.port) { t.worktree.port = freePort(new Set(this.store.data.threads.map((x) => x.worktree?.port).filter(Boolean))); this.store.save(true); }
     return copyEnv(t.worktree, t.project);
   }
+  // Values from the .env files a turn can see, so transcripts show [REDACTED] and merges refuse to commit them.
+  get secretGuard() { return this._secretGuard || (this._secretGuard = new SecretGuard()); }
+  async learnSecrets(root) {
+    if (!root) return;
+    for (const rel of await includedFiles(root).catch(() => [])) if (ENV_NAME.test(path.basename(rel))) this.secretGuard.addEnvFile(path.join(root, rel), rel);
+  }
+  async checkSecrets(diff) { const found = this.secretGuard.scanDiff(diff); return found.length ? secretError(found) : null; }
   workspaceEnvFor(dir) {
     const t = dir && this.store.data.threads.find((x) => x.worktree && (dir === x.worktree.path || dir.startsWith(x.worktree.path + path.sep)));
     return t ? this.workspaceEnv(t) : {};
@@ -822,11 +836,13 @@ class Hub extends EventEmitter {
     return { ...(await worktrees.worktreeStatus(g.root, t.worktree)), cwd: t.worktree.cwd, from: t.worktree.from, copied: t.worktree.copied || [], port: t.worktree.port, setup: t.worktree.setup };
   }
   // Into the project's current branch. Refused, with the files named, when it would conflict.
-  async mergeWorktree(threadId) {
+  // allowSecrets: merge even though the changes hold what looks like a secret.
+  async mergeWorktree(threadId, { allowSecrets = false } = {}) {
     return this.changeCopy(threadId, {}, async (t, root) => {
       this.reserve(`merge:${t.id}`, [root], true); // nobody else is writing in the project folder
       try {
-        const r = await worktrees.mergeWorktree(root, t.worktree, { message: t.title });
+        if (!allowSecrets) { await this.learnSecrets(root); await this.learnSecrets(t.worktree.path); }
+        const r = await worktrees.mergeWorktree(root, t.worktree, { message: t.title, scan: allowSecrets ? null : (diff) => this.checkSecrets(diff) });
         if (r.files.length) { t.worktree.mergedAt = now(); this.store.save(true); this.emit('state'); }
         return r;
       } finally { this.workspaceReservations.delete(`merge:${t.id}`); }
