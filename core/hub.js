@@ -303,7 +303,7 @@ class Hub extends EventEmitter {
     const p = plan({ thread: prior, agentId, text: request, names: this.names(), git });
     const beforePrints = git ? fingerprint(git.root, git.changed) : null;
 
-    const userMsg = { id: uid(), role: 'user', text: t.task && typeof displayText === 'string' ? displayText.slice(0, 4000) : text || (planFrom ? 'Run the plan' : ''), ts: now(), target: agentId, kind: planOnly ? 'plan' : (planFrom ? 'implement' : 'chat'), team: team || undefined };
+    const userMsg = { id: uid(), role: 'user', text: (t.task || team) && typeof displayText === 'string' ? displayText.slice(0, 4000) : text || (planFrom ? 'Run the plan' : ''), ts: now(), target: agentId, kind: planOnly ? 'plan' : (planFrom ? 'implement' : 'chat'), team: team || undefined };
     const msg = { id: uid(), role: 'assistant', agent: agentId, text: '', thinking: '', tools: [], files: [], plan: null, notices: [], error: null, ok: null,
       ts: now(), mode, gateway: gateway ? gateway.name : null, handoff: p.kind, resumed: !!p.resumeId, kind: planOnly ? 'plan' : (planFrom ? 'implement' : 'chat'), planFrom: planFrom || undefined, team: team || undefined };
     ac.signal.throwIfAborted();
@@ -414,7 +414,7 @@ class Hub extends EventEmitter {
         if (i >= 0) state.steps[i] = s; else state.steps.push(s);
         this.emit('state');
       } });
-      const text = { approved: 'The reviewer approved the work.', changes: 'The reviewer still requests changes after the last round.', unknown: 'The reviewer gave no clear verdict.', answered: 'Every agent answered and the answers were combined.' }[result.verdict];
+      const text = { merged: 'Every piece was merged.', partial: 'Some pieces were merged; the others need attention.', failed: 'No piece could be merged.', approved: 'The reviewer approved the work.', changes: 'The reviewer still requests changes after the last round.', unknown: 'The reviewer gave no clear verdict.', answered: 'Every agent answered and the answers were combined.' }[result.verdict];
       this.notify({ kind: result.verdict === 'approved' || result.verdict === 'answered' ? 'done' : 'attention', threadId, title: `${name} finished`, body: `${t.title}. ${text}` });
       return result;
     } catch (e) {

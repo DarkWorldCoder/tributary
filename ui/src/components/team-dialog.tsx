@@ -13,9 +13,10 @@ import { cn } from '@/lib/utils';
 import { useStore } from '@/store';
 import type { Thread } from '@/types';
 
-type Kind = 'race' | 'plan-build-review' | 'build-review' | 'council';
+type Kind = 'race' | 'manager' | 'plan-build-review' | 'build-review' | 'council';
 const KINDS: { id: Kind; name: string; evidence: string; description: string }[] = [
   { id: 'race', name: 'Race', evidence: 'Best supported by research', description: 'Every chosen agent tries the same task in its own copy of the project. Your tests decide, you compare the diffs and apply one. Your files stay untouched until then.' },
+  { id: 'manager', name: 'Manager', evidence: 'Best supported by research', description: 'One agent splits the task into pieces. Workers build them at the same time in their own copies; a piece is merged only when your tests pass.' },
   { id: 'plan-build-review', name: 'Plan, build, review', evidence: 'Structured handoff', description: 'One agent plans, another builds it, a third reviews. The builder fixes problems until the reviewer approves (two rounds at most).' },
   { id: 'build-review', name: 'Build and review', evidence: 'Structured handoff', description: 'One agent builds, another reviews and asks for fixes until it approves.' },
   { id: 'council', name: 'Ask everyone', evidence: 'Read-only', description: 'Each agent answers the same question without changing files, then one agent compares the answers and recommends.' },
@@ -36,8 +37,8 @@ export function TeamDialog() {
     const r = (i: number) => ready[Math.min(i, ready.length - 1)]?.id ?? '';
     setRoles({ planner: r(0), builder: r(1), reviewer: r(2), synthesizer: r(0) });
   }, [s.teamOpen, ready, s.draft]);
-  const multi = kind === 'race' || kind === 'council';
-  const roleList = kind === 'plan-build-review' ? ['planner', 'builder', 'reviewer'] : kind === 'build-review' ? ['builder', 'reviewer'] : kind === 'council' ? ['synthesizer'] : [];
+  const multi = kind === 'race' || kind === 'council' || kind === 'manager';
+  const roleList = kind === 'plan-build-review' ? ['planner', 'builder', 'reviewer'] : kind === 'build-review' ? ['builder', 'reviewer'] : kind === 'council' ? ['synthesizer'] : kind === 'manager' ? ['planner'] : [];
   const LABEL: Record<string, string> = { planner: 'Planner', builder: 'Builder', reviewer: 'Reviewer', synthesizer: 'Summarizer' };
   const canStart = task.trim() && (multi ? picked.length >= 2 : roleList.every((r) => roles[r])) && (kind !== 'council' || roles.synthesizer);
 
@@ -48,7 +49,7 @@ export function TeamDialog() {
     s.setTeamOpen(false); s.setDraft('');
     const r = kind === 'race'
       ? await s.hub.call<{ error?: string }>('runRace', t.id, { task, agents: picked, testCommand: testCommand.trim() || undefined, mode: s.mode === 'full' ? 'full' : 'edit' })
-      : await s.hub.call<{ error?: string }>('runTeam', t.id, { recipe: kind, task, mode: s.mode, roles: kind === 'council' ? { members: picked, synthesizer: roles.synthesizer } : roles });
+      : await s.hub.call<{ error?: string }>('runTeam', t.id, { recipe: kind, task, mode: s.mode, roles: kind === 'council' ? { members: picked, synthesizer: roles.synthesizer } : kind === 'manager' ? { planner: roles.planner, workers: picked } : roles, testCommand: kind === 'manager' ? testCommand.trim() || undefined : undefined });
     if (r && r.error) toast.error(r.error);
   };
 
@@ -72,8 +73,8 @@ export function TeamDialog() {
           <Field><FieldLabel htmlFor="team-task">Task</FieldLabel>
             <Textarea id="team-task" rows={3} value={task} onChange={(e) => setTask(e.target.value)} placeholder="Add pagination to the orders API, with tests…" /></Field>
           {multi && (
-            <Field><FieldLabel>{kind === 'race' ? 'Agents racing' : 'Agents answering'}</FieldLabel>
-              <ToggleGroup type="multiple" variant="outline" spacing={2} value={picked} onValueChange={setPicked} aria-label={kind === 'race' ? 'Agents racing' : 'Agents answering'} className="flex-wrap">
+            <Field><FieldLabel>{kind === 'race' ? 'Agents racing' : kind === 'manager' ? 'Workers' : 'Agents answering'}</FieldLabel>
+              <ToggleGroup type="multiple" variant="outline" spacing={2} value={picked} onValueChange={setPicked} aria-label={kind === 'race' ? 'Agents racing' : kind === 'manager' ? 'Workers' : 'Agents answering'} className="flex-wrap">
                 {ready.map((a) => (
                   <ToggleGroupItem key={a.id} value={a.id} className="h-auto rounded-full py-1 pr-3 pl-1"><AgentAvatar agent={a} size="sm" muted={!picked.includes(a.id)} />{a.name}</ToggleGroupItem>
                 ))}
@@ -90,7 +91,7 @@ export function TeamDialog() {
               ))}
             </div>
           )}
-          {kind === 'race' && (
+          {(kind === 'race' || kind === 'manager') && (
             <Field><FieldLabel htmlFor="team-test">Test command (optional)</FieldLabel>
               <Input id="team-test" className="font-mono" value={testCommand} onChange={(e) => setTestCommand(e.target.value)} placeholder="npm test…" spellCheck={false} autoComplete="off" />
               <FieldDescription>Runs in each agent’s copy when it finishes. Results that pass are marked so you can pick with confidence. Needs a git repository.</FieldDescription></Field>

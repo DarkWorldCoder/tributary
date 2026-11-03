@@ -2,6 +2,8 @@
 // Agent teams: coordinated multi-agent workflows. Every step is an ordinary turn in the same
 // thread, so each agent sees the others' work through the normal handoff.
 
+const { runManager } = require('./manager');
+
 const REVIEW_PROMPT = `Review the changes made for this task (look at \`git diff\` and new files). Check correctness, edge cases, tests and anything the task asked for that is missing. Do not change files.
 List concrete problems, most important first. If everything is fine, say so briefly.
 End your reply with exactly one line: "VERDICT: APPROVED" or "VERDICT: CHANGES REQUESTED".`;
@@ -23,6 +25,11 @@ const RECIPES = {
     name: 'Ask everyone',
     description: 'Every chosen agent answers the same question without changing files, then one agent compares the answers.',
     roles: [{ id: 'members', label: 'Agents', multi: true }, { id: 'synthesizer', label: 'Summarizer' }],
+  },
+  manager: {
+    name: 'Manager',
+    description: 'One agent splits the task into independent pieces. Workers build them at the same time, each in its own copy, and a piece is merged only when it applies cleanly and your tests pass.',
+    roles: [{ id: 'planner', label: 'Manager' }, { id: 'workers', label: 'Workers', multi: true }],
   },
 };
 
@@ -67,6 +74,7 @@ async function runTeam(hub, threadId, team, { onStep, signal } = {}) {
     await step('builder', { agentId: need('builder'), text: team.task, mode: buildMode });
     return reviewLoop();
   }
+  if (team.recipe === 'manager') return runManager(hub, threadId, team, { step, signal });
   // council
   const members = (roles.members || []).filter(Boolean);
   if (members.length < 2) throw new Error('Pick at least two agents to ask');
