@@ -227,3 +227,20 @@ test('hub: detects files changed by shell commands via git', async () => {
   assert.match(await hub.fileDiff(proj, 'keep.txt'), /\+more/);
   assert.match(await hub.fileDiff(proj, 'new.txt'), /^new file new.txt/);
 });
+
+test('hub: the request appears before the checkpoint, which is still taken before the agent runs', async () => {
+  const { execFileSync } = require('child_process');
+  const proj = tmp();
+  execFileSync('git', ['init', '-q'], { cwd: proj }); fs.writeFileSync(path.join(proj, 'a.txt'), 'x\n');
+  execFileSync('git', ['add', '.'], { cwd: proj }); execFileSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'i'], { cwd: proj });
+  const hub = new Hub({ dataDir: tmp(), secrets: new MemorySecrets() });
+  hub.agents = [fakeAgent('claude', 'claude-stream')];
+  const t = hub.createThread(proj);
+  const shown = [];
+  hub.on('message', ({ message }) => { if (message.role === 'assistant') shown.push(message.checkpoint || null); });
+  const m = await hub.send({ threadId: t.id, agentId: 'claude', text: 'go' });
+  assert.strictEqual(shown[0], null, 'the reply placeholder is shown without waiting for the checkpoint');
+  assert.ok(m.checkpoint && shown.includes(m.checkpoint), 'the checkpoint is attached once it exists');
+  assert.match(await hub.turnDiff(t.id, m.id), /a\.txt|^$/, 'the turn can still be diffed against its checkpoint');
+  hub.store.save(true);
+});

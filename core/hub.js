@@ -300,9 +300,6 @@ class Hub extends EventEmitter {
     const userMsg = { id: uid(), role: 'user', text: t.task && typeof displayText === 'string' ? displayText.slice(0, 4000) : text || (planFrom ? 'Run the plan' : ''), ts: now(), target: agentId, kind: planOnly ? 'plan' : (planFrom ? 'implement' : 'chat'), team: team || undefined };
     const msg = { id: uid(), role: 'assistant', agent: agentId, text: '', thinking: '', tools: [], files: [], plan: null, notices: [], error: null, ok: null,
       ts: now(), mode, gateway: gateway ? gateway.name : null, handoff: p.kind, resumed: !!p.resumeId, kind: planOnly ? 'plan' : (planFrom ? 'implement' : 'chat'), planFrom: planFrom || undefined, team: team || undefined };
-    if (git) {
-      try { msg.checkpoint = await createCheckpoint(git.root, msg.id); } catch (e) { msg.notices.push(`No checkpoint: ${e.message.split('\n')[0]}`); }
-    }
     ac.signal.throwIfAborted();
     if (t.messages.length === 0 && t.title === 'New thread') t.title = text.split('\n')[0].slice(0, 60) || 'New thread';
     t.messages.push(userMsg, msg); t.updatedAt = now(); t.lastAgent = agentId;
@@ -310,6 +307,11 @@ class Hub extends EventEmitter {
     this.emit('threads', t.project);
     this.emit('message', { threadId, message: userMsg });
     this.emit('message', { threadId, message: msg });
+    // A checkpoint can take seconds in a big repository; the request is already on screen while it is taken.
+    if (git) {
+      try { msg.checkpoint = await createCheckpoint(git.root, msg.id); } catch (e) { msg.notices.push(`No checkpoint: ${e.message.split('\n')[0]}`); }
+      this.emit('message', { threadId, message: msg });
+    }
 
     const started = now();
     const onEvent = (e) => {
