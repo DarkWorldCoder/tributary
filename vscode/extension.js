@@ -65,6 +65,8 @@ const API = {
   async pickProject() { const r = await vscode.window.showOpenDialog({ canSelectFolders: true, canSelectFiles: false, openLabel: 'Open folder in Tributary' }); if (!r?.[0]) return null; hub.addProject(r[0].fsPath); return r[0].fsPath; },
   send: (o) => hub.send(o).then((m) => ({ id: m.id, ok: m.ok })),
   stop: (id) => hub.stop(id),
+  permissions: (threadId) => hub.permissions(threadId),
+  answerPermission: (id, choice) => hub.answerPermission(id, choice),
   saveGateway: (g) => hub.saveGateway(g),
   deleteGateway: (id) => hub.deleteGateway(id),
   setSettings: (s) => hub.setSettings(s),
@@ -167,7 +169,7 @@ function currentProject() {
 async function activate(context) {
   const dataDir = context.globalStorageUri.fsPath;
   fs.mkdirSync(dataDir, { recursive: true });
-  hub = new Hub({ dataDir, secrets: new Secrets(context.secrets) });
+  hub = new Hub({ dataDir, secrets: new Secrets(context.secrets), approvals: true });
   hub.init().catch((e) => vscode.window.showWarningMessage(`Tributary could not finish finding agents: ${e.message}`));
   syncWorkspaceProjects();
 
@@ -197,7 +199,7 @@ async function activate(context) {
   hub.on('running', refreshStatus); refreshStatus();
 
   hub.on('notification', async (n) => {
-    const show = n.kind === 'failed' ? vscode.window.showWarningMessage : vscode.window.showInformationMessage;
+    const show = n.kind === 'failed' || n.kind === 'permission' ? vscode.window.showWarningMessage : vscode.window.showInformationMessage;
     const pick = await show(`${n.title}${n.body ? `: ${n.body}` : ''}`, 'Open');
     if (pick === 'Open') { await vscode.commands.executeCommand('tributary.chat.focus'); if (n.threadId) post('open-thread', n.threadId); }
   });

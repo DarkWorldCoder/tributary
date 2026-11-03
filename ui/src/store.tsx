@@ -144,7 +144,7 @@ function useStoreValue() {
     });
     hub.on('insert', (text) => setDraft((d) => (d ? `${d}\n${text}` : text)));
     hub.on('open-thread', (id) => { if (id) openThread(id); });
-    hub.on('notification', (n) => { (n.kind === 'failed' ? toast.error : toast.success)(n.title, { description: n.body }); });
+    hub.on('notification', (n) => { (n.kind === 'failed' ? toast.error : n.kind === 'permission' ? toast.warning : toast.success)(n.title, { description: n.body }); });
     hub.on('focus-project', async (p) => { await refreshState(); await loadThreads(p); if (projectRef.current !== p) newThread(p); });
   }, [loadThreads, newThread, refreshGit, refreshState, openThread, markSeen]);
 
