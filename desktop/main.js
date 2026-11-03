@@ -10,6 +10,8 @@ const { detectEditors, openInEditor } = require('../core/editors');
 
 app.setName('Tributary');
 const SMOKE = process.argv.includes('--smoke-test');
+// Smoke screenshots come from a hidden window; keep it painting and its timers running.
+if (SMOKE) { app.commandLine.appendSwitch('disable-backgrounding-occluded-windows'); app.commandLine.appendSwitch('disable-renderer-backgrounding'); app.commandLine.appendSwitch('disable-background-timer-throttling'); }
 if (process.env.TRIBUTARY_DATA_DIR) app.setPath('userData', path.resolve(process.env.TRIBUTARY_DATA_DIR));
 
 // API keys: encrypted with the OS keychain (Keychain, DPAPI, libsecret/kwallet) when available.
@@ -187,7 +189,8 @@ function createWindow() {
   });
   win.webContents.setWindowOpenHandler(({ url }) => { if (/^https?:\/\//.test(url)) shell.openExternal(url); return { action: 'deny' }; });
   win.webContents.on('will-navigate', (ev) => ev.preventDefault());
-  win.once('ready-to-show', () => win.show());
+  // Smoke runs stay hidden so they never take keyboard focus from whatever you are typing in.
+  win.once('ready-to-show', () => { if (!SMOKE) win.show(); });
   win.loadFile(path.join(__dirname, '..', 'ui', 'dist', 'index.html'));
 }
 
@@ -229,9 +232,30 @@ app.whenReady().then(async () => {
         }
         await new Promise((r) => setTimeout(r, 800));
       }
+      // TRIBUTARY_SMOKE_CLICKS="Settings|Agents|Browse agents|3000" clicks those buttons (label or text) before the
+      // screenshot; a number waits that many milliseconds.
+      // Animations are switched off: a background window may never advance them, leaving dialogs invisible.
+      const clicks = (process.env.TRIBUTARY_SMOKE_CLICKS || '').split('|').filter(Boolean);
+      if (clicks.length) await win.webContents.insertCSS('*, *::before, *::after { animation-duration: 0s !important; transition-duration: 0s !important; }');
+      for (const label of clicks) {
+        if (/^\d+$/.test(label)) { await new Promise((r) => setTimeout(r, Number(label))); continue; }
+        await win.webContents.executeJavaScript(`(() => {
+          const want = ${JSON.stringify(label)}.toLowerCase();
+          const name = (b) => (b.getAttribute('aria-label') || b.textContent || '').trim().toLowerCase();
+          const all = [...document.querySelectorAll('button, a, [role="button"]')];
+          const el = all.find((b) => name(b) === want) || all.find((b) => name(b).startsWith(want));
+          if (!el) throw new Error('smoke: no button ' + want);
+          el.click();
+          return name(el);
+        })()`).then((hit) => console.log(`SMOKE clicked ${JSON.stringify(hit)}`));
+        await new Promise((r) => setTimeout(r, 1500));
+      }
       const report = await win.webContents.executeJavaScript(`({ platform: window.hub && window.hub.platform, title: document.title,
         agents: ([...document.querySelectorAll('*')].find((e) => /agents? ready$/.test(e.textContent.trim()) && e.children.length === 0) || {}).textContent || null,
-        error: (document.body.innerText.match(/failed to start[\\s\\S]{0,300}/)||[])[0] || null })`);
+        error: (document.body.innerText.match(/failed to start[\\s\\S]{0,300}/)||[])[0] || null,
+        dialogs: [...document.querySelectorAll('[role="dialog"] h2')].map((h) => h.textContent) })`);
+      // A window behind others may not repaint on its own; ask for a fresh frame before capturing it.
+      win.webContents.invalidate(); await new Promise((r) => setTimeout(r, 300));
       const img = await win.webContents.capturePage();
       const out = process.env.TRIBUTARY_SMOKE_SHOT; if (out) fs.writeFileSync(out, img.toPNG());
       const last = hub.store.data.threads.flatMap((t) => t.messages).filter((m) => m.role === 'assistant').pop();

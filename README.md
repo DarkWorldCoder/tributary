@@ -119,6 +119,12 @@ npm run test:e2e
 node test/e2e/real-race.js /tmp/tributary-data /tmp/tributary-race claude codex
 ```
 
+Smoke mode starts the desktop app in a hidden window, prints a JSON report and saves a screenshot. `TRIBUTARY_SMOKE_CLICKS` clicks buttons by label first (a number waits that many milliseconds), which is how to check a screen such as Browse agents:
+
+```bash
+TRIBUTARY_DATA_DIR=/tmp/tributary-smoke TRIBUTARY_SMOKE_SHOT=/tmp/browse.png TRIBUTARY_SMOKE_CLICKS="Settings|Agents|Browse agents|4000" npm start -- --smoke-test
+```
+
 ## Layout
 
 | Folder | What is in it |
