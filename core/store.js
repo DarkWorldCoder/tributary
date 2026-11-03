@@ -5,6 +5,7 @@
 // and picks up the other's rows. Store is the older single-process JSON file, used where node:sqlite is missing.
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 let sqlite = null;
 try { sqlite = require('node:sqlite'); } catch { /* Node without SQLite: JSON fallback */ }
@@ -28,6 +29,8 @@ class Store {
   }
   sync() { return null; }
   watch() {}
+  isLoaded() { return true; }
+  summary(t) { const m = t.messages || []; for (let i = m.length - 1; i >= 0; i--) if (m[i].role === 'assistant') return { count: m.length, last: m[i] }; return { count: m.length, last: null }; }
   close() { if (this.timer) this.save(true); }
 }
 
@@ -37,10 +40,13 @@ const LISTS = { projects: 'path', gateways: 'id', notifications: 'id' };
 const KNOWN = new Set(['version', 'threads', 'settings', ...Object.keys(LISTS)]);
 // These keep a natural order across processes. Messages and gateways keep the position they were first saved at.
 const ORDER = { projects: (p) => p.addedAt || 0, notifications: (n) => -(n.ts || 0), threads: (t) => t.createdAt || 0 };
-const metaJson = ({ messages, ...meta }) => JSON.stringify(meta);
+const metaJson = (t) => { const meta = {}; for (const k of Object.keys(t)) if (k !== 'messages') meta[k] = t[k]; return JSON.stringify(meta); };
+const lastReply = (messages) => { for (let i = messages.length - 1; i >= 0; i--) if (messages[i].role === 'assistant') return messages[i]; return null; };
 const replace = (target, src) => { for (const k of Object.keys(target)) delete target[k]; return Object.assign(target, src); };
+// The snapshot keeps a fingerprint of each row as last read or written, not a second copy of the history.
+const digest = crypto.hash ? (s) => crypto.hash('sha1', s, 'base64') : (s) => crypto.createHash('sha1').update(s).digest('base64');
 // Changed here since the last read or write of that row (so a row from another process must not replace it).
-const dirty = (local, prev) => (prev ? local !== prev.json : local !== undefined);
+const dirty = (local, prev) => (prev ? local === undefined || digest(local) !== prev.h : local !== undefined);
 
 class SqliteStore {
   constructor(dir, defaults) {
@@ -61,7 +67,11 @@ class SqliteStore {
       upsert: this.db.prepare('INSERT INTO records(coll, id, pos, rev, data) VALUES(?, ?, ?, ?, ?) ON CONFLICT(coll, id) DO UPDATE SET pos = excluded.pos, rev = excluded.rev, data = excluded.data'),
       tick: this.db.prepare('UPDATE clock SET rev = rev + 1 WHERE id = 1 RETURNING rev'),
       since: this.db.prepare('SELECT coll, id, pos, rev, data FROM records WHERE rev > ? ORDER BY rev'),
-      all: this.db.prepare('SELECT coll, id, pos, data FROM records WHERE data IS NOT NULL ORDER BY pos, rev'),
+      all: this.db.prepare("SELECT coll, id, pos, data FROM records WHERE data IS NOT NULL AND substr(coll, 1, 2) != 'm:' ORDER BY pos, rev"),
+      messages: this.db.prepare('SELECT id, pos, data FROM records WHERE coll = ? AND data IS NOT NULL ORDER BY pos, rev'),
+      newestIds: this.db.prepare('SELECT id FROM records WHERE coll = ? AND data IS NOT NULL ORDER BY pos DESC, rev DESC'),
+      row: this.db.prepare('SELECT data FROM records WHERE coll = ? AND id = ?'),
+      dropMessages: this.db.prepare('UPDATE records SET data = NULL, rev = ? WHERE coll = ? AND data IS NOT NULL'),
       rev: this.db.prepare('SELECT rev FROM clock WHERE id = 1'),
       version: this.db.prepare('PRAGMA data_version'),
       meta: this.db.prepare('SELECT value FROM meta WHERE key = ?'),
@@ -100,27 +110,47 @@ class SqliteStore {
     try { this.version = this.q.version.get().data_version; rows = this.q.all.all(); this.lastRev = this.q.rev.get().rev; } finally { this.db.exec('COMMIT'); }
     const data = JSON.parse(JSON.stringify(this.defaults));
     for (const k of [...Object.keys(LISTS), 'threads']) data[k] = [];
-    this.snap = new Map();
-    const byId = new Map();
-    const msgs = [];
+    this.snap = new Map(); this.summaries = new Map();
     for (const r of rows) {
-      if (r.coll.startsWith('m:')) { msgs.push(r); continue; }
       const value = JSON.parse(r.data);
-      if (r.coll === 'threads') { const t = { ...value, messages: [] }; data.threads.push(t); byId.set(r.id, t); }
+      if (r.coll === 'threads') data.threads.push(this.lazy({ ...value }));
       else if (LISTS[r.coll]) data[r.coll].push(value);
       else if (r.coll === 'settings') data.settings[r.id] = value;
       else if (r.coll === 'data') data[r.id] = value;
       else continue;
-      this.snap.set(keyOf(r.coll, r.id), { json: r.data, pos: r.pos });
-    }
-    for (const r of msgs) {
-      const t = byId.get(r.coll.slice(2)); if (!t) continue;
-      t.messages.push(JSON.parse(r.data));
-      this.snap.set(keyOf(r.coll, r.id), { json: r.data, pos: r.pos });
+      this.snap.set(keyOf(r.coll, r.id), { h: digest(r.data), pos: r.pos });
     }
     // Unsaved defaults are not local edits: a setting saved by another process replaces them.
-    for (const [k, v] of Object.entries(data.settings)) { const key = keyOf('settings', k); if (!this.snap.has(key)) this.snap.set(key, { json: JSON.stringify(v ?? null), pos: 0, virtual: true }); }
+    for (const [k, v] of Object.entries(data.settings)) { const key = keyOf('settings', k); if (!this.snap.has(key)) this.snap.set(key, { h: digest(JSON.stringify(v ?? null)), pos: 0, virtual: true }); }
     this.data = data;
+  }
+
+  // A thread's messages load from the database the first time something reads thread.messages, so startup reads
+  // only thread metadata and memory holds only the conversations used in this session.
+  lazy(t) {
+    Object.defineProperty(t, 'messages', { configurable: true, enumerable: true, get: () => this.loadMessages(t), set: (v) => { this.settle(t, v); } });
+    return t;
+  }
+  settle(t, messages) { Object.defineProperty(t, 'messages', { value: messages, writable: true, enumerable: true, configurable: true }); return messages; }
+  isLoaded(t) { return !Object.getOwnPropertyDescriptor(t, 'messages')?.get; }
+  loadMessages(t) {
+    const coll = `m:${t.id}`;
+    const messages = this.closed ? [] : this.q.messages.all(coll).map((r) => { this.snap.set(keyOf(coll, r.id), { h: digest(r.data), pos: r.pos }); return JSON.parse(r.data); });
+    this.summaries.delete(t.id);
+    return this.settle(t, messages);
+  }
+  // What the thread list shows (message count, last reply) without loading the messages.
+  summary(t) {
+    if (this.isLoaded(t)) return { count: t.messages.length, last: lastReply(t.messages) };
+    let s = this.summaries.get(t.id);
+    if (!s) {
+      // Newest first, reading one message at a time: the last reply is almost always the newest or the one before.
+      const coll = `m:${t.id}`; const ids = this.q.newestIds.all(coll); let last = null;
+      for (const { id } of ids) { const m = JSON.parse(this.q.row.get(coll, id).data); if (m.role === 'assistant') { last = m; break; } }
+      s = { count: ids.length, last };
+      this.summaries.set(t.id, s);
+    }
+    return s;
   }
 
   // Every row of the in-memory data, keyed like the snapshot. With `only`, messages are read for those threads alone.
@@ -137,7 +167,7 @@ class SqliteStore {
     };
     for (const coll of Object.keys(LISTS)) list(coll, d[coll] || [], (x) => x[LISTS[coll]], JSON.stringify, ORDER[coll]);
     list('threads', d.threads || [], (t) => t.id, metaJson, ORDER.threads);
-    for (const t of d.threads || []) if (!only || only.has(t.id)) list(`m:${t.id}`, t.messages || [], (m) => m.id, JSON.stringify);
+    for (const t of d.threads || []) if ((!only || only.has(t.id)) && this.isLoaded(t)) list(`m:${t.id}`, t.messages || [], (m) => m.id, JSON.stringify);
     for (const [k, v] of Object.entries(d.settings || {})) out.set(keyOf('settings', k), { coll: 'settings', id: k, pos: 0, json: JSON.stringify(v ?? null) });
     for (const [k, v] of Object.entries(d)) if (!KNOWN.has(k) && v !== undefined) out.set(keyOf('data', k), { coll: 'data', id: k, pos: 0, json: JSON.stringify(v) });
     return out;
@@ -150,15 +180,18 @@ class SqliteStore {
     const live = only && new Set((this.data.threads || []).map((t) => t.id));
     const skipped = (k) => { if (!only || !k.startsWith('m:')) return false; const tid = k.slice(2, k.indexOf(SEP)); return live.has(tid) && !only.has(tid); };
     const writes = []; const gone = [];
-    for (const [k, r] of rows) { const prev = this.snap.get(k); if (!prev || prev.json !== r.json || prev.pos !== r.pos) writes.push([k, r]); }
+    for (const [k, r] of rows) { const prev = this.snap.get(k); if (!prev || prev.pos !== r.pos || prev.h !== (r.h = digest(r.json))) writes.push([k, r]); }
     for (const [k, prev] of this.snap) if (!rows.has(k) && !prev.virtual && !skipped(k)) gone.push([k, prev]);
     if (!writes.length && !gone.length) return;
     this.tx(() => {
       const { rev } = this.q.tick.get();
       for (const [, r] of writes) this.q.upsert.run(r.coll, r.id, r.pos, rev, r.json);
-      for (const [k, prev] of gone) { const [coll, id] = k.split(SEP); this.q.upsert.run(coll, id, prev.pos, rev, null); }
+      for (const [k, prev] of gone) {
+        const [coll, id] = k.split(SEP); this.q.upsert.run(coll, id, prev.pos, rev, null);
+        if (coll === 'threads') this.q.dropMessages.run(rev, `m:${id}`);
+      }
     });
-    for (const [k, r] of writes) this.snap.set(k, { json: r.json, pos: r.pos });
+    for (const [k, r] of writes) this.snap.set(k, { h: r.h ?? digest(r.json), pos: r.pos });
     for (const [k] of gone) this.snap.delete(k);
   }
 
@@ -208,12 +241,14 @@ class SqliteStore {
 
   apply(r, change, touched) {
     const k = keyOf(r.coll, r.id); const prev = this.snap.get(k); const d = this.data;
-    if (prev && prev.json === r.data && prev.pos === r.pos) return;
+    const h = r.data == null ? null : digest(r.data);
+    if (prev && prev.h === h && prev.pos === r.pos) return;
     if (!prev && r.data == null) return;
     const value = r.data == null ? null : JSON.parse(r.data);
     if (r.coll.startsWith('m:')) {
       const t = d.threads.find((x) => x.id === r.coll.slice(2));
       if (!t) { if (r.data == null) this.snap.delete(k); return; }
+      if (!this.isLoaded(t)) { this.summaries.delete(t.id); change.projects.add(t.project); return; }
       const i = t.messages.findIndex((m) => m.id === r.id);
       if (dirty(i >= 0 ? JSON.stringify(t.messages[i]) : undefined, prev)) return;
       if (value == null) { if (i >= 0) t.messages.splice(i, 1); }
@@ -224,7 +259,8 @@ class SqliteStore {
       if (dirty(i >= 0 ? metaJson(d.threads[i]) : undefined, prev)) return;
       if (value == null) { if (i >= 0) { change.projects.add(d.threads[i].project); d.threads.splice(i, 1); } }
       else {
-        if (i >= 0) { const t = d.threads[i]; const { messages } = t; replace(t, value).messages = messages; } else d.threads.push({ ...value, messages: [] });
+        if (i >= 0) { const t = d.threads[i]; const keep = Object.getOwnPropertyDescriptor(t, 'messages'); replace(t, value); if (keep) Object.defineProperty(t, 'messages', keep); }
+        else d.threads.push(this.lazy({ ...value }));
         change.projects.add(value.project);
       }
     } else if (LISTS[r.coll]) {
@@ -239,7 +275,7 @@ class SqliteStore {
       if (value == null && r.data == null) delete target[r.id]; else target[r.id] = value;
       change.state = true;
     } else return; // written by a newer version; leave it alone
-    if (r.data == null) this.snap.delete(k); else this.snap.set(k, { json: r.data, pos: r.pos });
+    if (r.data == null) this.snap.delete(k); else this.snap.set(k, { h, pos: r.pos });
   }
 
   // Poll for other processes' writes (cheap: one pragma unless something changed).

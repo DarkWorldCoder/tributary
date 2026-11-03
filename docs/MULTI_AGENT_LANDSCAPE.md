@@ -46,7 +46,7 @@ Nothing verifiable surfaced for Conductor, Vibe Kanban, Superset, Baton, Braid, 
 2. **The shared model gateway is a real gap.** Air and the IDEs leave local models to each agent. Tributary's gateway profiles already cover Ollama, LM Studio, LiteLLM, DeepSeek and OpenAI-compatible endpoints for every agent.
 3. **One MCP and skills layer is a real gap.** ACP passes only MCP servers, so Tributary's per-agent CLI approach for MCP and symlinked skills fills what the protocol cannot.
 4. **Read the ACP Registry.** Discovering and installing agents from `registry.json`, merging the client-specific indexes, would work outside Zed and JetBrains.
-5. **Change the team defaults to match the evidence.** Add "Race": N agents in separate git worktrees, run the tests, pick or review the best. Add "Manager": a task graph, one worktree per worker and test-gated merge. Keep the review loop as an option, since it has no controlled evidence either way. Avoid splitting one feature between peer agents, and avoid free-form agent chat.
+5. **Change the team defaults to match the evidence.** Add "Race": N agents in separate git worktrees, run the tests, pick or review the best. Add "Manager": a task graph, one worktree per worker and test-gated merge. Keep the review loop as an option, since it has no controlled evidence either way. Avoid splitting one feature between peer agents, and avoid free-form agent chat. Built: Race with an agent judge, and Manager (`core/manager.js`); every agent's work shows in the live activity view (`core/activity.js`).
 6. **Ship Linux packages and container isolation that does not need Docker Desktop.**
 
 ## Sources

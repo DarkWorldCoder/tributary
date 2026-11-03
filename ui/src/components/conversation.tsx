@@ -240,12 +240,13 @@ const TESTS: Record<string, { label: string; cls: string; icon?: React.ReactNode
 
 function Candidate({ c, m }: { c: RaceCandidate; m: AgentMessage }) {
   const s = useStore(); const a = s.agentOf(c.agent); const [show, setShow] = React.useState<'diff' | 'reply' | 'tests' | null>(null);
-  const applied = m.race?.applied; const winner = applied === c.agent;
+  const applied = m.race?.applied; const winner = applied === c.agent; const recommended = !applied && m.race?.judge?.winner === c.agent;
   const t = TESTS[c.tests ?? 'skipped'] ?? TESTS.skipped;
   return (
-    <div className={cn('flex min-w-0 flex-col rounded-xl border bg-card', winner && 'border-success ring-1 ring-success')}>
+    <div className={cn('flex min-w-0 flex-col rounded-xl border bg-card', winner && 'border-success ring-1 ring-success', recommended && 'border-brand ring-1 ring-brand')}>
       <div className="flex items-center gap-2 border-b px-3 py-2">
         <AgentAvatar agent={a} size="sm" /><span className="min-w-0 truncate font-medium">{a.name}</span>
+        {recommended && <Badge className="shrink-0 bg-brand/15 text-brand">Recommended</Badge>}
         {c.status === 'running' ? <Spinner className="ml-auto size-3.5" /> : <span className={cn('ml-auto inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] whitespace-nowrap', t.cls)}>{t.icon}{t.label}</span>}
       </div>
       <div className="flex flex-1 flex-col gap-1.5 px-3 py-2 text-[12.5px]">
@@ -279,6 +280,30 @@ function Candidate({ c, m }: { c: RaceCandidate; m: AgentMessage }) {
   );
 }
 
+// One agent compares the candidates' diffs and test results and recommends one. Applying stays your call.
+function RaceJudge({ m }: { m: AgentMessage }) {
+  const s = useStore(); const r = m.race!; const j = r.judge;
+  if (r.applied || r.candidates.filter((c) => c.status === 'done' && c.diff).length < 2) return null;
+  const judge = async (id: string) => {
+    try {
+      const v = await s.hub.call<{ winner: string | null }>('judgeRace', s.thread!.id, m.id, id);
+      toast.success(v.winner ? `${s.agentOf(id).name} recommends ${s.agentOf(v.winner).name}` : `${s.agentOf(id).name} recommends none of them`);
+    } catch (e) { toast.error((e as Error).message); }
+  };
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-sm">
+      {j && <span className="inline-flex items-center gap-1.5 text-muted-foreground"><AgentAvatar agent={s.agentOf(j.agent)} size="xs" />{s.agentOf(j.agent).name} {j.winner ? <>recommends <strong className="font-medium text-foreground">{s.agentOf(j.winner).name}</strong></> : 'recommends none of them'}.</span>}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild><Button size="xs" variant="outline" disabled={s.running}>{j ? 'Ask another agent' : 'Pick the best with…'}</Button></DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuLabel>Compares every diff and test result</DropdownMenuLabel>
+          {s.ready.map((a) => <DropdownMenuItem key={a.id} onClick={() => judge(a.id)}><AgentAvatar agent={a} size="xs" />{a.name}</DropdownMenuItem>)}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
+
 function RaceTurn({ m }: { m: AgentMessage }) {
   const r = m.race!; const live = m.ok == null;
   const passed = r.candidates.filter((c) => c.tests === 'passed').length;
@@ -295,6 +320,7 @@ function RaceTurn({ m }: { m: AgentMessage }) {
             : r.applied ? 'A result was applied to your project. Every attempt stays on its own branch if you want to look again.'
               : `Done.${r.testCommand ? ` ${passed} of ${r.candidates.length} passed the tests.` : ''} Compare the results and apply the one you want.`}
         </p>
+        {!live && <RaceJudge m={m} />}
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{r.candidates.map((c) => <Candidate key={c.agent} c={c} m={m} />)}</div>
         {m.error && <Alert variant="destructive"><AlertCircle /><AlertDescription>{m.error}</AlertDescription></Alert>}
         {(m.notices || []).map((n, i) => <p key={i} className="flex items-center gap-1.5 text-sm text-success"><Check className="size-3.5" /> {n}</p>)}

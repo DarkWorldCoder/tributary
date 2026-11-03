@@ -138,3 +138,55 @@ test('a save for one thread writes that thread without re-serializing the rest o
   assert.strictEqual(fresh.thread(other.id).messages.length, 1, 'skipped threads are kept, not deleted');
   for (const h of [hub, fresh]) h.store.close();
 });
+
+test('the save snapshot keeps a fingerprint per row, not a second copy of the history', () => {
+  const dataDir = tmp(); const proj = tmp();
+  const hub = open(dataDir);
+  const t = hub.createThread(proj, 'Long');
+  for (let i = 0; i < 20; i++) hub.thread(t.id).messages.push(reply('x'.repeat(5000)));
+  hub.store.save(true);
+  for (const v of hub.store.snap.values()) assert.ok(!('json' in v) && String(v.h).length <= 44, JSON.stringify(v).slice(0, 80));
+  // Change detection still works on fingerprints: an edit is written, an unchanged row is not.
+  hub.thread(t.id).messages[3].text = 'edited';
+  hub.store.save(true);
+  const fresh = open(dataDir);
+  assert.strictEqual(fresh.thread(t.id).messages[3].text, 'edited');
+  for (const h of [hub, fresh]) h.store.close();
+});
+
+test('messages load when a conversation is first used; the thread list does not need them', () => {
+  const dataDir = tmp(); const proj = tmp();
+  const writer = open(dataDir);
+  const ids = [];
+  for (let i = 0; i < 3; i++) {
+    const t = writer.createThread(proj, `Thread ${i}`); ids.push(t.id);
+    t.messages.push({ id: `u${i}`, role: 'user', text: 'do it', target: 'claude' });
+    t.messages.push({ ...reply('done'), ok: i !== 1, error: i === 1 ? 'boom' : null, files: i === 0 ? [{ rel: 'a.js', path: `${proj}/a.js` }] : [] });
+  }
+  writer.store.save(true);
+
+  const hub = open(dataDir);
+  const loaded = () => ids.filter((id) => hub.store.isLoaded(hub.store.data.threads.find((t) => t.id === id)));
+  assert.deepStrictEqual(loaded(), [], 'nothing is parsed at startup');
+  const list = Object.fromEntries(hub.threads(proj).map((t) => [t.title, [t.count, t.status]]));
+  assert.deepStrictEqual(list, { 'Thread 0': [2, 'review'], 'Thread 1': [2, 'failed'], 'Thread 2': [2, 'done'] });
+  assert.deepStrictEqual(loaded(), [], 'counts and badges come from the database');
+  assert.strictEqual(hub.thread(ids[2]).messages[1].text, 'done');
+  assert.deepStrictEqual(loaded(), [ids[2]]);
+
+  // Another process adds to a thread this one has not loaded: the list updates, and loading shows it.
+  writer.thread(ids[0]).messages.push(reply('more')); writer.store.save(true);
+  hub.store.sync();
+  assert.strictEqual(hub.threads(proj).find((t) => t.id === ids[0]).count, 3);
+  assert.deepStrictEqual(hub.thread(ids[0]).messages.map((m) => m.text), ['do it', 'done', 'more']);
+
+  // Edits to a loaded thread save; deleting a never-loaded thread removes its messages too.
+  hub.thread(ids[2]).title = 'Renamed'; hub.deleteThread(ids[1]); hub.store.save(true);
+  const fresh = open(dataDir);
+  assert.deepStrictEqual(fresh.threads(proj).map((t) => t.title).sort(), ['Renamed', 'Thread 0']);
+  const { DatabaseSync } = require('node:sqlite');
+  const db = new DatabaseSync(path.join(dataDir, 'tributary.db'));
+  assert.strictEqual(db.prepare('SELECT COUNT(*) n FROM records WHERE coll = ? AND data IS NOT NULL').get(`m:${ids[1]}`).n, 0);
+  db.close();
+  for (const h of [writer, hub, fresh]) h.store.close();
+});
