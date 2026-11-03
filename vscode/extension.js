@@ -80,6 +80,12 @@ const API = {
   fileDiff: (p, rel) => hub.fileDiff(p, rel),
   async revealFile(p, rel) { const abs = await require('../core/files').projectPath(knownProject(p), rel); await vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(abs)); return true; },
   syncInstructions: (p) => hub.syncInstructions(p),
+  teamSecrets: (p) => hub.teamSecrets.status(knownProject(p)),
+  createTeamKey: () => hub.teamSecrets.createKey(),
+  startTeamSecrets: (p, name) => hub.teamSecrets.start(knownProject(p), name),
+  setTeamSecret: (p, name, value) => hub.teamSecrets.setValue(knownProject(p), name, value),
+  addTeamMember: (p, member) => hub.teamSecrets.addMember(knownProject(p), member),
+  removeTeamMember: (p, recipient) => hub.teamSecrets.removeMember(knownProject(p), recipient),
   listFiles: (p) => hub.listFiles(p),
   addAttachments: (files) => hub.addAttachments(files),
   readAttachment: (id) => hub.readAttachment(id),
@@ -133,8 +139,8 @@ const API = {
   editors: () => [],
   openExternal: (url) => (/^https?:\/\//.test(url) ? vscode.env.openExternal(vscode.Uri.parse(url)) : null),
   openAgentsFile: async () => { const doc = await vscode.workspace.openTextDocument(hub.customAgentsFile); await vscode.window.showTextDocument(doc); },
-  createTerminal({ cwd, command } = {}) {
-    const term = vscode.window.createTerminal({ name: command ? `Tributary: ${command.split(' ')[0].split('/').pop()}` : 'Tributary', cwd: cwd && fs.existsSync(cwd) ? cwd : undefined, env: hub.workspaceEnvFor(cwd) });
+  async createTerminal({ cwd, command } = {}) {
+    const term = vscode.window.createTerminal({ name: command ? `Tributary: ${command.split(' ')[0].split('/').pop()}` : 'Tributary', cwd: cwd && fs.existsSync(cwd) ? cwd : undefined, env: { ...await hub.teamEnvFor(cwd), ...hub.workspaceEnvFor(cwd) } });
     term.show(); if (command) term.sendText(command, true); return 'vscode';
   },
   termWrite: () => false, termResize: () => false, termKill: () => false,

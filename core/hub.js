@@ -35,6 +35,7 @@ const { lineAuthors, revertTurnHunk } = require('./attribution');
 const worktrees = require('./worktrees');
 const { copyIncluded, freePort, copyEnv, projectScripts, scriptHash, includedFiles, ENV_NAME } = require('./workspace-setup');
 const { SecretGuard, secretError, pendingChanges } = require('./secret-guard');
+const { TeamSecrets } = require('./team-secrets');
 const { runScript } = require('./run-script');
 
 const attachments = require('./attachments');
@@ -404,6 +405,8 @@ class Hub extends EventEmitter {
     }
 
     await this.learnSecrets(git?.root);
+    const shared = await this.teamSecrets.env(git?.root);
+    if (shared.error) msg.notices.push(`Team secrets not loaded: ${shared.error}`);
     const started = now();
     const onEvent = (e) => {
       if (e.kind === 'permission') { this.secretGuard.redactEvent(e.request); if (this.approvals) e.answer = this.askPermission(t, msg, agent, e.request, ac.signal); return; }
@@ -412,7 +415,7 @@ class Hub extends EventEmitter {
       this.store.save(false, t.id); // only this thread changed: don't re-serialize all history
     };
     try {
-      const r = await runTurn({ agent, cwd: dir, prompt: p.prompt, env: this.workspaceEnv(t), images, mode, resumeId: p.resumeId, gateway, model, trusted: proj.trusted !== false, extraDirs: proj.folders || [], onEvent, signal: ac.signal });
+      const r = await runTurn({ agent, cwd: dir, prompt: p.prompt, env: { ...shared.env, ...this.workspaceEnv(t) }, images, mode, resumeId: p.resumeId, gateway, model, trusted: proj.trusted !== false, extraDirs: proj.folders || [], onEvent, signal: ac.signal });
       if (r.sessionId) t.agentSessions = { ...t.agentSessions, [sessKey]: r.sessionId };
       msg.ok = r.ok;
     } catch (e) {
@@ -770,7 +773,11 @@ class Hub extends EventEmitter {
   async learnSecrets(root) {
     if (!root) return;
     for (const rel of await includedFiles(root).catch(() => [])) if (ENV_NAME.test(path.basename(rel))) this.secretGuard.addEnvFile(path.join(root, rel), rel);
+    await this.teamSecrets.env(root); // the team's values too, when this person can read them
   }
+  // The project's encrypted team secrets (core/team-secrets.js): for agents and terminals only, never on disk.
+  get teamSecrets() { return this._teamSecrets || (this._teamSecrets = new TeamSecrets(this.secrets, this.secretGuard)); }
+  async teamEnvFor(dir) { return dir && this.isWorkspace(dir) ? (await this.teamSecrets.env(dir)).env : {}; }
   async checkSecrets(diff) { const found = this.secretGuard.scanDiff(diff); return found.length ? secretError(found) : null; }
   workspaceEnvFor(dir) {
     const t = dir && this.store.data.threads.find((x) => x.worktree && (dir === x.worktree.path || dir.startsWith(x.worktree.path + path.sep)));

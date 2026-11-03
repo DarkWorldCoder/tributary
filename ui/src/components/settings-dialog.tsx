@@ -23,6 +23,7 @@ import type { Gateway, Protocol, RegistryAgent, Thread, UiSkill } from '@/types'
 import { useRunInTerminal } from '@/hooks/use-run-in-terminal';
 import { setupCommand } from '@/lib/agent-setup.mjs';
 import { Connections } from '@/components/connections';
+import { TeamSecrets } from '@/components/team-secrets';
 
 const NAV: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
   { id: 'connections', label: 'Connections', icon: <Plug /> },
@@ -30,6 +31,7 @@ const NAV: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
   { id: 'gateways', label: 'Model gateways', icon: <Waypoints /> },
   { id: 'mcp', label: 'MCP servers', icon: <Plug /> },
   { id: 'skills', label: 'Skills', icon: <Sparkles /> },
+  { id: 'secrets', label: 'Team secrets', icon: <KeyRound /> },
   { id: 'appearance', label: 'Appearance', icon: <Palette /> },
   { id: 'about', label: 'About', icon: <Info /> },
 ];
@@ -409,7 +411,7 @@ export function SettingsDialog() {
   const s = useStore(); const [query, setQuery] = React.useState('');
   const returnFocus = React.useRef<HTMLElement | null>(null);
   React.useEffect(() => { if (s.settings.open) setQuery(''); }, [s.settings.open]);
-  const keywords: Record<string, string> = { connections: 'assistant provider local model account', agents: 'coding install custom', gateways: 'model endpoint api', mcp: 'tools servers', skills: 'instructions extensions ui layout writing components usability design accessibility', appearance: 'font typography reading size theme dark light system', about: 'version information' };
+  const keywords: Record<string, string> = { connections: 'assistant provider local model account', agents: 'coding install custom', gateways: 'model endpoint api', mcp: 'tools servers', skills: 'instructions extensions ui layout writing components usability design accessibility', secrets: 'env environment sops age keys share teammates members', appearance: 'font typography reading size theme dark light system', about: 'version information' };
   const matches = NAV.filter((n) => `${n.label} ${keywords[n.id] || ''}`.toLowerCase().includes(query.trim().toLowerCase()));
   const tab = query.trim() ? (matches.find((n) => n.id === s.settings.tab)?.id || matches[0]?.id) : s.settings.tab;
   return (
@@ -433,6 +435,7 @@ export function SettingsDialog() {
           {tab === 'gateways' && <GatewaysTab />}
           {tab === 'mcp' && <McpTab />}
           {tab === 'skills' && <SkillsTab />}
+          {tab === 'secrets' && <TeamSecrets />}
           {tab === 'appearance' && <AppearanceTab />}
           {tab === 'about' && <AboutTab />}
           </div>

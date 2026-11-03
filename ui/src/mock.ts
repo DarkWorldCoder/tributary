@@ -54,6 +54,8 @@ export function createMockHub(): HubBridge {
     { id: 'goose', name: 'Goose', version: '1.9.0', description: 'An open source, extensible AI agent that goes beyond code suggestions.', website: 'https://block.github.io/goose', install: { kind: 'binary' as const, runnable: false } },
   ];
   let seq = 10;
+  const team = { file: '.tributary/secrets.env', exists: true, names: ['STRIPE_SECRET_KEY', 'DATABASE_URL'], config: 'managed', storage: 'encrypted', sops: true, canRead: true, key: `age1${'q'.repeat(58)}` as string | null,
+    members: [{ recipient: `age1${'q'.repeat(58)}`, name: 'Maya' }, { recipient: `age1${'z'.repeat(58)}`, name: 'Sam' }] };
   const api: Record<string, (...a: any[]) => unknown> = {
     state: () => st, rescan: () => st.agents, pickProject: () => proj, removeProject: () => undefined,
     threads: (p: string) => (summaries()[p] || []).map((x) => ({ ...x, branch: threads[x.id]?.worktree?.branch })),
@@ -117,6 +119,13 @@ export function createMockHub(): HubBridge {
       m.ok = true; st.running = []; emit('message', { threadId, message: { ...m, race: { ...m.race! } } }); emit('running', { threadId, running: false });
       return { ok: true };
     },
+    // Team secrets: names and keys only, like the real hosts.
+    teamSecrets: (root: string) => ({ ...team, root, members: team.members.map((m) => ({ ...m, you: m.recipient === team.key, canRead: true })) }),
+    createTeamKey: () => (team.key = `age1${'q'.repeat(58)}`),
+    startTeamSecrets: (root: string, name: string) => { team.key ||= `age1${'q'.repeat(58)}`; team.config = 'managed'; team.members = [{ recipient: team.key, name }]; return api.teamSecrets(root); },
+    setTeamSecret: (root: string, name: string, value: string | null) => { team.names = value == null ? team.names.filter((n) => n !== name) : [...new Set([...team.names, name])]; team.exists = true; return api.teamSecrets(root); },
+    addTeamMember: (root: string, m: { name: string; recipient: string }) => { if (!/^age1[02-9ac-hj-np-z]{58}$/.test(m.recipient)) throw new Error('That is not an age public key. It starts with age1 and is 62 characters long.'); team.members.push(m); return api.teamSecrets(root); },
+    removeTeamMember: (root: string, recipient: string) => { team.members = team.members.filter((m) => m.recipient !== recipient); return { status: api.teamSecrets(root), rotate: team.names }; },
     createTerminal: () => 'term1', termWrite: () => undefined, termResize: () => undefined, termKill: () => undefined, exportThread: () => null,
     openFile: () => undefined, openDiff: () => false, openAgentsFile: () => undefined, openExternal: () => undefined, stop: () => undefined,
     async send({ threadId, agentId, text, mode, gatewayId }: any) {

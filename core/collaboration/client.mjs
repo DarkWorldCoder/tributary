@@ -46,7 +46,7 @@ export class CollaborationClient {
   async command(action, input, commandId = crypto.randomUUID()) {
     if (!this.token) throw new Error('Connect to a project service first.');
     const generation = this.generation; const id = this.value.snapshot?.project.id;
-    const routes = { createProject: '/api/projects', invite: `/api/projects/${id}/invite`, revoke: `/api/projects/${id}/revoke`, createTask: `/api/projects/${id}/tasks`, claim: `/api/projects/${id}/tasks/${encodeURIComponent(input.id || '')}/claim`, update: `/api/projects/${id}/tasks/${encodeURIComponent(input.id || '')}/update`, release: `/api/projects/${id}/tasks/${encodeURIComponent(input.id || '')}/release` };
+    const routes = { createProject: '/api/projects', invite: `/api/projects/${id}/invite`, revoke: `/api/projects/${id}/revoke`, ageKey: `/api/projects/${id}/age-key`, createTask: `/api/projects/${id}/tasks`, claim: `/api/projects/${id}/tasks/${encodeURIComponent(input.id || '')}/claim`, update: `/api/projects/${id}/tasks/${encodeURIComponent(input.id || '')}/update`, release: `/api/projects/${id}/tasks/${encodeURIComponent(input.id || '')}/release` };
     if (!Object.hasOwn(routes, action) || (action !== 'createProject' && !id)) throw new Error('Choose a project and a supported action.');
     const fingerprint = JSON.stringify([routes[action], input]);
     const key = this.pending.get(fingerprint) || commandId; this.pending.set(fingerprint, key);

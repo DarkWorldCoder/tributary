@@ -13,7 +13,7 @@
     "start": "npm run build:ui && electron .",
     "dev": "electron .",
     "build:ui": "npm --prefix ui run build",
-    "test": "node --test test/workspace-setup.test.js test/secret-guard.test.js test/desktop-secrets.test.js test/review-comments.test.js test/copy-conflicts.test.js test/verify.test.js test/attention.test.js test/core.test.js test/features.test.js test/workspace.test.js test/race.test.js test/acp-pool.test.js test/registry.test.js test/vscode.test.js test/everyday.test.js test/collaboration.test.js test/cli.test.js test/files.test.js test/remote.test.js test/status.test.js test/store.test.js test/ui-skills.test.js test/improvements.test.js test/shortcuts.test.js test/models.test.js test/workspace-tabs.test.js test/terminal-links.test.js test/file-kind.test.js test/image-preview.test.js test/markdown-blocks.test.js test/message-patch.test.js test/activity.test.js test/manager.test.js test/attribution.test.js test/revert-hunk.test.js test/text-change.test.js test/worktrees.test.js test/permissions.test.js test/usability.test.js",
+    "test": "node --test test/workspace-setup.test.js test/secret-guard.test.js test/team-secrets.test.js test/desktop-secrets.test.js test/review-comments.test.js test/copy-conflicts.test.js test/verify.test.js test/attention.test.js test/core.test.js test/features.test.js test/workspace.test.js test/race.test.js test/acp-pool.test.js test/registry.test.js test/vscode.test.js test/everyday.test.js test/collaboration.test.js test/cli.test.js test/files.test.js test/remote.test.js test/status.test.js test/store.test.js test/ui-skills.test.js test/improvements.test.js test/shortcuts.test.js test/models.test.js test/workspace-tabs.test.js test/terminal-links.test.js test/file-kind.test.js test/image-preview.test.js test/markdown-blocks.test.js test/message-patch.test.js test/activity.test.js test/manager.test.js test/attribution.test.js test/revert-hunk.test.js test/text-change.test.js test/worktrees.test.js test/permissions.test.js test/usability.test.js",
     "test:e2e": "node test/e2e/real-handoff.js claude codex",
     "ui:dev": "npm --prefix ui run dev",
     "vscode:build": "npm run build:ui && node vscode/build.js",
@@ -29,7 +29,8 @@
     "electron-builder": "26.17.0"
   },
   "dependencies": {
-    "@lydell/node-pty": "1.1.0"
+    "@lydell/node-pty": "1.1.0",
+    "age-encryption": "0.3.1"
   },
   "author": {
     "name": "Tributary contributors",

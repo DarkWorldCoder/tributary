@@ -128,6 +128,13 @@ const API = {
   gitInfo: (p) => hub.gitInfo(p),
   fileDiff: (p, rel) => hub.fileDiff(p, rel),
   syncInstructions: (p) => hub.syncInstructions(p),
+  // Team secrets: names, members and keys only; decrypted values never come back to the window.
+  teamSecrets: (p) => hub.teamSecrets.status(knownProject(p)),
+  createTeamKey: () => hub.teamSecrets.createKey(),
+  startTeamSecrets: (p, name) => hub.teamSecrets.start(knownProject(p), name),
+  setTeamSecret: (p, name, value) => hub.teamSecrets.setValue(knownProject(p), name, value),
+  addTeamMember: (p, member) => hub.teamSecrets.addMember(knownProject(p), member),
+  removeTeamMember: (p, recipient) => hub.teamSecrets.removeMember(knownProject(p), recipient),
   async pickProject() {
     const r = await dialog.showOpenDialog(win, { title: 'Add project folder', properties: ['openDirectory', 'createDirectory'] });
     if (r.canceled || !r.filePaths[0]) return null;
@@ -206,9 +213,9 @@ const API = {
     if (!inside(p, target)) throw new Error('Path outside project');
     openInEditor(e, { path: target, line }); return true;
   },
-  createTerminal({ cwd, cols, rows, command } = {}) {
+  async createTerminal({ cwd, cols, rows, command } = {}) {
     const dir = cwd && hub.project(cwd) ? cwd : (cwd && fs.existsSync(cwd) ? cwd : app.getPath('home'));
-    const id = terminals.create({ cwd: dir, cols, rows, env: hub.workspaceEnvFor(dir) }); // a copy's own ports
+    const id = terminals.create({ cwd: dir, cols, rows, env: { ...await hub.teamEnvFor(dir), ...hub.workspaceEnvFor(dir) } }); // team secrets, a copy's own ports
     // Type the command once the shell has printed its prompt (or after 2 s), not after a fixed guess.
     if (command) {
       let sent = false; let timer = null;

@@ -27,7 +27,7 @@ const ls = {
 
 export type Theme = 'system' | 'light' | 'dark';
 export type InterfaceFont = 'geist' | 'plex' | 'system';
-export type SettingsTab = 'connections' | 'agents' | 'gateways' | 'mcp' | 'skills' | 'appearance' | 'about';
+export type SettingsTab = 'connections' | 'agents' | 'gateways' | 'mcp' | 'skills' | 'secrets' | 'appearance' | 'about';
 
 function useStored<T>(key: string, initial: T) {
   const [v, setV] = React.useState<T>(() => ls.get(key, initial));
