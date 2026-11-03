@@ -26,7 +26,7 @@ function post(name, data) { for (const w of webviews) w.postMessage({ type: 'eve
 function syncWorkspaceProjects() {
   for (const f of vscode.workspace.workspaceFolders || []) { try { hub.addProject(f.uri.fsPath); } catch { /* not a folder */ } }
 }
-const knownProject = (p) => { if (!hub.project(p)) throw new Error('Unknown project'); return p; };
+const knownProject = (p) => { if (!hub.isWorkspace(p)) throw new Error('Unknown project'); return p; };
 const fileUri = (p, rel) => { const abs = path.resolve(knownProject(p), rel); if (!inside(p, abs)) throw new Error('Path outside project'); return vscode.Uri.file(abs); };
 
 const API = {
@@ -55,6 +55,7 @@ const API = {
   renameThread: (id, t) => hub.renameThread(id, t),
   deleteThread: (id) => hub.deleteThread(id),
   markThreadSeen: (id) => hub.markThreadSeen(id),
+  createWorktree: (id) => hub.createWorktree(id), worktreeStatus: (id) => hub.worktreeStatus(id), mergeWorktree: (id) => hub.mergeWorktree(id), discardWorktree: (id) => hub.discardWorktree(id),
   removeProject: () => false,
   async pickProject() { const r = await vscode.window.showOpenDialog({ canSelectFolders: true, canSelectFiles: false, openLabel: 'Open folder in Tributary' }); if (!r?.[0]) return null; hub.addProject(r[0].fsPath); return r[0].fsPath; },
   send: (o) => hub.send(o).then((m) => ({ id: m.id, ok: m.ok })),
