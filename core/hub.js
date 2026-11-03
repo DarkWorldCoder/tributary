@@ -183,7 +183,8 @@ class Hub extends EventEmitter {
       .sort((a, b) => b.updatedAt - a.updatedAt)
       .map((t) => {
         const running = this.running.has(t.id) || this.teams.has(t.id);
-        return { id: t.id, title: t.title, updatedAt: t.updatedAt, lastAgent: t.lastAgent, count: t.messages.length, running, agents: Object.keys(t.agentSessions || {}), status: threadStatus(t, { running }) };
+        const { count, last } = this.store.summary(t); // from the database, without loading the thread's messages
+        return { id: t.id, title: t.title, updatedAt: t.updatedAt, lastAgent: t.lastAgent, count, running, agents: Object.keys(t.agentSessions || {}), status: threadStatus({ seenAt: t.seenAt, messages: last ? [last] : [] }, { running }) };
       });
   }
   // Another process (the CLI, a second window) saved threads or settings: refresh whatever shows them.
