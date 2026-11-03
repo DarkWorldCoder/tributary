@@ -33,6 +33,7 @@ const { activityOf, watchActivity } = require('./activity');
 const { judgeRace } = require('./manager');
 const { lineAuthors, revertTurnHunk } = require('./attribution');
 const worktrees = require('./worktrees');
+const { copyIncluded } = require('./workspace-setup');
 
 const attachments = require('./attachments');
 const uid = () => crypto.randomUUID();
@@ -758,7 +759,9 @@ class Hub extends EventEmitter {
       const short = t.id.replace(/-/g, '').slice(0, 8);
       const repo = fs.realpathSync(root);
       const w = await worktrees.createWorktree(root, { dir: path.join(this.dataDir, 'worktrees', `thread-${short}`, path.basename(repo)), branch: `tributary/thread-${short}` });
-      t.worktree = { ...w, cwd: path.join(w.path, path.relative(repo, fs.realpathSync(t.project))), createdAt: now() };
+      // The project's gitignored .env files (or what .worktreeinclude lists) come along; commits leave them out.
+      const copied = await copyIncluded(root, w.path).catch(() => []);
+      t.worktree = { ...w, cwd: path.join(w.path, path.relative(repo, fs.realpathSync(t.project))), createdAt: now(), copied };
       // Agent sessions belong to the folder they ran in; the next turn joins with a summary instead.
       t.agentSessions = {};
       this.store.save(true);
@@ -769,7 +772,7 @@ class Hub extends EventEmitter {
     const t = this.thread(threadId); if (!t) throw new Error('Thread not found');
     if (!t.worktree) throw new Error('This conversation is not working in a separate copy.');
     const g = await gitInfo(t.project); if (!g) throw new Error('Not a git repository');
-    return { ...(await worktrees.worktreeStatus(g.root, t.worktree)), cwd: t.worktree.cwd, from: t.worktree.from };
+    return { ...(await worktrees.worktreeStatus(g.root, t.worktree)), cwd: t.worktree.cwd, from: t.worktree.from, copied: t.worktree.copied || [] };
   }
   // Into the project's current branch. Refused, with the files named, when it would conflict.
   async mergeWorktree(threadId) {

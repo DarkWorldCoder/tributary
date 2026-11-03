@@ -4,6 +4,7 @@
 // nothing reaches the project folder until the branch is merged back into the project's current branch.
 // Every function takes an optional { host } (core/host.js), like the other git helpers.
 const { localHost } = require('./host');
+const { unignoredCopies } = require('./workspace-setup');
 
 const gitRaw = async (host, cwd, args, { env } = {}) => {
   const r = await host.exec('git', args, { cwd, env, timeout: 120000, maxBuffer: 64 * 1024 * 1024 });
@@ -24,9 +25,11 @@ async function identity(host, cwd) {
     ...(email.code ? { GIT_AUTHOR_EMAIL: 'tributary@localhost', GIT_COMMITTER_EMAIL: 'tributary@localhost' } : {}),
   };
 }
-// Commit everything not yet committed in the copy to its branch.
-async function commitWork(host, dir, message) {
-  await git(host, dir, ['add', '-A']);
+// Commit everything not yet committed in the copy to its branch, except files copied in from the project
+// (.env and the like), even if an agent un-ignored them.
+async function commitWork(host, dir, message, copied) {
+  const skip = host.remote ? [] : await unignoredCopies(dir, copied);
+  await git(host, dir, ['add', '-A', '--', '.', ...skip.map((rel) => `:(exclude,literal)${rel}`)]);
   if ((await gitRaw(host, dir, ['diff', '--cached', '--quiet'])).code) await git(host, dir, ['commit', '--no-verify', '-q', '-m', message], { env: await identity(host, dir) });
 }
 const DEFAULT_MESSAGE = 'Work from a Tributary conversation';
@@ -72,9 +75,9 @@ const conflictError = (message, conflicts) => Object.assign(new Error(message), 
  * conflict, or overwrite uncommitted changes in the project folder, is refused with the files named.
  * -> { into, branch, commit, files } (files: paths the merge changed in the project, [] when there was nothing new)
  */
-async function mergeWorktree(root, { path: dir, branch }, { message = DEFAULT_MESSAGE, host = localHost } = {}) {
+async function mergeWorktree(root, { path: dir, branch, copied }, { message = DEFAULT_MESSAGE, host = localHost } = {}) {
   if (!(await host.exists(dir))) throw new Error(`The separate copy at ${dir} is gone. Discard it to work in the project folder again.`);
-  await commitWork(host, dir, message);
+  await commitWork(host, dir, message, copied);
   const into = await currentBranch(host, root);
   const ours = (await git(host, root, ['rev-parse', 'HEAD'])).trim();
   const theirs = (await git(host, root, ['rev-parse', branch])).trim();
@@ -99,8 +102,8 @@ async function mergeWorktree(root, { path: dir, branch }, { message = DEFAULT_ME
  * Remove the copy's folder and its branch, which loses any work not merged. With keepBranch, work not yet
  * committed is committed to the branch first, and the branch stays.
  */
-async function removeWorktree(root, { path: dir, branch }, { keepBranch = false, message = DEFAULT_MESSAGE, host = localHost } = {}) {
-  if (keepBranch && (await host.exists(dir))) await commitWork(host, dir, message).catch(() => {});
+async function removeWorktree(root, { path: dir, branch, copied }, { keepBranch = false, message = DEFAULT_MESSAGE, host = localHost } = {}) {
+  if (keepBranch && (await host.exists(dir))) await commitWork(host, dir, message, copied).catch(() => {});
   await gitRaw(host, root, ['worktree', 'remove', '--force', dir]);
   await host.rm(dir).catch(() => {});
   await gitRaw(host, root, ['worktree', 'prune']);
