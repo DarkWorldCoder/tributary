@@ -166,7 +166,13 @@ const API = {
   createTerminal({ cwd, cols, rows, command } = {}) {
     const dir = cwd && hub.project(cwd) ? cwd : (cwd && fs.existsSync(cwd) ? cwd : app.getPath('home'));
     const id = terminals.create({ cwd: dir, cols, rows });
-    if (command) setTimeout(() => { try { terminals.write(id, `${command}\r`); } catch {} }, 250);
+    // Type the command once the shell has printed its prompt (or after 2 s), not after a fixed guess.
+    if (command) {
+      let sent = false; let timer = null;
+      const go = () => { if (sent) return; sent = true; clearTimeout(timer); terminals.off('data', first); try { terminals.write(id, `${command}\r`); } catch {} };
+      const first = (d) => { if (d.id === id) { clearTimeout(timer); timer = setTimeout(go, 50); } };
+      terminals.on('data', first); timer = setTimeout(go, 2000);
+    }
     return id;
   },
   termWrite: (id, data) => terminals.write(id, data),
@@ -233,12 +239,19 @@ app.whenReady().then(async () => {
         await new Promise((r) => setTimeout(r, 800));
       }
       // TRIBUTARY_SMOKE_CLICKS="Settings|Agents|Browse agents|3000" clicks those buttons (label or text) before the
-      // screenshot; a number waits that many milliseconds.
+      // screenshot; a number waits that many milliseconds, "type:text" types and "key:control+f" presses keys.
       // Animations are switched off: a background window may never advance them, leaving dialogs invisible.
       const clicks = (process.env.TRIBUTARY_SMOKE_CLICKS || '').split('|').filter(Boolean);
       if (clicks.length) await win.webContents.insertCSS('*, *::before, *::after { animation-duration: 0s !important; transition-duration: 0s !important; }');
       for (const label of clicks) {
         if (/^\d+$/.test(label)) { await new Promise((r) => setTimeout(r, Number(label))); continue; }
+        // "type:some text" types into the focused element; "key:control+f" presses a key with modifiers.
+        if (label.startsWith('type:')) { for (const ch of label.slice(5)) win.webContents.sendInputEvent({ type: 'char', keyCode: ch }); await new Promise((r) => setTimeout(r, 300)); continue; }
+        if (label.startsWith('key:')) {
+          const [keyCode, ...modifiers] = label.slice(4).split('+').reverse();
+          for (const type of ['keyDown', 'char', 'keyUp']) if (type !== 'char' || keyCode.length > 1) win.webContents.sendInputEvent({ type, keyCode, modifiers });
+          await new Promise((r) => setTimeout(r, 500)); continue;
+        }
         await win.webContents.executeJavaScript(`(() => {
           const want = ${JSON.stringify(label)}.toLowerCase();
           const name = (b) => (b.getAttribute('aria-label') || b.textContent || '').trim().toLowerCase();

@@ -57,6 +57,9 @@ function Main() {
 
 export default function App() {
   const s = useStore();
+  // Once opened, the terminal stays mounted (hidden when closed) so its shells and scrollback survive.
+  const [terminalKept, setTerminalKept] = React.useState(false);
+  React.useEffect(() => { if (s.terminalOpen) setTerminalKept(true); }, [s.terminalOpen]);
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const mod = e.ctrlKey || e.metaKey;
@@ -80,7 +83,7 @@ export default function App() {
           <div className="flex min-h-0 flex-1">
             <div className="flex min-w-0 flex-1 flex-col">
               <main className="flex min-h-0 flex-1 flex-col">{<Main />}</main>
-              {s.terminalOpen && s.project && <TerminalPanel />}
+              {s.project && (s.terminalOpen || terminalKept) && <TerminalPanel hidden={!s.terminalOpen} />}
             </div>
             {!s.document && s.panel.open && s.project && <WorkspacePanel />}
             <DocumentPanel />
