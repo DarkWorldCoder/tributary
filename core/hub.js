@@ -69,6 +69,7 @@ class Hub extends EventEmitter {
     this.teams = new Map();   // threadId -> { abort, recipe, steps }
     watchActivity(this); // 'activity' events for the live view
     this.fileWatches = new FileWatches((event) => this.emit('files-changed', event));
+    this.projectChecks = new (require('./project-checks').ProjectChecks)();
   }
 
   async init() {
@@ -296,7 +297,11 @@ class Hub extends EventEmitter {
     return { ...g, apiKey: g.hasKey ? await this.secrets.get(`gateway:${id}`) : '' };
   }
 
-  setSettings(patch) { Object.assign(this.store.data.settings, patch); this.store.save(); this.emit('state'); }
+  setSettings(patch) {
+    if (patch.delegationConcurrency !== undefined && ![1, 2, 4].includes(patch.delegationConcurrency)) throw new Error('Choose 1, 2 or 4 background workers.');
+    if (patch.delegationSource !== undefined && !['inherit', 'native'].includes(patch.delegationSource) && !this.store.data.gateways.some((g) => g.id === patch.delegationSource && !g.direct)) throw new Error('Choose a configured coding-agent source.');
+    Object.assign(this.store.data.settings, patch); this.store.save(); this.emit('state');
+  }
 
   // ---- run a turn
   addAttachments(files) { return attachments.add(this.dataDir, files); }
@@ -355,7 +360,8 @@ class Hub extends EventEmitter {
 
     const proj = this.project(t.project) || { trusted: true };
     // A different gateway means a different model, so don't resume a session made elsewhere.
-    const sourceKey = gateway ? `${agentId}@${gateway.id}` : agentId;
+    const baseSourceKey = gateway ? `${agentId}@${gateway.id}` : agentId;
+    const sourceKey = agent.controlProtocol === 'gemini-acp' && !t.host ? `${baseSourceKey}#transport:acp` : baseSourceKey;
     const sessionModel = model || gateway?.model || '';
     const sessKey = sessionModel ? `${sourceKey}#model:${sessionModel}` : sourceKey;
     const prior = { ...t, agentSessions: { ...t.agentSessions, [agentId]: (t.agentSessions || {})[sessKey] } };
@@ -384,13 +390,13 @@ class Hub extends EventEmitter {
     const beforePrints = git ? fingerprint(git.root, git.changed) : null;
 
     const dir = this.workdir(t);
-    const userMsg = { id: uid(), role: 'user', text: (t.task || team) && typeof displayText === 'string' ? displayText.slice(0, 4000) : text || (planFrom ? 'Run the plan' : ''), ts: now(), target: agentId, attachments: attached.map(({ id, name, mime, size }) => ({ id, name, mime, size })), kind: planOnly ? 'plan' : (planFrom ? 'implement' : 'chat'), team: team || undefined };
+    const userMsg = { id: uid(), role: 'user', text: (t.task || team || t.delegation) && typeof displayText === 'string' ? displayText.slice(0, 4000) : text || (planFrom ? 'Run the plan' : ''), ts: now(), target: agentId, attachments: attached.map(({ id, name, mime, size }) => ({ id, name, mime, size })), kind: planOnly ? 'plan' : (planFrom ? 'implement' : 'chat'), team: team || undefined };
     const msg = { id: uid(), role: 'assistant', agent: agentId, text: '', thinking: '', tools: [], files: [], plan: null, notices: [], error: null, ok: null,
       ts: now(), mode, model: model || gateway?.model || null, gatewayId: gateway?.id || null, gateway: gateway ? gateway.name : null, handoff: p.kind, resumed: !!p.resumeId, kind: planOnly ? 'plan' : (planFrom ? 'implement' : 'chat'), planFrom: planFrom || undefined, team: team || undefined,
       workdir: t.worktree ? dir : undefined };
     if (sharedContext?.text) msg.memoryContext = { characters: sharedContext.characters, budget: sharedContext.budget, sources: sharedContext.sources };
     ac.signal.throwIfAborted();
-    if (t.messages.length === 0 && t.title === 'New thread') t.title = text.split('\n')[0].slice(0, 60) || 'New thread';
+    if (t.messages.length === 0 && t.title === 'New thread') t.title = userMsg.text.split('\n')[0].slice(0, 60) || 'New thread';
     t.messages.push(userMsg, msg); t.updatedAt = now(); t.lastAgent = agentId;
     this.verifyRuns?.get(threadId)?.abort(); // the last turn's checks no longer describe the files
     this.store.save();
@@ -406,18 +412,24 @@ class Hub extends EventEmitter {
     await this.learnSecrets(git?.root);
     const started = now();
     const onEvent = (e) => {
-      if (e.kind === 'permission') { this.secretGuard.redactEvent(e.request); if (this.approvals) e.answer = this.askPermission(t, msg, agent, e.request, ac.signal); return; }
+      if (e.kind === 'permission') { this.secretGuard.redactEvent(e.request); if (this.approvals) e.answer = this.askPermission(t, msg, agent, e.request, ac.signal, e); return; }
       this.apply(t, msg, e);
       this.emit('event', { threadId, messageId: msg.id, event: e, message: msg });
       this.store.save(false, t.id); // only this thread changed: don't re-serialize all history
     };
+    let delegation;
     try {
-      const r = await runTurn({ agent, cwd: dir, prompt: p.prompt, env: this.workspaceEnv(t), images, mode, resumeId: p.resumeId, gateway, model, trusted: proj.trusted !== false, extraDirs: proj.folders || [], onEvent, signal: ac.signal });
+      if (mode !== 'read' && !team && !t.task && !t.delegation && proj.trusted !== false && git && this.store.data.settings.agentDelegation !== false) {
+        try { delegation = await require('./delegation').openDelegation(this, t, msg, { mode, signal: ac.signal }); }
+        catch { msg.notices.push('Background worker commands unavailable for this turn.'); }
+      }
+      const r = await runTurn({ agent, cwd: dir, prompt: delegation ? `${delegation.prompt}\n\n${p.prompt}` : p.prompt, env: { ...this.workspaceEnv(t), ...delegation?.env }, images, mode, resumeId: p.resumeId, gateway, model, fallbackPrompt: p.resumeId && (agent.protocol === 'acp' || agent.controlProtocol === 'gemini-acp') ? plan({ thread: { ...prior, agentSessions: {} }, agentId, text: request, names: this.names(), git }).prompt : undefined, trusted: proj.trusted !== false, extraDirs: proj.folders || [], onEvent, signal: ac.signal });
       if (r.sessionId) t.agentSessions = { ...t.agentSessions, [sessKey]: r.sessionId };
       msg.ok = r.ok;
     } catch (e) {
       onEvent({ kind: 'error', message: e.message }); onEvent({ kind: 'done', ok: false }); msg.ok = false;
     } finally {
+      delegation?.close();
       // An agent that ended its turn (or crashed) while asking no longer needs an answer.
       for (const [id, p] of this.pendingPermissions) if (p.messageId === msg.id) p.settle('cancelled', null);
       // Where the turn ended: blame and the Changes tab stop here, so later edits aren't credited to this agent.
@@ -480,16 +492,20 @@ class Hub extends EventEmitter {
     this.verifyRuns?.get(threadId)?.abort();
     const team = this.teams.get(threadId); if (team) team.abort.abort();
     const ac = this.running.get(threadId); if (ac) ac.abort();
+    const worker = this.thread(threadId); if (worker?.delegation && (ac || worker.delegation.state === 'starting')) worker.delegation.cancelled = true;
+    for (const child of this.store.data.threads.filter((t) => t.delegation?.parentThreadId === threadId)) {
+      if (this.running.has(child.id) || child.delegation.state === 'starting') { child.delegation.cancelled = true; this.stop(child.id); }
+    }
   }
 
   // ---- tool permission requests (ACP agents; see core/acp.js and docs/TOOL_APPROVAL.md)
   // A request waits on the turn until the person answers, the turn is stopped, or the turn ends.
   // "Always" is remembered for the rest of the agent session: edits as a group, anything else by
   // its exact command (or title), on top of the agent's own allow_always option.
-  askPermission(t, msg, agent, request, signal) {
+  askPermission(t, msg, agent, request, signal, event) {
     const scope = `${t.id}\0${request.sessionId || ''}`;
-    const key = request.kind === 'edit' ? 'edit' : `${request.kind}\0${request.command || request.title}`;
-    if (this.alwaysAllowed.get(scope)?.has(key)) return Promise.resolve('always');
+    const key = request.kind === 'edit' ? 'edit' : `${request.kind}\0${request.command || request.detail || request.title}`;
+    if (!request.questions && this.alwaysAllowed.get(scope)?.has(key)) return Promise.resolve('always');
     const req = { id: uid(), threadId: t.id, messageId: msg.id, agent: agent.id, ...request, status: 'pending', ts: now() };
     (msg.permissions || (msg.permissions = [])).push(req);
     return new Promise((resolve) => {
@@ -504,6 +520,7 @@ class Hub extends EventEmitter {
       };
       const onAbort = () => settle('cancelled', null); // ACP: a cancelled turn answers its requests "cancelled"
       this.pendingPermissions.set(req.id, { threadId: t.id, messageId: msg.id, request: req, settle });
+      if (event) event.withdraw = () => settle('cancelled', null);
       if (signal.aborted) { onAbort(); return; }
       signal.addEventListener('abort', onAbort, { once: true });
       this.changedPermission(t, msg, req);
@@ -524,6 +541,12 @@ class Hub extends EventEmitter {
   answerPermission(id, choice) {
     const p = this.pendingPermissions.get(id);
     if (!p) throw new Error('That request is no longer waiting for an answer.');
+    if (p.request.questions && choice !== 'reject') {
+      const answers = choice && typeof choice === 'object' && choice.answers;
+      if (!answers || typeof answers !== 'object' || Array.isArray(answers) || Object.keys(answers).length !== p.request.questions.length || p.request.questions.some((q) => typeof answers[q.question] !== 'string' || !answers[q.question].trim() || answers[q.question].length > 4000)) throw new Error('Answer each question before continuing.');
+      const clean = Object.fromEntries(p.request.questions.map((q) => [q.question, answers[q.question].trim()]));
+      p.request.answers = clean; p.settle('allowed', { answers: clean }); return p.request;
+    }
     const option = p.request.options.find((o) => o.optionId === choice);
     if (!option && !['once', 'always', 'reject'].includes(choice)) throw new Error('Choose once, always or reject.');
     const kind = option ? option.kind : { once: 'allow_once', always: 'allow_always', reject: 'reject_once' }[choice];
@@ -548,6 +571,7 @@ class Hub extends EventEmitter {
     const t = this.thread(threadId); if (!t) throw new Error('Thread not found');
     if (this.teams.has(threadId) || this.running.has(threadId)) throw new Error('This thread is busy. Stop it first.');
     validateTeam(this, team);
+    if (!t.messages.length && t.title === 'New thread') t.title = team.task.trim().split('\n')[0].slice(0, 80);
     const record = { id: uid(), recipe: team.recipe, task: team.task, roles: team.roles, status: 'running', startedAt: now(), ownerPid: process.pid, steps: [] };
     t.teamRuns = [...(t.teamRuns || []), record].slice(-20); this.store.save(true);
     const state = { recipe: team.recipe, steps: [], abort: new AbortController() };
@@ -560,10 +584,11 @@ class Hub extends EventEmitter {
         record.steps = state.steps.map((step) => ({ ...step })); this.store.save(true);
         this.emit('state');
       } });
-      record.status = result.verdict === 'approved' || result.verdict === 'answered' ? 'done' : 'attention';
+      const successful = ['approved', 'answered', 'merged'].includes(result.verdict);
+      record.status = state.abort.signal.aborted || result.verdict === 'stopped' ? 'stopped' : successful ? 'done' : result.verdict === 'failed' ? 'failed' : 'attention';
       record.result = result; record.finishedAt = now(); this.store.save(true);
-      const text = { merged: 'Every piece was merged.', partial: 'Some pieces were merged; the others need attention.', failed: 'No piece could be merged.', approved: 'The reviewer approved the work.', changes: 'The reviewer still requests changes after the last round.', unknown: 'The reviewer gave no clear verdict.', answered: 'Every agent answered and the answers were combined.' }[result.verdict];
-      this.notify({ kind: result.verdict === 'approved' || result.verdict === 'answered' ? 'done' : 'attention', threadId, title: `${name} finished`, body: `${t.title}. ${text}` });
+      const text = { stopped: 'Background workers stopped.', merged: 'Every piece was merged.', partial: 'Some pieces were merged; the others need attention.', failed: 'No piece could be merged.', approved: 'The reviewer approved the work.', changes: 'The reviewer still requests changes after the last round.', unknown: 'The reviewer gave no clear verdict.', answered: 'Every agent answered and the answers were combined.' }[result.verdict];
+      this.notify({ kind: record.status === 'stopped' ? 'info' : successful ? 'done' : record.status === 'failed' ? 'failed' : 'attention', threadId, title: `${name} ${record.status === 'stopped' ? 'stopped' : 'finished'}`, body: `${t.title}. ${text}` });
       return result;
     } catch (e) {
       record.status = state.abort.signal.aborted ? 'stopped' : 'failed'; record.error = e.message; record.finishedAt = now(); this.store.save(true);
@@ -631,6 +656,10 @@ class Hub extends EventEmitter {
   }
 
   // ---- files
+  projectCheckTools(dir) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.projectChecks.catalog(dir); }
+  projectCheckState(dir) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.projectChecks.state(dir); }
+  runProjectCheck(dir, id) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.projectChecks.run(dir, id); }
+  stopProjectCheck(dir) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.projectChecks.stop(dir); }
   async readDirectory(dir, rel, options) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return folderFiles.readDirectory(dir, rel, options); }
   async readFile(dir, rel) {
     if (!this.isWorkspace(dir)) throw new Error('Unknown project');

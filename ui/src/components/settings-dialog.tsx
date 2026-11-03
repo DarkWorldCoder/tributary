@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { toast } from 'sonner';
-import { BookOpen, Cpu, Download, ExternalLink, FilePlus2, Info, KeyRound, LayoutGrid, Monitor, Moon, Palette, Pencil, Plug, Plus, RefreshCw, Share2, X, Sparkles, Sun, Trash2, Waypoints } from 'lucide-react';
+import { BookOpen, Keyboard, Cpu, Download, ExternalLink, FilePlus2, Info, KeyRound, LayoutGrid, Monitor, Moon, Palette, Pencil, Plug, Plus, RefreshCw, Share2, X, Sparkles, Sun, Trash2, Waypoints } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { AttentionSettings } from '@/components/needs-you';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { AgentAvatar } from '@/components/agent-avatar';
 import { cn } from '@/lib/utils';
@@ -22,6 +23,7 @@ import { useStore, type SettingsTab, type Theme, type InterfaceFont } from '@/st
 import type { Gateway, Protocol, RegistryAgent, Thread, UiSkill } from '@/types';
 import { useRunInTerminal } from '@/hooks/use-run-in-terminal';
 import { setupCommand } from '@/lib/agent-setup.mjs';
+import { ShortcutSettings } from '@/components/shortcut-settings';
 import { Connections } from '@/components/connections';
 
 const NAV: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
@@ -31,6 +33,7 @@ const NAV: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
   { id: 'mcp', label: 'MCP servers', icon: <Plug /> },
   { id: 'skills', label: 'Skills', icon: <Sparkles /> },
   { id: 'appearance', label: 'Appearance', icon: <Palette /> },
+  { id: 'shortcuts', label: 'Keyboard shortcuts', icon: <Keyboard /> },
   { id: 'about', label: 'About', icon: <Info /> },
 ];
 const MCP_AGENTS = ['claude', 'codex', 'gemini', 'antigravity'];
@@ -125,6 +128,12 @@ function AgentsTab() {
       </>}>
       <BrowseAgents open={browsing} onOpenChange={setBrowsing} />
       <AttentionSettings />
+      <section className="space-y-3 rounded-xl border p-4" aria-label="Background agent settings">
+        <div className="flex items-center justify-between gap-3"><label htmlFor="agent-delegation" className="text-[13px] font-medium">Background subagents</label><Switch id="agent-delegation" checked={s.st?.settings.agentDelegation !== false} onCheckedChange={(checked) => { void s.hub.call('setSettings', { agentDelegation: checked }).catch((e: Error) => toast.error(e.message)); }} /></div>
+        <div className="grid gap-3 sm:grid-cols-2"><Field><FieldLabel htmlFor="delegation-workers" className="text-xs">Workers at once</FieldLabel><NativeSelect className="w-full" id="delegation-workers" value={Number(s.st?.settings.delegationConcurrency) || 2} onChange={(e) => { void s.hub.call('setSettings', { delegationConcurrency: Number(e.target.value) }).catch((e: Error) => toast.error(e.message)); }}>{[1, 2, 4].map((n) => <NativeSelectOption key={n} value={n}>{n} {n === 1 ? 'worker' : 'workers'}</NativeSelectOption>)}</NativeSelect></Field>
+        <Field><FieldLabel htmlFor="delegation-source" className="text-xs">Worker model source</FieldLabel><NativeSelect className="w-full" id="delegation-source" value={String(s.st?.settings.delegationSource || 'inherit')} onChange={(e) => { void s.hub.call('setSettings', { delegationSource: e.target.value }).catch((error: Error) => toast.error(error.message)); }}><NativeSelectOption value="inherit">Use chat’s provider</NativeSelectOption><NativeSelectOption value="native">Agent’s own account</NativeSelectOption>{(s.st?.gateways || []).filter((g) => !g.direct).map((g) => <NativeSelectOption key={g.id} value={g.id}>{g.name}</NativeSelectOption>)}</NativeSelect></Field></div>
+        <p className="text-xs text-muted-foreground">Applies to new workers. Each task can choose a compatible source.</p>
+      </section>
       <div className="flex flex-col gap-2">
         {agents.map((a) => (
           <Item key={a.id} variant="outline" className="items-start">
@@ -141,7 +150,7 @@ function AgentsTab() {
                 {!!a.gateways?.length && <Button size="xs" variant="ghost" onClick={() => { s.setAgentId(a.id); s.openSettings('gateways'); }}>Model source</Button>}
                 {a.docs && <Button size="xs" variant="ghost" onClick={() => s.hub.call('openExternal', a.docs)}>{a.available ? 'Help' : 'Install guide'}<ExternalLink /></Button>}
               </div>
-              {a.available && <details className="mt-2 text-xs text-muted-foreground"><summary className="cursor-pointer">Details</summary><p className="mt-1 break-all font-mono">{a.version} · {a.path}</p><p>{a.protocol}</p></details>}
+              {a.available && <details className="mt-2 text-xs text-muted-foreground"><summary className="cursor-pointer">Details</summary><p className="mt-1 break-all font-mono">{a.version} · {a.path}</p><p>{a.protocol}</p>{a.capabilities && <p className="mt-1">{[a.capabilities.tools && 'Live tools', a.capabilities.plans && 'Plans', a.capabilities.approvals && 'Approvals in chat', a.capabilities.questions && 'Question forms', a.capabilities.resume && 'Session continuation'].filter(Boolean).join(' · ') || 'Text responses'}</p>}</details>}
               {a.note && <ItemDescription className="text-xs text-warning">{a.note}</ItemDescription>}
             </ItemContent>
           </Item>
@@ -324,20 +333,32 @@ function SkillsTab() {
       }
       s.setDraft(`${guide.instructions}\n\n${s.draft}`);
       s.setSettings({ ...s.settings, open: false });
-      toast.success('UI guidance added to your message', { description: 'Add your task, review the message, then send it when ready.' });
+      toast.success('Guidance added to your message');
     } catch (e) { setGuideError((e as Error).message); } finally { setUsing(null); }
   };
+  const [section, setSection] = React.useState('included');
+  const [forAgent, setForAgent] = React.useState('all');
   const all = ['antigravity', 'claude', 'codex', 'gemini'].filter((id) => s.agentOf(id).available);
-  const shown = (list ?? []).filter((k) => !q || `${k.name} ${k.description}`.toLowerCase().includes(q.toLowerCase()));
+  const shown = (list ?? []).filter((k) => (forAgent === 'all' || k.agents.includes(forAgent)) && (!q || `${k.name} ${k.title} ${k.description}`.toLowerCase().includes(q.toLowerCase())));
   return (
-    <Section title="Skills" description="Add guidance to your message or manage installed skills.">
-      <Input value={q} onChange={(e) => { setQ(e.target.value); setLimit(50); }} placeholder="Search skills…" aria-label="Search skills" />
-      <section aria-labelledby="built-in-ui-skills" className="space-y-3">
-        <div><h3 id="built-in-ui-skills" className="text-sm font-semibold">UI skills included with Tributary</h3><p className="mt-1 text-sm text-pretty text-muted-foreground">Add the full guidance to your next message. Works with any assistant; nothing runs until you send.</p></div>
-        <div className="grid gap-3 lg:grid-cols-2">{guides.filter((g) => `${g.title} ${g.description}`.toLowerCase().includes(q.toLowerCase())).map((g) => <div key={g.id} className="flex min-w-0 flex-col items-start gap-3 rounded-xl border bg-card p-4"><div><h4 className="text-sm font-medium text-balance">{g.title}</h4><p className="mt-1 text-sm leading-5 text-pretty text-muted-foreground">{g.description}</p></div><Button size="sm" variant="outline" className="mt-auto" disabled={!!using} onClick={() => useGuide(g.id)} aria-label={`Use ${g.title} guidance`}>{using === g.id ? 'Adding…' : 'Use guidance'}</Button></div>)}</div>
-        {guideError && <p role="alert" className="text-sm text-destructive">{guideError}</p>}
-      </section>
-      <div className="border-t pt-5"><h3 className="text-sm font-semibold">Installed agent skills</h3><p className="mt-1 text-sm text-pretty text-muted-foreground">Each agent has its own skills folder. “Share with all” creates links in the other agents’ folders without overwriting existing skills.</p></div>
+    <Section title="Skills">
+      <Tabs value={section} onValueChange={setSection} className="gap-4">
+        <TabsList aria-label="Skill libraries" variant="line" className="h-10 w-full justify-start border-b p-0">
+          <TabsTrigger value="included" className="h-10 flex-none px-3 text-[13px]">Included<span className="text-xs tabular-nums text-muted-foreground">{guides.length}</span></TabsTrigger>
+          <TabsTrigger value="installed" className="h-10 flex-none px-3 text-[13px]">Installed<span className="text-xs tabular-nums text-muted-foreground">{list?.length ?? '…'}</span></TabsTrigger>
+        </TabsList>
+        <div className="flex flex-wrap gap-2"><Input value={q} onChange={(e) => { setQ(e.target.value); setLimit(50); }} placeholder="Find a skill…" aria-label="Search skills" className="min-w-0 flex-1" />{section === 'installed' && <NativeSelect aria-label="Filter skills by agent" value={forAgent} onChange={(e) => { setForAgent(e.target.value); setLimit(50); }}><NativeSelectOption value="all">All agents</NativeSelectOption>{s.ready.map((agent) => <NativeSelectOption key={agent.id} value={agent.id}>{agent.name}</NativeSelectOption>)}</NativeSelect>}</div>
+        <TabsContent value="included" className="space-y-3">
+          <p className="text-xs text-muted-foreground">Add guidance to your next message.</p>
+          <div className="divide-y rounded-xl border">{guides.filter((g) => `${g.title} ${g.description}`.toLowerCase().includes(q.toLowerCase())).map((g) => <div key={g.id} className="flex min-w-0 items-center gap-3 px-3 py-3">
+            <Sparkles className="size-4 shrink-0 text-muted-foreground" /><div className="min-w-0 flex-1"><h3 className="text-[13px] font-medium">{g.title}</h3><details className="mt-1 text-xs text-muted-foreground"><summary className="w-fit cursor-pointer">Details</summary><p className="mt-2 leading-5 text-pretty">{g.description}</p></details></div>
+            <Button size="sm" variant="outline" disabled={!!using} onClick={() => useGuide(g.id)} aria-label={`Use ${g.title} guidance`}>{using === g.id ? 'Adding…' : 'Add to chat'}</Button>
+          </div>)}</div>
+          {!guides.some((g) => `${g.title} ${g.description}`.toLowerCase().includes(q.toLowerCase())) && !guideError && <p className="py-5 text-center text-xs text-muted-foreground">No matching guidance.</p>}
+          {guideError && <p role="alert" className="text-sm text-destructive">{guideError}</p>}
+        </TabsContent>
+        <TabsContent value="installed" className="space-y-3">
+          <p className="text-xs text-muted-foreground">Skills available to your agents.</p>
       {loadError ? <div role="alert" className="text-sm"><p className="text-destructive">{loadError}</p><Button size="sm" variant="outline" className="mt-2" onClick={() => { setLoadError(''); load().catch((e: Error) => setLoadError(e.message)); }}>Try again</Button></div> : list == null ? <div className="flex flex-col gap-2">{[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-14 rounded-xl" />)}</div> : (
         <div className="flex flex-col gap-2">
           {shown.slice(0, limit).map((k) => {
@@ -346,12 +367,12 @@ function SkillsTab() {
               <Item key={k.name} variant="outline" size="sm" className="flex-wrap">
                 <ItemContent className="min-w-0">
                   <ItemTitle className="break-words text-sm">{k.title || k.name}</ItemTitle>
-                  {k.description && <ItemDescription className="line-clamp-2 text-xs">{k.description}</ItemDescription>}
+                  {k.description && <ItemDescription className="line-clamp-1 text-xs">{k.description}</ItemDescription>}
                 </ItemContent>
                 <ItemActions className="shrink-0">
                   <span className="flex -space-x-1" title={`Available to ${k.agents.map((a) => s.agentOf(a).name).join(', ')}`}>{k.agents.filter((a) => s.agentOf(a).available).map((a) => <AgentAvatar key={a} agent={s.agentOf(a)} size="xs" className="ring-2 ring-background" />)}</span>
                   {missing.length > 0 && (
-                    <Button size="xs" variant="outline" onClick={async () => { try { const c = await s.hub.call<string[]>('shareSkill', k.name, s.project); toast.success(c.length ? `Shared ${k.name} with every agent` : 'Already shared'); load(); } catch (e) { toast.error((e as Error).message); } }}><Share2 /> Share with all</Button>
+                    <Button size="xs" variant="outline" onClick={async () => { try { const c = await s.hub.call<string[]>('shareSkill', k.name, s.project); toast.success(c.length ? `Shared ${k.name} with every agent` : 'Already shared'); load(); } catch (e) { toast.error((e as Error).message); } }} aria-label={`Share ${k.name} with all agents`}><Share2 className="size-3.5" /><span className="hidden sm:inline">Share</span></Button>
                   )}
                   <Button size="xs" variant="ghost" onClick={() => { s.setDraft(`Use the ${k.name} skill. ${s.draft}`); s.setSettings({ ...s.settings, open: false }); }}>Use</Button>
                 </ItemActions>
@@ -362,6 +383,8 @@ function SkillsTab() {
           {!shown.length && <Empty className="border"><EmptyHeader><EmptyTitle>{q ? 'No skills match' : 'No skills found'}</EmptyTitle></EmptyHeader></Empty>}
         </div>
       )}
+        </TabsContent>
+      </Tabs>
     </Section>
   );
 }
@@ -373,6 +396,7 @@ function AppearanceTab() {
   return (
     <Section title="Appearance" description="Choose how Tributary looks.">
       <FieldGroup className="max-w-md">
+        <Field><FieldLabel htmlFor="ui-density">Interface spacing</FieldLabel><NativeSelect id="ui-density" value={s.uiDensity} onChange={(event) => s.setUiDensity(event.target.value as 'compact' | 'comfortable')}><NativeSelectOption value="compact">Compact</NativeSelectOption><NativeSelectOption value="comfortable">Comfortable</NativeSelectOption></NativeSelect></Field>
         <Field><FieldLabel htmlFor="interface-font">Interface font</FieldLabel>
           <NativeSelect id="interface-font" value={s.interfaceFont} onChange={(e) => s.setInterfaceFont(e.target.value as InterfaceFont)}>
             <NativeSelectOption value="geist">Geist — clean and compact</NativeSelectOption><NativeSelectOption value="plex">IBM Plex Sans — familiar and open</NativeSelectOption><NativeSelectOption value="system">System font</NativeSelectOption>
@@ -399,7 +423,7 @@ function AboutTab() {
   return (
     <Section title="About Tributary">
       <div className="flex items-center gap-4"><img src="./logo.svg" alt="" className="size-14 rounded-2xl" /><div><div className="text-lg font-semibold">Tributary 0.1.0</div><div className="text-sm text-muted-foreground">Every coding agent, one stream of work.</div></div></div>
-      <p className="max-w-prose text-sm text-muted-foreground">Tributary runs the coding agents you already have through their official headless and protocol modes. When you switch agents mid-thread, the next one gets a compact summary of the conversation and the git working tree, so no agent starts from zero. Before each turn that may edit files, Tributary saves a git checkpoint you can restore.</p>
+      <p className="max-w-prose text-sm text-muted-foreground">Local agents, shared context, and restorable Git checkpoints.</p>
       <p className="text-sm text-muted-foreground">Custom agents: <span className="font-mono text-xs break-all">{s.st?.customAgentsFile}</span></p>
     </Section>
   );
@@ -409,15 +433,15 @@ export function SettingsDialog() {
   const s = useStore(); const [query, setQuery] = React.useState('');
   const returnFocus = React.useRef<HTMLElement | null>(null);
   React.useEffect(() => { if (s.settings.open) setQuery(''); }, [s.settings.open]);
-  const keywords: Record<string, string> = { connections: 'assistant provider local model account', agents: 'coding install custom', gateways: 'model endpoint api', mcp: 'tools servers', skills: 'instructions extensions ui layout writing components usability design accessibility', appearance: 'font typography reading size theme dark light system', about: 'version information' };
+  const keywords: Record<string, string> = { connections: 'assistant provider local model account', agents: 'coding install custom', gateways: 'model endpoint api', mcp: 'tools servers', skills: 'instructions extensions ui layout writing components usability design accessibility', appearance: 'font typography reading size theme dark light system density compact comfortable spacing', shortcuts: 'keyboard keys hotkeys mac windows linux send enter customize', about: 'version information' };
   const matches = NAV.filter((n) => `${n.label} ${keywords[n.id] || ''}`.toLowerCase().includes(query.trim().toLowerCase()));
   const tab = query.trim() ? (matches.find((n) => n.id === s.settings.tab)?.id || matches[0]?.id) : s.settings.tab;
   return (
     <Dialog open={s.settings.open} onOpenChange={(open) => s.setSettings({ ...s.settings, open })}>
-      <DialogContent showCloseButton={false} onOpenAutoFocus={() => { returnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; }} onCloseAutoFocus={(event) => { if (returnFocus.current?.isConnected && returnFocus.current !== document.body) { event.preventDefault(); returnFocus.current.focus(); } }} className="flex h-[min(720px,90vh)] w-[min(980px,calc(100vw-2rem))] max-w-none flex-col gap-0 overflow-hidden p-0 sm:max-w-none md:flex-row">
+      <DialogContent showCloseButton={false} onOpenAutoFocus={() => { returnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; }} onCloseAutoFocus={(event) => { if (returnFocus.current?.isConnected && returnFocus.current !== document.body) { event.preventDefault(); returnFocus.current.focus(); } }} className="flex h-[min(720px,90vh)] w-[min(980px,calc(100vw-2rem))] max-w-none flex-col gap-0 overflow-hidden p-0 sm:max-w-none md:flex-row max-sm:[&_button]:min-h-11 max-sm:[&_select]:min-h-11">
         <DialogTitle className="sr-only">Settings</DialogTitle>
         <DialogDescription className="sr-only">Agents, model gateways, MCP servers, skills and appearance</DialogDescription>
-        <nav className="flex shrink-0 gap-1 overflow-x-auto border-b bg-sidebar p-2 pr-10 md:pr-3 md:w-52 md:flex-col md:border-r md:border-b-0 md:p-3">
+        <nav aria-label="Settings sections" className="hidden shrink-0 gap-1 bg-sidebar md:flex md:w-52 md:flex-col md:border-r md:p-3">
           <div className="hidden px-2 pt-1 pb-3 font-semibold md:block">Settings</div>
           {matches.map((n) => (
             <button key={n.id} onClick={() => s.setSettings({ open: true, tab: n.id })} aria-current={tab === n.id ? 'page' : undefined}
@@ -425,6 +449,7 @@ export function SettingsDialog() {
           ))}
         </nav>
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <div className="flex shrink-0 items-center gap-3 border-b bg-sidebar px-4 py-3 md:hidden"><span className="text-sm font-semibold">Settings</span><NativeSelect aria-label="Settings section" className="w-full min-w-0 flex-1" value={tab || ''} disabled={!matches.length} onChange={(e) => s.setSettings({ open: true, tab: e.target.value as SettingsTab })}>{!matches.length && <NativeSelectOption value="">No matching sections</NativeSelectOption>}{matches.map((n) => <NativeSelectOption key={n.id} value={n.id}>{n.label}</NativeSelectOption>)}</NativeSelect></div>
           <header className="flex shrink-0 items-center gap-2 border-b px-4 py-3 md:px-6"><Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search settings…" aria-label="Find a settings section" className="min-w-0 flex-1 max-sm:h-11" /><DialogClose asChild><Button variant="ghost" size="icon-sm" aria-label="Close settings" className="shrink-0 max-sm:size-11"><X /></Button></DialogClose></header>
           <div className="min-h-0 flex-1 overflow-y-auto p-5 md:p-6">
           {!tab && <p className="text-sm text-muted-foreground">No settings match “{query}”. Try font, appearance, agents or connections.</p>}
@@ -434,6 +459,7 @@ export function SettingsDialog() {
           {tab === 'mcp' && <McpTab />}
           {tab === 'skills' && <SkillsTab />}
           {tab === 'appearance' && <AppearanceTab />}
+          {tab === 'shortcuts' && <ShortcutSettings />}
           {tab === 'about' && <AboutTab />}
           </div>
         </div>

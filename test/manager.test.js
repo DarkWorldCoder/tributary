@@ -105,3 +105,99 @@ test('a judge agent compares race candidates by their diffs and tests, and its p
   await assert.rejects(hub.judgeRace(t.id, 'nope', 'judge'), /Race not found/);
   hub.store.save(true);
 });
+
+test('the lead can assign selected workers, and cannot invent or enable other agents', () => {
+  const plan = { tasks: [{ id: 'api', title: 'API', agent: 'codex' }, { id: 'ui', title: 'UI', agent: 'claude' }] };
+  assert.deepStrictEqual(parsePlan(JSON.stringify(plan), ['claude', 'codex']).map((t) => t.agent), ['codex', 'claude']);
+  assert.throws(() => parsePlan(JSON.stringify(plan), ['claude']), /selected worker/);
+  assert.throws(() => parsePlan(JSON.stringify({ tasks: [{ id: 'bad', agent: 12 }] }), ['claude']), /selected worker/);
+  assert.strictEqual(parsePlan(JSON.stringify({ tasks: [{ id: 'old', title: 'Old plan' }] }), ['claude'])[0].agent, null);
+});
+
+test('delegated workers honor lead assignments, a concurrency cap and completed dependency results', async (t) => {
+  const proj = repo(); const data = tmp(); const logs = tmp(); const log = path.join(logs, 'workers.log');
+  const hub = new Hub({ dataDir: data, secrets: new MemorySecrets(), home: logs });
+  t.after(() => { hub.store.close(); for (const d of [proj, data, logs]) fs.rmSync(d, { recursive: true, force: true }); });
+  const plan = { tasks: [
+    { id: 'ui', title: 'Build UI', instructions: 'Create ui.txt', agent: 'worker-b', files: ['ui.txt'] },
+    { id: 'api', title: 'Build API', instructions: 'Create api.txt', agent: 'worker-a', files: ['api.txt'] },
+    { id: 'link', title: 'Link results', instructions: 'Check both dependency results; create link.txt', agent: 'worker-b', files: ['link.txt'], dependsOn: ['ui', 'api'] },
+  ] };
+  const delegate = (id) => agent(id, `let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{
+    const fs=require('fs'); const part=/Your part \\(id: (\\w+)\\)/.exec(s)[1];
+    fs.appendFileSync(${JSON.stringify(log)},JSON.stringify({part,agent:${JSON.stringify(id)},state:'start',at:Date.now()})+'\\n');
+    if(part==='link'&&(!s.includes('## Completed dependencies')||!s.includes('finished ui by worker-b')||!s.includes('finished api by worker-a')||!fs.existsSync('ui.txt')||!fs.existsSync('api.txt')))process.exit(2);
+    if(!s.includes('Files you will likely change: '+part+'.txt'))process.exit(3);
+    fs.writeFileSync(part+'.txt',${JSON.stringify(id)});
+    setTimeout(()=>{fs.appendFileSync(${JSON.stringify(log)},JSON.stringify({part,agent:${JSON.stringify(id)},state:'end',at:Date.now()})+'\\n');console.log(JSON.stringify({type:'item.completed',item:{id:'answer',type:'agent_message',text:'finished '+part+' by '+${JSON.stringify(id)}}}));console.log(JSON.stringify({type:'turn.completed'}));},100);
+  });`);
+  const lead = agent('lead', `let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{
+    if(!s.includes('## Selected workers')||!s.includes('worker-a')||!s.includes('worker-b'))process.exit(4);
+    ${reply(JSON.stringify(plan))}
+  });`);
+  hub.agents = [lead, delegate('worker-a'), delegate('worker-b')];
+  const chat = hub.createThread(proj);
+  const result = await hub.runTeam(chat.id, { recipe: 'manager', task: 'Build and link', roles: { planner: 'lead', workers: ['worker-a', 'worker-b'] }, maxParallel: 1 });
+  assert.strictEqual(result.verdict, 'merged');
+  assert.strictEqual(chat.title, 'Build and link');
+  assert.deepStrictEqual(result.tasks.map((task) => task.agent), ['worker-b', 'worker-a', 'worker-b']);
+  assert.strictEqual(fs.readFileSync(path.join(proj, 'link.txt'), 'utf8'), 'worker-b');
+  assert.match(result.tasks[2].result, /finished link by worker-b/);
+  const events = fs.readFileSync(log, 'utf8').trim().split('\n').map(JSON.parse); let active = 0;
+  for (const event of events) { active += event.state === 'start' ? 1 : -1; assert.ok(active >= 0 && active <= 1, 'parallel worker cap must be enforced'); }
+  assert.strictEqual(active, 0);
+  assert.strictEqual(hub.teamRuns(chat.id)[0].status, 'done');
+  assert.strictEqual(hub.notifications().at(-1).kind, 'done');
+  await assert.rejects(hub.runTeam(chat.id, { recipe: 'manager', task: 'Read-only delegation', mode: 'read', roles: { planner: 'lead', workers: ['worker-a'] } }), /Edit files/);
+  await assert.rejects(hub.runTeam(chat.id, { recipe: 'manager', task: 'Invalid cap', roles: { planner: 'lead', workers: ['worker-a'] }, maxParallel: 2 }), /parallel worker limit/);
+});
+
+test('stopping delegated background work stops workers and skips unstarted dependent tasks', async (t) => {
+  const proj = repo(); const data = tmp(); const home = tmp();
+  const hub = new Hub({ dataDir: data, secrets: new MemorySecrets(), home });
+  t.after(() => { hub.store.close(); for (const d of [proj, data, home]) fs.rmSync(d, { recursive: true, force: true }); });
+  const plan = { tasks: [{ id: 'first', title: 'Wait', agent: 'worker' }, { id: 'later', title: 'Must not start', agent: 'worker', dependsOn: ['first'] }] };
+  const marker = path.join(home, 'worker-started');
+  hub.agents = [agent('lead', reply(JSON.stringify(plan))), agent('worker', `require('fs').writeFileSync(${JSON.stringify(marker)},'started');setInterval(()=>{},1000)`)];
+  const chat = hub.createThread(proj, 'Stopped delegation');
+  const run = hub.runTeam(chat.id, { recipe: 'manager', task: 'Wait for stop', roles: { planner: 'lead', workers: ['worker'] } });
+  await until(() => fs.existsSync(marker));
+  hub.stop(chat.id);
+  const result = await run;
+  assert.strictEqual(result.verdict, 'stopped');
+  assert.strictEqual(result.tasks[1].state, 'skipped');
+  assert.strictEqual(hub.teamRuns(chat.id)[0].status, 'stopped');
+  assert.strictEqual(hub.thread(chat.id).messages.find((m) => m.manager).manager.phase, 'stopped');
+  assert.ok(!hub.running.has(chat.id) && !hub.teams.has(chat.id));
+  assert.strictEqual(execFileSync('git', ['worktree', 'list', '--porcelain'], { cwd: proj, encoding: 'utf8' }).match(/^worktree /gm).length, 1);
+});
+
+test('stopping a test command kills its process tree instead of waiting for the test timeout', async (t) => {
+  const { runTests } = require('../core/race'); const root = tmp(); t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const ready = path.join(root, 'ready'); const control = new AbortController();
+  const quote = (value) => "'" + value.replace(/'/g, "'\\''") + "'";
+  const code = `require('fs').writeFileSync(${JSON.stringify(ready)},'started');setInterval(()=>{},1000)`;
+  const run = runTests(root, `${quote(process.execPath)} -e ${quote(code)}`, 30000, { signal: control.signal });
+  await until(() => fs.existsSync(ready)); control.abort();
+  const result = await run;
+  assert.strictEqual(result.aborted, true); assert.strictEqual(result.passed, false); assert.match(result.output, /stopped/);
+  let spawned = false;
+  const skipped = await runTests(root, 'must-not-run', 30000, { signal: control.signal, host: { spawn() { spawned = true; } } });
+  assert.strictEqual(spawned, false); assert.strictEqual(skipped.aborted, true);
+});
+
+test('failed delegation skips every descendant even when dependencies are listed in reverse order', async (t) => {
+  const proj = repo(); const data = tmp(); const home = tmp();
+  const hub = new Hub({ dataDir: data, secrets: new MemorySecrets(), home });
+  t.after(() => { hub.store.close(); for (const d of [proj, data, home]) fs.rmSync(d, { recursive: true, force: true }); });
+  const plan = { tasks: [
+    { id: 'last', title: 'Last', agent: 'worker', dependsOn: ['middle'] },
+    { id: 'middle', title: 'Middle', agent: 'worker', dependsOn: ['first'] },
+    { id: 'first', title: 'First', agent: 'worker' },
+  ] };
+  hub.agents = [agent('lead', reply(JSON.stringify(plan))), agent('worker', 'process.exit(2)')];
+  const chat = hub.createThread(proj, 'Failure propagation');
+  const result = await hub.runTeam(chat.id, { recipe: 'manager', task: 'Fail safely', roles: { planner: 'lead', workers: ['worker'] } });
+  assert.deepStrictEqual(result.tasks.map((task) => task.state), ['skipped', 'skipped', 'failed']);
+  assert.strictEqual(hub.teamRuns(chat.id)[0].status, 'failed');
+});

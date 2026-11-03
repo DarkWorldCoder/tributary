@@ -12,13 +12,13 @@ function decodePeer(buffer, address) {
     return { endpoint: `https://${address}:${value.port}`, name: value.name.replace(/[\x00-\x1f\x7f]/g, '').slice(0, 80), fingerprint: value.fingerprint };
   } catch { return null; }
 }
-function advertise({ port, fingerprint, name = os.hostname() }) {
+function advertise({ port, fingerprint, name = os.hostname(), address }) {
   const socket = dgram.createSocket({ type: 'udp4', reuseAddr: true }); let timer;
   const packet = Buffer.from(JSON.stringify({ type: 'tributary-room-v1', port, fingerprint, name: name.slice(0, 80) }));
   const send = () => socket.send(packet, PORT, GROUP);
   socket.on('error', () => {});
   socket.on('message', (buffer, remote) => { if (buffer.toString() === 'tributary-discover-v1' && privateAddress(remote.address)) socket.send(packet, remote.port, remote.address); });
-  socket.bind(PORT, '0.0.0.0', () => { try { socket.addMembership(GROUP); socket.setMulticastTTL(1); send(); timer = setInterval(send, 5000); timer.unref(); } catch {} });
+  socket.bind(PORT, '0.0.0.0', () => { try { socket.addMembership(GROUP, address); if (address) socket.setMulticastInterface(address); socket.setMulticastTTL(1); send(); timer = setInterval(send, 5000); timer.unref(); } catch {} });
   return () => { clearInterval(timer); try { socket.close(); } catch {} };
 }
 function discover({ duration = 2200 } = {}) {

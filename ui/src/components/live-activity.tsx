@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Activity, CircleAlert, CircleCheck, FileCode2, GitBranch, Radio, Search, MessageSquare } from 'lucide-react';
+import { Activity, CircleAlert, CircleCheck, FileCode2, GitBranch, Search, MessageSquare } from 'lucide-react';
 import { AgentAvatar } from '@/components/agent-avatar';
 import { FileDiff } from '@/components/file-diff';
 import { Input } from '@/components/ui/input';
@@ -138,13 +138,6 @@ export function LiveActivity() {
   return (
     <>
       {!open && <NeedsYou />}
-      {(busy.length > 0 || (recent.length > 0 && !open)) && !open && (
-        <Button variant="outline" onClick={() => setOpen(true)} aria-label={busy.length ? `${busy.length} agents working. Open the live view` : 'Open the live view'}
-          className="fixed right-4 bottom-24 z-40 h-9 gap-2 rounded-full bg-popover pr-3 pl-1.5 shadow-md">
-          <span className="flex -space-x-1">{[...new Set((busy.length ? busy : recent.flatMap((r) => r.workers)).map((w) => w.agent))].slice(0, 4).map((id) => <AgentAvatar key={id} agent={s.agentOf(id)} size="sm" className="ring-2 ring-popover" />)}</span>
-          {busy.length ? <><Radio className="text-brand" />{busy.length} working</> : 'Recent agent work'}
-        </Button>
-      )}
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="right" className={cn('w-full gap-0 p-0 data-[side=right]:sm:max-w-none', pick ? 'data-[side=right]:w-[min(1040px,100vw)]' : 'data-[side=right]:w-[min(560px,100vw)]')}>
           <SheetHeader className="gap-1 border-b pr-12">

@@ -1,3 +1,4 @@
+import { ShortcutLabel } from '@/components/shortcut-settings';
 import { BookOpen, FileImage, FolderPlus, Globe, Keyboard, GitCompareArrows, ListTodo, MessageSquare, Plug, Settings, Sparkles, SquarePen, SquareTerminal, SunMoon, Users } from 'lucide-react';
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator, CommandShortcut } from '@/components/ui/command';
 import { AgentAvatar } from '@/components/agent-avatar';
@@ -15,13 +16,17 @@ export function CommandPalette() {
       <CommandList>
         <CommandEmpty>No results.</CommandEmpty>
         <CommandGroup heading="Actions">
-          <CommandItem onSelect={run(() => s.setShortcutsOpen(true))}><Keyboard /> Keyboard shortcuts<CommandShortcut>Ctrl /</CommandShortcut></CommandItem>
-          <CommandItem disabled={!s.project} onSelect={run(() => s.newThread())}><SquarePen /> New chat<CommandShortcut>Ctrl N</CommandShortcut></CommandItem>
+          <CommandItem keywords={['recent', 'files', 'folders', 'workspaces']} onSelect={run(() => s.setRecentOpen(true))}><FolderPlus />Open recent files and folders</CommandItem>
+          <CommandItem keywords={['host', 'join', 'LAN', 'invite', 'teammates']} onSelect={run(() => s.setRoomOpen(true))}><Users /> Project room</CommandItem>
+          <CommandItem keywords={['background', 'workers', 'running']} onSelect={run(() => window.dispatchEvent(new Event('tributary:live')))}><ListTodo /> Live activity</CommandItem>
+          <CommandItem onSelect={run(() => s.setShortcutsOpen(true))}><Keyboard /> Keyboard shortcuts<CommandShortcut><ShortcutLabel action="help" /></CommandShortcut></CommandItem>
+          <CommandItem disabled={!s.project} onSelect={run(() => s.newThread())}><SquarePen /> New chat<CommandShortcut><ShortcutLabel action="new" /></CommandShortcut></CommandItem>
           <CommandItem disabled={!s.project} onSelect={run(() => s.openPanel('files'))}><FileImage /> Files and image previews</CommandItem>
           <CommandItem disabled={!s.project} onSelect={run(() => s.openPanel('memory'))}><BookOpen /> Project memory</CommandItem>
           <CommandItem disabled={!s.project} onSelect={run(() => s.openPanel('preview'))}><Globe /> App preview</CommandItem>
+          <CommandItem disabled={!s.project} keywords={['lint', 'eslint', 'typecheck', 'format', 'clippy', 'ruff', 'vet', 'test', 'diagnostics']} onSelect={run(s.openChecks)}><ListTodo /> Problems and project checks</CommandItem>
           <CommandItem disabled={!s.project} onSelect={run(() => s.setTerminalOpen(true))}><SquareTerminal /> Terminal</CommandItem>
-          <CommandItem disabled={!s.project || s.ready.length < 2 || !!s.running} onSelect={run(() => s.setTeamOpen(true))}><Users /> Work with a team</CommandItem>
+          <CommandItem disabled={!s.project} onSelect={run(() => s.setTeamOpen(true))}><Users /> Agent teams · Parallel and background runs</CommandItem>
           {s.git && <CommandItem onSelect={run(() => s.openReview(null))}><GitCompareArrows /> Review changes</CommandItem>}
           {s.hub.platform !== 'vscode' && <CommandItem onSelect={run(async () => { const p = await s.hub.call<string | null>('pickProject'); if (p) { await s.refreshState(); await s.loadThreads(p); s.newThread(p); } })}><FolderPlus /> Add project folder</CommandItem>}
           <CommandItem onSelect={run(() => s.openSettings('mcp'))}><Plug /> MCP servers</CommandItem>

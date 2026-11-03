@@ -17,7 +17,7 @@ import type { Thread } from '@/types';
 type Kind = 'race' | 'manager' | 'plan-build-review' | 'build-review' | 'council';
 const KINDS: { id: Kind; name: string; evidence: string; description: string }[] = [
   { id: 'race', name: 'Race', evidence: 'Separate working copies', description: 'Compare attempts, run checks and apply one result.' },
-  { id: 'manager', name: 'Manager', evidence: 'Best supported by research', description: 'One agent splits the task into pieces. Workers build them at the same time in their own copies; a piece is merged only when your tests pass.' },
+  { id: 'manager', name: 'Manager', evidence: 'Parallel workers in separate copies', description: 'A lead agent assigns tasks to independent coding agents.' },
   { id: 'plan-build-review', name: 'Plan, build, review', evidence: 'Structured handoff', description: 'Assign three roles, with up to two review rounds.' },
   { id: 'build-review', name: 'Build and review', evidence: 'Structured handoff', description: 'One agent builds; another reviews and requests fixes.' },
   { id: 'council', name: 'Ask everyone', evidence: 'Read-only', description: 'Compare independent answers with an agent summary.' },
@@ -30,7 +30,11 @@ function StepMark({ state }: { state: string }) {
 /** Start a coordinated multi-agent run: race in worktrees, or a team recipe. */
 export function TeamDialog() {
   const s = useStore();
-  const [kind, setKind] = React.useState<Kind>('race');
+  const [background, setBackground] = React.useState(true);
+  const [starting, setStarting] = React.useState(false);
+  const launching = React.useRef(false);
+  const [kind, setKind] = React.useState<Kind>('manager');
+  const [parallelLimit, setParallelLimit] = React.useState('auto');
   const [task, setTask] = React.useState('');
   const [picked, setPicked] = React.useState<string[]>([]);
   const [roles, setRoles] = React.useState<Record<string, string>>({});
@@ -47,7 +51,7 @@ export function TeamDialog() {
   const ready = s.ready;
   React.useEffect(() => {
     if (!s.teamOpen) return;
-    setTask(s.draft); setPicked(ready.slice(0, 3).map((a) => a.id)); setChecksOpen(!!testCommand.trim());
+    setTask(s.draft); setPicked(ready.filter((a) => kind !== 'manager' || !a.connectionId).slice(0, 3).map((a) => a.id)); setChecksOpen(!!testCommand.trim());
     const r = (i: number) => ready[Math.min(i, ready.length - 1)]?.id ?? '';
     setRoles({ planner: r(0), builder: ready.find((a) => a.id === r(1) && !a.connectionId)?.id || ready.find((a) => !a.connectionId)?.id || '', reviewer: r(2), synthesizer: r(0) });
     // Capture defaults when opening; background discovery must not reset an edited team form.
@@ -55,28 +59,43 @@ export function TeamDialog() {
   }, [s.teamOpen]);
   const multi = kind === 'race' || kind === 'council' || kind === 'manager';
   const roleList = kind === 'plan-build-review' ? ['planner', 'builder', 'reviewer'] : kind === 'build-review' ? ['builder', 'reviewer'] : kind === 'council' ? ['synthesizer'] : kind === 'manager' ? ['planner'] : [];
-  const LABEL: Record<string, string> = { planner: 'Planner', builder: 'Builder', reviewer: 'Reviewer', synthesizer: 'Summarizer' };
-  const canStart = task.trim() && (multi ? picked.length >= (kind === 'manager' ? 1 : 2) && (kind !== 'manager' || ready.some((a) => a.id === roles.planner) && picked.every((id) => ready.some((a) => a.id === id && !a.connectionId))) : roleList.every((r) => ready.some((a) => a.id === roles[r] && (r !== 'builder' || !a.connectionId)))) && (kind !== 'council' || roles.synthesizer);
+  const LABEL: Record<string, string> = { planner: kind === 'manager' ? 'Lead agent' : 'Planner', builder: 'Builder', reviewer: 'Reviewer', synthesizer: 'Summarizer' };
+  const canStart = (kind !== 'manager' || s.mode !== 'read') && task.trim() && (multi ? picked.length >= (kind === 'manager' ? 1 : 2) && (kind !== 'manager' || ready.some((a) => a.id === roles.planner) && picked.every((id) => ready.some((a) => a.id === id && !a.connectionId))) : roleList.every((r) => ready.some((a) => a.id === roles[r] && (r !== 'builder' || !a.connectionId)))) && (kind !== 'council' || roles.synthesizer);
 
   const start = async () => {
-    let t = s.thread;
-    if (!t) { t = await s.hub.call<Thread>('createThread', s.project); s.setThread(t); await s.openThread(t.id); }
-    try { localStorage.setItem('tributary.testCommand', testCommand); } catch { /* ignore */ }
-    s.setTeamOpen(false); s.setDraft('');
-    const r = kind === 'race'
-      ? await s.hub.call<{ error?: string }>('runRace', t.id, { task, agents: picked, testCommand: testCommand.trim() || undefined, mode: s.mode === 'full' ? 'full' : 'edit' })
-      : await s.hub.call<{ error?: string }>('runTeam', t.id, { recipe: kind, task, mode: s.mode, roles: kind === 'council' ? { members: picked, synthesizer: roles.synthesizer } : kind === 'manager' ? { planner: roles.planner, workers: picked } : roles, testCommand: kind === 'manager' ? testCommand.trim() || undefined : undefined });
-    if (r && r.error) { s.setDraft(task); toast.error(r.error); }
+    if (launching.current || !canStart || !s.project || !background && s.running) return;
+    launching.current = true; setStarting(true);
+    let run: Promise<{ error?: string }> | null = null;
+    try {
+      let t = background ? null : s.thread;
+      if (!t) {
+        t = await s.hub.call<Thread>('createThread', s.project);
+        if (background && kind !== 'council') await s.hub.call('createWorktree', t.id);
+        if (!background) await s.openThread(t.id);
+      }
+      try { localStorage.setItem('tributary.testCommand', testCommand); } catch { /* optional preference */ }
+      s.setTeamOpen(false);
+      if (!background) s.setDraft('');
+      run = kind === 'race'
+        ? s.hub.call<{ error?: string }>('runRace', t.id, { task, agents: picked, testCommand: testCommand.trim() || undefined, mode: s.mode === 'full' ? 'full' : 'edit' })
+        : s.hub.call<{ error?: string }>('runTeam', t.id, { recipe: kind, task, mode: s.mode, roles: kind === 'council' ? { members: picked, synthesizer: roles.synthesizer } : kind === 'manager' ? { planner: roles.planner, workers: picked } : roles, testCommand: kind === 'manager' ? testCommand.trim() || undefined : undefined, ...(kind === 'manager' && parallelLimit !== 'auto' ? { maxParallel: Math.min(Number(parallelLimit), picked.length) } : {}) });
+      if (background) { const id = t.id; toast.message('Team started in background', { action: { label: 'View', onClick: () => s.openThread(id) } }); }
+    } catch (e) { toast.error((e as Error).message); }
+    finally { launching.current = false; setStarting(false); }
+    if (run) {
+      try { const result = await run; if (result?.error) toast.error(result.error); }
+      catch (e) { toast.error((e as Error).message); }
+    }
   };
 
   return (
     <Dialog open={s.teamOpen} onOpenChange={s.setTeamOpen}>
       <DialogContent className="team-dialog max-h-[90dvh] gap-5 overflow-y-auto sm:max-w-2xl max-sm:[&_input]:min-h-11 max-sm:[&_select]:min-h-11 max-sm:[&_button]:min-h-11">
         <DialogHeader className="gap-1 pr-8">
-          <DialogTitle className="flex items-center gap-2 leading-6"><Users className="size-4" /> Work as a team</DialogTitle>
-          <DialogDescription className="text-xs">Choose a workflow, assign agents and add your task.</DialogDescription>
+          <DialogTitle className="flex items-center gap-2 leading-6"><Users className="size-4" /> Agent teams</DialogTitle>
+          <DialogDescription className="text-xs">Delegate tasks. Keep working while agents run.</DialogDescription>
         </DialogHeader>
-        <ToggleGroup type="single" variant="outline" spacing={2} value={kind} onValueChange={(v) => { if (v) setKind(v as Kind); }} aria-label="How the agents work together" className="grid w-full grid-cols-2 items-stretch gap-2">
+        <ToggleGroup type="single" variant="outline" spacing={2} value={kind} onValueChange={(v) => { if (!v) return; setKind(v as Kind); setParallelLimit('auto'); if (v === 'manager') setPicked((ids) => ids.filter((id) => ready.some((a) => a.id === id && !a.connectionId))); }} aria-label="How the agents work together" className="grid w-full grid-cols-2 items-stretch gap-2">
           {KINDS.map((k) => (
             <ToggleGroupItem key={k.id} value={k.id} className="h-auto min-w-0 flex-col items-stretch justify-center gap-1 rounded-lg border-border/70 p-3 text-left font-normal whitespace-normal text-foreground data-[state=on]:border-foreground/25 data-[state=on]:bg-muted max-sm:min-h-16 max-sm:p-2">
               <span className="flex items-center gap-2 text-[13px] font-medium">{React.createElement(ICONS[k.id], { className: 'size-4 shrink-0 text-muted-foreground' })}<span className="min-w-0 flex-1">{k.name}</span><Check className={cn('size-3.5 shrink-0 max-sm:hidden', kind !== k.id && 'invisible')} /></span>
@@ -86,17 +105,19 @@ export function TeamDialog() {
         </ToggleGroup>
         <p className="-mt-3 text-xs leading-5 text-muted-foreground sm:hidden">{KINDS.find((workflow) => workflow.id === kind)?.description}</p>
         <FieldGroup className="gap-4">
+          <Field><FieldLabel htmlFor="team-run-target">Run in</FieldLabel><NativeSelect id="team-run-target" value={background ? 'background' : 'current'} onChange={(e) => setBackground(e.target.value === 'background')}><NativeSelectOption value="background">New background chat</NativeSelectOption><NativeSelectOption value="current">Current chat</NativeSelectOption></NativeSelect><FieldDescription>{background ? kind === 'council' ? 'Keep working here. Follow progress in Live activity.' : 'Separate working copy. Review and merge when ready.' : 'Results appear in this chat.'}</FieldDescription></Field>
           <Field><FieldLabel htmlFor="team-task">Task</FieldLabel>
             <Textarea id="team-task" rows={3} value={task} onChange={(e) => setTask(e.target.value)} placeholder={kind === 'council' ? 'Ask a question for your agents…' : 'Describe what you want the team to deliver…'} /></Field>
           {multi && (
             <Field><div className="flex items-center justify-between gap-2"><FieldLabel>{kind === 'race' ? 'Agents racing' : kind === 'manager' ? 'Workers' : 'Agents answering'}</FieldLabel><span aria-live="polite" className="text-xs tabular-nums text-muted-foreground">{picked.length} selected</span></div>
-              <ToggleGroup type="multiple" variant="outline" spacing={2} value={picked} onValueChange={setPicked} aria-label={kind === 'race' ? 'Agents racing' : kind === 'manager' ? 'Workers' : 'Agents answering'} className="w-full flex-wrap justify-start">
-                {ready.map((a) => (
+              <ToggleGroup type="multiple" variant="outline" spacing={2} value={picked} onValueChange={(ids) => { setPicked(ids); setParallelLimit('auto'); }} aria-label={kind === 'race' ? 'Agents racing' : kind === 'manager' ? 'Workers' : 'Agents answering'} className="w-full flex-wrap justify-start">
+                {ready.filter((a) => kind !== 'manager' || !a.connectionId).map((a) => (
                   <ToggleGroupItem key={a.id} value={a.id} className="h-9 max-w-full gap-2 rounded-lg px-2 text-[13px] data-[state=on]:bg-muted"><AgentAvatar agent={a} size="sm" muted={!picked.includes(a.id)} /><span className="truncate">{a.name}</span></ToggleGroupItem>
                 ))}
               </ToggleGroup>
-              <FieldDescription>{kind === 'manager' ? 'Pick at least one worker.' : 'Pick at least two.'}</FieldDescription></Field>
+              <FieldDescription>{kind === 'manager' && s.mode === 'read' ? 'Enable Edit files in the chat to run coding workers.' : kind === 'manager' ? 'Pick at least one worker.' : 'Pick at least two.'}</FieldDescription></Field>
           )}
+          {kind === 'manager' && <Field><FieldLabel htmlFor="team-parallel-limit">Workers at once</FieldLabel><NativeSelect id="team-parallel-limit" value={parallelLimit} onChange={(e) => setParallelLimit(e.target.value)}><NativeSelectOption value="auto">One per selected agent</NativeSelectOption>{Array.from({ length: Math.max(1, picked.length) }, (_, i) => <NativeSelectOption key={i + 1} value={String(i + 1)}>{i + 1}</NativeSelectOption>)}</NativeSelect></Field>}
           {roleList.length > 0 && (
             <div className="grid gap-3 sm:grid-cols-3">
               {roleList.map((r) => (
@@ -117,7 +138,7 @@ export function TeamDialog() {
         <DialogFooter className="grid grid-cols-2 sm:flex">
           <span className="col-span-2 mr-auto flex items-center gap-1.5 self-center text-xs text-muted-foreground">{kind === 'council' ? <ShieldCheck className="size-3.5" /> : <Workflow className="size-3.5" />}{KINDS.find((workflow) => workflow.id === kind)?.evidence}</span>
           <Button variant="outline" onClick={() => s.setTeamOpen(false)}>Cancel</Button>
-          <Button onClick={start} disabled={!canStart || s.running}>{kind === 'race' ? 'Start race' : 'Start team'}</Button>
+          <Button onClick={start} disabled={!canStart || starting || (!background && s.running)}>{starting ? 'Starting…' : background ? 'Start in background' : kind === 'race' ? 'Start race' : 'Start team'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

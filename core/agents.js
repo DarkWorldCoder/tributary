@@ -13,9 +13,9 @@ const BUILTIN = [
   {
     id: 'claude', docs: 'https://code.claude.com/docs', login: 'claude', glyph: 'Cl', name: 'Claude Code', vendor: 'Anthropic', bins: ['claude'],
     protocol: 'claude-stream', gateways: ['anthropic'], verified: true, color: '#d97757',
-    stdinPrompt: true,
-    args({ mode, resumeId, model, extraDirs = [], images = [] }) {
-      const a = ['-p', ...(images.length ? ['--input-format', 'stream-json'] : []), '--output-format', 'stream-json', '--verbose', '--include-partial-messages',
+    stdinPrompt: true, controlProtocol: 'claude-stdio',
+    args({ mode, resumeId, model, extraDirs = [], images = [], control = false }) {
+      const a = ['-p', ...(control || images.length ? ['--input-format', 'stream-json'] : []), ...(control ? ['--permission-prompt-tool', 'stdio'] : []), '--output-format', 'stream-json', '--verbose', '--include-partial-messages',
         '--permission-mode', { read: 'plan', edit: 'acceptEdits', full: 'bypassPermissions' }[mode]];
       if (extraDirs.length) a.push('--add-dir', ...extraDirs);
       if (resumeId) a.push('--resume', resumeId);
@@ -27,7 +27,7 @@ const BUILTIN = [
     id: 'codex', docs: 'https://developers.openai.com/codex', login: 'codex login', glyph: 'Cx', name: 'Codex', vendor: 'OpenAI', bins: ['codex'],
     extraPaths: ['/usr/lib/chatgpt/resources/codex', '/Applications/ChatGPT.app/Contents/Resources/codex',
       '/Applications/Codex.app/Contents/Resources/codex'],
-    protocol: 'codex-exec', gateways: ['openai', 'ollama', 'lmstudio'], verified: true, color: '#10a37f',
+    protocol: 'codex-exec', controlProtocol: 'codex-app-server', gateways: ['openai', 'ollama', 'lmstudio'], verified: true, color: '#10a37f',
     stdinPrompt: true,
     args({ mode, resumeId, cwd, model, gatewayArgs = [], extraDirs = [], images = [] }) {
       const policy = mode === 'full'
@@ -41,7 +41,7 @@ const BUILTIN = [
   },
   {
     id: 'gemini', docs: 'https://geminicli.com', login: 'gemini', glyph: 'Ge', name: 'Gemini CLI', vendor: 'Google', bins: ['gemini'],
-    protocol: 'gemini-stream', gateways: ['gemini'], verified: true, color: '#4285f4',
+    protocol: 'gemini-stream', controlProtocol: 'gemini-acp', gateways: ['gemini'], verified: true, color: '#4285f4',
     stdinPrompt: false,
     trustEnv: { GEMINI_CLI_TRUST_WORKSPACE: 'true' },
     note: 'Personal Google sign-in was retired for Gemini CLI. Use a Gemini API key gateway or Antigravity.',
@@ -158,7 +158,9 @@ async function probeAgentVersions(agents, { env = process.env, concurrency = 2 }
 // Plain JSON view of an agent for UIs (drops functions).
 function describe(a) {
   const { args, textArgs, ...rest } = a;
-  return JSON.parse(JSON.stringify(rest));
+  const acp = a.protocol === 'acp' || a.controlProtocol === 'gemini-acp';
+  const native = ['claude-stdio', 'codex-app-server'].includes(a.controlProtocol);
+  return JSON.parse(JSON.stringify({ ...rest, capabilities: { tools: acp || native || ['claude-stream', 'codex-exec', 'gemini-stream', 'agy-stream'].includes(a.protocol), plans: acp || native || ['claude-stream', 'codex-exec'].includes(a.protocol), approvals: acp || native, questions: native, resume: acp || ['claude-stream', 'codex-exec', 'gemini-stream', 'agy-stream'].includes(a.protocol) } }));
 }
 
 module.exports = { BUILTIN, MODES, detectAgents, probeVersions: probeAgentVersions, describe, which, pathDirs };

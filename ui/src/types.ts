@@ -7,6 +7,7 @@ export interface ModelCatalog { supportsSelection: boolean; source: string; note
 export interface Agent {
   id: string; name: string; vendor?: string; color: string; glyph?: string; docs?: string; login?: string;
   available: boolean; headless: boolean; protocol: string; verified?: boolean;
+  capabilities?: { tools: boolean; plans: boolean; approvals: boolean; questions: boolean; resume: boolean };
   version?: string | null; path?: string | null; gateways?: Protocol[]; note?: string; custom?: boolean; connectionId?: string; registry?: string;
 }
 export interface RegistryAgent {
@@ -38,14 +39,20 @@ export interface RaceCandidate {
 export interface RaceInfo { task: string; testCommand: string; agents: string[]; candidates: RaceCandidate[]; applied: string | null; base?: string; judge?: { agent: string; winner: string | null; messageId: string } }
 export interface AppNotification { id: string; ts: number; read: boolean; kind: 'done' | 'failed' | 'attention' | 'info' | 'permission'; threadId?: string; title: string; body?: string }
 export interface FileContent { rel: string; size: number; binary: boolean; truncated: boolean; content: string; mtime: number; base64?: string }
+export interface ProjectDiagnostic { rel: string; line: number; column: number; severity: 'error' | 'warning' | 'info'; message: string; source: string }
+export interface ProjectCheckResult { toolId: string; label: string; command: string; code: number; stopped: boolean; startedAt: number; finishedAt: number; output: string; diagnostics: ProjectDiagnostic[] }
+export interface ProjectCheckState { running: boolean; toolId: string | null; result: ProjectCheckResult | null }
+export interface ProjectCheckCatalog extends ProjectCheckState { tools: { id: string; label: string; command: string; available: boolean }[] }
 export interface MemoryInfo { enabled: boolean; memory: string | null; worklog: string[]; revision?: string; bytes?: number; context?: { includeInPrompts: boolean; budget: number } }
 export interface ThreadChange { rel: string; turns: { messageId: string; agent: string; ts?: number; change?: string; team?: string }[] }
 export type ThreadStatus = 'working' | 'permission' | 'review' | 'failed' | 'done';
 export interface PermissionOption { optionId: string; name: string; kind: 'allow_once' | 'allow_always' | 'reject_once' | 'reject_always' | string }
 /** A tool call the agent asked to make. Pending until the person answers, the turn is stopped, or it ends. */
 export interface PermissionRequest {
+  questions?: { question: string; multiSelect: boolean; options: { label: string; description: string }[] }[];
+  answers?: Record<string, string>;
   id: string; threadId: string; messageId: string; agent: string; toolCallId?: string; title: string; kind: string;
-  command?: string; path?: string; options: PermissionOption[]; status: 'pending' | 'allowed' | 'always' | 'rejected' | 'cancelled'; ts: number;
+  command?: string; path?: string; detail?: string; options: PermissionOption[]; status: 'pending' | 'allowed' | 'always' | 'rejected' | 'cancelled'; ts: number;
 }
 export interface ThreadSummary { id: string; title: string; updatedAt: number; lastAgent: string | null; count?: number; running?: boolean; agents: string[]; status?: ThreadStatus | null; branch?: string }
 export interface Tool { id?: string; name: string; input?: Record<string, unknown> & { command?: unknown }; status: 'running' | 'done' | 'error'; output?: string; files?: string[] }
@@ -53,6 +60,7 @@ export interface FileChange { path: string; rel: string; external?: boolean; cha
 export interface Attachment { id: string; name: string; mime: string; size: number }
 export interface UserMessage { attachments?: Attachment[]; id: string; role: 'user'; text: string; target: string; ts?: number; kind?: 'chat' | 'plan' | 'implement' | 'race'; team?: { recipe: string; role: string } }
 export interface AgentMessage {
+  delegations?: { id: string; agentId: string; title: string; state: string }[];
   memoryContext?: { characters: number; budget: number; sources: { source: string; line: number }[] };
   id: string; role: 'assistant'; model?: string | null; gatewayId?: string | null; agent: string; text: string; thinking?: string; tools: Tool[]; files: FileChange[];
   plan?: { text: string; done: boolean }[] | null; notices: string[]; error?: string | null; ok: boolean | null;
@@ -70,7 +78,7 @@ export interface WorktreeStatus { branch: string; path: string; cwd: string; int
 /** The project's setup script in a separate copy (.tributary/settings.json scripts.setup). */
 export interface CopySetup { state: 'untrusted' | 'pending' | 'running' | 'done' | 'failed' | 'stopped'; command: string; hash: string; output?: string; ms?: number }
 export interface MergeResult { into: string; branch: string; commit: string; files: string[] }
-export interface Thread { id: string; project: string; title: string; messages: Message[]; agentSessions: Record<string, string>; lastAgent?: string | null; updatedAt?: number; task?: { templateId: string; material?: string }; documents?: SavedDocument[]; worktree?: Worktree }
+export interface Thread { id: string; project: string; title: string; messages: Message[]; agentSessions: Record<string, string>; lastAgent?: string | null; updatedAt?: number; task?: { templateId: string; material?: string }; documents?: SavedDocument[]; worktree?: Worktree; delegation?: { parentThreadId: string; parentMessageId: string; agentId: string; state: string } }
 export interface GitInfo { root: string; branch: string; changed: { code: string; path: string; from?: string }[]; stat?: string }
 
 export interface HubEvents {

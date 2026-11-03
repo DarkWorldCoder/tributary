@@ -6,6 +6,7 @@ import {
   AlertCircle, BookmarkPlus, Brain, Check, CircleCheck, CircleX, Copy, FileCode2, FileText, Flag, Globe, History, Info, ListChecks, Play, Repeat2, RotateCcw, Search, ShieldQuestion, SquareTerminal, Wrench,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -101,7 +102,7 @@ function Activity({ m }: { m: AgentMessage }) {
   );
 }
 
-const ASKS: Record<string, string> = { execute: 'run a command', edit: 'edit a file', delete: 'delete a file', move: 'move a file', read: 'read a file', search: 'search', fetch: 'fetch from the web' };
+const ASKS: Record<string, string> = { execute: 'run a command', edit: 'edit a file', delete: 'delete a file', move: 'move a file', read: 'read a file', search: 'search', fetch: 'fetch from the web', permissions: 'request additional access' };
 
 /** A tool call the agent is waiting on: allow it once, for the rest of the agent session, or deny it. */
 function PermissionCard({ r, agent }: { r: PermissionRequest; agent: Agent }) {
@@ -111,7 +112,7 @@ function PermissionCard({ r, agent }: { r: PermissionRequest; agent: Agent }) {
     try { await s.hub.call('answerPermission', r.id, choice); } catch (e) { toast.error((e as Error).message); setBusy(false); }
   };
   const rel = r.path && s.project && r.path.startsWith(`${s.project}/`) ? r.path.slice(s.project.length + 1) : r.path;
-  const detail = r.command || rel;
+  const detail = r.command || rel || r.detail;
   const always = r.kind === 'edit' ? 'Allow every edit for the rest of this agent session' : r.command ? 'Allow this exact command for the rest of this agent session' : 'Allow this tool for the rest of this agent session';
   return (
     <Alert className="border-brand/40" aria-label={`Permission request: ${r.title}`}>
@@ -130,10 +131,29 @@ function PermissionCard({ r, agent }: { r: PermissionRequest; agent: Agent }) {
   );
 }
 
+function AgentQuestionCard({ r, agent }: { r: PermissionRequest; agent: Agent }) {
+  const s = useStore(); const id = React.useId();
+  const [selected, setSelected] = React.useState<Record<string, string[]>>({}); const [custom, setCustom] = React.useState<Record<string, string>>({});
+  const [busy, setBusy] = React.useState(false); const [error, setError] = React.useState('');
+  const answers = Object.fromEntries((r.questions || []).map((q) => [q.question, custom[q.question]?.trim() || (selected[q.question] || []).join(', ')]));
+  const answer = async (skip = false) => { setBusy(true); setError(''); try { await s.hub.call('answerPermission', r.id, skip ? 'reject' : { answers }); } catch (e) { setError((e as Error).message); setBusy(false); } };
+  return <section aria-label={`Question from ${agent.name}`} className="rounded-xl border bg-card p-4">
+    <h3 className="mb-3 text-[13px] font-medium">{agent.name} needs your input</h3>
+    <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); void answer(); }}>
+      {(r.questions || []).map((q, index) => <fieldset key={q.question} disabled={busy} className="space-y-2"><legend className="mb-2 text-[13px] font-medium">{q.question}</legend>
+        {q.options.map((option) => <label key={option.label} className="flex min-h-9 cursor-pointer items-start gap-2 rounded-lg border px-3 py-2 text-xs has-checked:border-brand/60 has-checked:bg-muted max-sm:min-h-11"><input type={q.multiSelect ? 'checkbox' : 'radio'} name={`${id}-${index}`} value={option.label} checked={(selected[q.question] || []).includes(option.label)} onChange={(e) => { setCustom((all) => ({ ...all, [q.question]: '' })); setSelected((all) => ({ ...all, [q.question]: q.multiSelect ? e.target.checked ? [...(all[q.question] || []), option.label] : (all[q.question] || []).filter((item) => item !== option.label) : [option.label] })); }} className="mt-0.5 shrink-0 accent-current" /><span className="min-w-0"><span className="font-medium">{option.label}</span>{option.description && <span className="mt-1 block text-muted-foreground">{option.description}</span>}</span></label>)}
+        <Input aria-label={`Your answer: ${q.question}`} placeholder="Write your own answer…" maxLength={2000} value={custom[q.question] || ''} onChange={(e) => { setCustom((all) => ({ ...all, [q.question]: e.target.value })); setSelected((all) => ({ ...all, [q.question]: [] })); }} />
+      </fieldset>)}
+      {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
+      <div className="flex flex-wrap gap-2"><Button size="sm" disabled={busy || Object.values(answers).some((value) => !value)}>Send answers</Button><Button size="sm" variant="ghost" type="button" disabled={busy} onClick={() => void answer(true)}>Skip</Button></div>
+    </form>
+  </section>;
+}
+
 function PermissionRequests({ m, agent }: { m: AgentMessage; agent: Agent }) {
   const s = useStore();
   const pending = m.ok == null && s.running ? (m.permissions || []).filter((p) => p.status === 'pending') : [];
-  return pending.map((r) => <PermissionCard key={r.id} r={r} agent={agent} />);
+  return pending.map((r) => r.questions ? <AgentQuestionCard key={r.id} r={r} agent={agent} /> : <PermissionCard key={r.id} r={r} agent={agent} />);
 }
 
 function FilesChanged({ m }: { m: AgentMessage }) {
@@ -163,6 +183,16 @@ function FilesChanged({ m }: { m: AgentMessage }) {
       </ul>
     </div>
   );
+}
+
+function DelegatedWorkers({ m }: { m: AgentMessage }) {
+  const s = useStore(); if (!m.delegations?.length) return null;
+  return <section aria-label="Delegated workers" className="overflow-hidden rounded-xl border bg-card">
+    <div className="border-b px-3 py-2 text-xs font-medium">Background agents</div>
+    {m.delegations.map((worker) => <button key={worker.id} className="flex w-full min-w-0 items-center gap-2 px-3 py-2 text-left text-xs hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-ring" onClick={() => s.openThread(worker.id)} aria-label={`Open worker chat: ${worker.title}`}>
+      <AgentAvatar agent={s.agentOf(worker.agentId)} size="xs" /><span className="min-w-0 flex-1 truncate">{worker.title}</span><span className="shrink-0 text-muted-foreground">{worker.state === 'running' || worker.state === 'starting' ? <Spinner className="size-3.5" aria-label={worker.state} /> : worker.state === 'done' ? 'Ready to review' : worker.state}</span>
+    </button>)}
+  </section>;
 }
 
 export function ChangeCode({ code }: { code: string }) {
@@ -417,6 +447,7 @@ function AgentTurn({ m, agent, prompt }: { m: AgentMessage; agent: Agent; prompt
         {m.error && <AgentError text={m.error} agent={m.agent} />}
         <FilesChanged m={m} />
         {!live && <Checks m={m} />}
+        <DelegatedWorkers m={m} />
         <RunPlan m={m} />
         {!live && (
           <MessageFooter className="flex items-center gap-0.5 text-xs text-muted-foreground">

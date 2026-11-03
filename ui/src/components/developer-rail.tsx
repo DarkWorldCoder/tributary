@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { BookOpen, Files, GitCompareArrows, Globe, PanelLeft, Search, Settings, SquarePen, SquareTerminal } from 'lucide-react';
+import { BookOpen, Files, GitCompareArrows, Globe, PanelLeft, Search, Settings, SquarePen, SquareTerminal, Users, Workflow, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -8,12 +8,13 @@ import { NotificationsBell } from '@/components/notifications';
 
 export function DeveloperEntry() {
   const s = useStore(); const { setOpen } = useSidebar();
-  const entered = React.useRef<string | null>(null);
+  const entered = React.useRef(new Set<string>());
   React.useEffect(() => {
-    if (!s.codeLayout || !s.thread || s.document || entered.current === s.thread.id) return;
-    entered.current = s.thread.id; setOpen(false);
-    if (window.innerWidth >= 768) { s.setWorkspaceExpanded(false); s.openPanel('files'); }
-  }, [s.codeLayout, s.thread?.id, s.document, setOpen, s.openPanel, s.setWorkspaceExpanded]);
+    if (!s.codeLayout || !s.thread || s.document || !s.project || entered.current.has(s.project)) return;
+    entered.current.add(s.project);
+    // Enter each project's workbench once; a new turn must not reset a chosen tool or layout.
+    if (window.innerWidth >= 768 && !s.workspaceViewSaved && !s.panel.open) { setOpen(false); s.openPanel('files'); }
+  }, [s.codeLayout, s.thread?.id, s.project, s.document, s.panel.open, setOpen, s.openPanel, s.setWorkspaceExpanded]);
   return null;
 }
 
@@ -25,6 +26,9 @@ export function DeveloperRail({ workspaceVisible }: { workspaceVisible: boolean 
     <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className="mb-2 size-9" aria-label="Projects and chats" aria-expanded={open} onClick={toggleSidebar}><img src="./logo.svg" className="size-6 rounded-md" alt="" /></Button></TooltipTrigger><TooltipContent side="right">Projects and chats</TooltipContent></Tooltip>
     {tool('New chat', <SquarePen />, () => s.newThread())}
     {tool('Search chats', <Search />, () => s.setPalette(true))}
+    {!open && tool('Project room', <Users />, () => s.setRoomOpen(true), s.roomOpen)}
+    {tool('Agent teams', <Workflow />, () => s.setTeamOpen(true), s.teamOpen)}
+    {tool('Live activity', <Activity />, () => window.dispatchEvent(new Event('tributary:live')))}
     <div className="my-1 w-5 border-t" />
     {!workspaceVisible && <>
       {tool('Files', <Files />, () => panel('files'))}

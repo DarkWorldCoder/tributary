@@ -303,9 +303,6 @@
 .developer-shell [aria-label="Chat"] .prose-reply h3 { font-size: 0.9375rem; }
 .developer-shell svg.lucide,
 .workspace-surface svg.lucide { stroke-width: 1.6; }
-@media (min-width: 640px) {
-  .developer-shell [aria-label="Project files"] .explorer-row { min-height: 28px; border-radius: 4px; }
-}
 @media (max-width: 639px) {
   .developer-shell [aria-label="Chat"] button[data-slot="button"],
   .developer-shell [aria-label="Chat"] button[data-slot="input-group-button"] { min-height: 44px; }
@@ -320,7 +317,7 @@
 .workspace-file-tab[data-state="active"] { background: var(--card); }
 
 /* One row rhythm keeps labels, tab actions and neighboring panes on the same centerline. */
-:root, .developer-shell, .workspace-surface { --workbench-row-height: 36px; --workbench-action-size: 32px; }
+:root, .developer-shell, .workspace-surface { --workbench-row-height: 32px; --workbench-action-size: 28px; --explorer-row-height: 24px; }
 .workbench-toolbar {
   display: flex; min-width: 0; height: var(--workbench-row-height, 40px);
   flex-shrink: 0; align-items: center;
@@ -340,7 +337,21 @@
 }
 .workspace-file-close { top: 50%; transform: translate(-100%, -50%); }
 .composer-tool-item:not([data-checked]) > svg:last-child { display: none; }
-.workspace-file-footer { min-height: 36px; }
+.workspace-file-footer { min-height: 24px; }
+.workspace-file-footer .workbench-action { width: 24px; height: 24px; }
+.workspace-file-footer .workbench-action svg { width: 14px; height: 14px; }
+.workspace-file-actions { height: 28px; }
+.workspace-explorer .explorer-row.sticky { position: sticky; }
+.workspace-file-tab[data-slot="tabs-trigger"] { gap: 6px; }
+.workspace-file-close svg { width: 14px; height: 14px; }
+.workspace-surface .explorer-row { height: var(--explorer-row-height); min-height: var(--explorer-row-height); border-radius: 2px; }
+.explorer-children { position: relative; }
+.explorer-children::before {
+  content: ''; position: absolute; top: 0; bottom: 0; left: var(--explorer-guide-left);
+  border-left: 1px solid color-mix(in oklch, var(--border) 65%, transparent); pointer-events: none;
+}
+.workspace-explorer:focus-within .explorer-children::before { border-left-color: var(--border); }
+.workspace-tool-list > [data-slot="tabs-trigger"], .workspace-file-tab[data-slot="tabs-trigger"] { transition-property: color, background-color, box-shadow; }
 .workspace-file-footer { container-type: inline-size; }
 @container (max-width: 420px) { .editor-file-details { display: none; } }
 @container (max-width: 220px) { .editor-wrap-control { display: none; } }
@@ -381,10 +392,13 @@
 .composer-toolbar button[data-size^="icon"], .composer-toolbar button[aria-label^="Permissions:"] { width: 32px; }
 @media (hover: none) { .reply-actions { opacity: 1; } }
 @media (max-width: 639px) {
-  :root, .developer-shell, .workspace-surface { --workbench-row-height: 44px; --workbench-action-size: 44px; }
+  :root, .developer-shell, .workspace-surface { --workbench-row-height: 44px; --workbench-action-size: 44px; --explorer-row-height: 44px; }
   .composer-toolbar button { height: 44px; min-height: 44px; }
   .composer-toolbar button[data-size^="icon"], .composer-toolbar button[aria-label^="Permissions:"] { width: 44px; }
   .workspace-file-footer { min-height: 48px; }
+  .workspace-file-footer .workbench-action { width: 44px; height: 44px; }
+  .workspace-file-footer .workbench-action svg { width: 16px; height: 16px; }
+  .workspace-file-actions { height: 44px; }
   .composer-model-trigger { min-width: 44px; }
   .composer-selector { height: 44px; min-height: 44px; }
   .composer-selector-icon { width: 44px; }
@@ -496,3 +510,17 @@
 
 .app-frame:has(> .desktop-titlebar) [data-slot="sidebar-container"] { top: 32px; height: calc(100svh - 32px); }
 @media (max-width: 639px) { .desktop-titlebar .titlebar-button:nth-child(-n+2) { display: none; } }
+
+/* Keep the send action on the selector row in narrow chat panes. */
+@container (max-width: 360px) {
+  .composer-toolbar { flex-wrap: nowrap; padding-inline: 4px; }
+  .composer-toolbar .composer-selector { gap: 3px; padding-inline: 4px; }
+  .composer-toolbar .composer-model-trigger > span { max-width: 64px; }
+}
+
+/* Density changes desktop spacing; touch controls keep their independent 44px targets. */
+@media (min-width: 640px) {
+  :root[data-ui-density="comfortable"], [data-ui-density="comfortable"] .developer-shell, [data-ui-density="comfortable"] .workspace-surface {
+    --workbench-row-height: 36px; --workbench-action-size: 32px; --explorer-row-height: 28px;
+  }
+}

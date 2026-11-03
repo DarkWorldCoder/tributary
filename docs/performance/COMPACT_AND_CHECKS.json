@@ -1,0 +1,65 @@
+{
+  "metrics": {
+    "breadcrumbs": 28,
+    "guides": 2,
+    "row": 24,
+    "status": 25,
+    "tabs": 32,
+    "toolbar": 32
+  },
+  "checks": [
+    "Desktop density: 24px rows, 32px toolbar and tabs, 28px breadcrumbs, compact status",
+    "Nested folders show two indentation guides",
+    "Pinned file stays open when another file previews",
+    "Arrow keys select the adjacent open file",
+    "Collapse folders preserves the active document",
+    "Workspace toolbar fits at 320px",
+    "Phone toolbar keeps 44px controls at 320px",
+    "Workspace toolbar fits at 390px",
+    "Phone toolbar keeps 44px controls at 390px",
+    "Workspace toolbar fits at 768px",
+    "Workspace toolbar fits at 900px",
+    "Workspace toolbar fits at 1280px",
+    "Workspace toolbar fits at 1920px",
+    "Real TypeScript check reports a clickable file and line",
+    "Problem opens the file and displays an inline error marker",
+    "Live disk edits remove stale inline markers",
+    "Fixing the file and rerunning produces a passing result",
+    "Closing and reopening Problems retains the project result",
+    "Stop check cancels the running project tool",
+    "Problems controls fit at 320px",
+    "Problems controls fit at 390px",
+    "Problems controls fit at 768px",
+    "Problems controls fit at 900px",
+    "Problems controls fit at 1280px",
+    "Problems controls fit at 1920px",
+    "Command search opens the project Problems panel",
+    "Project tools opens Problems in the file workbench",
+    "Final build shows the live type-check error in the editor"
+  ],
+  "date": "2026-11-03",
+  "tests": {
+    "passed": 236,
+    "failed": 0,
+    "log": "/tmp/tributary-lint-final-tests.log"
+  },
+  "typecheck": "passed",
+  "productionBuild": "passed",
+  "diffCheck": "passed",
+  "widths": [
+    320,
+    390,
+    768,
+    900,
+    1280,
+    1920
+  ],
+  "runtimeVerification": "Real installed TypeScript checker, failing fixture, linked editor diagnostic, corrected file and passing rerun; separate cancellation fixture.",
+  "boundaries": [
+    "Checks run against saved files on explicit request",
+    "No dependency installation or native Mac/Windows execution tested",
+    "Other tool output parsers validated with fixtures",
+    "Existing user app and its LAN hosting were not restarted",
+    "Changes remain local and uncommitted"
+  ]
+}

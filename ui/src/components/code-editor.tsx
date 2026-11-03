@@ -2,6 +2,10 @@ import * as React from 'react';
 import { basicSetup } from 'codemirror';
 import { EditorState, Compartment, Transaction, type Extension } from '@codemirror/state';
 import { EditorView, keymap } from '@codemirror/view';
+import { lintGutter, lintKeymap, setDiagnostics } from '@codemirror/lint';
+import { autocompletion } from '@codemirror/autocomplete';
+import { liveValidation, languageCompletions } from '@/lib/language-assistance';
+import { documentLanguage } from '@/lib/document-language-support.mjs';
 import { formatInWorker } from '@/lib/formatter';
 import { formatParser } from '@/lib/format-document.mjs';
 import { minimalChange } from '@/lib/text-change.mjs';
@@ -13,7 +17,7 @@ import { toast } from 'sonner';
 import { agentFlash, applyRemoteText, askAboutSelection, blameAt, blameGutter, showBlame, type Blame, type BlamePick, type BlameTurn } from '@/lib/agent-editor';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useStore } from '@/store';
-import type { ActivityEntry, FileContent } from '@/types';
+import type { ActivityEntry, FileContent, ProjectDiagnostic } from '@/types';
 
 // Language support loads the first time a file of that kind opens, not with the app.
 const load = {
@@ -58,8 +62,8 @@ export async function languageFor(path: string): Promise<Extension | null> {
 const theme = EditorView.theme({
   '&': { height: '100%', fontSize: '13px', backgroundColor: 'var(--card)', color: 'var(--foreground)' },
   '&.cm-focused': { outline: 'none' },
-  '.cm-scroller': { fontFamily: 'var(--font-mono)', lineHeight: '1.6' },
-  '.cm-content': { caretColor: 'var(--foreground)', padding: '8px 0' },
+  '.cm-scroller': { fontFamily: 'var(--font-mono)', lineHeight: '1.55' },
+  '.cm-content': { caretColor: 'var(--foreground)', padding: '4px 0' },
   '.cm-line': { padding: '0 12px 0 8px' },
   '.cm-lineNumbers .cm-gutterElement': { padding: '0 8px 0 12px', minWidth: '32px' },
   '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--foreground)' },
@@ -89,15 +93,16 @@ const highlight = HighlightStyle.define([
 const undoKey = typeof navigator !== 'undefined' && /Mac/.test(navigator.platform) ? '⌘⌥Z' : 'Ctrl+Alt+Z';
 
 /** A real code editor (CodeMirror 6): multi-cursor, search, folding, bracket matching, undo history. */
-export function CodeEditor({ project: documentProject, path, value, onChange, onSave, readOnly, line, wrap = false, onCursorChange, onToggleWrap }: {
-  project?: string; path: string; value: string; onChange?: (v: string) => void; onSave?: () => void; readOnly?: boolean; line?: number; wrap?: boolean; onCursorChange?: (position: { line: number; column: number }) => void; onToggleWrap?: () => void;
+export function CodeEditor({ project: documentProject, path, value, onChange, onSave, readOnly, line, column, wrap = false, onCursorChange, onToggleWrap, diagnostics = [], onDiagnostics, onNavigate }: {
+  project?: string; path: string; value: string; onChange?: (v: string) => void; onSave?: () => void; readOnly?: boolean; line?: number; column?: number; wrap?: boolean; onCursorChange?: (position: { line: number; column: number }) => void; onToggleWrap?: () => void; diagnostics?: ProjectDiagnostic[]; onDiagnostics?: (diagnostics: ProjectDiagnostic[]) => void; onNavigate?: () => void;
 }) {
   const host = React.useRef<HTMLDivElement>(null);
   const view = React.useRef<EditorView | null>(null);
   const ro = React.useRef(new Compartment());
   const language = React.useRef(new Compartment());
   const wrapping = React.useRef(new Compartment());
-  const cb = React.useRef({ onChange, onSave, onCursorChange, onToggleWrap }); cb.current = { onChange, onSave, onCursorChange, onToggleWrap };
+  const cb = React.useRef({ onChange, onSave, onCursorChange, onToggleWrap, onDiagnostics, onNavigate }); cb.current = { onChange, onSave, onCursorChange, onToggleWrap, onDiagnostics, onNavigate };
+  const [liveDiagnostics, setLiveDiagnostics] = React.useState<{ path: string; text: string; items: ProjectDiagnostic[] } | null>(null);
   // Agent-aware editing: who wrote each line (Alt+B toggles it), agent edits highlighted, a selection handed to an agent.
   const s = useStore(); const workspace = documentProject ?? s.workdir; const store = React.useRef(s); store.current = s;
   const [blameOn, setBlameOn] = React.useState(() => { try { return localStorage.getItem('tributary.blame') !== 'off'; } catch { return true; } });
@@ -148,15 +153,17 @@ export function CodeEditor({ project: documentProject, path, value, onChange, on
       state: EditorState.create({
         doc: value,
         extensions: [
-          basicSetup, theme, syntaxHighlighting(highlight), keymap.of([indentWithTab, { key: 'Mod-s', preventDefault: true, run: () => { cb.current.onSave?.(); return true; } }, { key: 'Alt-z', run: () => { if (!cb.current.onToggleWrap) return false; cb.current.onToggleWrap(); return true; } }]),
+          basicSetup, theme, lintGutter(), keymap.of(lintKeymap), syntaxHighlighting(highlight), keymap.of([indentWithTab, { key: 'Mod-s', preventDefault: true, run: () => { cb.current.onSave?.(); return true; } }, { key: 'Alt-z', run: () => { if (!cb.current.onToggleWrap) return false; cb.current.onToggleWrap(); return true; } }]),
           EditorView.contentAttributes.of({ 'aria-label': `Edit ${path}`, tabindex: '0' }),
           ro.current.of([EditorState.readOnly.of(!!readOnly), EditorView.editable.of(!readOnly)]),
           wrapping.current.of(wrap ? EditorView.lineWrapping : []),
           EditorView.updateListener.of((u) => {
             if (u.docChanged && u.transactions.some((transaction) => !transaction.annotation(Transaction.remote))) cb.current.onChange?.(u.state.doc.toString());
+            if (u.selectionSet && u.transactions.some((transaction) => transaction.isUserEvent('select'))) cb.current.onNavigate?.();
             if (u.selectionSet || u.docChanged) { const head = u.state.selection.main.head; const current = u.state.doc.lineAt(head); cb.current.onCursorChange?.({ line: current.number, column: head - current.from + 1 }); }
           }),
           language.current.of([]),
+          ...(documentLanguage(path) ? [autocompletion({ override: [languageCompletions(path)] })] : []),
           agentFlash,
           blameGutter((pick) => { const box = host.current!.getBoundingClientRect(); setPicked({ ...pick, x: pick.x - box.left, y: pick.y - box.top }); }),
           keymap.of([{ key: 'Shift-Alt-f', run: () => { void format.current(); return !readOnly && !!formatParser(path); } }, { key: 'Mod-Alt-z', run: (v) => { const head = v.state.selection.main.head; const turn = blameAt(v.state, head); if (!turn) return false; void undo.current(turn, v.state.doc.lineAt(head).number); return true; } }]),
@@ -187,13 +194,35 @@ export function CodeEditor({ project: documentProject, path, value, onChange, on
     // Only the changed part is replaced, so the cursor and scroll position stay put; the changed lines light up.
     if (applyRemoteText(v, value)) setDiskChanged((n) => n + 1);
   }, [value]);
+  React.useEffect(() => {
+    let current = true;
+    cb.current.onDiagnostics?.([]);
+    if (readOnly || !documentLanguage(path)) return;
+    const timer = setTimeout(() => {
+      liveValidation(path, value).then((items) => { if (current) { setLiveDiagnostics({ path, text: value, items }); cb.current.onDiagnostics?.(items); } }).catch(() => { if (current) setLiveDiagnostics(null); });
+    }, 300);
+    return () => { current = false; clearTimeout(timer); };
+  }, [path, value, readOnly]);
+  const allDiagnostics = [...diagnostics, ...(liveDiagnostics?.path === path && liveDiagnostics.text === value ? liveDiagnostics.items : [])];
+  const diagnosticKey = JSON.stringify(allDiagnostics);
+  React.useEffect(() => {
+    const v = view.current; if (!v) return;
+    v.dispatch(setDiagnostics(v.state, allDiagnostics.map((d) => {
+      const row = v.state.doc.line(Math.min(v.state.doc.lines, Math.max(1, d.line)));
+      const from = Math.min(row.to, row.from + Math.max(0, d.column - 1));
+      return { from, to: Math.min(v.state.doc.length, Math.max(from, Math.min(row.to, from + 1))), severity: d.severity, message: d.message, source: d.source || undefined };
+    })));
+    // Diagnostics are value data; equivalent arrays must not dispatch on every cursor update.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [diagnosticKey, path]);
   React.useEffect(() => { view.current?.dispatch({ effects: ro.current.reconfigure([EditorState.readOnly.of(!!readOnly), EditorView.editable.of(!readOnly)]) }); }, [readOnly]);
   React.useEffect(() => { view.current?.dispatch({ effects: wrapping.current.reconfigure(wrap ? EditorView.lineWrapping : []) }); }, [wrap]);
   React.useEffect(() => {
     const v = view.current; if (!v || !line) return;
     const l = v.state.doc.line(Math.min(Math.max(1, line), v.state.doc.lines));
-    v.dispatch({ selection: { anchor: l.from }, effects: EditorView.scrollIntoView(l.from, { y: 'center' }) }); v.focus();
-  }, [line, path]);
+    const at = Math.min(l.to, l.from + Math.max(0, (column || 1) - 1));
+    v.dispatch({ selection: { anchor: at }, effects: EditorView.scrollIntoView(at, { y: 'center' }) }); v.focus();
+  }, [line, column, path]);
 
   // Agents changing this file in the project right now (not those working in their own copy).
   const [editing, setEditing] = React.useState<string[]>([]);

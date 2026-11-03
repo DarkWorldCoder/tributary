@@ -79,23 +79,23 @@ export function NoProject() {
 }
 
 const STARTERS = [
-  { label: 'Explain this project', text: 'Explain what this project does, how it is organized, and how to run it. Keep it short and plain.', mode: 'read' as const },
-  { label: 'Find and fix a bug', text: 'Find the most likely bug in this project, explain it in plain words, then fix it and tell me how you checked.' },
+  { label: 'Explain project', text: 'Explain what this project does, how it is organized, and how to run it. Keep it short and plain.', mode: 'read' as const },
+  { label: 'Fix a bug', text: 'Find the most likely bug in this project, explain it in plain words, then fix it and tell me how you checked.' },
   { label: 'Add tests', text: 'Add tests for the most important code that has none yet, and run them.' },
-  { label: 'Review my changes', text: '/review' },
+  { label: 'Review changes', text: '/review' },
 ];
 
 /** Starter prompts for a new thread. */
 export function Starters() {
   const s = useStore();
   return (
-    <div className="mt-5 flex flex-wrap justify-center gap-2" role="group" aria-label="Suggested tasks">
+    <div className="mt-4 flex flex-wrap justify-center gap-1.5" role="group" aria-label="Suggested tasks">
       {STARTERS.map((x) => (
-        <button key={x.label} onClick={() => { s.setDraft(x.text); if (x.mode) s.setMode(x.mode); }} className="rounded-full border bg-card px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+        <button key={x.label} onClick={() => { s.setDraft(x.text); if (x.mode) s.setMode(x.mode); }} className="min-h-8 rounded-lg border bg-card px-2.5 py-1.5 text-xs max-sm:min-h-11 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
           {x.label}
         </button>
       ))}
-      <button onClick={() => s.openPanel('memory')} className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"><BookOpen className="size-3.5" /> Shared memory</button>
+      <button onClick={() => s.openPanel('memory')} className="inline-flex items-center gap-1.5 min-h-8 rounded-lg border bg-card px-2.5 py-1.5 text-xs max-sm:min-h-11 text-muted-foreground hover:bg-muted hover:text-foreground"><BookOpen className="size-3.5" /> Shared memory</button>
     </div>
   );
 }

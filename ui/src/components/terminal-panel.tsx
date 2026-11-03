@@ -1,7 +1,9 @@
+import { ShortcutLabel } from '@/components/shortcut-settings';
 import * as React from 'react';
-import { Plus, SquareTerminal, X } from 'lucide-react';
+import { PanelBottom, PanelLeft, PanelRight, PanelTop, PanelsTopLeft, Plus, SquareTerminal, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { XtermView, wire } from '@/components/terminal-view';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -18,6 +20,14 @@ export function TerminalPanel({ hidden = false }: { hidden?: boolean } = {}) {
   const [editing, setEditing] = React.useState<string | null>(null);
   const [active, setActive] = React.useState<string | null>(null);
   const [height, setHeight] = React.useState(() => { try { return Number(localStorage.getItem('tributary.termHeight')) || 260; } catch { return 260; } });
+  const [width, setWidth] = React.useState(() => { try { return Number(localStorage.getItem('tributary.termWidth')) || 420; } catch { return 420; } });
+  const section = React.useRef<HTMLElement>(null);
+  const cleanupDrag = React.useRef<() => void>(() => {});
+  const side = s.terminalDock === 'left' || s.terminalDock === 'right';
+  const leading = s.terminalDock === 'left' || s.terminalDock === 'top';
+  const [maxSize, setMaxSize] = React.useState(800);
+  const minSize = side ? Math.min(240, maxSize) : Math.min(120, maxSize);
+  const size = Math.min(maxSize, Math.max(minSize, side ? width : height));
   const desktop = s.hub.platform === 'desktop';
   const creating = React.useRef(new Set<string | null>());
   const create = React.useCallback(async (command?: string, cwd = s.workdir) => {
@@ -46,19 +56,29 @@ export function TerminalPanel({ hidden = false }: { hidden?: boolean } = {}) {
   const termsRef = React.useRef(terms); termsRef.current = terms;
   React.useEffect(() => () => { for (const t of termsRef.current) hub.call('termKill', t.id).catch(() => {}); }, []);
   React.useEffect(() => { const t = setTimeout(() => { try { localStorage.setItem('tributary.termHeight', String(height)); } catch { /* storage unavailable */ } }, 300); return () => clearTimeout(t); }, [height]);
-  const maxHeight = () => Math.round(window.innerHeight * 0.75);
+  React.useEffect(() => { try { localStorage.setItem('tributary.termWidth', String(width)); } catch { /* optional preference */ } }, [width]);
+  React.useEffect(() => {
+    const parent = section.current?.parentElement; if (!parent) return;
+    const resize = () => { const r = parent.getBoundingClientRect(); setMaxSize(Math.max(80, Math.floor((side ? r.width : r.height) * 0.65))); };
+    resize(); const observer = new ResizeObserver(resize); observer.observe(parent);
+    return () => observer.disconnect();
+  }, [side]);
+  React.useEffect(() => () => cleanupDrag.current(), [s.terminalDock]);
+  const setSize = (value: number) => (side ? setWidth : setHeight)(Math.min(maxSize, Math.max(minSize, value)));
   const rename = (id: string, value: string) => { const v = value.trim(); if (v) setTerms((x) => x.map((y) => (y.id === id ? { ...y, title: v.slice(0, 40), named: true } : y))); setEditing(null); };
   const drag = (e: React.PointerEvent) => {
-    const y0 = e.clientY; const h0 = height;
-    const move = (ev: PointerEvent) => setHeight(Math.min(Math.max(120, h0 + (y0 - ev.clientY)), maxHeight()));
-    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
-    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+    if (e.button !== 0) return; e.preventDefault(); cleanupDrag.current();
+    const start = side ? e.clientX : e.clientY; const initial = size;
+    const move = (ev: PointerEvent) => setSize(initial + ((side ? ev.clientX : ev.clientY) - start) * (leading ? 1 : -1));
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); };
+    cleanupDrag.current = up;
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
   };
   return (
-    <section aria-label="Terminal" className={cn('relative flex shrink-0 flex-col border-t bg-card', hidden && 'hidden')} style={{ height }}>
-      <div role="separator" aria-orientation="horizontal" aria-label="Resize terminal" tabIndex={0} aria-valuenow={height} aria-valuemin={120} aria-valuemax={maxHeight()}
-        onKeyDown={(e) => { if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); setHeight((h) => Math.min(Math.max(120, h + (e.key === 'ArrowUp' ? 24 : -24)), maxHeight())); } }}
-        onPointerDown={drag} className="absolute inset-x-0 -top-1 z-10 h-2 cursor-row-resize outline-none hover:bg-brand/30 focus-visible:bg-brand/40" />
+    <section ref={section} aria-label="Terminal" data-position={s.terminalDock} className={cn('relative flex min-h-0 min-w-0 shrink-0 flex-col bg-card', leading && '-order-1', s.terminalDock === 'bottom' ? 'border-t' : s.terminalDock === 'top' ? 'border-b' : s.terminalDock === 'left' ? 'border-r' : 'border-l', hidden && 'hidden')} style={side ? { width: size } : { height: size }}>
+      <div role="separator" aria-orientation={side ? 'vertical' : 'horizontal'} aria-label="Resize terminal" tabIndex={0} aria-valuenow={size} aria-valuemin={minSize} aria-valuemax={maxSize}
+        onKeyDown={(e) => { const keys = side ? ['ArrowLeft', 'ArrowRight'] : ['ArrowUp', 'ArrowDown']; if (keys.includes(e.key)) { e.preventDefault(); setSize(size + (e.key === keys[1] ? 24 : -24) * (leading ? 1 : -1)); } else if (e.key === 'Home' || e.key === 'End') { e.preventDefault(); setSize(e.key === 'Home' ? minSize : maxSize); } }}
+        onPointerDown={drag} className={cn('absolute z-10 touch-none outline-none hover:bg-brand/30 focus-visible:bg-brand/40', side ? `inset-y-0 w-2 cursor-col-resize ${leading ? '-right-1' : '-left-1'}` : `inset-x-0 h-2 cursor-row-resize ${leading ? '-bottom-1' : '-top-1'}`)} />
       <header className="workbench-toolbar gap-1 border-b px-2">
         <SquareTerminal className="size-4 text-muted-foreground" />
         <div role="tablist" aria-label="Terminals" className="flex min-w-0 flex-1 gap-0.5 overflow-x-auto">
@@ -74,7 +94,11 @@ export function TerminalPanel({ hidden = false }: { hidden?: boolean } = {}) {
           ))}
         </div>
         {desktop && <Tooltip><TooltipTrigger asChild><Button className="workbench-action" variant="ghost" size="icon-sm" onClick={() => create()} aria-label="New terminal"><Plus /></Button></TooltipTrigger><TooltipContent>New terminal</TooltipContent></Tooltip>}
-        <Tooltip><TooltipTrigger asChild><Button className="workbench-action" variant="ghost" size="icon-sm" onClick={() => s.setTerminalOpen(false)} aria-label="Hide terminal"><X /></Button></TooltipTrigger><TooltipContent>Hide (Ctrl+`)</TooltipContent></Tooltip>
+        <DropdownMenu><Tooltip><TooltipTrigger asChild><DropdownMenuTrigger asChild><Button className="workbench-action" variant="ghost" size="icon-sm" aria-label="Move terminal"><PanelsTopLeft /></Button></DropdownMenuTrigger></TooltipTrigger><TooltipContent>Move terminal</TooltipContent></Tooltip>
+          <DropdownMenuContent align="end"><DropdownMenuLabel>Terminal position</DropdownMenuLabel><DropdownMenuRadioGroup value={s.terminalPosition} onValueChange={(value) => s.setTerminalPosition(value as typeof s.terminalPosition)}>
+            {([['left', 'Left', PanelLeft], ['right', 'Right', PanelRight], ['top', 'Top', PanelTop], ['bottom', 'Bottom', PanelBottom]] as const).map(([value, label, Icon]) => <DropdownMenuRadioItem key={value} value={value}><Icon className="size-4" />{label}</DropdownMenuRadioItem>)}
+          </DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu>
+        <Tooltip><TooltipTrigger asChild><Button className="workbench-action" variant="ghost" size="icon-sm" onClick={() => s.setTerminalOpen(false)} aria-label="Hide terminal"><X /></Button></TooltipTrigger><TooltipContent>Hide <ShortcutLabel action="terminal" /></TooltipContent></Tooltip>
       </header>
       <div className="min-h-0 flex-1">
         {desktop ? terms.map((t) => (

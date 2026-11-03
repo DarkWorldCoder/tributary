@@ -28,17 +28,26 @@ function fmt(m, names) {
 
 function digest(messages, names, budget = BUDGET) {
   budget = Math.max(0, Math.min(BUDGET, Number.isFinite(budget) ? Math.floor(budget) : BUDGET));
-  const parts = messages.map((m) => fmt(m, names));
-  if (parts.join('\n\n').length <= budget) return parts.join('\n\n');
-  const first = (parts[0] || '').slice(0, Math.floor(budget / 3));
-  const kept = []; let remaining = Math.max(0, budget - first.length - 85);
-  for (let i = parts.length - 1; i >= 1 && remaining > 0; i--) {
-    const part = parts[i].slice(0, Math.max(0, remaining - 2));
-    if (!part) break;
-    kept.unshift(part); remaining -= part.length + 2;
-    if (part.length < parts[i].length) break;
+  if (!budget || !messages.length) return '';
+  const original = fmt(messages[0], names);
+  if (messages.length === 1) return original.slice(0, budget);
+  // Only format the bounded tail. Long sessions should not rebuild their entire transcript.
+  const tail = []; let size = original.length;
+  for (let i = messages.length - 1; i >= 1; i--) {
+    const part = fmt(messages[i], names); tail.unshift(part); size += part.length + 2;
+    if (size > budget) break;
+    if (i === 1) return [original, ...tail].join('\n\n');
   }
-  return `${first}\n\n(… earlier messages omitted to fit the handoff budget …)\n\n${kept.join('\n\n')}`.slice(0, budget);
+  const first = original.slice(0, Math.floor(budget / 3));
+  const marker = '\n\n(… earlier messages omitted to fit the handoff budget …)\n\n';
+  const kept = []; let remaining = Math.max(0, budget - first.length - marker.length);
+  for (let i = tail.length - 1; i >= 0 && remaining > 0; i--) {
+    const part = tail[i].slice(0, Math.max(0, remaining - (kept.length ? 2 : 0)));
+    if (!part) break;
+    remaining -= part.length + (kept.length ? 2 : 0); kept.unshift(part);
+    if (part.length < tail[i].length) break;
+  }
+  return `${first}${marker}${kept.join('\n\n')}`.slice(0, budget);
 }
 
 function gitBlock(git) {

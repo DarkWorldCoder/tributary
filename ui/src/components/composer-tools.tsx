@@ -93,7 +93,8 @@ export function ComposerTools({ everyday, planOn, setPlanOn, focusMessage, onAtt
               {row('files', 'Files and folders', <FolderOpen />, everyday ? 'Browse your project' : 'Reference project files', () => changePage('files'), { disabled: !s.project, next: true, keywords: 'reference context' })}
               {row('skills', 'Skills', <Sparkles />, 'Guidance for your next message', () => changePage('skills'), { next: true })}
               {!everyday && row('plan', 'Plan first', <ListTodo />, 'Review a plan before building', () => run(() => { setPlanOn(!planOn); focusMessage(); }), { checked: planOn })}
-              {!everyday && row('team', 'Work with a team', <Users />, s.ready.length < 2 ? 'Connect two or more agents' : 'Plan, build and review', () => run(() => s.setTeamOpen(true)), { disabled: s.ready.length < 2 })}
+              {!everyday && row('team', 'Work with a team', <Users />, 'Delegate coding tasks', () => run(() => s.setTeamOpen(true)))}
+              {!everyday && row('delegation', 'Agent delegation', <Users />, s.st?.settings.agentDelegation === false ? 'Off' : `Up to ${Number(s.st?.settings.delegationConcurrency) || 2} background workers`, () => run(() => { void s.hub.call('setSettings', { agentDelegation: s.st?.settings.agentDelegation === false }).catch((error: Error) => setError(error.message)); }), { checked: s.st?.settings.agentDelegation !== false })}
               {row('agents', 'Your agents', <Users />, 'Switch or add an assistant', () => changePage('agents'), { next: true })}
               {row('connections', 'Apps and connections', <Plug />, 'Manage assistant connections', () => run(() => s.openSettings('connections')))}
               {!everyday && row('mcp', 'MCP tools', <Plug />, 'Configured agent tool servers', () => changePage('mcp'), { next: true })}

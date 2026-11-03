@@ -24,7 +24,7 @@ class FileWatches {
       for (const [dir, rels] of groups) {
         try {
           const handle = fs.watch(dir, { persistent: false }, (event, name) => {
-            if (dir === root && event === 'rename') queue('');
+            if (event === 'rename') queue('');
             for (const rel of rels) if (!name || path.basename(rel) === name.toString()) queue(rel);
           });
           // Network-mounted folders can lose native events; stat polling remains active below.

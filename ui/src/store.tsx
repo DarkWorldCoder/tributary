@@ -2,6 +2,9 @@ import * as React from 'react';
 import { toast } from 'sonner';
 import { createMockHub } from './mock';
 import { applyPatch } from '@/lib/message-patch.mjs';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useWorkspaceView } from '@/hooks/use-workspace-view';
+import { followedFile } from '@/lib/workbench-navigation.mjs';
 import type { Agent, AgentMessage, GitInfo, HubBridge, HubState, Message, Mode, Thread, ThreadSummary, TaskInput, SavedDocument } from './types';
 
 export type PanelTab = 'review' | 'changes' | 'files' | 'memory' | 'preview';
@@ -27,7 +30,7 @@ const ls = {
 
 export type Theme = 'system' | 'light' | 'dark';
 export type InterfaceFont = 'geist' | 'plex' | 'system';
-export type SettingsTab = 'connections' | 'agents' | 'gateways' | 'mcp' | 'skills' | 'appearance' | 'about';
+export type SettingsTab = 'connections' | 'agents' | 'gateways' | 'mcp' | 'skills' | 'appearance' | 'shortcuts' | 'about';
 
 function useStored<T>(key: string, initial: T) {
   const [v, setV] = React.useState<T>(() => ls.get(key, initial));
@@ -54,19 +57,31 @@ function useStoreValue() {
   const [interfaceFont, setInterfaceFont] = useStored<InterfaceFont>('interfaceFont', 'geist');
   const [readingSize, setReadingSize] = useStored<number>('readingSize', 15);
   const [codingReadingSize, setCodingReadingSize] = useStored<number>('codingReadingSize', 13);
+  const [uiDensity, setUiDensity] = useStored<'compact' | 'comfortable'>('uiDensity', 'compact');
+  const [compactFolders, setCompactFolders] = useStored<boolean>('compactFolders', true);
+  const [stickyFolders, setStickyFolders] = useStored<boolean>('stickyFolders', true);
   const [roomOpen, setRoomOpen] = React.useState(false);
   const [contextOpen, setContextOpen] = useStored<boolean>('contextOpen', true);
   const [contextSheetOpen, setContextSheetOpen] = React.useState(false);
-  const [workspaceLayout, setWorkspaceLayout] = useStored<'editor' | 'chat'>('workspaceLayout', 'editor');
-  const [workspaceExpanded, setWorkspaceExpanded] = useStored<boolean>('workspaceExpanded', false);
+  const { view, update: updateView, saved: workspaceViewSaved } = useWorkspaceView(thread?.worktree?.cwd ?? project);
+  const workspaceLayout = view.layout; const workspaceExpanded = view.expanded; const panel = view.panel;
+  const setWorkspaceLayout = React.useCallback((layout: 'editor' | 'chat') => updateView({ layout }), [updateView]);
+  const setWorkspaceExpanded = React.useCallback((expanded: boolean) => updateView({ expanded }), [updateView]);
   const [review, setReview] = React.useState<{ open: boolean; rel: string | null; diff: string }>({ open: false, rel: null, diff: '' });
-  const [panel, setPanelRaw] = React.useState<{ open: boolean; tab: PanelTab }>(() => ({ open: false, tab: ls.get<PanelTab>('panelTab', 'review') }));
-  const [fileToOpen, setFileToOpen] = React.useState<{ rel: string; line?: number; intent: 'preview' | 'pinned'; project: string | null; n: number } | null>(null);
+  const [fileToOpen, setFileToOpen] = React.useState<{ rel: string; line?: number; column?: number; following?: boolean; intent: 'preview' | 'pinned'; project: string | null; n: number } | null>(null);
+  const [followThread, setFollowThread] = React.useState<string | null>(null);
+  const pauseFollowing = React.useCallback(() => setFollowThread(null), []);
+  const [checksIntent, setChecksIntent] = React.useState<{ project: string; n: number } | null>(null);
   const [terminalOpen, setTerminalOpenRaw] = useStored<boolean>('terminal', false);
+  const [terminalPositionRaw, setTerminalPosition] = useStored<'left' | 'right' | 'top' | 'bottom'>('terminalPosition', 'bottom');
+  const terminalPosition = ['left', 'right', 'top', 'bottom'].includes(terminalPositionRaw) ? terminalPositionRaw : 'bottom';
+  const mobile = useIsMobile();
+  const terminalDock = mobile ? 'bottom' : terminalPosition;
   const [teamOpen, setTeamOpen] = React.useState(false);
-  const [queue, setQueue] = React.useState<Record<string, { text: string; attachments?: string[]; plan?: boolean; mode?: Mode; agentId: string; model?: string; gatewayId?: string | null }[]>>({});
+  const [queue, setQueue] = React.useState<Record<string, { id: string; text: string; attachments?: string[]; plan?: boolean; mode?: Mode; agentId: string; model?: string; gatewayId?: string | null }[]>>({});
   const [settings, setSettings] = React.useState<{ open: boolean; tab: SettingsTab }>({ open: false, tab: 'agents' });
   const [palette, setPalette] = React.useState(false);
+  const [recentOpen, setRecentOpen] = React.useState(false);
   const [shortcutsOpen, setShortcutsOpen] = React.useState(false);
   const [loaded, setLoaded] = React.useState(false);
   const [home, setHome] = React.useState(false);
@@ -94,14 +109,14 @@ function useStoreValue() {
     if (!t) return;
     markSeen(t.id);
     threadRef.current = t; projectRef.current = t.project; workdirRef.current = t.worktree?.cwd ?? t.project;
-    setWorkspaceExpanded(false); setHome(false); setThread(t); setThreadIdRaw(t.id); setProjectRaw(t.project); refreshGit(workdirRef.current);
-  }, [refreshGit, setProjectRaw, setThreadIdRaw, markSeen, setWorkspaceExpanded]);
+    pauseFollowing(); setHome(false); setThread(t); setThreadIdRaw(t.id); setProjectRaw(t.project); refreshGit(workdirRef.current);
+  }, [refreshGit, setProjectRaw, setThreadIdRaw, markSeen, pauseFollowing]);
 
   const newThread = React.useCallback((p?: string | null) => {
     const target = p ?? projectRef.current; if (!target) return;
     threadRef.current = null; projectRef.current = target; workdirRef.current = target;
-    setWorkspaceExpanded(false); setHome(false); setThread(null); setThreadIdRaw(null); setProjectRaw(target); refreshGit(target);
-  }, [refreshGit, setProjectRaw, setThreadIdRaw, setWorkspaceExpanded]);
+    pauseFollowing(); setHome(false); setThread(null); setThreadIdRaw(null); setProjectRaw(target); refreshGit(target);
+  }, [refreshGit, setProjectRaw, setThreadIdRaw, pauseFollowing]);
 
   // First load
   React.useEffect(() => {
@@ -161,6 +176,7 @@ function useStoreValue() {
   }, [loadThreads, newThread, refreshGit, refreshState, openThread, markSeen]);
 
   // Theme
+  React.useEffect(() => { document.documentElement.dataset.uiDensity = uiDensity === 'comfortable' ? 'comfortable' : 'compact'; }, [uiDensity]);
   React.useEffect(() => {
     const fonts = { geist: "'Geist Variable', ui-sans-serif, system-ui, sans-serif", plex: "'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif", system: 'ui-sans-serif, system-ui, sans-serif' };
     document.documentElement.style.setProperty('--app-font', fonts[interfaceFont] || fonts.geist);
@@ -188,7 +204,7 @@ function useStoreValue() {
     // While an agent is working in this thread, hold the message and send it when the turn ends.
     if (t && st?.running.includes(t.id)) {
       const id = t.id;
-      setQueue((q) => ({ ...q, [id]: [...(q[id] || []), { text: text.trim(), attachments: opts.attachments, plan: opts.plan, mode: opts.mode ?? mode, agentId: who, model, gatewayId: source }] }));
+      setQueue((q) => ({ ...q, [id]: [...(q[id] || []), { id: crypto.randomUUID(), text: text.trim(), attachments: opts.attachments, plan: opts.plan, mode: opts.mode ?? mode, agentId: who, model, gatewayId: source }] }));
       return true;
     }
     if (!t) {
@@ -210,10 +226,20 @@ function useStoreValue() {
       .catch((e: Error) => toast.error(e.message || String(e)));
   }, [st, thread, queue, mode, gatewayId]);
 
-  const setPanel = React.useCallback((p: { open: boolean; tab: PanelTab }) => { setPanelRaw(p); ls.set('panelTab', p.tab); }, []);
+  const setPanel = React.useCallback((p: { open: boolean; tab: PanelTab }) => { if (!p.open || p.tab !== 'files') pauseFollowing(); updateView({ panel: p }); }, [updateView, pauseFollowing]);
   const openPanel = React.useCallback((tab: PanelTab) => { setPanel({ open: true, tab }); }, [setPanel]);
   const fileIntentId = React.useRef(0);
-  const openFile = React.useCallback((rel: string, line?: number, intent: 'preview' | 'pinned' = 'preview') => { setFileToOpen({ rel, line, intent, project: workdirRef.current, n: ++fileIntentId.current }); setPanel({ open: true, tab: 'files' }); }, [setPanel]);
+  const openChecks = React.useCallback(() => { const project = workdirRef.current; if (!project) return; setChecksIntent({ project, n: ++fileIntentId.current }); setPanel({ open: true, tab: 'files' }); }, [setPanel]);
+  const openFile = React.useCallback((rel: string, line?: number, intent: 'preview' | 'pinned' = 'preview', column?: number) => { pauseFollowing(); setFileToOpen({ rel, line, column, intent, project: workdirRef.current, n: ++fileIntentId.current }); setPanel({ open: true, tab: 'files' }); }, [setPanel, pauseFollowing]);
+  const following = !!thread && followThread === thread.id;
+  const followed = React.useRef('');
+  const followTarget = following ? followedFile(thread, workdir) : null;
+  React.useEffect(() => {
+    if (!following || !followTarget || !panel.open || panel.tab !== 'files') return;
+    const key = `${thread?.id}:${followTarget.key}`; if (followed.current === key) return; followed.current = key;
+    setFileToOpen({ rel: followTarget.rel, following: true, intent: 'preview', project: workdirRef.current, n: ++fileIntentId.current });
+  }, [following, followTarget?.key, panel.open, panel.tab, thread?.id]);
+  const toggleFollowing = () => { if (following) pauseFollowing(); else if (thread) { followed.current = ''; openPanel('files'); setFollowThread(thread.id); } };
 
   const openReview = React.useCallback(async (rel?: string | null) => {
     const p = workdirRef.current; if (!p) return;
@@ -244,15 +270,19 @@ function useStoreValue() {
   return {
     hub, loaded, st, threadsBy, project, workdir, thread, git, agentId, agent, mode, gatewayId, theme, review, settings, palette, ready, running,
     get draft() { return getDraft(); },
-    home, goHome: () => { setHome(true); setPanelRaw((p) => ({ ...p, open: false })); }, startTask, document: activeDocument, setDocument, makeDocument,
-    shortcutsOpen, setShortcutsOpen, panel, setPanel, openPanel, fileToOpen, openFile, terminalOpen, teamOpen, setTeamOpen, roomOpen, setRoomOpen,
+    home, goHome: () => { setHome(true); pauseFollowing(); }, startTask, document: activeDocument, setDocument, makeDocument,
+    shortcutsOpen, setShortcutsOpen, panel, setPanel, openPanel, fileToOpen, openFile, checksIntent, openChecks, terminalOpen, teamOpen, setTeamOpen, roomOpen, setRoomOpen, recentOpen, setRecentOpen,
     selectedModel, setSelectedModel, modelFor,
     interfaceFont, setInterfaceFont, readingSize, setReadingSize, codingReadingSize, setCodingReadingSize,
-    workspaceExpanded, setWorkspaceExpanded, workspaceLayout, setWorkspaceLayout,
+    uiDensity, setUiDensity, compactFolders, setCompactFolders, stickyFolders, setStickyFolders,
+    following, toggleFollowing, pauseFollowing,
+    workspaceExpanded, setWorkspaceExpanded, workspaceLayout, setWorkspaceLayout, workspaceViewSaved,
     contextOpen, setContextOpen, contextSheetOpen, setContextSheetOpen,
-    codeLayout: workspaceLayout === 'editor' && !home && !!thread?.messages.length && st?.projects.find((p) => p.path === project)?.kind !== 'personal',
+    codeLayout: workspaceLayout === 'editor' && !home && loaded && !!project && st?.projects.find((p) => p.path === project)?.kind !== 'personal',
     queued: (thread && queue[thread.id]) || [], clearQueue: () => { if (thread) setQueue((q) => ({ ...q, [thread.id]: [] })); },
-    setTerminalOpen: setTerminalOpenRaw,
+    editQueued: (id: string, text: string) => { if (thread && text.trim()) setQueue((q) => ({ ...q, [thread.id]: (q[thread.id] || []).map((m) => m.id === id ? { ...m, text: text.trim() } : m) })); },
+    removeQueued: (id: string) => { if (thread) setQueue((q) => ({ ...q, [thread.id]: (q[thread.id] || []).filter((m) => m.id !== id) })); },
+    setTerminalOpen: setTerminalOpenRaw, terminalPosition, setTerminalPosition, terminalDock,
     agentOf, refreshState, loadThreads, refreshGit, openThread, newThread, send, openReview,
     setAgentId, setMode, setGatewayId, setTheme, setReview, setSettings, setPalette, setDraft, setThread,
     stop: () => { if (threadRef.current) hub.call('stop', threadRef.current.id); },

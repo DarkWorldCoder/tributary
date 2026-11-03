@@ -28,7 +28,7 @@ const RECIPES = {
   },
   manager: {
     name: 'Manager',
-    description: 'One agent splits the task into independent pieces. Workers build them at the same time, each in its own copy, and a piece is merged only when it applies cleanly and your tests pass.',
+    description: 'One agent splits the task into independent pieces. Workers build them at the same time, each in its own copy, and a piece is merged only when it applies cleanly and configured checks pass.',
     roles: [{ id: 'planner', label: 'Manager' }, { id: 'workers', label: 'Workers', multi: true }],
   },
 };
@@ -43,6 +43,8 @@ function validateTeam(hub, team) {
   if (!String(team.task || '').trim()) throw new Error('Describe the task for the team');
   if (typeof team.task !== 'string' || team.task.length > 12000) throw new Error('Keep the team task below 12,000 characters.');
   if (team.maxRounds !== undefined && (!Number.isInteger(team.maxRounds) || team.maxRounds < 0 || team.maxRounds > 5)) throw new Error('Choose between zero and five repair rounds.');
+  if (team.recipe === 'manager' && team.mode === 'read') throw new Error('Choose Edit files to delegate coding tasks, or Ask everyone for read-only work.');
+  if (team.recipe === 'manager' && team.maxParallel !== undefined && (!Number.isInteger(team.maxParallel) || team.maxParallel < 1 || team.maxParallel > new Set(team.roles?.workers || []).size)) throw new Error('Choose a parallel worker limit between 1 and the selected worker count.');
   for (const role of recipe.roles) {
     const value = team.roles?.[role.id];
     const ids = role.multi ? value : [value];

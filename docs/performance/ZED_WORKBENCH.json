@@ -1,0 +1,509 @@
+{
+  "date": "2026-11-03",
+  "scope": "First Zed-inspired workbench implementation pass",
+  "validation": {
+    "regression": {
+      "passed": 274,
+      "failed": 0,
+      "logDuringRun": "/tmp/tributary-zed-final-tests.log"
+    },
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "diffWhitespaceCheck": "passed",
+    "browserEnvironment": "Isolated Electron profile on Linux/X11 with local fixtures; no paid provider calls or LAN host started",
+    "keyboard": [
+      "Releasing Control selects the previous file",
+      "File switcher returns focus to the editor",
+      "Escape dismisses layout menu without closing workspace",
+      "Escape cancels recent-file switching without closing workspace",
+      "Keyboard resize resets explorer to 224px"
+    ],
+    "agentAndQueue": [
+      "Opt-in Follow opens the agent file without replacing its unsaved draft",
+      "Manual file navigation pauses Follow",
+      "Queued messages support independent edit and removal",
+      "Later agent activity does not override manual file selection"
+    ],
+    "liveRefresh": [
+      "Expanded parent stays visible while scrolling",
+      "Disk updates preserve unsaved content",
+      "File watcher keeps tree rows mounted and scroll position",
+      "Review remains clickable with live file changes"
+    ],
+    "responsive": {
+      "checks": [
+        "Explicit chat-only layout survives reload",
+        "Phone menu retains Follow agent",
+        "Chat fits at 320px",
+        "Chat fits at 390px",
+        "Chat fits at 768px",
+        "Chat fits at 900px",
+        "Chat fits at 1280px",
+        "Chat fits at 1920px",
+        "Workspace fits at 320px",
+        "Breadcrumb toolbar fits touch controls at 320px",
+        "Workspace fits at 390px",
+        "Breadcrumb toolbar fits touch controls at 390px",
+        "Workspace fits at 768px",
+        "Workspace fits at 900px",
+        "Workspace fits at 1280px",
+        "Workspace fits at 1920px"
+      ],
+      "dimensions": [
+        {
+          "buttons": [
+            {
+              "height": 44,
+              "label": null,
+              "left": 4,
+              "right": 48
+            },
+            {
+              "height": 27.5,
+              "label": "Switch conversation",
+              "left": 52,
+              "right": 168
+            },
+            {
+              "height": 44,
+              "label": "Open live activity",
+              "left": 172,
+              "right": 216
+            },
+            {
+              "height": 44,
+              "label": "Notifications, 1 unread",
+              "left": 220,
+              "right": 264
+            },
+            {
+              "height": 44,
+              "label": "More options",
+              "left": 268,
+              "right": 312
+            }
+          ],
+          "documentWidth": 320,
+          "surface": "chat",
+          "title": 116,
+          "width": 320
+        },
+        {
+          "buttons": [
+            {
+              "height": 44,
+              "label": null,
+              "left": 4,
+              "right": 48
+            },
+            {
+              "height": 27.5,
+              "label": "Switch conversation",
+              "left": 52,
+              "right": 238
+            },
+            {
+              "height": 44,
+              "label": "Open live activity",
+              "left": 242,
+              "right": 286
+            },
+            {
+              "height": 44,
+              "label": "Notifications, 1 unread",
+              "left": 290,
+              "right": 334
+            },
+            {
+              "height": 44,
+              "label": "More options",
+              "left": 338,
+              "right": 382
+            }
+          ],
+          "documentWidth": 390,
+          "surface": "chat",
+          "title": 186,
+          "width": 390
+        },
+        {
+          "buttons": [
+            {
+              "height": 32,
+              "label": null,
+              "left": 292,
+              "right": 324
+            },
+            {
+              "height": 27.5,
+              "label": "Switch conversation",
+              "left": 328,
+              "right": 472
+            },
+            {
+              "height": 32,
+              "label": "Follow agent",
+              "left": 476,
+              "right": 508
+            },
+            {
+              "height": 32,
+              "label": "Workspace layout",
+              "left": 512,
+              "right": 544
+            },
+            {
+              "height": 32,
+              "label": "Work in a separate copy",
+              "left": 548,
+              "right": 580
+            },
+            {
+              "height": 32,
+              "label": "Open live activity",
+              "left": 584,
+              "right": 616
+            },
+            {
+              "height": 32,
+              "label": "Notifications, 1 unread",
+              "left": 620,
+              "right": 652
+            },
+            {
+              "height": 32,
+              "label": "Switch to workbench",
+              "left": 656,
+              "right": 688
+            },
+            {
+              "height": 32,
+              "label": "Project context",
+              "left": 692,
+              "right": 724
+            },
+            {
+              "height": 32,
+              "label": "More options",
+              "left": 728,
+              "right": 760
+            }
+          ],
+          "documentWidth": 768,
+          "surface": "chat",
+          "title": 144,
+          "width": 768
+        },
+        {
+          "buttons": [
+            {
+              "height": 32,
+              "label": null,
+              "left": 292,
+              "right": 324
+            },
+            {
+              "height": 27.5,
+              "label": "Switch conversation",
+              "left": 328,
+              "right": 520.71875
+            },
+            {
+              "height": 32,
+              "label": "Follow agent",
+              "left": 608,
+              "right": 640
+            },
+            {
+              "height": 32,
+              "label": "Workspace layout",
+              "left": 644,
+              "right": 676
+            },
+            {
+              "height": 32,
+              "label": "Work in a separate copy",
+              "left": 680,
+              "right": 712
+            },
+            {
+              "height": 32,
+              "label": "Open live activity",
+              "left": 716,
+              "right": 748
+            },
+            {
+              "height": 32,
+              "label": "Notifications, 1 unread",
+              "left": 752,
+              "right": 784
+            },
+            {
+              "height": 32,
+              "label": "Switch to workbench",
+              "left": 788,
+              "right": 820
+            },
+            {
+              "height": 32,
+              "label": "Project context",
+              "left": 824,
+              "right": 856
+            },
+            {
+              "height": 32,
+              "label": "More options",
+              "left": 860,
+              "right": 892
+            }
+          ],
+          "documentWidth": 900,
+          "surface": "chat",
+          "title": 192.71875,
+          "width": 900
+        },
+        {
+          "buttons": [
+            {
+              "height": 32,
+              "label": null,
+              "left": 292,
+              "right": 324
+            },
+            {
+              "height": 27.5,
+              "label": "Switch conversation",
+              "left": 328,
+              "right": 520.71875
+            },
+            {
+              "height": 32,
+              "label": "Follow agent",
+              "left": 988,
+              "right": 1020
+            },
+            {
+              "height": 32,
+              "label": "Workspace layout",
+              "left": 1024,
+              "right": 1056
+            },
+            {
+              "height": 32,
+              "label": "Work in a separate copy",
+              "left": 1060,
+              "right": 1092
+            },
+            {
+              "height": 32,
+              "label": "Open live activity",
+              "left": 1096,
+              "right": 1128
+            },
+            {
+              "height": 32,
+              "label": "Notifications, 1 unread",
+              "left": 1132,
+              "right": 1164
+            },
+            {
+              "height": 32,
+              "label": "Switch to workbench",
+              "left": 1168,
+              "right": 1200
+            },
+            {
+              "height": 32,
+              "label": "Project context",
+              "left": 1204,
+              "right": 1236
+            },
+            {
+              "height": 32,
+              "label": "More options",
+              "left": 1240,
+              "right": 1272
+            }
+          ],
+          "documentWidth": 1280,
+          "surface": "chat",
+          "title": 192.71875,
+          "width": 1280
+        },
+        {
+          "buttons": [
+            {
+              "height": 32,
+              "label": null,
+              "left": 292,
+              "right": 324
+            },
+            {
+              "height": 27.5,
+              "label": "Switch conversation",
+              "left": 328,
+              "right": 520.71875
+            },
+            {
+              "height": 32,
+              "label": "Follow agent",
+              "left": 1628,
+              "right": 1660
+            },
+            {
+              "height": 32,
+              "label": "Workspace layout",
+              "left": 1664,
+              "right": 1696
+            },
+            {
+              "height": 32,
+              "label": "Work in a separate copy",
+              "left": 1700,
+              "right": 1732
+            },
+            {
+              "height": 32,
+              "label": "Open live activity",
+              "left": 1736,
+              "right": 1768
+            },
+            {
+              "height": 32,
+              "label": "Notifications, 1 unread",
+              "left": 1772,
+              "right": 1804
+            },
+            {
+              "height": 32,
+              "label": "Switch to workbench",
+              "left": 1808,
+              "right": 1840
+            },
+            {
+              "height": 32,
+              "label": "Project context",
+              "left": 1844,
+              "right": 1876
+            },
+            {
+              "height": 32,
+              "label": "More options",
+              "left": 1880,
+              "right": 1912
+            }
+          ],
+          "documentWidth": 1920,
+          "surface": "chat",
+          "title": 192.71875,
+          "width": 1920
+        },
+        {
+          "breadcrumbHeight": 44,
+          "documentWidth": 320,
+          "outlineHeight": 44,
+          "surface": "workspace",
+          "width": 320,
+          "workspace": {
+            "left": 0,
+            "right": 320,
+            "width": 320
+          }
+        },
+        {
+          "breadcrumbHeight": 44,
+          "documentWidth": 390,
+          "outlineHeight": 44,
+          "surface": "workspace",
+          "width": 390,
+          "workspace": {
+            "left": 0,
+            "right": 390,
+            "width": 390
+          }
+        },
+        {
+          "breadcrumbHeight": 28,
+          "documentWidth": 768,
+          "outlineHeight": 32,
+          "surface": "workspace",
+          "width": 768,
+          "workspace": {
+            "left": 44,
+            "right": 407,
+            "width": 363
+          }
+        },
+        {
+          "breadcrumbHeight": 28,
+          "documentWidth": 900,
+          "outlineHeight": 32,
+          "surface": "workspace",
+          "width": 900,
+          "workspace": {
+            "left": 44,
+            "right": 539,
+            "width": 495
+          }
+        },
+        {
+          "breadcrumbHeight": 28,
+          "documentWidth": 1280,
+          "outlineHeight": 32,
+          "surface": "workspace",
+          "width": 1280,
+          "workspace": {
+            "left": 44,
+            "right": 919,
+            "width": 875
+          }
+        },
+        {
+          "breadcrumbHeight": 28,
+          "documentWidth": 1920,
+          "outlineHeight": 32,
+          "surface": "workspace",
+          "width": 1920,
+          "workspace": {
+            "left": 44,
+            "right": 1432.234375,
+            "width": 1388.234375
+          }
+        }
+      ]
+    },
+    "additionalInteractions": [
+      "Compact folder chains retain visible parent paths and do not hide empty folders",
+      "ArrowRight, Home, End and type-to-select in the unfiltered explorer",
+      "TypeScript outline lists greet, Box and value; selecting value opens line 6",
+      "Switching chats retains workspace expansion and unsaved document content",
+      "Switching projects restores the chosen layout and each project document",
+      "F8 opens the diagnostic at its exact line and column; Shift+F8 moves back",
+      "Comfortable desktop tree rows measure 28px; touch rows remain 44px",
+      "F7 and Shift+F7 navigate two actual Git hunks in unified and side-by-side views",
+      "Review opens conversation activity; the toolbar activity control no longer covers it"
+    ]
+  },
+  "implementation": {
+    "layout": "Per-physical-project visibility, expansion, selected tool and widths persist in local storage; presets are explicit",
+    "files": "Open documents, drafts and expanded folders remain separately mounted per project for the session",
+    "follow": "Opt-in to current chat live file activity; manual file selection, editor selection, edits or tool changes pause it",
+    "outline": "Current-document parser outlines for JS/TS, Python, Rust, Go, Markdown, JSON, CSS-family and HTML, capped at 512 KiB and 300 symbols",
+    "queue": "Edit/remove one queued message without replacing the composer draft or attachments",
+    "responsive": "Secondary chat-header actions move to the phone menu; outline toolbar accommodates 44px touch controls"
+  },
+  "screenshots": [
+    "zed-workbench-desktop.png",
+    "zed-workbench-phone.png",
+    "zed-chat-phone.png"
+  ],
+  "limits": [
+    "This pass implements the prioritized subset, not all 54 research patterns",
+    "No new semantic LSP definitions/references, split editors, hunk staging or VS Code extension host",
+    "Draft recovery after restarting remains outside this change",
+    "Tree arrow-key navigation applies to the unfiltered explorer; filtered results retain their existing buttons",
+    "No native Windows/macOS run or screen-reader audio validation was performed",
+    "The real user app was not restarted; checks ran in a disposable profile",
+    "Changes remain uncommitted and unpublished"
+  ]
+}

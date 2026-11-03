@@ -1,0 +1,525 @@
+{
+  "reviewed": "2026-11-03",
+  "referenceRevision": "8e8f54c67edb1d0f4acaa0e9bc86cc9e36abe493",
+  "scope": "Major UI patterns relevant to Tributary; not an exhaustive Zed feature list",
+  "patterns": [
+    {
+      "id": "Z01",
+      "area": "Workbench",
+      "pattern": "Editor-first and agent-first presets",
+      "tributarySourceStatus": "Extend",
+      "priority": "P0",
+      "recommendedMove": "Preserve current layout choices; make transitions explicit and stable",
+      "source": "https://zed.dev/docs/windows-and-projects"
+    },
+    {
+      "id": "Z02",
+      "area": "Workbench",
+      "pattern": "Shared panel docks",
+      "tributarySourceStatus": "Extend",
+      "priority": "P0",
+      "recommendedMove": "Apply terminal-style positioning consistently to tools and chat",
+      "source": "https://zed.dev/docs/visual-customization"
+    },
+    {
+      "id": "Z03",
+      "area": "Workbench",
+      "pattern": "Per-project layout retention",
+      "tributarySourceStatus": "Extend",
+      "priority": "P0",
+      "recommendedMove": "Keep active document, widths and focus when switching chats",
+      "source": "https://zed.dev/docs/windows-and-projects"
+    },
+    {
+      "id": "Z04",
+      "area": "Workbench",
+      "pattern": "Panel zoom, close and focus actions",
+      "tributarySourceStatus": "Existing",
+      "priority": "Keep",
+      "recommendedMove": "Use one control placement and accessible labels",
+      "source": "https://zed.dev/docs/visual-customization"
+    },
+    {
+      "id": "Z05",
+      "area": "Workbench",
+      "pattern": "Divider reset to configured width",
+      "tributarySourceStatus": "New",
+      "priority": "P1",
+      "recommendedMove": "Double-click and keyboard reset; retain resize bounds",
+      "source": "https://zed.dev/docs/ai/parallel-agents"
+    },
+    {
+      "id": "Z06",
+      "area": "Workbench",
+      "pattern": "Adjustable UI density",
+      "tributarySourceStatus": "New",
+      "priority": "P0",
+      "recommendedMove": "Compact desktop spacing with independent touch targets",
+      "source": "https://github.com/zed-industries/zed/blob/main/crates/theme/src/ui_density.rs"
+    },
+    {
+      "id": "Z07",
+      "area": "Workbench",
+      "pattern": "Separate UI, editor, chat and terminal fonts",
+      "tributarySourceStatus": "Extend",
+      "priority": "P1",
+      "recommendedMove": "Give each surface its own size without scaling every control",
+      "source": "https://zed.dev/docs/visual-customization"
+    },
+    {
+      "id": "Z08",
+      "area": "Workbench",
+      "pattern": "Shared spacing, typography and elevation",
+      "tributarySourceStatus": "Extend",
+      "priority": "P0",
+      "recommendedMove": "Extend current workbench tokens across menus and settings",
+      "source": "https://zed.dev/docs/visual-customization"
+    },
+    {
+      "id": "Z09",
+      "area": "Workbench",
+      "pattern": "Project, worktree and branch pickers",
+      "tributarySourceStatus": "Extend",
+      "priority": "P0",
+      "recommendedMove": "Show the active code location beside the title",
+      "source": "https://zed.dev/docs/windows-and-projects"
+    },
+    {
+      "id": "Z10",
+      "area": "Explorer",
+      "pattern": "Preview and permanent file tabs",
+      "tributarySourceStatus": "Existing",
+      "priority": "Keep",
+      "recommendedMove": "Retain single-click preview and edit/double-click pinning",
+      "source": "https://zed.dev/docs/project-panel"
+    },
+    {
+      "id": "Z11",
+      "area": "Explorer",
+      "pattern": "Auto-reveal active file",
+      "tributarySourceStatus": "Extend",
+      "priority": "P0",
+      "recommendedMove": "Reveal only on navigation; avoid scroll jumps on disk refresh",
+      "source": "https://zed.dev/docs/project-panel"
+    },
+    {
+      "id": "Z12",
+      "area": "Explorer",
+      "pattern": "Sticky ancestor folders",
+      "tributarySourceStatus": "New",
+      "priority": "P1",
+      "recommendedMove": "Keep current folder context visible in long trees",
+      "source": "https://zed.dev/docs/project-panel"
+    },
+    {
+      "id": "Z13",
+      "area": "Explorer",
+      "pattern": "Compact chains of single-child folders",
+      "tributarySourceStatus": "New",
+      "priority": "P0",
+      "recommendedMove": "Reduce deep indentation without hiding path context",
+      "source": "https://zed.dev/docs/project-panel"
+    },
+    {
+      "id": "Z14",
+      "area": "Explorer",
+      "pattern": "Full keyboard tree navigation",
+      "tributarySourceStatus": "New",
+      "priority": "P0",
+      "recommendedMove": "Arrow keys, Home/End, expand/collapse and type-to-select",
+      "source": "https://zed.dev/docs/project-panel"
+    },
+    {
+      "id": "Z15",
+      "area": "Explorer",
+      "pattern": "Inline create and rename",
+      "tributarySourceStatus": "New",
+      "priority": "P1",
+      "recommendedMove": "Keep filename edits beside the selected row",
+      "source": "https://zed.dev/docs/project-panel"
+    },
+    {
+      "id": "Z16",
+      "area": "Explorer",
+      "pattern": "Multi-select and compare two files",
+      "tributarySourceStatus": "New",
+      "priority": "P1",
+      "recommendedMove": "Support batch actions and a direct comparison entry point",
+      "source": "https://zed.dev/docs/project-panel"
+    },
+    {
+      "id": "Z17",
+      "area": "Explorer",
+      "pattern": "Move, copy, duplicate and recoverable trash",
+      "tributarySourceStatus": "New",
+      "priority": "P2",
+      "recommendedMove": "Add explicit file operations with undo where supported",
+      "source": "https://zed.dev/docs/project-panel"
+    },
+    {
+      "id": "Z18",
+      "area": "Explorer",
+      "pattern": "Git and diagnostic badges",
+      "tributarySourceStatus": "New",
+      "priority": "P1",
+      "recommendedMove": "Surface file state without adding separate navigation rows",
+      "source": "https://zed.dev/docs/diagnostics"
+    },
+    {
+      "id": "Z19",
+      "area": "Explorer",
+      "pattern": "Sorting and folder-scoped search",
+      "tributarySourceStatus": "Extend",
+      "priority": "P1",
+      "recommendedMove": "Keep filename filtering; add predictable sorting and text search",
+      "source": "https://zed.dev/docs/project-panel"
+    },
+    {
+      "id": "Z20",
+      "area": "Tabs and navigation",
+      "pattern": "Recent-use file switcher",
+      "tributarySourceStatus": "New",
+      "priority": "P0",
+      "recommendedMove": "Ctrl+Tab picker for files; keep the existing chat switcher",
+      "source": "https://zed.dev/docs/tab-switcher"
+    },
+    {
+      "id": "Z21",
+      "area": "Tabs and navigation",
+      "pattern": "Pane splitting and tab movement",
+      "tributarySourceStatus": "New",
+      "priority": "P1",
+      "recommendedMove": "Open beside, move tabs and resize editor panes",
+      "source": "https://zed.dev/docs/visual-customization"
+    },
+    {
+      "id": "Z22",
+      "area": "Tabs and navigation",
+      "pattern": "Compact breadcrumbs and tab controls",
+      "tributarySourceStatus": "Existing",
+      "priority": "Keep",
+      "recommendedMove": "Preserve the implemented alignment and dirty indicators",
+      "source": "https://zed.dev/docs/visual-customization"
+    },
+    {
+      "id": "Z23",
+      "area": "Tabs and navigation",
+      "pattern": "File-symbol outline",
+      "tributarySourceStatus": "New",
+      "priority": "P1",
+      "recommendedMove": "Explain functions, classes and sections beside the code",
+      "source": "https://zed.dev/docs/outline-panel"
+    },
+    {
+      "id": "Z24",
+      "area": "Tabs and navigation",
+      "pattern": "Definitions, references and project symbols",
+      "tributarySourceStatus": "New",
+      "priority": "P2",
+      "recommendedMove": "Add on-demand LSP support; do not fake symbol resolution",
+      "source": "https://zed.dev/docs/finding-navigating"
+    },
+    {
+      "id": "Z25",
+      "area": "Tabs and navigation",
+      "pattern": "Unified fuzzy command navigation",
+      "tributarySourceStatus": "Extend",
+      "priority": "P1",
+      "recommendedMove": "Rank recent commands and show the active shortcut",
+      "source": "https://zed.dev/docs/command-palette"
+    },
+    {
+      "id": "Z26",
+      "area": "Problems and review",
+      "pattern": "Live inline diagnostics",
+      "tributarySourceStatus": "Extend",
+      "priority": "P1",
+      "recommendedMove": "JSON/CSS-family now work; add more language adapters incrementally",
+      "source": "https://zed.dev/docs/diagnostics"
+    },
+    {
+      "id": "Z27",
+      "area": "Problems and review",
+      "pattern": "Next and previous diagnostic",
+      "tributarySourceStatus": "New",
+      "priority": "P0",
+      "recommendedMove": "One keyboard action to inspect the next problem",
+      "source": "https://zed.dev/docs/diagnostics"
+    },
+    {
+      "id": "Z28",
+      "area": "Problems and review",
+      "pattern": "Optional inline error lens",
+      "tributarySourceStatus": "New",
+      "priority": "P1",
+      "recommendedMove": "Show concise messages beside code only when requested",
+      "source": "https://zed.dev/docs/diagnostics"
+    },
+    {
+      "id": "Z29",
+      "area": "Problems and review",
+      "pattern": "Scrollbar error and search markers",
+      "tributarySourceStatus": "New",
+      "priority": "P1",
+      "recommendedMove": "Add location hints without widening the editor",
+      "source": "https://zed.dev/docs/diagnostics"
+    },
+    {
+      "id": "Z30",
+      "area": "Problems and review",
+      "pattern": "Unified and split diffs",
+      "tributarySourceStatus": "Existing",
+      "priority": "Keep",
+      "recommendedMove": "Preserve existing diff modes and line wrapping",
+      "source": "https://zed.dev/docs/git"
+    },
+    {
+      "id": "Z31",
+      "area": "Problems and review",
+      "pattern": "Word-level change highlighting",
+      "tributarySourceStatus": "New",
+      "priority": "P1",
+      "recommendedMove": "Make small edits easier to identify",
+      "source": "https://zed.dev/docs/git"
+    },
+    {
+      "id": "Z32",
+      "area": "Problems and review",
+      "pattern": "Hunk-level stage and review actions",
+      "tributarySourceStatus": "New",
+      "priority": "P1",
+      "recommendedMove": "Keep/reject or stage individual changes with clear scope",
+      "source": "https://zed.dev/docs/git"
+    },
+    {
+      "id": "Z33",
+      "area": "Problems and review",
+      "pattern": "File history",
+      "tributarySourceStatus": "New",
+      "priority": "P2",
+      "recommendedMove": "Trace a file's changes from its tab or tree entry",
+      "source": "https://zed.dev/docs/git"
+    },
+    {
+      "id": "Z34",
+      "area": "Problems and review",
+      "pattern": "Changed-files tree and flat views",
+      "tributarySourceStatus": "Extend",
+      "priority": "P1",
+      "recommendedMove": "Let developers group larger change sets by folder",
+      "source": "https://zed.dev/docs/git"
+    },
+    {
+      "id": "Z35",
+      "area": "Agent UI",
+      "pattern": "Project-grouped independent chats",
+      "tributarySourceStatus": "Existing",
+      "priority": "Keep",
+      "recommendedMove": "Retain background execution and visible agent identity",
+      "source": "https://zed.dev/docs/ai/parallel-agents"
+    },
+    {
+      "id": "Z36",
+      "area": "Agent UI",
+      "pattern": "Fast recent-chat switcher",
+      "tributarySourceStatus": "Existing",
+      "priority": "Keep",
+      "recommendedMove": "Retain search and status in the right-side chat header",
+      "source": "https://zed.dev/docs/ai/parallel-agents"
+    },
+    {
+      "id": "Z37",
+      "area": "Agent UI",
+      "pattern": "Searchable archived history and restore",
+      "tributarySourceStatus": "Extend",
+      "priority": "P1",
+      "recommendedMove": "Distinguish recent chats from archived work",
+      "source": "https://zed.dev/docs/ai/parallel-agents"
+    },
+    {
+      "id": "Z38",
+      "area": "Agent UI",
+      "pattern": "Editable individual queued messages",
+      "tributarySourceStatus": "Extend",
+      "priority": "P1",
+      "recommendedMove": "Existing queue needs per-message edit/remove controls",
+      "source": "https://zed.dev/docs/ai/agent-panel"
+    },
+    {
+      "id": "Z39",
+      "area": "Agent UI",
+      "pattern": "Optional Follow agent mode",
+      "tributarySourceStatus": "New",
+      "priority": "P0",
+      "recommendedMove": "Follow reads/edits only after opt-in; manual navigation pauses it",
+      "source": "https://zed.dev/docs/ai/agent-panel"
+    },
+    {
+      "id": "Z40",
+      "area": "Agent UI",
+      "pattern": "Persistent compact change-review bar",
+      "tributarySourceStatus": "Extend",
+      "priority": "P0",
+      "recommendedMove": "Keep changed-file count and Review beside the composer",
+      "source": "https://zed.dev/docs/ai/agent-panel"
+    },
+    {
+      "id": "Z41",
+      "area": "Agent UI",
+      "pattern": "Rich context chips",
+      "tributarySourceStatus": "Extend",
+      "priority": "P1",
+      "recommendedMove": "Extend file mentions to selections, diagnostics and other chats",
+      "source": "https://zed.dev/docs/ai/agent-panel"
+    },
+    {
+      "id": "Z42",
+      "area": "Agent UI",
+      "pattern": "Inspectable compaction summary",
+      "tributarySourceStatus": "New",
+      "priority": "P1",
+      "recommendedMove": "Show what was retained when context is shortened",
+      "source": "https://zed.dev/docs/ai/agent-panel"
+    },
+    {
+      "id": "Z43",
+      "area": "Agent UI",
+      "pattern": "Expandable message editor",
+      "tributarySourceStatus": "New",
+      "priority": "P1",
+      "recommendedMove": "Expand long prompts without permanently enlarging the sidebar",
+      "source": "https://zed.dev/docs/ai/agent-panel"
+    },
+    {
+      "id": "Z44",
+      "area": "Agent UI",
+      "pattern": "Agent capability boundaries",
+      "tributarySourceStatus": "Extend",
+      "priority": "P0",
+      "recommendedMove": "Surface existing capability metadata near unavailable actions",
+      "source": "https://zed.dev/docs/ai/external-agents"
+    },
+    {
+      "id": "Z45",
+      "area": "Terminal and tasks",
+      "pattern": "Terminal positioning",
+      "tributarySourceStatus": "Existing",
+      "priority": "Keep",
+      "recommendedMove": "Retain left/right/top/bottom docking already implemented",
+      "source": "https://zed.dev/docs/terminal"
+    },
+    {
+      "id": "Z46",
+      "area": "Terminal and tasks",
+      "pattern": "Terminal as a regular editor tab",
+      "tributarySourceStatus": "New",
+      "priority": "P1",
+      "recommendedMove": "Offer a center workspace terminal for long sessions",
+      "source": "https://zed.dev/docs/terminal"
+    },
+    {
+      "id": "Z47",
+      "area": "Terminal and tasks",
+      "pattern": "Split terminal sessions",
+      "tributarySourceStatus": "New",
+      "priority": "P1",
+      "recommendedMove": "Show parallel command output without switching tabs",
+      "source": "https://zed.dev/docs/terminal"
+    },
+    {
+      "id": "Z48",
+      "area": "Terminal and tasks",
+      "pattern": "Terminal search and clickable paths",
+      "tributarySourceStatus": "Existing",
+      "priority": "Keep",
+      "recommendedMove": "Retain current search addon and file-link handling",
+      "source": "https://zed.dev/docs/terminal"
+    },
+    {
+      "id": "Z49",
+      "area": "Terminal and tasks",
+      "pattern": "Task picker and rerun history",
+      "tributarySourceStatus": "Extend",
+      "priority": "P1",
+      "recommendedMove": "Build on project checks and project run commands",
+      "source": "https://zed.dev/docs/tasks"
+    },
+    {
+      "id": "Z50",
+      "area": "Terminal and tasks",
+      "pattern": "Task reveal and terminal reuse controls",
+      "tributarySourceStatus": "New",
+      "priority": "P1",
+      "recommendedMove": "Allow background tasks without stealing editor focus",
+      "source": "https://zed.dev/docs/tasks"
+    },
+    {
+      "id": "Z51",
+      "area": "Settings",
+      "pattern": "Searchable settings controls",
+      "tributarySourceStatus": "Existing",
+      "priority": "Keep",
+      "recommendedMove": "Improve field matching while retaining the section selector",
+      "source": "https://zed.dev/docs/configuring-zed"
+    },
+    {
+      "id": "Z52",
+      "area": "Settings",
+      "pattern": "Project-specific editor overrides",
+      "tributarySourceStatus": "New",
+      "priority": "P2",
+      "recommendedMove": "Keep per-project language behavior separate from global appearance",
+      "source": "https://zed.dev/docs/configuring-zed"
+    },
+    {
+      "id": "Z53",
+      "area": "Settings",
+      "pattern": "Live icon-theme preview",
+      "tributarySourceStatus": "New",
+      "priority": "P2",
+      "recommendedMove": "Extend current file icons through a stable mapping API",
+      "source": "https://zed.dev/docs/icon-themes"
+    },
+    {
+      "id": "Z54",
+      "area": "Settings",
+      "pattern": "Visible shortcut hints",
+      "tributarySourceStatus": "Extend",
+      "priority": "P0",
+      "recommendedMove": "Use existing Mac/Windows/Linux bindings in menus and tooltips",
+      "source": "https://zed.dev/docs/command-palette"
+    }
+  ],
+  "implementationPass": {
+    "date": "2026-11-03",
+    "implementedPatternIds": [
+      "Z01",
+      "Z05",
+      "Z06",
+      "Z11",
+      "Z12",
+      "Z13",
+      "Z14",
+      "Z20",
+      "Z23",
+      "Z27",
+      "Z38",
+      "Z39",
+      "Z40"
+    ],
+    "extendedPatternIds": [
+      "Z03",
+      "Z08",
+      "Z44",
+      "Z54"
+    ],
+    "notes": [
+      "Original tributarySourceStatus values preserve the research baseline.",
+      "Z14 applies to the unfiltered explorer.",
+      "Z03 persists layout choices and widths; document drafts and open tabs remain session-only.",
+      "Z44 disables Follow when the agent explicitly reports no tool capability.",
+      "Diff navigation is implemented; Z32 staging/reject actions remain out of scope."
+    ],
+    "verification": "../performance/ZED_WORKBENCH.json"
+  }
+}

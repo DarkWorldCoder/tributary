@@ -133,3 +133,35 @@ test('new repositories, binary files and oversized untracked files have honest b
   fs.writeFileSync(path.join(root, 'binary.dat'), Buffer.from([0, 1, 2])); assert.match(await fileDiff(root, 'binary.dat'), /Binary file/);
   fs.writeFileSync(path.join(root, 'large.txt'), Buffer.alloc(1024 * 1024 + 100, 'x')); assert.match(await fileDiff(root, 'large.txt'), /larger than 1 MB/);
 });
+
+test('renames in a watched subfolder invalidate listings without requiring a root change', async (t) => {
+  const root = temp(t); fs.mkdirSync(path.join(root, 'src')); fs.writeFileSync(path.join(root, 'src', 'app.ts'), 'export {};');
+  const original = fs.watch; const callbacks = new Map();
+  fs.watch = (dir, _options, callback) => { callbacks.set(dir, callback); return { on() {}, close() {} }; };
+  let finish; const next = new Promise((resolve) => { finish = resolve; });
+  const watches = new FileWatches((event) => finish(event));
+  t.after(() => { fs.watch = original; watches.close(); });
+  const id = await watches.start(root, ['src/app.ts']); fs.watch = original;
+  const timer = setTimeout(() => finish(null), 1500); t.after(() => clearTimeout(timer));
+  callbacks.get(path.join(root, 'src'))('rename', 'new-child.ts');
+  const event = await next;
+  assert.ok(event, 'subfolder rename must emit an invalidation');
+  assert.equal(event.watchId, id); assert.deepEqual(event.paths, ['']);
+});
+
+test('handoff compaction formats only a bounded tail of a long agent session', () => {
+  let reads = 0;
+  const messages = Array.from({ length: 10000 }, (_, i) => ({ role: 'user', get text() { reads++; return `message ${i} ${'x'.repeat(600)}`; } }));
+  const result = digest(messages, {}, 4000);
+  assert.ok(result.length <= 4000); assert.match(result, /message 0/); assert.match(result, /message 9999/);
+  assert.ok(reads < 50, `Only the goal and bounded recent tail should be formatted, got ${reads}`);
+  assert.equal(digest([], {}, 4000), '');
+});
+test('memory retrieval removes repeated note excerpts and reports its exact character budget', (t) => {
+  const root = temp(t); memory.enableMemory(root);
+  memory.saveMemory(root, '# Decisions\n- Use SQLite for durable state.\n* Use SQLite for durable state.\n- Run tests before merging.\n');
+  const result = state.retrieve(root, 'SQLite');
+  assert.equal((result.text.match(/SQLite/g) || []).length, 1);
+  assert.equal(result.characters, result.text.length); assert.equal(result.sources.length, 2);
+  assert.equal(result.sources[0].line, 2); assert.ok(result.characters <= result.budget);
+});

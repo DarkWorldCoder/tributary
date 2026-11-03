@@ -1,3 +1,4 @@
+import { WorkbenchLayoutMenu } from '@/components/workbench-layout-menu';
 import * as React from 'react';
 import {
   BookOpen, Code2, File, GitCompareArrows, Globe, RotateCw, X, Maximize2, Minimize2,
@@ -9,6 +10,7 @@ import { useSidebar } from '@/components/ui/sidebar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { AgentAvatar } from '@/components/agent-avatar';
+import { ProjectPreview } from '@/components/project-preview';
 import { FilesTab } from '@/components/workspace-files';
 import { MemoryPanel } from '@/components/memory-panel';
 import { FileDiff } from '@/components/file-diff';
@@ -114,25 +116,6 @@ function ChangesTab() {
 const MemoryTab = MemoryPanel;
 
 // ---------- Preview: the app you are building, served locally
-function PreviewTab() {
-  const s = useStore();
-  const [url, setUrl] = React.useState(() => { try { return localStorage.getItem('tributary.previewUrl') || 'http://localhost:3000'; } catch { return 'http://localhost:3000'; } });
-  const [shown, setShown] = React.useState(url); const [n, setN] = React.useState(0);
-  const go = () => { const u = /^https?:\/\//.test(url) ? url : `http://${url}`; setShown(u); setN((x) => x + 1); try { localStorage.setItem('tributary.previewUrl', u); } catch { /* ignore */ } };
-  const local = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/.test(shown);
-  return (
-    <div className="flex h-full min-h-0 flex-col">
-      <form className="workbench-toolbar gap-1 border-b px-2" onSubmit={(e) => { e.preventDefault(); go(); }}>
-        <Input value={url} onChange={(e) => setUrl(e.target.value)} aria-label="Preview address" className="h-7 font-mono text-xs" placeholder="http://localhost:3000" />
-        <Button className="workbench-action" size="icon-sm" variant="ghost" type="submit" aria-label="Reload preview"><RotateCw /></Button>
-        <Button className="h-8 max-sm:h-11" size="xs" variant="ghost" type="button" onClick={() => s.hub.call('openExternal', shown)}>Open in browser</Button>
-      </form>
-      {local && s.hub.platform !== 'vscode'
-        ? <iframe key={n} title="App preview" src={shown} className="min-h-0 flex-1 bg-white" />
-        : <p className="p-6 text-center text-sm text-muted-foreground">{local ? 'Use “Open in browser” to view it from VS Code.' : 'Only local addresses (localhost or 127.0.0.1) can be previewed here. Start your dev server, for example with npm run dev in the terminal.'}</p>}
-    </div>
-  );
-}
 
 export function WorkspacePanel() {
   const s = useStore();
@@ -163,21 +146,22 @@ export function WorkspacePanel() {
           <Heading className="sr-only">Workspace</Heading>
           <div className="h-full min-w-0 flex-1 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <TabsList aria-label="Workspace tools" variant="line" className="workspace-tool-list justify-start gap-0 rounded-none p-0">
-              {TABS.map((tab) => <TabsTrigger key={tab.id} value={tab.id} aria-label={tab.id === 'review' ? `Changes, ${changed} changed ${changed === 1 ? 'file' : 'files'}` : tab.label} className="h-10 flex-none gap-1.5 rounded-none border-0 px-3 text-[13px] font-normal group-data-[variant=line]/tabs-list:data-active:bg-muted/50 dark:group-data-[variant=line]/tabs-list:data-active:bg-muted/50 group-data-horizontal/tabs:after:bottom-0 after:h-px focus-visible:ring-inset max-sm:h-11 @max-[480px]:px-2 @max-[480px]:[&_svg]:hidden @max-[360px]:gap-1 @max-[360px]:px-1.5 [&_svg]:size-4">
+              {TABS.map((tab) => <TabsTrigger key={tab.id} value={tab.id} aria-label={tab.id === 'review' ? `Changes, ${changed} changed ${changed === 1 ? 'file' : 'files'}` : tab.label} className="h-8 flex-none gap-1.5 rounded-none border-0 px-2.5 text-[13px] font-normal group-data-[variant=line]/tabs-list:data-active:bg-muted/50 dark:group-data-[variant=line]/tabs-list:data-active:bg-muted/50 group-data-horizontal/tabs:after:bottom-0 after:h-px focus-visible:ring-inset max-sm:h-11 @max-[480px]:px-2 @max-[480px]:[&_svg]:hidden @max-[360px]:gap-1 @max-[360px]:px-1.5 [&_svg]:size-4">
                 {tab.icon}<span>{tab.label}</span>{tab.id === 'review' && changed > 0 && <span aria-hidden="true" className="rounded bg-muted px-1 text-[11px] tabular-nums">{changed > 99 ? '99+' : changed}</span>}
               </TabsTrigger>)}
             </TabsList>
           </div>
+          <WorkbenchLayoutMenu />
           {s.workspaceExpanded ? <Button variant="ghost" size="xs" className="hidden shrink-0 gap-1.5 md:inline-flex" onClick={() => s.setWorkspaceExpanded(false)} aria-label="Restore split view"><Minimize2 className="size-4" />Show chat</Button> : <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" className="workbench-action shrink-0 max-md:hidden [&_svg]:size-4" onClick={() => s.setWorkspaceExpanded(!s.workspaceExpanded)} aria-label={s.workspaceExpanded ? 'Restore split view' : 'Expand workspace'}>{s.workspaceExpanded ? <Minimize2 /> : <Maximize2 />}</Button></TooltipTrigger><TooltipContent>{s.workspaceExpanded ? 'Restore split view' : 'Expand workspace'}</TooltipContent></Tooltip>}
           <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" className="workbench-action shrink-0 [&_svg]:size-4" onClick={() => s.setPanel({ ...s.panel, open: false })} aria-label="Close workspace"><X /></Button></TooltipTrigger><TooltipContent>Close workspace</TooltipContent></Tooltip>
         </header>
         <div className="min-h-0 flex-1">
-          <TabsContent value="review" className="flex h-full min-h-0 flex-col"><div role="group" aria-label="Changes to show" className="flex shrink-0 gap-1 border-b p-2"><Button size="xs" variant={s.panel.tab === 'review' ? 'secondary' : 'ghost'} aria-pressed={s.panel.tab === 'review'} onClick={() => s.openPanel('review')}>Working tree</Button><Button size="xs" variant={s.panel.tab === 'changes' ? 'secondary' : 'ghost'} aria-pressed={s.panel.tab === 'changes'} onClick={() => s.openPanel('changes')}>Conversation activity</Button></div><div className="min-h-0 flex-1">{s.panel.tab === 'changes' ? <ChangesTab /> : <ReviewTab />}</div></TabsContent>
+          <TabsContent value="review" className="flex h-full min-h-0 flex-col"><div role="group" aria-label="Changes to show" className="flex min-h-8 shrink-0 items-center gap-1 border-b px-2 py-1"><Button size="xs" variant={s.panel.tab === 'review' ? 'secondary' : 'ghost'} aria-pressed={s.panel.tab === 'review'} onClick={() => s.openPanel('review')}>Working tree</Button><Button size="xs" variant={s.panel.tab === 'changes' ? 'secondary' : 'ghost'} aria-pressed={s.panel.tab === 'changes'} onClick={() => s.openPanel('changes')}>Conversation activity</Button></div><div className="min-h-0 flex-1">{s.panel.tab === 'changes' ? <ChangesTab /> : <ReviewTab />}</div></TabsContent>
           <TabsContent value="files" forceMount className={s.panel.tab === 'files' ? 'h-full min-h-0' : 'hidden'}>
-            {projects.map((project) => <div key={project} className={s.workdir === project ? 'h-full min-h-0' : 'hidden'}><FilesTab project={project} visible={s.workdir === project && s.panel.open && s.panel.tab === 'files' && !s.document} /></div>)}
+            {projects.map((project) => <div key={project} className={s.workdir === project ? 'h-full min-h-0' : 'hidden'}><FilesTab project={project} visible={!s.home && s.workdir === project && s.panel.open && s.panel.tab === 'files' && !s.document} /></div>)}
           </TabsContent>
           <TabsContent value="memory" forceMount className={s.panel.tab === 'memory' ? 'h-full min-h-0' : 'hidden'}>{memoryOpened && s.project && <MemoryTab key={s.project} />}</TabsContent>
-          <TabsContent value="preview" className="h-full min-h-0"><PreviewTab /></TabsContent>
+          <TabsContent value="preview" className="h-full min-h-0"><ProjectPreview key={s.workdir} /></TabsContent>
         </div>
       </Tabs>
     </aside>

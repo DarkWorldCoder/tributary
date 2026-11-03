@@ -21,6 +21,8 @@ const { DesktopSecrets, storageKind } = require('./secrets');
 
 let win = null;
 let hub = null;
+let lanHost = null;
+const getLanHost = () => lanHost ||= require('../server/lan-host').createLanHost({ dir: path.join(app.getPath('userData'), 'project-room') });
 
 function send(name, data) { if (win && !win.isDestroyed()) win.webContents.send('hub-event', name, data); }
 
@@ -72,6 +74,16 @@ const API = {
   },
   async revealFile(p, rel) { const abs = await require('../core/files').projectPath(knownProject(p), rel); shell.showItemInFolder(abs); return true; },
   discoverPeers: () => require('../core/collaboration/peers').discover(),
+  lanHostState: () => getLanHost().state(),
+  async startLanHost(options) {
+    await getLanHost().start(options);
+    await lanHost.connectOwner((input) => hub.collaborationConnect(input));
+    return lanHost.state();
+  },
+  async stopLanHost() {
+    if (lanHost && (await hub.collaborationState()).endpoint === lanHost.state().endpoint) await hub.collaborationDisconnect();
+    return getLanHost().stop();
+  },
   collaborationState: () => hub.collaborationState(),
   collaborationConnect: (input) => hub.collaborationConnect(input),
   collaborationDisconnect: () => hub.collaborationDisconnect(),
@@ -143,6 +155,10 @@ const API = {
   openExternal(url) { if (/^https?:\/\//.test(url)) return shell.openExternal(url); return null; },
   // Projects and files
   listFiles: (p) => hub.listFiles(p),
+  projectCheckTools: (p) => hub.projectCheckTools(p),
+  projectCheckState: (p) => hub.projectCheckState(p),
+  runProjectCheck: (p, id) => hub.runProjectCheck(p, id),
+  stopProjectCheck: (p) => hub.stopProjectCheck(p),
   addAttachments: (files) => hub.addAttachments(files),
   readAttachment: (id) => hub.readAttachment(id),
   readFile: (p, rel) => hub.readFile(p, rel),
@@ -358,5 +374,11 @@ app.whenReady().then(async () => {
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });
 // Write anything still waiting in the store before the process ends.
-app.on('will-quit', () => { try { hub?.store.close(); } catch (e) { console.error(`Could not save on quit: ${e.message}`); } });
-app.on('window-all-closed', () => { if (hub) { for (const id of hub.running.keys()) hub.stop(id); hub.collaborationClient?.disconnect(); hub.fileWatches.close(); } terminals.killAll(); if (process.platform !== 'darwin' || SMOKE) app.quit(); });
+let stoppedHostingForQuit = false;
+app.on('before-quit', (event) => {
+  if (!lanHost || stoppedHostingForQuit) return;
+  event.preventDefault();
+  lanHost.stop().catch((e) => console.error(`Could not stop hosting: ${e.message}`)).finally(() => { stoppedHostingForQuit = true; app.quit(); });
+});
+app.on('will-quit', () => { hub?.projectChecks.stopAll(); try { hub?.store.close(); } catch (e) { console.error(`Could not save on quit: ${e.message}`); } });
+app.on('window-all-closed', () => { if (hub) { hub.projectChecks.stopAll(); for (const id of hub.running.keys()) hub.stop(id); hub.collaborationClient?.disconnect(); hub.fileWatches.close(); } terminals.killAll(); if (process.platform !== 'darwin' || SMOKE) app.quit(); });

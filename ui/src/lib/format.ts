@@ -13,6 +13,11 @@ export const duration = (ms?: number) => {
 export const relTo = (project: string | null, p?: string) => (project && p && p.startsWith(`${project}/`) ? p.slice(project.length + 1) : p || '');
 export function toolTarget(t: Tool, project: string | null): string {
   const i = (t.input || {}) as Record<string, any>;
+  if (t.name === 'TodoWrite' && Array.isArray(i.todos)) return `${i.todos.filter((item: any) => item.status === 'completed').length} of ${i.todos.length} complete`;
+  if (t.name === 'TaskCreate') return String(i.subject || 'New task');
+  if (t.name === 'TaskUpdate' || t.name === 'TaskGet') return `Task ${i.taskId ?? i.task_id ?? i.id ?? ''}${i.status ? ` · ${i.status.replaceAll('_', ' ')}` : ''}`.trim();
+  if (t.name === 'TaskList') return 'Project tasks';
+  if (/^agent\./.test(t.name) && i.prompt) return String(i.prompt).split('\n')[0].slice(0, 120);
   const v = i.command ?? i.cmd ?? i.file_path ?? i.filePath ?? i.path ?? i.Path ?? i.pattern ?? i.query ?? i.url ?? i.description ?? (Array.isArray(i.changes) ? i.changes.map((c: any) => c.path).join(', ') : undefined);
   if (v != null) return Array.isArray(v) ? v.join(' ') : relTo(project, String(v));
   const s = JSON.stringify(i); return s && s !== '{}' ? s.slice(0, 160) : '';
@@ -22,6 +27,10 @@ const EDIT = /edit|write|replace|patch|create/i;
 const READ = /^(read|read_file|read_many_files|view|cat|open)$/i;
 const SEARCH = /grep|glob|search|find|ls|list/i;
 export function toolVerb(t: Tool): string {
+  if (t.name === 'TodoWrite') return 'Updated plan';
+  if (t.name === 'TaskCreate') return 'Added task';
+  if (t.name === 'TaskUpdate') return 'Updated task';
+  if (t.name === 'background_agent' || /^agent\./.test(t.name)) return 'Agent task';
   if (CMD.test(t.name)) return 'Ran'; if (EDIT.test(t.name)) return 'Edited'; if (READ.test(t.name)) return 'Read';
   if (SEARCH.test(t.name)) return 'Searched'; if (/web/i.test(t.name)) return 'Browsed'; return t.name;
 }

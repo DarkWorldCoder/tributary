@@ -1,9 +1,9 @@
 'use strict';
 // Manager: one agent splits a task into a small graph of independent pieces. Workers build pieces at the same
 // time, each in its own git worktree (core/race.js). A piece is merged into your files only when it applies
-// cleanly and your tests still pass with it; otherwise it is rolled back and tried once more, with the failure as
+// cleanly and any configured tests pass with it; otherwise it is rolled back and tried once more, with the failure as
 // feedback. This is the pattern with the best evidence (docs/MULTI_AGENT_LANDSCAPE.md: task graph, isolated
-// workers, test-gated merge). Agents never chat with each other; each gets its part and the list of the others.
+// workers, test-gated merge). The lead assigns workers; completed dependency results are carried into the next worker prompt.
 const crypto = require('crypto');
 const path = require('path');
 const { race, applyDiff, runTests } = require('./race');
@@ -12,12 +12,13 @@ const { createCheckpoint, restoreCheckpoint } = require('./checkpoint');
 const PLAN_PROMPT = `You are the manager of a small team of coding agents. Look at the project, then split the task below into 2 to 6 pieces that different agents can build at the same time, each in its own copy of the project.
 - Make the pieces independent. If two pieces would change the same file, make them one piece or make one depend on the other.
 - Give each piece clear instructions: what to build, where, and how to check it.
+- Assign each piece to an agent from the selected worker list using its exact id.
 - Do not change any files yourself.
 Reply with only a JSON object in this shape:
-{"tasks":[{"id":"short-id","title":"Short title","instructions":"What to build and how to check it","files":["paths it will likely change"],"dependsOn":["ids that must be merged first"]}]}`;
+{"tasks":[{"id":"short-id","title":"Short title","instructions":"What to build and how to check it","agent":"selected-worker-id","files":["paths it will likely change"],"dependsOn":["ids that must be merged first"]}]}`;
 
 // The task list from the manager's reply: a fenced JSON block or the outermost object. Throws when it is unusable.
-function parsePlan(text) {
+function parsePlan(text, allowedWorkers) {
   const src = String(text || '');
   const candidates = [...src.matchAll(/```(?:json)?\s*\n([\s\S]*?)```/g)].map((m) => m[1]);
   if (src.includes('{')) candidates.push(src.slice(src.indexOf('{'), src.lastIndexOf('}') + 1));
@@ -28,11 +29,15 @@ function parsePlan(text) {
   if (plan.tasks.length > 8) throw new Error('Keep the plan to at most 8 pieces.');
   const tasks = plan.tasks.map((t, i) => ({
     id: String(t.id || `t${i + 1}`).replace(/[^\w-]/g, '').slice(0, 40) || `t${i + 1}`,
+    agent: t.agent == null ? null : typeof t.agent === 'string' ? t.agent.trim() : '',
     title: String(t.title || `Piece ${i + 1}`).slice(0, 120),
     instructions: String(t.instructions || t.title || '').slice(0, 4000),
     files: Array.isArray(t.files) ? t.files.map(String).slice(0, 40) : [],
     dependsOn: Array.isArray(t.dependsOn) ? [...new Set(t.dependsOn.map(String))] : [],
   }));
+  for (const task of tasks) {
+    if (task.agent !== null && (!task.agent || task.agent.length > 160 || allowedWorkers && !allowedWorkers.includes(task.agent))) throw new Error(`Piece ${task.id} must use a selected worker agent.`);
+  }
   const ids = new Set(tasks.map((t) => t.id));
   if (ids.size !== tasks.length) throw new Error('Two pieces in the plan have the same id.');
   for (const t of tasks) for (const d of t.dependsOn) if (!ids.has(d) || d === t.id) throw new Error(`Piece ${t.id} depends on ${d}, which is not another piece in the plan.`);
@@ -48,11 +53,14 @@ function parsePlan(text) {
 
 function workerPrompt(task, tasks, goal, feedback) {
   const others = tasks.filter((t) => t.id !== task.id);
+  const plannedFiles = task.plannedFiles || task.files;
+  const dependencies = tasks.filter((t) => task.dependsOn?.includes(t.id)).map((t) => `- ${t.id}: ${t.title} (${t.agent})\n${String(t.result || t.note || 'Completed').slice(0, 1600)}\nChanged files: ${(t.files || []).join(', ')}`).join('\n\n').slice(0, 6000);
   return [
     'You are one of several coding agents building parts of a larger task at the same time, each in your own copy of the project. Build only your part; the other parts are being built by the others.',
     `## Overall task\n${goal}`,
-    `## Your part (id: ${task.id}): ${task.title}\n${task.instructions}${task.files.length ? `\nFiles you will likely change: ${task.files.join(', ')}` : ''}`,
-    others.length ? `## Other parts (not yours)\n${others.map((t) => `- ${t.id}: ${t.title}${t.files.length ? ` (${t.files.join(', ')})` : ''}`).join('\n')}` : '',
+    `## Your part (id: ${task.id}): ${task.title}\n${task.instructions}${plannedFiles.length ? `\nFiles you will likely change: ${plannedFiles.join(', ')}` : ''}`,
+    others.length ? `## Other parts (not yours)\n${others.map((t) => `- ${t.id}: ${t.title}${(t.plannedFiles || t.files).length ? ` (${(t.plannedFiles || t.files).join(', ')})` : ''}`).join('\n')}` : '',
+    dependencies ? `## Completed dependencies\n${dependencies}` : '',
     feedback ? `## Your previous attempt was not merged\n${feedback}\nStart again from the current files, which include the parts merged so far.` : '',
     'When you are done, make sure the project still builds and its tests pass. Reply with a short summary of what you changed.',
   ].filter(Boolean).join('\n\n');
@@ -64,21 +72,24 @@ function summary(items, hub) {
   const merged = items.filter((x) => x.state === 'done').length;
   const lines = items.map((x) => {
     const files = x.files.length ? `, ${x.files.length} file${x.files.length === 1 ? '' : 's'}` : '';
-    return `- ${MARK[x.state] || '[ ]'} **${x.title}** (${hub.agent(x.agent)?.name || x.agent}): ${STATE_TEXT[x.state] || x.state}${files}${x.note ? `. ${x.note.split('\n')[0]}` : ''}`;
+    return `- ${MARK[x.state] || '[ ]'} **${x.title}** (${hub.agent(x.agent)?.name || x.agent || 'Unassigned'}): ${STATE_TEXT[x.state] || x.state}${files}${x.note ? `. ${x.note.split('\n')[0]}` : ''}${x.state === 'done' && x.result ? `\n  ${x.result.split('\n').find((line) => line.trim())?.slice(0, 160) || ''}` : ''}`;
   });
   return `**Manager: ${merged} of ${items.length} pieces merged**\n\n${lines.join('\n')}`;
 }
 
 /**
  * Runs the manager recipe. team: { task, roles: { planner, workers: [agentId] }, testCommand?, mode? }.
- * step(role, opts) runs one ordinary turn (teams.js). Returns { verdict: merged | partial | failed, tasks }.
+ * step(role, opts) runs one ordinary turn (teams.js). Returns { verdict: merged | partial | failed | stopped, tasks }.
  */
 async function runManager(hub, threadId, team, { step, signal } = {}) {
   const roles = team.roles || {};
   const workers = [...new Set((roles.workers || []).filter(Boolean))].map((id) => hub.agent(id)).filter((a) => a && a.available);
   if (!workers.length) throw new Error('Pick at least one worker agent.');
-  const planned = await step('planner', { agentId: roles.planner, text: `${PLAN_PROMPT}\n\n## Task\n${team.task}`, displayText: `Split into pieces: ${team.task}`, mode: 'read' });
-  const tasks = parsePlan(planned.text);
+  const maxParallel = team.maxParallel ?? workers.length;
+  if (!Number.isInteger(maxParallel) || maxParallel < 1 || maxParallel > workers.length) throw new Error('Choose a parallel worker limit between 1 and the selected worker count.');
+  const roster = workers.map((a) => `- ${a.id}: ${a.name}`).join('\n');
+  const planned = await step('planner', { agentId: roles.planner, text: `${PLAN_PROMPT}\n\n## Selected workers\n${roster}\n\n## Task\n${team.task}`, displayText: `Split into pieces: ${team.task}`, mode: 'read' });
+  const tasks = parsePlan(planned.text, workers.map((a) => a.id));
   const testCommand = String(team.testCommand || '').trim();
   const mode = team.mode === 'full' ? 'full' : 'edit';
 
@@ -88,14 +99,14 @@ async function runManager(hub, threadId, team, { step, signal } = {}) {
     const t = hub.thread(threadId); const proj = hub.project(t.project) || {};
     const dir = hub.workdir(t); // the conversation's separate copy, when it has one
     const stop = signal && AbortSignal.any ? AbortSignal.any([ac.signal, signal]) : ac.signal;
-    const items = tasks.map((x, i) => ({ ...x, agent: workers[i % workers.length].id, state: 'waiting', activity: '', tests: testCommand ? 'pending' : 'skipped', files: [], diff: '', branch: '', note: '', attempts: 0 }));
+    const items = tasks.map((x, i) => ({ ...x, plannedFiles: x.files, agent: x.agent || workers[i % workers.length].id, state: 'waiting', activity: '', tests: testCommand ? 'pending' : 'skipped', files: [], diff: '', branch: '', note: '', result: '', attempts: 0 }));
     const msg = { id: crypto.randomUUID(), role: 'assistant', agent: roles.planner, kind: 'manager', text: '', thinking: '', tools: [], files: [], plan: null, notices: [], error: null, ok: null,
-      ts: Date.now(), mode, team: { recipe: 'manager', role: 'manager' }, manager: { task: team.task, phase: 'building', testCommand, tasks: items } };
+      ts: Date.now(), mode, team: { recipe: 'manager', role: 'manager' }, manager: { task: team.task, phase: 'building', testCommand, maxParallel, tasks: items } };
     t.messages.push(msg); t.updatedAt = Date.now();
     const update = () => { msg.text = summary(items, hub); hub.emit('event', { threadId, messageId: msg.id, event: { kind: 'manager' }, message: msg }); hub.store.save(false, threadId); };
     update(); hub.emit('message', { threadId, message: msg }); hub.emit('threads', t.project);
 
-    const done = new Set(); const failed = new Set(); const mergedFiles = new Set(); const running = new Map();
+    const done = new Set(); const failed = new Set(); const mergedFiles = new Set(); const running = new Map(); const busyAgents = new Set();
     let mergeQueue = Promise.resolve();
     const serial = (fn) => { const p = mergeQueue.then(fn); mergeQueue = p.catch(() => {}); return p; };
     const fail = (task, note) => { task.state = 'failed'; task.note = note; task.activity = ''; failed.add(task.id); update(); };
@@ -107,9 +118,10 @@ async function runManager(hub, threadId, team, { step, signal } = {}) {
       const before = await createCheckpoint(git.root, `manager-${msg.id}-${task.id}-${task.attempts}`);
       try { await applyDiff(git.root, c.diff); } catch (e) { return `It conflicted with the pieces merged before it. ${e.message}`; }
       if (testCommand) {
-        const tr = await runTests(dir, testCommand);
+        const tr = await runTests(dir, testCommand, undefined, { signal: stop });
         if (!tr.passed) { await restoreCheckpoint(git.root, before); return `The tests failed after merging it with the other pieces, so it was rolled back.\n${tr.output.slice(-2000)}`; }
       }
+      if (stop.aborted) { await restoreCheckpoint(git.root, before); return 'Stopped'; }
       return null;
     });
 
@@ -123,7 +135,8 @@ async function runManager(hub, threadId, team, { step, signal } = {}) {
           extraDirs: proj.folders || [], trusted: proj.trusted !== false, signal: stop,
           onUpdate: (c) => { task.state = c.status === 'running' ? 'working' : c.tests === 'running' ? 'testing' : task.state; task.activity = c.activity || ''; task.tests = c.tests; update(); } });
         const c = r.candidates[0];
-        Object.assign(task, { branch: c.branch || '', files: c.files || [], tests: c.tests, diff: c.diff || '', activity: '' });
+        Object.assign(task, { result: String(c.text || '').slice(0, 4000), branch: c.branch || '', files: c.files || [], tests: c.tests, diff: c.diff || '', activity: '' });
+        if (stop.aborted) return fail(task, 'Stopped');
         if (!c.ok) { feedback = `The agent stopped with an error: ${String(c.error || 'no details').split('\n')[0]}`; continue; }
         if (testCommand && c.tests !== 'passed') { feedback = `The tests failed in your copy.\n${String(c.testOutput || '').slice(-2000)}`; continue; }
         if (!task.files.length) { Object.assign(task, { state: 'done', note: 'No changes were needed' }); done.add(task.id); update(); return; }
@@ -139,26 +152,33 @@ async function runManager(hub, threadId, team, { step, signal } = {}) {
 
     // Start every piece whose dependencies are merged, as many at a time as there are workers.
     for (;;) {
+      if (stop.aborted) { for (const task of items) if (task.state === 'waiting') { task.state = 'skipped'; task.note = 'Stopped'; failed.add(task.id); } update(); }
+      // Propagate failures even when the planner listed descendants before their parents.
+      let skipped;
+      do {
+        skipped = false;
+        for (const task of items) {
+          const blockers = task.dependsOn.filter((d) => failed.has(d));
+          if (task.state === 'waiting' && blockers.length) { Object.assign(task, { state: 'skipped', note: `Skipped because ${blockers.join(', ')} was not merged` }); failed.add(task.id); skipped = true; update(); }
+        }
+      } while (skipped);
       for (const task of items) {
-        const blockers = task.dependsOn.filter((d) => failed.has(d));
-        if (task.state === 'waiting' && blockers.length) { Object.assign(task, { state: 'skipped', note: `Skipped because ${blockers.join(', ')} was not merged` }); failed.add(task.id); update(); }
-      }
-      for (const task of items) {
-        if (running.size >= workers.length) break;
-        if (task.state !== 'waiting' || running.has(task.id) || !task.dependsOn.every((d) => done.has(d))) continue;
-        running.set(task.id, build(task).catch((e) => fail(task, e.message)).finally(() => running.delete(task.id)));
+        if (running.size >= maxParallel) break;
+        if (task.state !== 'waiting' || running.has(task.id) || busyAgents.has(task.agent) || !task.dependsOn.every((d) => done.has(d))) continue;
+        busyAgents.add(task.agent);
+        running.set(task.id, build(task).catch((e) => fail(task, e.message)).finally(() => { running.delete(task.id); busyAgents.delete(task.agent); }));
       }
       if (!running.size) break;
       await Promise.race(running.values());
     }
 
     const merged = items.filter((x) => x.state === 'done').length;
-    msg.manager.phase = 'done';
+    msg.manager.phase = stop.aborted ? 'stopped' : 'done';
     msg.files = [...mergedFiles].map((rel) => ({ path: path.join(dir, rel), rel, change: 'M' }));
-    msg.ok = merged > 0; msg.durationMs = Date.now() - msg.ts;
+    msg.ok = !stop.aborted && merged > 0; msg.durationMs = Date.now() - msg.ts;
     if (stop.aborted) msg.notices.push('Stopped by user');
     update(); hub.store.save(true); hub.emit('message', { threadId, message: msg }); hub.emit('threads', t.project);
-    return { verdict: failed.size ? (merged ? 'partial' : 'failed') : 'merged', tasks: items.map(({ diff, ...x }) => x) };
+    return { verdict: stop.aborted ? 'stopped' : failed.size ? (merged ? 'partial' : 'failed') : 'merged', tasks: items.map(({ diff, ...x }) => x) };
   });
 }
 

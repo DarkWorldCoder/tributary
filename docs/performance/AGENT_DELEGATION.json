@@ -1,0 +1,38 @@
+{
+  "date": "2026-11-03",
+  "automated": {
+    "tests": 204,
+    "passed": 204,
+    "failed": 0,
+    "typescript": "passed",
+    "rendererProductionBuild": "passed"
+  },
+  "nativeUi": {
+    "runtime": "Electron on X11 with an isolated test profile",
+    "agents": "Fake local coding agents; no paid provider requests",
+    "checks": [
+      "Two Manager teams run concurrently in separate background chats",
+      "Lead assigns tasks to selected worker agents",
+      "Concurrency limit and one active task per selected agent are enforced within a team",
+      "Dependent workers receive predecessor summaries and changed paths",
+      "Each background coding team integrates into its own conversation working copy",
+      "Original project files remain unchanged before explicit review and merge",
+      "Current chat stays selected",
+      "Background chat titles use the user task",
+      "A chatting agent uses the generated Electron-as-Node command to create two worker chats",
+      "Worker cards appear in the parent reply and link to worker chats",
+      "Worker chats link back to their parent",
+      "Workers continue after the parent finishes and report Ready to review",
+      "Team slash command opens setup with the task filled in"
+    ]
+  },
+  "boundaries": [
+    "Tributary must remain open while teams run",
+    "Background coding copies require a committed Git repository",
+    "No remote execution on teammates' computers",
+    "Real provider end-to-end delegation and packaged cross-platform execution were not tested",
+    "Chat delegation uses a scoped shell command; direct text connections cannot use it",
+    "Worker chats cannot delegate recursively",
+    "Two active worker chats per parent and four new workers per turn"
+  ]
+}

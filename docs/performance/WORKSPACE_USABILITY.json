@@ -1,0 +1,56 @@
+{
+  "date": "2026-11-03",
+  "unitTests": {
+    "passed": 195,
+    "failed": 0,
+    "log": "/tmp/tributary-onboard-final-tests.log"
+  },
+  "typecheck": "passed",
+  "productionBuild": "passed",
+  "diffCheck": "passed",
+  "nativeUi": {
+    "tree": [
+      "stable row identities during repeated root additions and deletions",
+      "scroll and expanded folders preserved",
+      "no background loading flash",
+      "unsaved editor draft preserved",
+      "new file in watched subfolder appears in place"
+    ],
+    "terminal": "full-width bottom panel below workspace and chat",
+    "navigation": [
+      "Project room remains visible on task home",
+      "workbench rail, View menu and feature search entries",
+      "empty chats keep workbench and explorer mounted"
+    ],
+    "rooms": [
+      "separate Host and Join paths",
+      "existing project name prefilled",
+      "local folder link saved only in app settings",
+      "invitation includes endpoint, pin and individual key",
+      "claimed task opens a local draft",
+      "folder link persists across renderer reload"
+    ],
+    "roomWidths": [
+      320,
+      390,
+      768,
+      900,
+      1280,
+      1920
+    ],
+    "backgroundTeams": [
+      "two concurrent teams in separate chats",
+      "only fake local members and summarizer used",
+      "current composer draft preserved",
+      "both runs visible in Live activity",
+      "all runs completed"
+    ]
+  },
+  "boundaries": [
+    "no paid model calls",
+    "no second physical device tested",
+    "remote files and agents are not synchronized or executed by the room server",
+    "existing user app and hosted room were not restarted",
+    "changes are local and uncommitted"
+  ]
+}

@@ -21,15 +21,21 @@ const git = async (host, cwd, args, opts) => {
 const IDENTITY = { GIT_AUTHOR_NAME: 'Tributary', GIT_AUTHOR_EMAIL: 'tributary@localhost', GIT_COMMITTER_NAME: 'Tributary', GIT_COMMITTER_EMAIL: 'tributary@localhost' };
 const diffId = (diff) => crypto.createHash('sha1').update(diff).digest('hex');
 
-function runTests(cwd, command, timeoutMs = 10 * 60 * 1000, { host = localHost } = {}) {
+function runTests(cwd, command, timeoutMs = 10 * 60 * 1000, { host = localHost, signal } = {}) {
+  if (signal?.aborted) return Promise.resolve({ passed: false, output: '[stopped]', aborted: true });
   return new Promise((resolve) => {
     const sh = !host.remote && process.platform === 'win32' ? ['cmd.exe', ['/d', '/s', '/c', command]] : ['/bin/sh', ['-c', command]];
     const child = host.spawn(sh[0], sh[1], { cwd, env: { CI: '1' } });
     let out = ''; const take = (d) => { out = (out + d).slice(-6000); };
     child.stdout.on('data', take); child.stderr.on('data', take);
-    const timer = setTimeout(() => { take('\n[timed out]'); host.kill(child); }, timeoutMs);
-    child.on('close', (code) => { clearTimeout(timer); resolve({ passed: code === 0, output: out }); });
-    child.on('error', (e) => { clearTimeout(timer); resolve({ passed: false, output: e.message }); });
+    let aborted = false; let timedOut = false;
+    const abort = () => { if (aborted) return; aborted = true; take('\n[stopped]'); host.kill(child); };
+    const timer = setTimeout(() => { timedOut = true; take('\n[timed out]'); host.kill(child); }, timeoutMs);
+    const finish = (result) => { clearTimeout(timer); signal?.removeEventListener('abort', abort); resolve(result); };
+    child.on('close', (code) => finish({ passed: code === 0 && !aborted && !timedOut, output: out, ...(aborted ? { aborted: true } : {}) }));
+    child.on('error', (e) => finish({ passed: false, output: e.message, ...(aborted ? { aborted: true } : {}) }));
+    signal?.addEventListener('abort', abort, { once: true });
+    if (signal?.aborted) abort();
   });
 }
 
@@ -63,7 +69,7 @@ async function race(hub, { root, project, prompts, agents, mode = 'edit', testCo
       c.ok = r.ok; c.text = (c.text || r.text || '').slice(0, 8000);
       if (testCommand && !(signal && signal.aborted)) {
         c.tests = 'running'; update(c);
-        const t = await runTests(cwd, testCommand, undefined, { host });
+        const t = await runTests(cwd, testCommand, undefined, { host, signal });
         c.tests = t.passed ? 'passed' : 'failed'; c.testOutput = t.output;
       }
       const tree = await snapshotTree(wt, { external: false, host });

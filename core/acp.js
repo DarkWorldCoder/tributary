@@ -198,7 +198,7 @@ const acpPool = {
 };
 
 // host: a remote host from core/host.js runs the agent there (cwd is a path on that host).
-function runAcp({ command, args, cwd, env, prompt, mode, resumeId, onEvent, signal, host }) {
+function runAcp({ command, args, cwd, env, prompt, fallbackPrompt, images = [], mode, resumeId, onEvent, signal, host }) {
   return new Promise((resolve) => {
     const conn = acpPool.acquire({ command, args, cwd, env, host: host || localHost });
     let sessionId = null; let finished = false;
@@ -255,7 +255,7 @@ function runAcp({ command, args, cwd, env, prompt, mode, resumeId, onEvent, sign
       const s = await conn.session(resumeId);
       sessionId = s.sessionId; conn.handlers.set(sessionId, handler);
       onEvent({ kind: 'session', sessionId, resumed: s.resumed });
-      const r = await conn.request('session/prompt', { sessionId, prompt: [{ type: 'text', text: prompt }] });
+      const r = await conn.request('session/prompt', { sessionId, prompt: [{ type: 'text', text: resumeId && !s.resumed && fallbackPrompt ? fallbackPrompt : prompt }, ...(conn.caps.promptCapabilities?.image ? images.map((image) => ({ type: 'image', mimeType: image.mime, data: image.base64 })) : [])] });
       const stop = r && r.stopReason;
       finish(stop !== 'refusal' && stop !== 'cancelled', stop === 'refusal' ? 'Agent refused the request' : stop === 'cancelled' ? 'Stopped' : undefined);
     })().catch((e) => finish(false, e.message));

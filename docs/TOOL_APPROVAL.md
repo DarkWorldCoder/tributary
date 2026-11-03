@@ -1,6 +1,6 @@
 # Tool approval
 
-Agents ask before they run a command, edit a file or fetch a page. Tributary shows the request in the running turn and the person answers: **Allow once**, **Always allow** or **Deny**. This page covers how that works for ACP agents today. It also covers how Claude Code and Codex would plug into the same model, and what `core/runner.js` needs for that.
+Agents ask before they run a command, edit a file or fetch a page. Tributary shows the request in the running turn and the person answers: **Allow once**, **Always allow** or **Deny**. These shared controls now cover ACP agents and the local native Claude and Codex adapters.
 
 Checked on 2026-11-03 against Claude Code 2.1.292 (the installed binary, plus the docs at code.claude.com), the Codex app-server docs, and the ACP registry.
 
@@ -69,159 +69,20 @@ The hand-off between the protocol code and the hub is a plain event, so other pr
 
 `core/runner.js` passes events through unchanged, so this already works for ACP without touching the runner.
 
-## Claude Code
+## Claude Code — implemented
 
-Tributary runs `claude -p --output-format stream-json --verbose --include-partial-messages --permission-mode <plan|acceptEdits|bypassPermissions>` and writes the prompt to stdin. In `-p` mode nobody can answer a prompt, so anything the mode doesn't allow is denied.
+The built-in local Claude adapter now uses stream-json input and the stdio host permission channel. The runner keeps stdin open, returns Allow/Deny answers, cancels withdrawn requests and sends an interrupt before a bounded process shutdown. Native questions use answer forms rather than a generic permission grant. Current Task tools and legacy TodoWrite update the plan display. No global permission settings are changed.
 
-### Option A, works today: Claude through ACP
+The installed Claude 2.1.292 accepts `--permission-prompt-tool stdio`. Protocol behavior has fixture coverage; authenticated Claude model execution was not exercised in this pass. SSH keeps its existing stream launcher. Claude ACP remains an alternative through Browse agents.
 
-The ACP registry lists `claude-acp`, which runs `npx @agentclientprotocol/claude-agent-acp`. Installing it from **Browse agents** gives Claude with interactive approval through the code above. It is the same adapter Zed uses.
+## Codex — implemented
 
-### Option B, recommended for the built-in agent: the stdio control protocol
+The built-in local adapter uses Codex app-server over private stdio, preserving real Codex thread IDs and streaming text/tool events. Command, file-change and additional-access requests use the same approval cards as Claude and ACP. Native user-input requests use the same question forms. Read-only declines file changes and additional write grants. Unsupported protocol requests fail closed. Session allowances do not write persistent exec/network policy amendments.
 
-This is the protocol the Agent SDK's `canUseTool` uses. The SDK starts the CLI with `--permission-prompt-tool stdio`, and permission prompts then travel over stdin and stdout as JSON lines next to the normal stream-json messages. The shapes below are taken from the 2.1.292 binary. They are not in the public docs, so check them against the installed version.
+The installed CLI generated the schemas used by the adapter. Default, Ollama and LM Studio configurations completed isolated initialize handshakes without model prompts. Tool execution is verified with protocol fixtures, not paid provider inference. SSH retains the existing exec stream path.
 
-Start the CLI with:
+## Other coding agents
 
-```
-claude -p --input-format stream-json --output-format stream-json --verbose --include-partial-messages \
-  --permission-mode <plan|acceptEdits|bypassPermissions> --permission-prompt-tool stdio
-```
+Gemini uses its native ACP mode locally, including model selection and negotiated image support. OpenCode, Goose, Qwen and other ACP agents retain pooled sessions and the common tool/plan/approval controls. When ACP cannot reload a session, the next native session receives compact conversation context instead of losing prior work. Stream-only agents retain their own CLI permission mode and do not show unsupported interactive capabilities.
 
-**The prompt.** Send it as a stream-json user message, and keep stdin open until the `result` message arrives:
-
-```json
-{"type":"user","message":{"role":"user","content":[{"type":"text","text":"…"}]}}
-```
-
-**The request**, from CLI to Tributary, on stdout:
-
-```json
-{"type":"control_request","request_id":"…","request":{"subtype":"can_use_tool","tool_name":"Bash","display_name":"Bash",
- "input":{"command":"npm test","description":"…"},"tool_use_id":"toolu_…","description":"…",
- "permission_suggestions":[{"type":"addRules","rules":[{"toolName":"Bash","ruleContent":"npm test"}],"behavior":"allow","destination":"session"}],
- "blocked_path":"…","decision_reason":"…"}}
-```
-
-**The answer**, from Tributary to CLI, on stdin:
-
-```json
-{"type":"control_response","response":{"subtype":"success","request_id":"…","response":{"behavior":"allow","updatedInput":{…}}}}
-{"type":"control_response","response":{"subtype":"success","request_id":"…","response":{"behavior":"deny","message":"The user denied this."}}}
-```
-
-**Withdrawn and stopped requests.**
-- The CLI may send `{"type":"control_cancel_request","request_id":"…"}` when it no longer needs an answer.
-- To stop the turn, Tributary sends `{"type":"control_request","request_id":"…","request":{"subtype":"interrupt"}}`. This stops the turn but keeps the session usable for `--resume`.
-
-Mapping to the pending request:
-
-| Pending request | From `can_use_tool` |
-| :- | :- |
-| `title` | `description` or `display_name` plus the command or file |
-| `kind` | `execute` for Bash; `edit` for Edit, Write, MultiEdit and NotebookEdit; `fetch` for WebFetch; `read` for Read |
-| `command` | `input.command` |
-| `path` | `input.file_path`, or `blocked_path` |
-| `options` | Made up by Tributary: `allow_once`, plus `allow_always` when `permission_suggestions` is not empty, plus `reject_once` |
-
-| Answer | `control_response.response` |
-| :- | :- |
-| once | `{ behavior: 'allow', updatedInput: input }` |
-| always | the same, plus `updatedPermissions`: the `permission_suggestions` whose `destination` is `session` |
-| reject | `{ behavior: 'deny', message: 'The user denied this.' }` |
-| cancelled (stop) | `{ behavior: 'deny', message: 'Stopped by the user.', interrupt: true }`, then the `interrupt` request |
-
-With the modes unchanged, Claude asks in the same cases as an ACP agent:
-- In `acceptEdits`, edits run without asking and Bash commands ask.
-- In `plan`, edits come to the callback. Tributary should decline them without asking, to keep Read-only's promise.
-- `bypassPermissions` asks only about the few actions no mode approves, such as critical-path `rm`.
-
-`AskUserQuestion` also arrives as `can_use_tool`. Decline it until there's UI for questions.
-
-### Option C: an MCP permission prompt tool
-
-`--permission-prompt-tool mcp__<server>__<tool>` is the documented route. Tributary would run a small MCP server that the CLI calls for each prompt. The tool returns `{"behavior":"allow","updatedInput":…}` or `{"behavior":"deny","message":…}` as JSON text.
-
-This needs an MCP server process and `--mcp-config` for every run, and the CLI waits for that server to start before the first turn. Option B gives the same answers with fewer moving parts.
-
-### Runner changes needed for Claude (`core/runner.js` and `core/parsers.js`)
-
-1. Add `--input-format stream-json --permission-prompt-tool stdio` to the `claude` args in `core/agents.js`. If no host can answer, the runner falls back to denying, which is today's behavior.
-2. Write the prompt as one stream-json user message instead of raw text. Keep stdin open (the `keepOpen` option of `proc.start`, as ACP does), and end it after the `result` message.
-3. Have the `claude-stream` parser turn `control_request` / `can_use_tool` into `{ kind: 'permission', request, requestId }`. Have it turn `control_cancel_request` into `{ kind: 'permission-withdrawn', requestId }`.
-4. In the runner, for a `permission` event:
-   - Await `event.answer`. If nobody set it, answer at once: allow edits in Edit files mode, and deny everything else.
-   - Write the matching `control_response` to the child's stdin.
-5. For a `permission-withdrawn` event, call `event.withdraw?.()` on the original event. The hub would set `withdraw` next to `answer`; that is a small hub change to make together with this step.
-6. On stop, send the `interrupt` control request first. Kill the process only if it is still running a few seconds later. Pending requests are already answered as cancelled by the hub.
-7. Tests: extend `test/fake-agent.js` with a `claude-stream` mode that sends a `can_use_tool` request and prints the answer it gets. Reuse the cases in `test/permissions.test.js`.
-
-## Codex
-
-Tributary runs `codex exec --json …` with `-s read-only`, `-s workspace-write`, or `--dangerously-bypass-approvals-and-sandbox`. `codex exec` is non-interactive and never asks for approval, so there is nothing to answer today.
-
-### Option A, works today: Codex through ACP
-
-The ACP registry lists `codex-acp`, which runs `npx @agentclientprotocol/codex-acp`. It maps Codex approvals to `session/request_permission`.
-
-### Option B, recommended for the built-in agent: `codex app-server`
-
-`codex app-server` is the protocol the Codex IDE extension uses.
-- **Transport:** JSON-RPC 2.0 over stdio, one JSON message per line, with the `"jsonrpc":"2.0"` field left out on the wire.
-- **Schema:** `codex app-server generate-json-schema --out DIR` writes the exact schema for the installed version.
-
-**Setup.**
-1. Send `initialize` with `{ clientInfo: { name: 'tributary', title: 'Tributary', version } }`, then the `initialized` notification.
-2. Call `thread/start` for a new thread, or `thread/resume` with the stored thread id. Its params include `approvalPolicy` and `sandbox`.
-
-**A turn.**
-- `turn/start` takes `{ threadId, input: [{ type: 'text', text }], approvalPolicy, sandboxPolicy }`.
-- Progress arrives as `turn/started`, `item/started`, `item/agentMessage/delta`, `item/completed` and `turn/completed`.
-- `turn/interrupt` with `{ threadId, turnId }` stops the turn. It then ends with status `interrupted`.
-
-**Approval requests**, from server to client:
-- `item/commandExecution/requestApproval` with `{ threadId, turnId, itemId, reason?, command?, cwd?, commandActions?, proposedExecpolicyAmendment?, availableDecisions? }`.
-  - Decisions: `accept`, `acceptForSession`, `decline`, `cancel`, or `{ acceptWithExecpolicyAmendment: { execpolicy_amendment: [...] } }`.
-- `item/fileChange/requestApproval` with `{ threadId, turnId, itemId, reason?, grantRoot? }`.
-  - Decisions: `accept`, `acceptForSession`, `decline`, `cancel`.
-  - The files are in the `fileChange` item from the `item/started` that came just before.
-- After the answer, or when the server clears the request, the server sends `serverRequest/resolved`.
-
-Mapping:
-
-| Tributary | Codex |
-| :- | :- |
-| Read-only | `sandbox: read-only`, `approvalPolicy: on-request` |
-| Edit files | `sandbox: workspace-write`, `approvalPolicy: on-request` |
-| Full auto | `sandbox: danger-full-access`, `approvalPolicy: never` |
-| No host can answer | `approvalPolicy: never`, as `codex exec` does today |
-| `kind`, `command`, `path` | `execute` with `command`; `edit` with the `fileChange` item's paths |
-| once / always / reject / cancelled | `accept` / `acceptForSession` / `decline` / `cancel` |
-| Request withdrawn | `serverRequest/resolved` for a request that is still pending |
-
-Codex's own `acceptForSession` covers "always". The hub's memory is only a backup.
-
-Other server requests can be declined until there's UI for them:
-- `item/permissions/requestApproval` (extra network or filesystem access)
-- `tool/requestUserInput`
-- `mcpServer/elicitation/request`
-
-### Runner changes needed for Codex (`core/runner.js`, new `core/codex-app.js`)
-
-1. Add a `codex-app` protocol: a long-lived JSON-RPC client shaped like `AcpConnection` in `core/acp.js`.
-   - Pool one process per folder and environment.
-   - Do the handshake: `initialize` and `initialized`.
-   - Call `thread/start` or `thread/resume`, then `turn/start`.
-   - Turn notifications into normalized events: agent message deltas become `text`, reasoning becomes `thinking`, `commandExecution` becomes `tool`, `fileChange` becomes `tool` plus `file`, `turn/completed` becomes `done`, and token usage becomes `usage`.
-2. In `runTurn`, send `agent.protocol === 'codex-app'` to it, the same way `acp` goes to `runAcp`.
-3. Answer `item/*/requestApproval` through the same `{ kind: 'permission' }` event and `event.answer`. If nobody answers, decline, which matches today.
-4. Use `serverRequest/resolved` for a request that is still pending to withdraw it (see step 5 of the Claude list).
-5. On stop, send `turn/interrupt`. Answer pending requests with `cancel`; the hub already does this through the abort signal.
-6. In `core/agents.js`, make `codex-app` the Codex protocol when `codex app-server` is available. Keep `codex-exec` as the fallback for older installs and for the CLI.
-7. Tests: a `test/fake-codex-app.js` that speaks the app-server protocol and asks for one command approval and one file-change approval.
-
-## Not covered yet
-
-- Gemini CLI and Antigravity. Gemini CLI has an ACP mode (`gemini --acp`, the hidden `gemini-acp` agent), so it can use the ACP path. Antigravity's protocol was not checked.
-- Editing the input before allowing it. Claude supports this with `updatedInput`, and Codex with an exec-policy amendment.
-- Remembering answers across sessions, for example writing Claude's `localSettings` suggestions.
+See [Native agent behavior](NATIVE_AGENT_BEHAVIOR.md) for the capability table, background-work limits and verification boundaries.

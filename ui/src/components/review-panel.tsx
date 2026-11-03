@@ -57,12 +57,12 @@ export function ReviewTab() {
   if (!g) return <p className="p-6 text-center text-sm text-muted-foreground">This folder has no Git comparison baseline yet. Use Files to browse and watch live edits. Initialize Git when you want a version history and before/after comparisons.</p>;
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="shrink-0 space-y-2 border-b p-3"><div className="flex items-center justify-between gap-2"><p className="text-sm font-medium">{g.changed.length} changed {g.changed.length === 1 ? 'file' : 'files'}</p><Button variant="ghost" size="icon-xs" aria-label="Refresh changes" onClick={() => s.refreshGit()}><RefreshCw /></Button></div><Input aria-label="Filter changed files" placeholder="Find a changed file…" value={filter} onChange={(e) => setFilter(e.target.value)} /></div>
+      <div className="shrink-0 space-y-1.5 border-b px-3 py-2"><div className="flex min-h-7 items-center justify-between gap-2"><p className="text-[13px] font-medium">{g.changed.length} changed {g.changed.length === 1 ? 'file' : 'files'}</p><Button variant="ghost" size="icon-xs" aria-label="Refresh changes" onClick={() => s.refreshGit()}><RefreshCw /></Button></div><Input aria-label="Filter changed files" placeholder="Find a changed file…" className="h-7 text-[13px]" value={filter} onChange={(e) => setFilter(e.target.value)} /></div>
       <ScrollArea className="max-h-[30%] shrink-0 border-b">
         <ul className="py-1">
           {shown.map((c) => (
             <li key={c.path}>
-              <button onClick={() => pick(c.path)} className={cn('flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-sm hover:bg-muted/60', c.path === rel && 'bg-accent')}>
+              <button onClick={() => pick(c.path)} aria-current={c.path === rel ? 'page' : undefined} className={cn('workbench-list-row flex h-6 w-full items-center gap-2 px-3 text-left text-[13px] hover:bg-muted/60 max-sm:h-11', c.path === rel && 'bg-accent')}>
                 <FileTypeIcon path={c.path} /><ChangeCode code={changeCode(c.code)} /><span className="min-w-0 flex-1 truncate font-mono text-[12.5px]" title={c.from ? `${c.from} → ${c.path}` : c.path}>{c.path}</span><span className="text-xs text-muted-foreground">{label(c.code)}</span>
               </button>
             </li>

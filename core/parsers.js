@@ -29,19 +29,41 @@ function toolResultText(content) {
 function claudeStream() {
   const streamedMsgs = new Set();
   const toolNames = new Map();
+  const blocks = new Map();
+  const taskCalls = new Map(); const tasks = new Map();
+  const taskPlan = () => ({ kind: 'plan', items: [...tasks.values()].slice(0, 100).map((task) => ({ text: task.status === 'in_progress' && task.activeForm ? task.activeForm : task.subject, done: task.status === 'completed' })) });
   return (o) => {
     const out = [];
     switch (o.type) {
+      case 'control_request': out.push({ kind: 'control-request', requestId: o.request_id, control: o.request }); break;
+      case 'control_cancel_request': out.push({ kind: 'control-withdrawn', requestId: o.request_id }); break;
       case 'system':
         if (o.subtype === 'init') out.push({ kind: 'session', sessionId: o.session_id, model: o.model });
         else if (o.subtype === 'compact_boundary') out.push({ kind: 'notice', text: 'Context compacted by Claude Code' });
+        else if (['task_started', 'task_progress', 'task_notification', 'task_updated'].includes(o.subtype) && o.task_id && !o.ambient) {
+          const status = o.patch?.status || o.status;
+          out.push({ kind: 'tool', id: `claude-task:${o.task_id}:${o.run_id || ''}`, name: 'background_agent', input: o.description ? { description: o.description, type: o.task_type } : undefined,
+            status: status === 'completed' ? 'done' : ['failed', 'stopped', 'killed'].includes(status) ? 'error' : 'running', output: o.summary ? clip(o.summary) : undefined });
+        }
         break;
       case 'stream_event': {
         const e = o.event || {};
-        if (e.type === 'message_start' && e.message) streamedMsgs.add(e.message.id);
+        if (e.type === 'message_start' && e.message) { streamedMsgs.add(e.message.id); blocks.clear(); }
+        if (e.type === 'content_block_start' && e.content_block?.type === 'tool_use') {
+          const block = e.content_block; blocks.set(e.index, { id: block.id, name: block.name, input: block.input, json: '' }); toolNames.set(block.id, block.name);
+          out.push({ kind: 'tool', id: block.id, name: block.name, input: block.input, status: 'running' });
+        }
         if (e.type === 'content_block_delta' && e.delta) {
           if (e.delta.type === 'text_delta' && e.delta.text) out.push({ kind: 'text', text: e.delta.text });
           if (e.delta.type === 'thinking_delta' && e.delta.thinking) out.push({ kind: 'thinking', text: e.delta.thinking });
+          if (e.delta.type === 'input_json_delta' && blocks.has(e.index)) {
+            const block = blocks.get(e.index); block.json = (block.json + (e.delta.partial_json || '')).slice(0, 64000);
+          }
+        }
+        if (e.type === 'content_block_stop' && blocks.has(e.index)) {
+          const block = blocks.get(e.index); blocks.delete(e.index);
+          let input = block.input; try { if (block.json) input = JSON.parse(block.json); } catch { /* the full assistant event supplies the final input */ }
+          out.push({ kind: 'tool', id: block.id, name: block.name, input, status: 'running' });
         }
         break;
       }
@@ -52,6 +74,8 @@ function claudeStream() {
           if (b.type === 'tool_use') {
             toolNames.set(b.id, b.name);
             out.push({ kind: 'tool', id: b.id, name: b.name, input: b.input, status: 'running' });
+            if (b.name === 'TodoWrite' && Array.isArray(b.input?.todos)) out.push({ kind: 'plan', items: b.input.todos.slice(0, 100).map((item) => ({ text: item.content || item.activeForm || '', done: item.status === 'completed' })) });
+            if (['TaskCreate', 'TaskUpdate', 'TaskGet', 'TaskList'].includes(b.name)) taskCalls.set(b.id, { name: b.name, input: b.input || {} });
           }
         }
         break;
@@ -61,6 +85,18 @@ function claudeStream() {
           if (b.type !== 'tool_result') continue;
           const name = toolNames.get(b.tool_use_id) || 'tool';
           out.push({ kind: 'tool', id: b.tool_use_id, name, status: b.is_error ? 'error' : 'done', output: clip(toolResultText(b.content)) });
+          const call = taskCalls.get(b.tool_use_id); taskCalls.delete(b.tool_use_id);
+          if (call && !b.is_error) {
+            const result = o.tool_use_result;
+            if ((call.name === 'TaskCreate' || call.name === 'TaskGet') && result?.task?.id && tasks.size < 100) tasks.set(String(result.task.id), { ...call.input, ...result.task, subject: result.task.subject || call.input.subject || '', status: result.task.status || 'pending' });
+            if (call.name === 'TaskUpdate') {
+              const id = String(call.input.taskId ?? call.input.id ?? call.input.task_id);
+              if (call.input.status === 'deleted') tasks.delete(id);
+              else if (tasks.has(id)) tasks.set(id, { ...tasks.get(id), ...call.input });
+            }
+            if (call.name === 'TaskList' && Array.isArray(result?.tasks)) { tasks.clear(); for (const task of result.tasks.slice(0, 100)) if (task.id && task.subject) tasks.set(String(task.id), task); }
+            out.push(taskPlan());
+          }
         }
         break;
       }

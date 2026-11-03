@@ -1,3 +1,7 @@
+import { QueuedMessages } from '@/components/queued-messages';
+import { ChatReviewBar } from '@/components/chat-review-bar';
+import { ShortcutLabel } from '@/components/shortcut-settings';
+import { useShortcutPreferences } from '@/hooks/use-shortcut-preferences';
 import * as React from 'react';
 import { ArrowUp, Check, ChevronDown, Clock, Cpu, Eye, ListTodo, PanelRight, PencilLine, Plug, Settings2, Sparkles, Square, X, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -23,6 +27,7 @@ export const MODES: Record<Mode, { label: string; help: string; icon: React.Reac
 };
 
 const COMMANDS = [
+  { name: 'team', hint: 'Delegate to background coding agents', insert: '/team ' },
   { name: 'plan', hint: 'Plan first, then approve to run', insert: '/plan ' },
   { name: 'review', hint: 'Review uncommitted changes, no edits', text: 'Review the uncommitted changes in this project (see `git diff` and new files). Point out bugs, risks and missing tests, most important first. Do not change any files.', mode: 'read' as Mode },
   { name: 'test', hint: 'Run the tests and fix failures', text: 'Run this project’s test suite. If anything fails, find the cause and fix it, then run the tests again.' },
@@ -115,6 +120,7 @@ function ModePicker() {
 }
 
 export function Composer({ autoFocus, className }: { autoFocus?: boolean; className?: string }) {
+  const { preferences: shortcutPreferences, platform: keyboardPlatform } = useShortcutPreferences();
   const s = useStore();
   const everyday = !!s.thread?.task || !!s.agent.connectionId || s.st?.projects.find((p) => p.path === s.project)?.kind === 'personal';
   const ref = React.useRef<HTMLTextAreaElement>(null);
@@ -202,6 +208,7 @@ export function Composer({ autoFocus, className }: { autoFocus?: boolean; classN
     const m = everyday ? null : /^\/([\w-]+)\s*([\s\S]*)$/.exec(raw);
     if (m) {
       const c = COMMANDS.find((x) => x.name === m[1]);
+      if (c?.name === 'team') { s.setDraft(m[2].trim()); s.setTeamOpen(true); return; }
       if (c?.name === 'plan') { plan = true; body = m[2].trim(); if (!body) return; }
       else if (c?.text) { body = m[2].trim() ? `${c.text}\n\n${m[2].trim()}` : c.text; mode = c.mode; }
     }
@@ -214,26 +221,26 @@ export function Composer({ autoFocus, className }: { autoFocus?: boolean; classN
     if (showSuggest) {
       if (e.key === 'ArrowDown') { e.preventDefault(); setSel((i) => (i + 1) % suggestions.length); return; }
       if (e.key === 'ArrowUp') { e.preventDefault(); setSel((i) => (i - 1 + suggestions.length) % suggestions.length); return; }
-      if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); suggestions[sel]?.apply(); return; }
+      if (!e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey && !e.nativeEvent.isComposing && (e.key === 'Enter' || e.key === 'Tab')) { e.preventDefault(); suggestions[sel]?.apply(); return; }
       if (e.key === 'Escape') { e.preventDefault(); setCaret(-1); return; }
     }
-    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); submit(); }
+    if (e.key === 'Enter' && !e.shiftKey && !e.altKey && !e.nativeEvent.isComposing && (shortcutPreferences.send === 'enter' || (keyboardPlatform === 'mac' ? e.metaKey : e.ctrlKey))) { e.preventDefault(); submit(); }
   };
 
   const disabled = !s.ready.length;
   const chatView = !s.codeLayout && !!s.thread?.messages.length && !s.thread.task;
   const workspaceToggle = (s.project && <Tooltip><TooltipTrigger asChild>
             <InputGroupButton size="icon-sm" variant="ghost" aria-label="Workspace" aria-pressed={s.panel.open} onClick={() => { s.setWorkspaceExpanded(false); s.setPanel({ ...s.panel, open: !s.panel.open }); }}><PanelRight /></InputGroupButton>
-          </TooltipTrigger><TooltipContent>{s.panel.open ? 'Hide workspace' : 'Open workspace'} (Ctrl+J)</TooltipContent></Tooltip>);
+          </TooltipTrigger><TooltipContent>{s.panel.open ? 'Hide workspace' : 'Open workspace'} <ShortcutLabel action="workspace" /></TooltipContent></Tooltip>);
   const agentControls = <><AgentPicker />
           <ModelPicker />
           {!everyday && <><ModePicker />{planOn && <span className="px-2 text-xs text-muted-foreground">Plan first</span>}</>}</>;
   const sendActions = (<div className="ml-auto flex items-center gap-1">
             {s.running && <Button size="icon-sm" variant="secondary" className="rounded-full" onClick={s.stop} aria-label="Stop"><Square className="fill-current" /></Button>}
-            {(!s.running || text.trim() || attachments.length) && (
+            {(!s.running || !!text.trim() || attachments.length > 0) && (
               <Tooltip><TooltipTrigger asChild>
                 <Button size="icon-sm" className="rounded-full" onClick={submit} disabled={(!text.trim() && !attachments.length) || disabled || uploading} aria-label={s.running ? 'Queue message' : 'Send'}>{s.running ? <Clock /> : <ArrowUp />}</Button>
-              </TooltipTrigger><TooltipContent>{s.running ? 'Send when the current turn ends' : 'Send (Enter)'}</TooltipContent></Tooltip>
+              </TooltipTrigger><TooltipContent>{s.running ? 'Send when the current turn ends' : `Send (${shortcutPreferences.send === 'enter' ? 'Enter' : keyboardPlatform === 'mac' ? '⌘+Enter' : 'Ctrl+Enter'})`}</TooltipContent></Tooltip>
             )}
           </div>);
   return (
@@ -241,12 +248,8 @@ export function Composer({ autoFocus, className }: { autoFocus?: boolean; classN
       <input ref={picker} type="file" multiple className="sr-only" tabIndex={-1} aria-label="Attach files" onChange={(event) => { void attach([...(event.target.files || [])]); event.target.value = ''; }} />
       {!!attachments.length && <ChatAttachments files={attachments} onRemove={(id) => changeAttachments(attachments.filter((file) => file.id !== id))} />}
       {uploading && <p role="status" className="px-2 py-1 text-xs text-muted-foreground">Adding attachments…</p>}
-      {s.queued.length > 0 && (
-        <div className="mb-2 flex items-center gap-2 rounded-xl border bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground">
-          <Clock className="size-3.5" /><span className="min-w-0 flex-1 truncate">{s.queued.length} message{s.queued.length > 1 ? 's' : ''} waiting: “{s.queued[0].text.slice(0, 80)}”</span>
-          <button onClick={s.clearQueue} className="rounded p-0.5 hover:bg-background" aria-label="Clear queued messages"><X className="size-3.5" /></button>
-        </div>
-      )}
+      <ChatReviewBar />
+      <QueuedMessages />
       {showSuggest && (
         <div role="listbox" aria-label={at ? 'Files' : 'Commands and skills'} className="absolute right-0 bottom-full left-0 z-20 mb-2 max-h-72 overflow-auto rounded-xl border bg-popover p-1 shadow-lg">
           <div className="px-2 pt-1 pb-1.5 text-xs font-medium text-muted-foreground">{at ? 'Mention a file' : 'Commands and skills'}</div>
@@ -291,9 +294,11 @@ export function Composer({ autoFocus, className }: { autoFocus?: boolean; classN
 
 export function HandoffHint() {
   const s = useStore();
+  const { preferences, platform } = useShortcutPreferences();
   if (s.thread?.task || s.agent.connectionId) return <p className="mt-2 text-center text-xs text-muted-foreground">A conversation summary follows when you switch assistants. Save useful replies as documents.</p>;
   const msgs = s.thread?.messages ?? [];
-  if (!msgs.length || !s.agentId) return <p className="mt-2 text-center text-xs text-muted-foreground">Enter to send, Shift+Enter for a new line</p>;
+  const sendHint = `${preferences.send === 'enter' ? 'Enter' : platform === 'mac' ? '⌘+Enter' : 'Ctrl+Enter'} to send, Shift+Enter for a new line`;
+  if (!msgs.length || !s.agentId) return <p className="mt-2 text-center text-xs text-muted-foreground">{sendHint}</p>;
   const name = s.agent.name;
   let last = -1; for (let i = msgs.length - 1; i >= 0; i--) { const m = msgs[i]; if (m.role === 'assistant' && m.agent === s.agentId) { last = i; break; } }
   let hint = '';
@@ -302,5 +307,5 @@ export function HandoffHint() {
     const others = msgs.slice(last + 1).filter((m) => m.role === 'assistant' && m.agent !== s.agentId);
     if (others.length) hint = `${name} will catch up on ${others.length} repl${others.length === 1 ? 'y' : 'ies'} from ${[...new Set(others.map((m) => s.agentOf(m.role === 'assistant' ? m.agent : '').name))].join(' and ')}.`;
   }
-  return <p className="mt-2 text-center text-xs text-muted-foreground">{hint || 'Enter to send, Shift+Enter for a new line'}</p>;
+  return <p className="mt-2 text-center text-xs text-muted-foreground">{hint || sendHint}</p>;
 }

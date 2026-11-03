@@ -1,0 +1,64 @@
+{
+  "date": "2026-11-03",
+  "scope": "Live editor diagnostics and additional project-check adapters",
+  "tests": {
+    "regression": {
+      "passed": 261,
+      "failed": 0
+    },
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "browser": [
+      "JSON syntax errors appear in Problems and the editor",
+      "Correcting an unsaved JSON draft removes obsolete errors",
+      "CSS unknown-property warning appears live",
+      "Problems filter matches source and message",
+      "CSS completion inserts a property without snippet placeholders",
+      "JSON completion handles the opening quote correctly",
+      "Switching files clears the previous live diagnostics",
+      "Problems controls fit at 320px",
+      "Problems controls fit at 390px",
+      "Problems controls fit at 768px",
+      "Problems controls fit at 900px",
+      "Problems controls fit at 1280px",
+      "Problems controls fit at 1920px"
+    ],
+    "realTools": [
+      {
+        "tool": "biome",
+        "code": 1,
+        "diagnostics": [
+          {
+            "rel": "a.js",
+            "line": 1,
+            "column": 7,
+            "severity": "warning",
+            "message": "This variable unused is unused.",
+            "source": "lint/correctness/noUnusedVariables"
+          }
+        ]
+      },
+      {
+        "tool": "oxlint",
+        "code": 0,
+        "diagnostics": [
+          {
+            "rel": "a.js",
+            "line": 1,
+            "column": 7,
+            "severity": "warning",
+            "message": "Variable 'unused' is declared but never used. Unused variables should start with a '_'.",
+            "source": "eslint(no-unused-vars)"
+          }
+        ]
+      }
+    ]
+  },
+  "limits": [
+    "HTML completions only; no built-in HTML validation",
+    "Basic package.json schema, no remote schema fetching",
+    "Other CLI adapters validated with fixtures, not all toolchains installed",
+    "Native Windows/macOS and VS Code webview runtime not exercised",
+    "Changes uncommitted; real user app not restarted"
+  ]
+}

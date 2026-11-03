@@ -68,6 +68,23 @@ Navigation takes cues from [VS Code's explorer/editor layout](https://code.visua
 
 ## Sharing the service with other computers
 
+In the desktop app:
+
+1. Open **Project room** beside **Start a task**, then **Host a room → Host on this network**. The owner signs in automatically.
+2. Create the shared project using your existing local project. Click **Invite teammate**.
+3. Share the private invitation. It includes the LAN address, certificate fingerprint and that teammate's key.
+4. Teammates choose **Find nearby rooms**, verify the fingerprint with you, and join with their key.
+
+**Join a room** has a separate discovery and invitation form. **Local folder** links each shared project to a folder on your computer; only the local app saves that path. Claimed tasks offer **Work locally** and **Run with agents**.
+
+**Hosting options** lets you choose a private IPv4 interface or a different port. **Stop hosting** disconnects clients and saves the room. Disconnecting your own view keeps the host running; quitting Tributary stops it. Hosting is always an explicit action, never automatic on launch. The initial certificate needs OpenSSL, which is available on this development machine. No firewall or system trust settings are changed.
+
+The host is embedded in Electron's main process: no extra Node process, web framework, Rust/Zig binary, or runtime dependency. The same lifecycle supports `npm run server:lan`. SQLite and TLS use Node's native implementations; live changes use SSE, with heartbeats rather than client polling. Nearby discovery sends a small packet every five seconds. Desktop room data and the private owner key are under the app's `userData/project-room` directory; CLI data remains under `~/.tributary-server` unless configured. Public IPC status never includes the owner key. These are separate stores.
+
+A local standalone measurement is in [LAN_HOST.json](performance/LAN_HOST.json): zero clients, loopback, discovery disabled. It measured 60 MiB total process RSS against a 49.6 MiB baseline, 6.4 MiB JS heap, 0.3 ms CPU over a two-second idle sample, and 4.7 ms warm startup. First certificate creation and startup took 290.9 ms in that sample. These are one-machine observations, not total Electron memory, load capacity or second-device performance. No measured bottleneck currently justifies a separate native-language service.
+
+Validation: 194 tests pass, including host lifecycle, owner persistence, port conflicts, concurrent starts/stops and invited clients. The actual Electron UI started/stopped hosting, created a project/invitation/task, received a separate client's live claim, reconnected without a key, recovered the saved room, and stopped the listener when the app quit. Controls were checked at 320, 390, 768, 900, 1280 and 1920 px. Two physical computers and packaged cross-platform hosting remain unverified.
+
 People on the same LAN can use one service: each opens its reachable HTTPS address and joins with an individual invitation key. The LAN host command now supports nearby discovery in desktop/VS Code. Discovery does not grant access or share a source folder. See [the LAN setup guide](USABILITY_2026-11-03.md#lan-setup).
 
 You can now host HTTPS directly, without a separate reverse proxy. Obtain a certificate valid for the host address and trusted by the participating devices, and keep its private key private. Example for a server whose actual LAN address is `192.168.1.20`:
@@ -96,3 +113,11 @@ Automated coverage includes membership isolation, secret omission, origin/Host c
 Existing agent, handoff, checkpoint, race, ACP, registry, file-editor and VS Code integration tests remain part of `npm test`. No paid model request is needed for the collaboration tests. Browser/desktop checks use a disposable service, test identities and a separate desktop profile.
 
 The next stages are persistent task worktrees and attributable agent-result sharing, review/integration checks, then intentional same-file editing and authenticated preview sharing. This implementation establishes the shared room and local correctness foundation; it does not complete those later stages or the entire general-user roadmap.
+
+## Background teams and workspace stability
+
+**Agent teams** and **Live activity** are available from the sidebar, workbench rail, View menu and feature search. Agent teams defaults to **Manager → New background chat**. The lead assigns work to selected coding agents with a concurrency limit and dependency handoffs. Background coding teams each get a separate conversation working copy, so multiple teams can run while the current chat and draft stay visible. Review and merge each copy when ready. See [agent delegation](AGENT_DELEGATION.md). Shared-room claims and reported results still require explicit updates; starting a local team does not execute commands on teammates' machines or synchronize their files.
+
+The terminal now spans the bottom of the editor and chat. File-tree updates retain existing rows, expanded folders, pagination and scroll position. New chats keep the chosen workbench layout. Native UI checks covered repeated root and watched-subfolder changes, unsaved edits, empty-chat transitions, Host/Join setup, saved folder links, invitation creation, claimed-task handoff, and six room widths. Two background teams completed concurrently using fake local agents; no paid model requests were sent.
+
+Use **Move terminal** in the terminal toolbar to choose **Left**, **Right**, **Top** or **Bottom**. Drag its edge or focus the resize handle and press arrow keys to resize. Position and dimensions are saved; changing sides keeps the existing shells and scrollback. On narrow screens, it uses the bottom position and restores your preferred side when space returns.

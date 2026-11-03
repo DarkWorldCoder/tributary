@@ -1,0 +1,104 @@
+{
+  "date": "2026-11-03",
+  "status": "local uncommitted changes",
+  "checks": {
+    "regressionTests": {
+      "passed": 229,
+      "failed": 0,
+      "log": "/tmp/tributary-polished-final-tests.log"
+    },
+    "typescript": "passed",
+    "productionBuild": "passed",
+    "diffCheck": "passed"
+  },
+  "responsiveWidths": [
+    320,
+    390,
+    768,
+    900,
+    1280,
+    1920
+  ],
+  "uiChecks": [
+    "Custom shortcut saved",
+    "Custom shortcut opens commands",
+    "Mac bindings display Command",
+    "Duplicate shortcut rejected",
+    "Mac Command shortcut opens commands",
+    "Installed skills have an agent filter",
+    "Guidance adds real instructions to the message draft",
+    "Host setup pre-fills the selected project",
+    "Room fits at 320px",
+    "Room fits at 390px",
+    "Room fits at 768px",
+    "Room fits at 900px",
+    "Room fits at 1280px",
+    "Room fits at 1920px",
+    "Composer controls fit at 320px",
+    "Composer controls fit at 390px",
+    "Composer controls fit at 768px",
+    "Composer controls fit at 900px",
+    "Composer controls fit at 1280px",
+    "Composer controls fit at 1920px",
+    "Shared native question form renders in the narrow chat pane",
+    "Settings fits 320px",
+    "Current settings section visible at 320px",
+    "Settings fits 390px",
+    "Current settings section visible at 390px",
+    "Settings fits 768px",
+    "Settings fits 900px",
+    "Settings fits 1280px",
+    "Settings fits 1920px",
+    "Mobile section picker changes content",
+    "Shift Enter adds a newline with suggestions open",
+    "Running composer has no stray count beside Stop"
+  ],
+  "additionalNativeUiChecks": [
+    "Claude command approval waits and continues after Allow once",
+    "Claude question answer resumes the session",
+    "Codex uses the same question controls",
+    "Background worker concurrency and configured provider saved in Settings"
+  ],
+  "protocolFixtures": [
+    "Claude streamed tools, task plans, approval, questions, withdrawal and cancellation",
+    "Codex commands, additional permissions, questions, plans, continuation, cancellation and local image input",
+    "Gemini ACP models, image capabilities and fallback context",
+    "Delegation provider compatibility and four parallel workers"
+  ],
+  "installedCodexHandshake": [
+    {
+      "agent": "installed Codex app-server",
+      "provider": "default",
+      "initialize": true,
+      "sentPrompt": false,
+      "isolatedHome": true
+    },
+    {
+      "agent": "installed Codex app-server",
+      "provider": "ollama",
+      "initialize": true,
+      "sentPrompt": false,
+      "isolatedHome": true
+    },
+    {
+      "agent": "installed Codex app-server",
+      "provider": "lmstudio",
+      "initialize": true,
+      "sentPrompt": false,
+      "isolatedHome": true
+    }
+  ],
+  "screenshots": [
+    "workbench-native-controls.png",
+    "settings-phone-sections.png",
+    "skills-phone-compact.png"
+  ],
+  "boundaries": [
+    "UI agent runs use fake local agents only",
+    "No paid inference or real provider tool action tested",
+    "No second physical device or native Mac/Windows runtime tested",
+    "No VS Code extension host added; language extensions open in VS Code",
+    "The existing user app and its hosted rooms were not restarted",
+    "The final two composer-only fixes were followed by a production build, TypeScript and native UI check; the 229-test suite preceded those two fixes"
+  ]
+}

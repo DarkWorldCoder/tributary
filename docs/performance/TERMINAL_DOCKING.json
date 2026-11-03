@@ -1,0 +1,17 @@
+{
+  "date": "2026-11-03",
+  "runtime": "Isolated Electron test profile on X11",
+  "checks": [
+    "All four positions verified against chat geometry",
+    "Arrow-key resizing works at each edge",
+    "Same xterm instance remains mounted through all moves",
+    "Real shell variable retained through all four moves",
+    "390 px screen falls back to bottom with no page overflow",
+    "1280 px screen restores the saved left preference"
+  ],
+  "artifacts": "Native screenshots recorded locally in /tmp; no paid model requests or changes to the user profile",
+  "limits": [
+    "Cross-platform packaged app not tested",
+    "Shell sessions remain in the current app session; restart recovery is not implemented"
+  ]
+}

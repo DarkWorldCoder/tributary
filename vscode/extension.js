@@ -81,6 +81,10 @@ const API = {
   async revealFile(p, rel) { const abs = await require('../core/files').projectPath(knownProject(p), rel); await vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(abs)); return true; },
   syncInstructions: (p) => hub.syncInstructions(p),
   listFiles: (p) => hub.listFiles(p),
+  projectCheckTools: (p) => hub.projectCheckTools(p),
+  projectCheckState: (p) => hub.projectCheckState(p),
+  runProjectCheck: (p, id) => hub.runProjectCheck(p, id),
+  stopProjectCheck: (p) => hub.stopProjectCheck(p),
   addAttachments: (files) => hub.addAttachments(files),
   readAttachment: (id) => hub.readAttachment(id),
   readFile: (p, rel) => hub.readFile(p, rel),
@@ -261,10 +265,10 @@ async function activate(context) {
       const pick = await vscode.window.showQuickPick(g.changed.map((c) => ({ label: c.path, description: c.code })), { placeHolder: 'Pick a changed file to see its diff' });
       if (pick) await API.openDiff(p, path.relative(p, path.join(g.root, pick.label)));
     }),
-    { dispose: () => { for (const id of hub.running.keys()) hub.stop(id); } },
+    { dispose: () => { hub.projectChecks.stopAll(); for (const id of hub.running.keys()) hub.stop(id); } },
   );
 }
 
-function deactivate() { if (hub) { for (const id of hub.running.keys()) hub.stop(id); hub.collaborationClient?.disconnect(); hub.fileWatches.close(); try { hub.store.close(); } catch {} } }
+function deactivate() { if (hub) { hub.projectChecks.stopAll(); for (const id of hub.running.keys()) hub.stop(id); hub.collaborationClient?.disconnect(); hub.fileWatches.close(); try { hub.store.close(); } catch {} } }
 
 module.exports = { activate, deactivate };

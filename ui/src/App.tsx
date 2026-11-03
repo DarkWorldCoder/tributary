@@ -21,16 +21,18 @@ import { TaskHome } from '@/components/task-home';
 import { DocumentPanel } from '@/components/document-panel';
 import { CollaborationDialog } from '@/components/collaboration-dialog';
 import { ProjectContext } from '@/components/project-context';
+import { RecentWork } from '@/components/recent-work';
 const WorkspacePanel = React.lazy(() => import('@/components/workspace-panel').then((m) => ({ default: m.WorkspacePanel })));
 const TerminalPanel = React.lazy(() => import('@/components/terminal-panel').then((m) => ({ default: m.TerminalPanel })));
 
 function NewThread() {
   const s = useStore(); const project = s.st?.projects.find((p) => p.path === s.project);
   return (
-    <div className="flex min-h-0 flex-1 overflow-y-auto px-5 py-8 sm:px-8">
+    <div className="@container flex min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-5">
       <div className="mx-auto my-auto w-full max-w-3xl py-8">
-        <p className="mb-3 break-words text-center text-sm text-muted-foreground">{project?.name || 'Your project'}</p>
-        <h2 className="mb-8 text-center text-3xl font-medium text-balance">What can I help you with?</h2>
+        <img src="./logo.svg" alt="Tributary" className="mx-auto mb-4 size-8 rounded-lg" />
+        <p className="mb-2 break-words text-center text-xs text-muted-foreground">{project?.name || 'Your project'}</p>
+        <h2 className="mb-6 text-center text-xl font-medium text-balance @min-[480px]:text-3xl">What can I help you with?</h2>
         <Composer autoFocus />
         <Starters />
       </div>
@@ -65,7 +67,7 @@ export default function App() {
   React.useEffect(() => { if (s.panel.open) setWorkspaceOpened(true); }, [s.panel.open]);
   const studio = !!s.codeLayout && !s.document;
   const conversationLayout = !studio && !s.home && !!s.thread?.messages.length && !s.thread.task;
-  const workspaceVisible = !s.document && s.panel.open && !!s.project;
+  const workspaceVisible = !s.home && !s.document && s.panel.open && !!s.project;
   React.useEffect(() => { document.title = s.thread ? `${s.thread.title} · Tributary` : 'Tributary'; }, [s.thread?.title]);
   return (
     <TooltipProvider delayDuration={300}>
@@ -77,14 +79,16 @@ export default function App() {
         <KeyboardShortcuts />
         <SidebarInset className="min-h-0 overflow-hidden">
           {!studio && <div className={workspaceVisible ? "contents max-md:hidden" : "contents"}><ThreadHeader /></div>}
-          <div className="flex min-h-0 flex-1">
-            <WorkspaceLayout visible={workspaceVisible} expanded={s.workspaceExpanded} editorFirst={studio}
-              chat={<>{studio && <ThreadHeader compact />}<section aria-label="Chat" className="flex min-h-0 flex-1 flex-col"><Main /></section>
-                {s.project && (s.terminalOpen || terminalKept) && <React.Suspense fallback={<p role="status" className="p-3 text-sm text-muted-foreground">Opening terminal…</p>}><TerminalPanel hidden={!s.terminalOpen} /></React.Suspense>}</>}
+          <div className={`flex min-h-0 min-w-0 flex-1 ${s.terminalDock === 'left' || s.terminalDock === 'right' ? 'flex-row' : 'flex-col'}`}>
+            <div className="flex min-h-0 min-w-0 flex-1">
+            <WorkspaceLayout project={s.workdir} visible={workspaceVisible} expanded={s.workspaceExpanded} editorFirst={studio}
+              chat={<>{studio && <ThreadHeader compact />}<section aria-label="Chat" className="flex min-h-0 flex-1 flex-col"><Main /></section></>}
               workspace={(workspaceOpened || s.panel.open) && <React.Suspense fallback={<p role="status" className="p-5 text-sm text-muted-foreground">Opening workspace…</p>}><WorkspacePanel /></React.Suspense>}
             />
             <DocumentPanel />
             {conversationLayout && !workspaceVisible && !s.document && <ProjectContext />}
+            </div>
+            {s.project && (s.terminalOpen || terminalKept) && <React.Suspense fallback={<p role="status" className="p-3 text-sm text-muted-foreground">Opening terminal…</p>}><TerminalPanel hidden={!s.terminalOpen} /></React.Suspense>}
           </div>
         </SidebarInset>
       </SidebarProvider>
@@ -92,6 +96,7 @@ export default function App() {
       <TeamDialog />
       <CollaborationDialog />
       <CommandPalette />
+      <RecentWork />
       <LiveActivity />
       <Toaster position="bottom-center" />
     </TooltipProvider>

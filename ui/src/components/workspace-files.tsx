@@ -1,6 +1,7 @@
+import { DocumentOutline } from '@/components/document-outline';
 import * as React from 'react';
 import { toast } from 'sonner';
-import { Copy, SquareTerminal, WandSparkles, Check, ChevronRight, Circle, Ellipsis, Eye, FolderOpen, Image as ImageIcon, PanelLeftClose, PanelLeftOpen, Pencil, Pin, RefreshCw, RotateCw, Save, Search, SquareArrowOutUpRight, WrapText, X } from 'lucide-react';
+import { Copy, CircleAlert, SquareTerminal, WandSparkles, Check, ChevronRight, Circle, Ellipsis, Eye, FolderOpen, Image as ImageIcon, PanelLeftClose, PanelLeftOpen, Pencil, Pin, RefreshCw, RotateCw, Save, Search, SquareArrowOutUpRight, WrapText, X } from 'lucide-react';
 import type { PanelImperativeHandle } from 'react-resizable-panels';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
@@ -18,13 +19,18 @@ import { DirectoryTree } from '@/components/directory-tree';
 import { Markdown } from '@/components/markdown';
 import { ProjectMenu } from '@/components/project-menu';
 import { ImagePreview } from '@/components/image-preview';
+import { ProjectChecks } from '@/components/project-checks';
+import { FileSwitcher } from '@/components/file-switcher';
+import { folderChains } from '@/lib/workbench-navigation.mjs';
 import { imageMime, imageSource } from '@/lib/image-preview.mjs';
+import { projectProfile } from '@/lib/project-profile.mjs';
+import { rememberFile } from '@/lib/recent-work.mjs';
 import { closeFileTabs, fileTabLabel, openFileTab } from '@/lib/workspace-tabs.mjs';
 import { cn } from '@/lib/utils';
 import { formatParser } from '@/lib/format-document.mjs';
 import { useRunInTerminal } from '@/hooks/use-run-in-terminal';
 import { useStore } from '@/store';
-import type { FileContent } from '@/types';
+import type { FileContent, ProjectCheckResult } from '@/types';
 
 type Node = { name: string; path: string; dir: boolean; children: Node[] };
 function buildTree(files: string[]): Node[] {
@@ -46,8 +52,8 @@ function TreeNode({ n, depth, open, toggle, active, onOpen, loading }: { n: Node
   return (
     <>
       <button onClick={() => (n.dir ? toggle(n.path) : onOpen(n.path))} aria-expanded={n.dir ? isOpen : undefined} aria-current={!n.dir && active === n.path ? 'page' : undefined} aria-busy={!n.dir && loading === n.path} onDoubleClick={() => { if (!n.dir) onOpen(n.path, 'pinned'); }} title={n.path}
-        className={cn('explorer-row flex w-full items-center gap-1.5 rounded-md min-h-9 max-sm:min-h-11 pr-2 text-left text-[13px] hover:bg-muted/70', active === n.path && 'bg-accent text-accent-foreground')} style={{ paddingLeft: 6 + depth * 12 }}>
-        {n.dir ? <ChevronRight className={cn('size-4 shrink-0 text-muted-foreground transition-transform', isOpen && 'rotate-90')} /> : <span className="w-3.5 shrink-0" />}
+        className={cn('explorer-row flex w-full items-center gap-1.5 rounded-md h-8 min-h-8 max-sm:h-11 max-sm:min-h-11 pr-2 text-left text-[13px] hover:bg-muted/70', active === n.path && 'bg-accent text-accent-foreground')} style={{ paddingLeft: 6 + depth * 12 }}>
+        {n.dir ? <ChevronRight className={cn('size-4 shrink-0 text-muted-foreground transition-transform', isOpen && 'rotate-90')} /> : <span className="w-4 shrink-0" />}
         {n.dir ? <FolderTypeIcon path={n.path} open={isOpen} /> : <FileTypeIcon path={n.path} loading={loading === n.path} />}
         <span className="truncate">{n.name}</span>
       </button>
@@ -80,6 +86,11 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
   const [filter, setFilter] = React.useState('');
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [hidden, setHidden] = React.useState(false);
+  const [checksOpen, setChecksOpen] = React.useState(false);
+  const [checkResult, setCheckResult] = React.useState<ProjectCheckResult | null>(null);
+  const [liveDiagnostics, setLiveDiagnostics] = React.useState<import('@/types').ProjectDiagnostic[]>([]);
+  const updateLiveDiagnostics = React.useCallback((items: import('@/types').ProjectDiagnostic[]) => setLiveDiagnostics((previous) => JSON.stringify(previous) === JSON.stringify(items) ? previous : items), []);
+  React.useEffect(() => { if (s.checksIntent?.project === project) setChecksOpen(true); }, [s.checksIntent, project]);
   const searchId = React.useId();
   const [browse, setBrowse] = React.useState(true);
   const [collapsed, setCollapsed] = React.useState(false);
@@ -88,6 +99,8 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
   const [cursors, setCursors] = React.useState<Record<string, { line: number; column: number }>>({});
   const [active, setActive] = React.useState<string | null>(null);
   const [line, setLine] = React.useState<number | undefined>();
+  const [column, setColumn] = React.useState<number | undefined>();
+  const [switcherOpen, setSwitcherOpen] = React.useState(false);
   const [editors, setEditors] = React.useState<{ id: string; name: string }[]>([]);
   const [error, setError] = React.useState<{ rel: string; intent: OpenIntent; line?: number; reload?: boolean } | null>(null);
   const [busy, setBusy] = React.useState(false);
@@ -98,6 +111,7 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
   const fileGroup = React.useRef<HTMLDivElement>(null);
   const explorerWidth = React.useRef(224);
   const docsRef = React.useRef(docs); docsRef.current = docs;
+  const sourceRef = React.useRef({ project: s.project, threadId: s.thread?.id }); sourceRef.current = { project: s.project, threadId: s.thread?.id };
   const activeRef = React.useRef(active); activeRef.current = active;
   const sequence = React.useRef(0);
   const requests = React.useRef(new Map<string, Promise<FileContent>>());
@@ -111,7 +125,7 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
   const searchToggle = React.useRef<HTMLButtonElement>(null);
   React.useEffect(() => { if (searchOpen && visible && !collapsed && (!small || browse)) search.current?.focus(); }, [searchOpen, visible, collapsed, small, browse]);
   const restoreFocus = React.useRef<HTMLElement | null>(null);
-  const load = React.useCallback(() => { s.hub.call<string[]>('listFiles', project).then(setFiles).catch(() => setFiles([])); }, [project, s.hub]);
+  const load = React.useCallback(() => { s.hub.call<string[]>('listFiles', project).then((next) => setFiles((previous) => previous?.length === next.length && previous.every((file, index) => file === next[index]) ? previous : next)).catch(() => setFiles([])); }, [project, s.hub]);
   React.useEffect(() => { if (visible) { load(); setDirectoryRevision((value) => value + 1); } }, [visible, load]);
   React.useEffect(() => {
     const query = window.matchMedia('(max-width: 639px)');
@@ -145,7 +159,11 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
     }
     return request;
   }, [project, s.hub]);
-  const openDoc = React.useCallback(async (rel: string, intent: OpenIntent = 'preview', ln?: number) => {
+  const pauseFollowing = React.useRef(s.pauseFollowing); pauseFollowing.current = s.pauseFollowing;
+  const openDoc = React.useCallback(async (rel: string, intent: OpenIntent = 'preview', ln?: number, col?: number, following = false) => {
+    if (!following) pauseFollowing.current();
+    setColumn(col);
+    setOpen((folders) => { const next = new Set(folders); const parts = rel.split('/'); parts.slice(0, -1).forEach((_, i) => next.add(parts.slice(0, i + 1).join('/'))); return next; });
     const id = ++sequence.current;
     setError(null);
     const existing = docsRef.current.find((doc) => doc.rel === rel);
@@ -158,6 +176,7 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
       const file = await read(rel);
       if (id !== sequence.current) return;
       const next: Doc = { ...file, rel, text: file.content, dirty: false, pinned: intent === 'pinned', mode: imageMime(rel) || /\.(md|mdx|markdown)$/i.test(rel) ? 'preview' : 'edit' };
+      if (sourceRef.current.project) rememberFile({ project: sourceRef.current.project, rel, threadId: sourceRef.current.threadId });
       setDocs((all) => openFileTab(all, next, intent));
       setActive(rel); setLine(ln); setBrowse(false);
       setOpen((folders) => { const next = new Set(folders); const parts = rel.split('/'); parts.slice(0, -1).forEach((_, i) => next.add(parts.slice(0, i + 1).join('/'))); return next; });
@@ -167,7 +186,7 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
   React.useEffect(() => {
     const request = s.fileToOpen;
     if (!visible || !request || request.project !== project || handledIntent.current === request.n) return;
-    handledIntent.current = request.n; void openDoc(request.rel, request.intent, request.line);
+    handledIntent.current = request.n; void openDoc(request.rel, request.intent, request.line, request.column, request.following);
   }, [s.fileToOpen, visible, project, openDoc]);
 
   const autoOpened = React.useRef<string | null>(null);
@@ -178,7 +197,7 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
     autoOpened.current = id;
     if (active) return;
     const recorded = s.thread?.messages.flatMap((message) => message.role === 'assistant' ? message.files.filter((file) => !file.external).map((file) => file.rel) : []).at(-1);
-    const entry = recorded && files.includes(recorded) ? recorded : files.find((file) => /^(src\/)?(main|app|index)\.[cm]?[jt]sx?$/i.test(file))
+    const entry = recorded && files.includes(recorded) ? recorded : projectProfile(files).entry || files.find((file) => /^(src\/)?(main|app|index)\.[cm]?[jt]sx?$/i.test(file))
       || files.find((file) => /^readme\.md$/i.test(file))
       || files.find((file) => /\.(tsx?|jsx?|py|rs|go|java|html|css)$/i.test(file) && !/(^|\/)(node_modules|dist|build|fixtures|test|tests)\//.test(file));
     if (entry) void openDoc(entry);
@@ -245,6 +264,7 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
     return query ? (files ?? []).filter((file) => file.toLowerCase().includes(query) && (hidden || !file.split('/').some((part) => part.startsWith('.')))).slice(0, 2000) : [];
   }, [files, filter, hidden]);
   const tree = React.useMemo(() => buildTree(shown), [shown]);
+  const chains = React.useMemo(() => folderChains(files || []), [files]);
   React.useEffect(() => { if (filter.trim()) setOpen((folders) => new Set([...folders, ...shown.flatMap((file) => { const parts = file.split('/'); return parts.slice(0, -1).map((_, i) => parts.slice(0, i + 1).join('/')); })])); }, [shown, filter]);
   const toggle = (path: string) => setOpen((folders) => { const next = new Set(folders); if (next.has(path)) next.delete(path); else next.add(path); return next; });
   const browseFiles = () => { setBrowse(true); setCollapsed(false); setSearchOpen(true); };
@@ -257,7 +277,7 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
         <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" className={cn(iconButton, s.codeLayout && !small && !collapsed && 'hidden')} aria-label={small ? 'Browse files' : collapsed ? 'Show explorer' : 'Collapse explorer'} aria-expanded={small ? browse : !collapsed} onClick={() => small ? setBrowse(!browse) : setCollapsed(!collapsed)}>{collapsed || (small && !browse) ? <PanelLeftOpen /> : <PanelLeftClose />}</Button></TooltipTrigger><TooltipContent>{small ? 'Browse files' : collapsed ? 'Show explorer' : 'Collapse explorer'}</TooltipContent></Tooltip>
         <div ref={fileTabs} className="workspace-file-strip @container relative min-w-0 flex-1 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <TabsList aria-label="Open files" variant="line" className="workspace-file-list justify-start gap-0 rounded-none p-0">
-            {docs.map((item) => <TabsTrigger key={item.rel} value={item.rel} data-file-path={item.rel} title={item.rel} aria-label={`${item.rel}${!item.pinned ? ', preview' : ''}${item.dirty ? ', unsaved' : ''}`} onDoubleClick={() => pin(item.rel)} className={cn('workspace-file-tab h-10 min-w-0 max-w-[min(16rem,100cqw)] flex-none justify-start rounded-none border-0 px-3 pr-10 text-[13px] font-normal after:hidden focus-visible:ring-inset max-sm:h-11 max-sm:pr-12', !item.pinned && 'italic')}>
+            {docs.map((item) => <TabsTrigger key={item.rel} value={item.rel} data-file-path={item.rel} title={item.rel} aria-label={`${item.rel}${!item.pinned ? ', preview' : ''}${item.dirty ? ', unsaved' : ''}`} onDoubleClick={() => pin(item.rel)} className={cn('workspace-file-tab h-8 min-w-0 max-w-[min(16rem,100cqw)] flex-none justify-start rounded-none border-0 px-2.5 pr-8 text-[13px] font-normal after:hidden focus-visible:ring-inset max-sm:h-11 max-sm:pr-12', !item.pinned && 'italic')}>
               <FileTypeIcon path={item.rel} /><span className="truncate">{label(item.rel)}</span>
               {item.dirty && <Circle aria-hidden="true" className="size-2 fill-current" />}
             </TabsTrigger>)}
@@ -268,6 +288,9 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
         </div>
         <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon-sm" className={iconButton} aria-label="Open files menu" aria-busy={busy}>{busy ? <Spinner /> : <Ellipsis />}</Button></DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="max-h-[70dvh] max-w-[calc(100vw-16px)] overflow-y-auto max-sm:[&_[role=menuitem]]:min-h-11">
+            <DropdownMenuItem onSelect={() => s.openPanel('preview')}>Project tools & extensions</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => setChecksOpen(true)}>Lint, type check & tests…</DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuLabel>Open files</DropdownMenuLabel>
             {!docs.length && <DropdownMenuItem disabled>No open files</DropdownMenuItem>}
             {docs.map((item) => <DropdownMenuItem key={item.rel} title={item.rel} aria-label={`${item.rel}${item.dirty ? ', unsaved' : ''}`} onSelect={() => { void openDoc(item.rel); }}><Check className={cn('size-4', active !== item.rel && 'invisible')} /><span className={cn('max-w-64 truncate', !item.pinned && 'italic')}>{label(item.rel)}</span>{item.dirty && <Circle className="size-2 fill-current" />}</DropdownMenuItem>)}
@@ -286,12 +309,15 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
             <DropdownMenuItem disabled={docs.length < 2} onSelect={() => close(docs.filter((item) => item.rel !== active).map((item) => item.rel))}>Close others</DropdownMenuItem>
             <DropdownMenuItem disabled={!docs.some((item) => !item.dirty)} onSelect={() => close(docs.filter((item) => !item.dirty).map((item) => item.rel))}>Close saved tabs</DropdownMenuItem>
             <DropdownMenuItem disabled={!doc} onSelect={() => { if (!doc) return; if (doc.dirty) { restoreFocus.current = document.activeElement as HTMLElement; setConfirmation({ paths: [doc.rel], reload: true }); } else void reload(doc.rel); }}><RotateCw />Reload from disk</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem disabled={!docs.length} onSelect={() => setSwitcherOpen(true)}>Switch file…<span className="ml-auto text-xs text-muted-foreground">Ctrl+Tab</span></DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>);
 
   return <div ref={root} className="relative flex h-full min-h-0 flex-col text-[13px]">
-    <Tabs value={active ?? ''} onValueChange={(rel) => { ++sequence.current; setBusy(false); setOpening(null); setError(null); setActive(rel); setLine(undefined); setBrowse(false); }} className="min-h-0 flex-1 gap-0">
+    <FileSwitcher visible={visible} paths={docs.map((doc) => doc.rel)} active={active} open={switcherOpen} setOpen={setSwitcherOpen} onSelect={(rel) => void openDoc(rel, 'pinned')} />
+    <Tabs value={active ?? ''} onValueChange={(rel) => { s.pauseFollowing(); ++sequence.current; setBusy(false); setOpening(null); setError(null); setActive(rel); setLine(undefined); setColumn(undefined); setBrowse(false); }} className="min-h-0 flex-1 gap-0">
       {(!s.codeLayout || small) && fileNavigation}
       {busy && <span role="status" className="sr-only">Opening file…</span>}
       {error && <div role="alert" className="absolute inset-x-0 top-10 z-20 flex items-center gap-1 border-b bg-popover px-3 py-1 text-xs max-sm:top-11"><span className="min-w-0 flex-1 truncate" title={error.rel}>Couldn’t read {error.rel.split('/').pop()}.</span><Button variant="ghost" size="sm" onClick={() => { if (error.reload) { setError(null); void reload(error.rel); } else void openDoc(error.rel, error.intent, error.line); }}>Retry</Button><Button variant="ghost" size="icon-sm" aria-label="Dismiss file error" onClick={() => setError(null)}><X /></Button></div>}
@@ -304,7 +330,10 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
               <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon-sm" className={cn(iconButton, 'relative text-muted-foreground')} aria-label="Explorer options"><Ellipsis />{hidden && <span className="absolute top-1 right-1 size-1 rounded-full bg-foreground" />}</Button></DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48 max-sm:[&_[role^=menuitem]]:min-h-11">
                   <DropdownMenuCheckboxItem checked={hidden} onCheckedChange={setHidden}>Show hidden files</DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem checked={s.compactFolders} onCheckedChange={s.setCompactFolders}>Compact folders</DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem checked={s.stickyFolders} onCheckedChange={s.setStickyFolders}>Sticky folders</DropdownMenuCheckboxItem>
                   <DropdownMenuItem onSelect={refreshFiles}><RefreshCw />Refresh files</DropdownMenuItem>
+                  <DropdownMenuItem disabled={!open.size} onSelect={() => setOpen(new Set())}>Collapse folders</DropdownMenuItem>
                   {!small && <><DropdownMenuSeparator /><DropdownMenuItem onSelect={() => setCollapsed(true)}><PanelLeftClose />Collapse explorer</DropdownMenuItem></>}
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -313,35 +342,37 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
               <Input ref={search} value={filter} onChange={(event) => setFilter(event.target.value)} onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeSearch(); } }} placeholder="Find a file…" aria-label="Find a file" className="h-8 min-w-0 bg-transparent text-[13px] shadow-none max-sm:h-11" />
               <Button variant="ghost" size="icon-sm" className={iconButton} aria-label="Close file search" onClick={closeSearch}><X /></Button>
             </div>}
-            <div className="min-h-0 flex-1 overflow-auto px-1 pt-1 pb-2" role="region" aria-label="Project files">
-              {!filter.trim() ? <DirectoryTree bridge={s.hub} project={project} active={active} openFile={openDoc} revision={directoryRevision} expanded={open} toggle={toggle} loading={opening} hidden={hidden} />
+            <div className="min-h-0 flex-1 overflow-auto px-1 pt-0.5 pb-2" role="region" aria-label="Project files">
+              {!filter.trim() ? <DirectoryTree bridge={s.hub} project={project} active={active} openFile={openDoc} revision={directoryRevision} expanded={open} toggle={toggle} loading={opening} hidden={hidden} compact={s.compactFolders} sticky={s.stickyFolders} chains={chains} />
                 : files == null ? <div className="grid place-items-center p-6"><Spinner /></div>
                   : tree.map((node) => <TreeNode key={node.path} n={node} depth={0} open={open} active={active} onOpen={openDoc} toggle={toggle} loading={opening} />)}
               {filter.trim() && files && !shown.length && <p className="p-3 text-xs text-muted-foreground">No matching files.</p>}
             </div>
           </div>
         </ResizablePanel>
-        <ResizableHandle aria-label="Resize file explorer" className={small || collapsed ? 'hidden' : ''} />
+        <ResizableHandle aria-label="Resize file explorer" title="Arrow keys resize; Enter resets" onDoubleClick={() => { explorerWidth.current = 224; explorer.current?.resize(224); }} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); explorerWidth.current = 224; explorer.current?.resize(224); } }} className={small || collapsed ? 'hidden' : ''} />
         <ResizablePanel id={`reader-${project}`} minSize={small ? browse ? 0 : '100%' : 144} maxSize={small && browse ? 0 : '100%'} className="h-full min-w-0">
           <div className={cn('flex h-full min-h-0 flex-col', small && browse && 'hidden')}>
             {s.codeLayout && !small && fileNavigation}
             {doc ? <>
-              <div className="workspace-file-actions flex h-7 min-w-0 shrink-0 items-center border-b px-3">
+              <div className="workspace-file-actions flex h-7 min-w-0 shrink-0 items-center border-b px-3 max-sm:h-11">
                 <nav aria-label="File breadcrumbs" title={doc.rel} className="min-w-0 flex-1 overflow-hidden text-xs text-muted-foreground"><ol className="flex min-w-0 items-center gap-1">
                   {(doc.rel.split('/').length > 3 ? ['…', ...doc.rel.split('/').slice(-2)] : doc.rel.split('/')).map((part, index, parts) => <li key={index} className={cn('flex min-w-0 items-center gap-1', index === parts.length - 1 && 'flex-1')} >{index > 0 && <ChevronRight className="size-3 shrink-0" />}<span className="truncate" aria-current={index === parts.length - 1 ? 'page' : undefined}>{part}</span></li>)}
                 </ol></nav>
+                {doc.mode === 'edit' && !doc.binary && <DocumentOutline path={doc.rel} text={doc.text} onSelect={(ln, col) => void openDoc(doc.rel, 'pinned', ln, col)} />}
               </div>
               {(doc.diskChanged || doc.diskError) && <div role="status" className="flex shrink-0 flex-wrap items-center gap-1 border-b bg-muted px-3 py-1 text-xs"><span className="flex-1">{doc.diskError ? 'File unavailable. Draft kept.' : 'Changed on disk. Draft kept.'}</span><Button variant="ghost" size="sm" onClick={() => { if (doc.dirty) { restoreFocus.current = document.activeElement as HTMLElement; setConfirmation({ paths: [doc.rel], reload: true }); } else void reload(doc.rel); }}>Reload</Button></div>}
               <div className="min-h-0 flex-1">
                 {docs.map((item) => <TabsContent key={item.rel} value={item.rel} tabIndex={-1} className="h-full min-h-0">
                   {item.rel === active && (item.binary && !IMAGE.test(item.rel) ? <p className="p-6 text-center text-sm text-muted-foreground">Binary file · {item.size.toLocaleString()} bytes</p>
                     : item.mode === 'preview' && previewable(item.rel) ? <FilePreview doc={item} project={project} />
-                      : <CodeEditor project={project} path={item.rel} value={item.text} line={line} readOnly={item.truncated} wrap={item.wrap} onToggleWrap={toggleWrap} onCursorChange={(position) => setCursors((all) => all[item.rel]?.line === position.line && all[item.rel]?.column === position.column ? all : { ...all, [item.rel]: position })} onSave={save} onChange={(value) => setDocs((all) => all.map((current) => current.rel === item.rel ? { ...current, text: value, dirty: value !== current.content, pinned: true } : current))} />)}
+                      : <CodeEditor onNavigate={s.pauseFollowing} onDiagnostics={updateLiveDiagnostics} project={project} path={item.rel} value={item.text} line={line} column={column} readOnly={item.truncated} diagnostics={!item.dirty && checkResult && item.mtime <= checkResult.startedAt ? checkResult.diagnostics.filter((d) => d.rel === item.rel) : []} wrap={item.wrap} onToggleWrap={toggleWrap} onCursorChange={(position) => setCursors((all) => all[item.rel]?.line === position.line && all[item.rel]?.column === position.column ? all : { ...all, [item.rel]: position })} onSave={save} onChange={(value) => { s.pauseFollowing(); setDocs((all) => all.map((current) => current.rel === item.rel ? { ...current, text: value, dirty: value !== current.content, pinned: true } : current)); }} />)}
                 </TabsContent>)}
               </div>
               {!IMAGE.test(doc.rel) && <div className="workspace-file-footer flex min-w-0 shrink-0 items-center gap-1 border-t pr-2 pl-3">
                 <p role="status" aria-live="off" className="min-w-0 flex-1 truncate text-xs tabular-nums text-muted-foreground" title={doc.mode === 'edit' && !doc.binary ? `${doc.rel.split('.').pop()?.toUpperCase() || 'Text'} · ${doc.text.includes('\r\n') ? 'CRLF' : 'LF'} · ${live}` : live}>{doc.mode === 'edit' && !doc.binary ? <><span aria-label="Editor position">Ln {cursors[doc.rel]?.line ?? 1}, Col {cursors[doc.rel]?.column ?? 1}</span><span className="editor-file-details"> · {doc.rel.split('.').pop()?.toUpperCase() || 'Text'} · {doc.text.includes('\r\n') ? 'CRLF' : 'LF'}</span>{doc.truncated && ' · Read only'}</> : live}</p>
                 <div role="group" aria-label="File actions" className="flex shrink-0 items-center gap-0.5">
+                <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={iconButton} aria-label="Project checks" aria-pressed={checksOpen} onClick={() => setChecksOpen((open) => !open)}><CircleAlert /></Button></TooltipTrigger><TooltipContent>Lint, type check & tests</TooltipContent></Tooltip>
                 {doc.mode === 'edit' && !doc.binary && <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={cn(iconButton, 'editor-wrap-control')} aria-label="Wrap lines" aria-pressed={!!doc.wrap} onClick={toggleWrap}><WrapText /></Button></TooltipTrigger><TooltipContent>Wrap lines (Alt+Z)</TooltipContent></Tooltip>}
                 {previewable(doc.rel) && !doc.binary && !IMAGE.test(doc.rel) && <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={iconButton} aria-label={doc.mode === 'edit' ? 'Preview file' : 'Edit file'} onClick={() => setDocs((all) => all.map((item) => item.rel === doc.rel ? { ...item, mode: item.mode === 'edit' ? 'preview' : 'edit' } : item))}>{doc.mode === 'edit' ? <Eye /> : <Pencil />}</Button></TooltipTrigger><TooltipContent>{doc.mode === 'edit' ? 'Preview' : 'Edit'}</TooltipContent></Tooltip>}
                 {editors.length > 0 && <DropdownMenu><DropdownMenuTrigger asChild><Button size="icon-sm" variant="ghost" className={iconButton} aria-label="Open in editor" title="Open in editor"><SquareArrowOutUpRight /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="max-sm:[&_[role=menuitem]]:min-h-11"><DropdownMenuLabel>Open in editor</DropdownMenuLabel>{editors.map((editor) => <DropdownMenuItem key={editor.id} onClick={() => s.hub.call('openInEditor', editor.id, project, doc.rel, line).catch((e) => toast.error(e.message))}>{editor.name}</DropdownMenuItem>)}</DropdownMenuContent></DropdownMenu>}
@@ -352,6 +383,7 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
+      {checksOpen && <div className="h-[min(300px,45%)] min-h-40 shrink-0 border-t"><ProjectChecks visible={visible} staleFiles={docs.filter((d) => d.dirty || (checkResult && d.mtime > checkResult.startedAt)).map((d) => d.rel)} liveDiagnostics={liveDiagnostics.filter((d) => d.rel === active && docs.some((doc) => doc.rel === active && doc.mode === 'edit'))} project={project} onClose={() => setChecksOpen(false)} onResult={setCheckResult} /></div>}
     </Tabs>
     <AlertDialog open={!!confirmation} onOpenChange={(isOpen) => { if (!isOpen) setConfirmation(null); }}>
       <AlertDialogContent className="max-w-[calc(100vw-32px)] max-sm:[&_button]:min-h-11" onCloseAutoFocus={(event) => {

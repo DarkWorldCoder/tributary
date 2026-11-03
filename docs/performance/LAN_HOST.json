@@ -1,0 +1,12 @@
+{
+  "scope": "Standalone Node process, local loopback, zero clients, discovery disabled; not total Electron app memory or a second-device test",
+  "node": "v24.21.0",
+  "firstStartMs": 290.9,
+  "warmStartMs": 4.7,
+  "baselineRssMiB": 49.6,
+  "hostingRssMiB": 60,
+  "hostingHeapMiB": 6.4,
+  "idleObservationMs": 2002,
+  "idleCpuMs": 0.3,
+  "addedRuntimeDependencies": 0
+}

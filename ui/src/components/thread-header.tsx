@@ -1,5 +1,6 @@
+import { WorkbenchLayoutMenu } from '@/components/workbench-layout-menu';
 import * as React from 'react';
-import { BookOpen, FolderOpen, Keyboard, Code2, Download, MessageSquare, MoreHorizontal, PanelRight, Pencil, Search, SquareTerminal, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Crosshair, BookOpen, FolderOpen, Keyboard, Code2, Download, MessageSquare, MoreHorizontal, PanelRight, Pencil, Search, Users, Workflow, Activity, SquareTerminal, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ import { SeparateCopy } from '@/components/separate-copy';
 import { useStore } from '@/store';
 import { ChevronDown, FileText } from 'lucide-react';
 import { ProjectMenu } from '@/components/project-menu';
+import { ChatSwitcher } from '@/components/chat-switcher';
 
 export function ThreadHeader({ compact = false }: { compact?: boolean }) {
   const s = useStore(); const t = s.thread;
@@ -41,15 +43,19 @@ export function ThreadHeader({ compact = false }: { compact?: boolean }) {
   return (
     <header className={compact || conversationView ? "chat-toolbar workbench-toolbar gap-1 border-b px-2 [&_svg]:size-4" : "flex h-12 shrink-0 items-center gap-1.5 px-3"}>
       <SidebarTrigger className={compact ? "-ml-1 md:hidden" : "-ml-1"} />{compact && <AgentAvatar agent={s.agent} size="xs" />}
+      {t?.delegation && <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" aria-label="Back to parent chat" onClick={() => s.openThread(t.delegation!.parentThreadId)}><ArrowLeft /></Button></TooltipTrigger><TooltipContent>Parent chat</TooltipContent></Tooltip>}
       <div className="flex min-w-0 flex-1 flex-col items-start justify-center gap-0">
-        <h1 className={compact || conversationView ? "max-w-full truncate text-[13px] font-medium" : "max-w-full truncate text-[0.9375rem] font-semibold"}>{s.home ? 'Start a task' : t ? t.title : project ? 'New chat' : 'Tributary'}</h1>
+        <h1 className={compact || conversationView ? "max-w-full text-[13px] font-medium" : "max-w-full text-[0.9375rem] font-semibold"}>{s.project && !s.home ? <ChatSwitcher title={t?.title || 'New chat'} /> : s.home ? 'Start a task' : 'Tributary'}</h1>
         {project && !compact && !conversationView && (
           <ProjectMenu><button className="flex max-w-full items-center gap-1 rounded text-xs text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring" title={project.path} aria-label={`Project options: ${project.name}`}>
             <span className="truncate">{project.name}{project.folders?.length ? ` +${project.folders.length}` : ''}{s.git?.branch ? ` on ${s.git.branch}` : ''}</span><ChevronDown className="size-3 shrink-0" />
           </button></ProjectMenu>
         )}
       </div>
-      <SeparateCopy />
+      {t && <span className="hidden sm:contents"><Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" className="workbench-action" aria-label="Follow agent" aria-pressed={s.following} disabled={s.agent.capabilities?.tools === false} onClick={s.toggleFollowing}><Crosshair className={s.following ? 'text-brand' : ''} /></Button></TooltipTrigger><TooltipContent>{s.following ? 'Following agent · click to pause' : s.agent.capabilities?.tools === false ? 'Agent has no live file activity' : 'Follow agent files'}</TooltipContent></Tooltip></span>}
+      <span className="hidden sm:contents"><WorkbenchLayoutMenu /><SeparateCopy /></span>
+      {compact && <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" className="max-md:hidden" aria-label="Hide chat" onClick={() => { if (!s.panel.open) s.openPanel('files'); s.setWorkspaceExpanded(true); }}><X className="size-4" /></Button></TooltipTrigger><TooltipContent>Hide chat</TooltipContent></Tooltip>}
+      <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" className="workbench-action relative" aria-label="Open live activity" onClick={() => window.dispatchEvent(new Event('tributary:live'))}><Activity />{!!s.st?.running.length && <span aria-label={`${s.st.running.length} chats working`} className="absolute top-1 right-1 size-1.5 rounded-full bg-brand" />}</Button></TooltipTrigger><TooltipContent>Live activity</TooltipContent></Tooltip>
       {!compact && team && <span className="hidden items-center gap-1.5 rounded-full bg-brand/10 px-2.5 py-0.5 text-xs text-brand sm:inline-flex">{s.st?.recipes?.[team.recipe]?.name ?? 'Team'}: step {team.steps.length}</span>}
       {!compact && !conversationView && agentsHere.length > 0 && (
         <Tooltip><TooltipTrigger asChild>
@@ -58,18 +64,24 @@ export function ThreadHeader({ compact = false }: { compact?: boolean }) {
       )}
       {!compact && <NotificationsBell />}
       {compact && <div className="md:hidden"><NotificationsBell /></div>}
-      {compact && <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" aria-label="Search chats" onClick={() => s.setPalette(true)}><Search /></Button></TooltipTrigger><TooltipContent>Search chats</TooltipContent></Tooltip>}
+
       {s.project && (
         <>
-          {!!t?.messages.length && !s.home && !t.task && <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" aria-label={s.workspaceLayout === 'editor' ? 'Switch to chat view' : 'Switch to workbench'} onClick={switchView}>{s.workspaceLayout === 'editor' ? <MessageSquare /> : <Code2 />}</Button></TooltipTrigger><TooltipContent>{s.workspaceLayout === 'editor' ? 'Chat view' : 'Workbench'}</TooltipContent></Tooltip>}
-          {conversationView && <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" aria-label="Project context" aria-pressed={s.contextOpen} onClick={() => window.innerWidth < 1200 ? s.setContextSheetOpen(true) : s.setContextOpen(!s.contextOpen)}><PanelRight /></Button></TooltipTrigger><TooltipContent>Project context</TooltipContent></Tooltip>}
+          {!compact && !!t?.messages.length && !s.home && !t.task && <span className="hidden sm:contents"><Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" aria-label={s.workspaceLayout === 'editor' ? 'Switch to chat view' : 'Switch to workbench'} onClick={switchView}>{s.workspaceLayout === 'editor' ? <MessageSquare /> : <Code2 />}</Button></TooltipTrigger><TooltipContent>{s.workspaceLayout === 'editor' ? 'Chat view' : 'Workbench'}</TooltipContent></Tooltip></span>}
+          {conversationView && <span className="hidden sm:contents"><Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" aria-label="Project context" aria-pressed={s.contextOpen} onClick={() => window.innerWidth < 1200 ? s.setContextSheetOpen(true) : s.setContextOpen(!s.contextOpen)}><PanelRight /></Button></TooltipTrigger><TooltipContent>Project context</TooltipContent></Tooltip></span>}
           <DropdownMenu>
             <DropdownMenuTrigger asChild><Button variant="ghost" size="icon-sm" aria-label="More options"><MoreHorizontal /></Button></DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64">
               {compact && team && <DropdownMenuLabel>{s.st?.recipes?.[team.recipe]?.name ?? 'Team'} · step {team.steps.length}</DropdownMenuLabel>}
               <DropdownMenuItem onClick={() => { s.setWorkspaceExpanded(false); s.setPanel({ ...s.panel, open: !s.panel.open }); }}><PanelRight />{s.panel.open ? 'Hide workspace' : 'Open workspace'}</DropdownMenuItem>
               <DropdownMenuItem onClick={switchView}><MessageSquare />{s.workspaceLayout === 'editor' ? 'Chat view' : 'Workbench view'}</DropdownMenuItem>
+              {t && <DropdownMenuItem className="sm:hidden" disabled={s.agent.capabilities?.tools === false} onClick={s.toggleFollowing}><Crosshair />{s.following ? 'Pause following agent' : 'Follow agent'}</DropdownMenuItem>}
+              {conversationView && <DropdownMenuItem className="sm:hidden" onClick={() => s.setContextSheetOpen(true)}><PanelRight />Project context</DropdownMenuItem>}
+              <div className="flex items-center justify-between px-2 sm:hidden"><span className="text-xs text-muted-foreground">Working copy</span><SeparateCopy /></div>
               <DropdownMenuItem onClick={() => s.setTerminalOpen(!s.terminalOpen)}><SquareTerminal />{s.terminalOpen ? 'Close terminal' : 'Open terminal'}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => s.setRoomOpen(true)}><Users />Project room</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => s.setTeamOpen(true)}><Workflow />Agent teams</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => window.dispatchEvent(new Event('tributary:live'))}><Activity />Live activity</DropdownMenuItem>
               <DropdownMenuItem onClick={() => s.setShortcutsOpen(true)}><Keyboard />Keyboard shortcuts</DropdownMenuItem>
               {t && <DropdownMenuItem onClick={() => { setTitle(t.title); setRename(true); }}><Pencil /> Rename chat</DropdownMenuItem>}
               {t && <DropdownMenuItem onClick={exportThread}><Download /> Export chat</DropdownMenuItem>}

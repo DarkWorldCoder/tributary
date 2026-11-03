@@ -92,11 +92,14 @@ function retrieve(project, query, budget = settings(project).budget, matchesOnly
     candidates.push({ source: '.tributary/memory.md', line: index + 1, text: line.slice(0, 1500), score: score * 10 + (/decisions|run|test|gotchas/i.test(section) ? 1 : 0) });
   }
   candidates.sort((a, b) => b.score - a.score || a.line - b.line);
-  const selected = []; let used = 0;
+  const selected = []; const seen = new Set(); let used = 0;
   for (const item of candidates) {
+    const normalized = item.text.replace(/^\s*[-*]\s+/, '').trim();
+    if (seen.has(normalized)) continue;
     const rendered = `[${item.source}:${item.line}] ${item.text}`;
-    if (used + rendered.length + 1 > budget) continue;
-    selected.push({ ...item, rendered }); used += rendered.length + 1;
+    const extra = rendered.length + (selected.length ? 1 : 0);
+    if (used + extra > budget) continue;
+    seen.add(normalized); selected.push({ ...item, rendered }); used += extra;
   }
   return { text: selected.map((x) => x.rendered).join('\n'), sources: selected.map(({ source, line }) => ({ source, line })), characters: used, budget, omitted: candidates.length - selected.length };
 }

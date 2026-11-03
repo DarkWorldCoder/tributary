@@ -1,9 +1,9 @@
 import * as React from 'react';
-import { Check, ChevronRight, CircleAlert, Folder, FolderPlus, GitBranch, Home, Keyboard, MoreHorizontal, PanelLeftClose, Search, Settings, ShieldQuestion, SquarePen, Trash2, Users } from 'lucide-react';
+import { Check, ChevronRight, CircleAlert, Folder, FolderPlus, GitBranch, Home, Keyboard, MoreHorizontal, PanelLeftClose, Search, Settings, ShieldQuestion, SquarePen, Trash2, Users, Workflow, Activity } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ProjectMenu } from '@/components/project-menu';
-import { modifierLabel } from '@/components/keyboard-shortcuts';
+import { ShortcutLabel } from '@/components/shortcut-settings';
 import { Kbd } from '@/components/ui/kbd';
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupAction, SidebarGroupLabel, SidebarHeader,
@@ -61,19 +61,19 @@ export function AppSidebar() {
           <button className="flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-foreground max-sm:size-11" onClick={toggleSidebar} aria-label="Collapse project list" title="Collapse project list"><PanelLeftClose className="size-4" /></button>
         </div>
         <SidebarMenu aria-label="Chat actions">
-          <SidebarMenuItem><SidebarMenuButton aria-label="New chat" onClick={() => newThread()} disabled={!s.project} className="h-10 font-medium"><SquarePen /><span>New chat</span><Kbd className="ml-auto opacity-0 group-hover/menu-item:opacity-100">{modifierLabel()} N</Kbd></SidebarMenuButton></SidebarMenuItem>
+          <SidebarMenuItem><SidebarMenuButton aria-label="New chat" onClick={() => newThread()} disabled={!s.project} className="h-10 font-medium"><SquarePen /><span>New chat</span><span className="ml-auto opacity-0 group-hover/menu-item:opacity-100"><ShortcutLabel action="new" /></span></SidebarMenuButton></SidebarMenuItem>
           <SidebarMenuItem><SidebarMenuButton aria-label="Search chats" onClick={() => { s.setPalette(true); if (isMobile) setOpenMobile(false); }} className="h-10"><Search /><span>Search chats</span></SidebarMenuButton></SidebarMenuItem>
           <SidebarMenuItem><SidebarMenuButton aria-label="Start a task" onClick={() => { s.goHome(); if (isMobile) setOpenMobile(false); }} isActive={s.home || !s.project} className="h-10"><Home /><span>Start a task</span></SidebarMenuButton></SidebarMenuItem>
+          <SidebarMenuItem><SidebarMenuButton aria-label="Project room" onClick={() => { s.setRoomOpen(true); if (isMobile) setOpenMobile(false); }} isActive={s.roomOpen} className="h-10"><Users /><span>Project room</span></SidebarMenuButton></SidebarMenuItem>
         </SidebarMenu>
 
       </SidebarHeader>
 
       <SidebarContent>
-        {!s.codeLayout && !s.thread?.messages.length && <SidebarGroup>
+        {!s.codeLayout && !s.thread?.messages.length && !(s.panel.open && s.project && !s.document) && <SidebarGroup>
           <SidebarGroupLabel>Workspace</SidebarGroupLabel>
           <SidebarMenu>
             {!(s.panel.open && s.project && !s.document) && <SidebarMenuItem><SidebarMenuButton disabled={!s.project} onClick={() => { s.openPanel('files'); s.setWorkspaceExpanded(false); if (isMobile) setOpenMobile(false); }}><Folder /><span>Project files</span></SidebarMenuButton></SidebarMenuItem>}
-            <SidebarMenuItem><SidebarMenuButton onClick={() => { s.setRoomOpen(true); if (isMobile) setOpenMobile(false); }}><Users /><span>Project room</span></SidebarMenuButton></SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>}
           <SidebarGroup>
@@ -115,7 +115,8 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t px-3 py-2">
         <SidebarMenu>
-          {s.codeLayout && <SidebarMenuItem><SidebarMenuButton onClick={() => { s.setRoomOpen(true); if (isMobile) setOpenMobile(false); }}><Users /><span>Project room</span></SidebarMenuButton></SidebarMenuItem>}
+          <SidebarMenuItem><SidebarMenuButton disabled={!s.project} onClick={() => { s.setTeamOpen(true); if (isMobile) setOpenMobile(false); }}><Workflow /><span>Agent teams</span></SidebarMenuButton></SidebarMenuItem>
+          <SidebarMenuItem><SidebarMenuButton onClick={() => { window.dispatchEvent(new Event('tributary:live')); if (isMobile) setOpenMobile(false); }}><Activity /><span>Live activity</span>{!!s.st?.running.length && <span className="ml-auto text-xs tabular-nums">{s.st.running.length}</span>}</SidebarMenuButton></SidebarMenuItem>
           <SidebarMenuItem><SidebarMenuButton onClick={() => { s.setShortcutsOpen(true); if (isMobile) setOpenMobile(false); }}><Keyboard /><span>Keyboard shortcuts</span></SidebarMenuButton></SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={() => { s.openSettings('appearance'); if (isMobile) setOpenMobile(false); }} className="h-9">
