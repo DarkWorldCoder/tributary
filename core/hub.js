@@ -414,6 +414,8 @@ class Hub extends EventEmitter {
     } finally {
       // An agent that ended its turn (or crashed) while asking no longer needs an answer.
       for (const [id, p] of this.pendingPermissions) if (p.messageId === msg.id) p.settle('cancelled', null);
+      // Where the turn ended: blame and the Changes tab stop here, so later edits aren't credited to this agent.
+      if (git && msg.checkpoint) try { msg.after = await createCheckpoint(git.root, `${msg.id} end`); msg.afterTs = now(); } catch (e) { msg.notices.push(`No end checkpoint: ${e.message.split('\n')[0]}`); }
       // Catch every file the turn changed, including shell edits that emit no file event.
       if (git) {
         try {
@@ -648,7 +650,8 @@ class Hub extends EventEmitter {
   memoryHistory(dir) { if (!this.project(dir)) throw new Error('Unknown project'); return memoryState.history(dir); }
   memoryVersion(dir, id) { if (!this.project(dir)) throw new Error('Unknown project'); return memoryState.previous(dir, id); }
 
-  // What one turn changed: its checkpoint against the next turn's checkpoint, or the files now.
+  // What one turn changed: its checkpoint against the one taken when it ended. Turns from before end checkpoints,
+  // and a turn still running, run to the next turn's checkpoint or the files now.
   async turnDiff(threadId, messageId, rel) {
     const t = this.thread(threadId); if (!t) throw new Error('Thread not found');
     const i = t.messages.findIndex((m) => m.id === messageId); const m = t.messages[i];
@@ -657,7 +660,7 @@ class Hub extends EventEmitter {
     // The next turn in the same folder; turns in another copy say nothing about this one.
     const next = t.messages.slice(i + 1).find((x) => x.role === 'assistant' && x.checkpoint && (x.workdir || null) === (m.workdir || null));
     const relRoot = rel ? path.relative(root, path.resolve(dir, rel)) : undefined;
-    return diffBetween(root, m.checkpoint, next ? next.checkpoint : null, relRoot);
+    return diffBetween(root, m.checkpoint, m.after || (next ? next.checkpoint : null), relRoot);
   }
 
   // Every file touched in a thread, by turn.

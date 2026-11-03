@@ -87,6 +87,23 @@ test('a change that was edited since is left alone, with the reason', async () =
   hub.store.save(true);
 });
 
+test('a change edited by hand after its turn is left alone too, so the hand edit survives', async () => {
+  const { proj, hub, read } = await project({ 'b.txt': 'keep\nold one\nold two\nend\n' }, [
+    agent('alpha', "fs.writeFileSync('b.txt', 'keep\\nnew one\\nnew two\\nnew three\\nend\\n')"),
+  ]);
+  const t = hub.createThread(proj, 'Edits');
+  await hub.send({ threadId: t.id, agentId: 'alpha', text: 'rewrite' });
+  // No turn comes after: the person changes one of alpha's lines in the editor.
+  fs.writeFileSync(path.join(proj, 'b.txt'), read('b.txt').replace('new two', 'new TWO by hand'));
+  const alpha = await turnAt(hub, proj, 'b.txt', 2);
+  assert.strictEqual(alpha.agent, 'alpha');
+  assert.strictEqual(await turnAt(hub, proj, 'b.txt', 3), undefined, 'the edited line is nobody\'s');
+  const before = read('b.txt');
+  await assert.rejects(hub.revertTurnHunk(proj, 'b.txt', alpha.messageId, 2), /changed since/);
+  assert.strictEqual(read('b.txt'), before, 'nothing was written');
+  hub.store.save(true);
+});
+
 test('undoing a change at the end of a file puts back the missing final newline exactly', async () => {
   const { proj, hub, read } = await project({ 'c.txt': 'a\nb' }, [
     agent('alpha', "fs.writeFileSync('c.txt', 'a\\nb\\nc by alpha\\n')"),

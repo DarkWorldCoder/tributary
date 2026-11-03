@@ -53,3 +53,26 @@ test('each line names the agent whose turn changed it, across conversations; unt
   await assert.rejects(hub.lineAuthors(tmp(), 'a.txt'), /Unknown project/);
   hub.store.save(true);
 });
+
+test('an edit made by hand after the newest turn has no author, and the turn\'s diff leaves it out', async () => {
+  const proj = tmp(); execFileSync('git', ['init', '-q'], { cwd: proj });
+  fs.writeFileSync(path.join(proj, 'a.txt'), 'one\ntwo\nthree\nfour\nfive\n');
+  execFileSync('git', ['add', '.'], { cwd: proj }); execFileSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'init'], { cwd: proj });
+  const hub = new Hub({ dataDir: tmp(), secrets: new MemorySecrets(), home: tmp() });
+  hub.agents = [agent('alpha', "fs.writeFileSync('a.txt', fs.readFileSync('a.txt', 'utf8').replace('two', 'TWO by alpha').replace('four', 'FOUR by alpha'))")];
+  const t = hub.createThread(proj, 'Edits');
+  const m = await hub.send({ threadId: t.id, agentId: 'alpha', text: 'shout' });
+  assert.ok(m.after && m.after !== m.checkpoint, 'the turn ends with a checkpoint of its own');
+  // Afterwards the person rewrites one of alpha's lines and adds one.
+  fs.writeFileSync(path.join(proj, 'a.txt'), 'one\nTWO by hand\nthree\nFOUR by alpha\nfive\nsix by hand\n');
+  const who = async () => { const b = await hub.lineAuthors(proj, 'a.txt'); return b.authors.map((i) => (i < 0 ? null : b.turns[i].agent)); };
+  assert.deepStrictEqual(await who(), [null, null, null, 'alpha', null, null]);
+  const diff = await hub.turnDiff(t.id, m.id, 'a.txt');
+  assert.match(diff, /\+TWO by alpha/); assert.doesNotMatch(diff, /by hand/);
+
+  // A turn recorded before end checkpoints existed still runs to the files now.
+  delete m.after; delete m.afterTs;
+  assert.deepStrictEqual(await who(), [null, 'alpha', null, 'alpha', null, 'alpha']);
+  assert.match(await hub.turnDiff(t.id, m.id, 'a.txt'), /\+six by hand/);
+  hub.store.save(true);
+});
