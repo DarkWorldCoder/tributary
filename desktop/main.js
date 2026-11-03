@@ -213,6 +213,7 @@ app.whenReady().then(async () => {
   initialized.catch((e) => { console.error('Agent discovery failed:', e.message); });
   if (SMOKE) {
     win.webContents.once('did-finish-load', async () => {
+      const loadedMs = Math.round(process.uptime() * 1000); // process start to page loaded
       await initialized;
       await new Promise((r) => setTimeout(r, 1500));
       const prompt = process.env.TRIBUTARY_SMOKE_PROMPT;
@@ -277,7 +278,15 @@ app.whenReady().then(async () => {
       const out = process.env.TRIBUTARY_SMOKE_SHOT; if (out) fs.writeFileSync(out, img.toPNG());
       const last = hub.store.data.threads.flatMap((t) => t.messages).filter((m) => m.role === 'assistant').pop();
       if (last) report.turn = { agent: last.agent, ok: last.ok, text: (last.text || '').slice(0, 160), uiText: await win.webContents.executeJavaScript(`([...document.querySelectorAll('.prose-reply')].pop()||{}).innerText || ''`) };
-      console.log(`SMOKE ${JSON.stringify({ ...report, encryption: safeStorage.isEncryptionAvailable(), ready: hub.state().agents.filter((x) => x.available && x.headless).map((x) => x.id) })}`);
+      // Startup and memory, so speed and memory work can be measured: resident memory per process type, in MB.
+      const memoryMB = {};
+      for (const m of app.getAppMetrics()) memoryMB[m.type] = (memoryMB[m.type] || 0) + Math.round(m.memory.workingSetSize / 1024);
+      const mu = process.memoryUsage(); memoryMB.mainHeap = Math.round(mu.heapUsed / 1048576); memoryMB.mainExternal = Math.round(mu.external / 1048576);
+      memoryMB.processes = app.getAppMetrics().map((m) => m.type + (m.serviceName ? `:${m.serviceName}` : '')).join(',');
+      memoryMB.rendererHeap = await win.webContents.executeJavaScript(`Math.round((performance.memory || {}).usedJSHeapSize / 1048576 || 0)`);
+      memoryMB.domNodes = await win.webContents.executeJavaScript('document.getElementsByTagName("*").length');
+      const paint = await win.webContents.executeJavaScript(`Math.round((performance.getEntriesByName('first-contentful-paint')[0] || {}).startTime || 0)`);
+      console.log(`SMOKE ${JSON.stringify({ ...report, encryption: safeStorage.isEncryptionAvailable(), ready: hub.state().agents.filter((x) => x.available && x.headless).map((x) => x.id), loadedMs, firstPaintMs: paint, memoryMB })}`);
       app.quit();
     });
   }
