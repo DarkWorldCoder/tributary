@@ -13,6 +13,8 @@ import { FilesTab } from '@/components/workspace-files';
 import { MemoryPanel } from '@/components/memory-panel';
 import { FileDiff } from '@/components/file-diff';
 import { CommentTray, addComment, removeComment, useComments, useCommentsKey } from '@/components/review-comments';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
 import { ReviewTab } from '@/components/review-panel';
 import { ago } from '@/lib/format';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -44,11 +46,34 @@ function ChangesTab() {
   }, [sel, tid, s.hub, scope, count]);
   // Comments go to the agent whose turn made the change.
   const author = sel ? list?.find((f) => f.rel === sel.rel)?.turns.find((t) => t.messageId === sel.messageId)?.agent : undefined;
+  // Another agent reviews everything this conversation changed; its findings become comments on those lines.
+  const [reviewing, setReviewing] = React.useState<string | null>(null);
+  const review = async (agentId: string) => {
+    if (!tid) return; setReviewing(agentId);
+    try {
+      const r = await s.hub.call<{ findings: { file: string; line: number; severity: string; note: string }[] }>('reviewChanges', tid, agentId);
+      const who = s.agentOf(agentId).name; const files = list || [];
+      for (const f of r.findings) {
+        const file = files.find((x) => x.rel === f.file || f.file.endsWith(`/${x.rel}`));
+        if (commentsKey) addComment(commentsKey, { file: file?.rel ?? f.file, line: f.line, side: 'after', quote: '', note: `${f.severity === 'high' ? 'Important: ' : f.severity === 'low' ? 'Minor: ' : ''}${f.note}`, by: who, agent: file?.turns.at(-1)?.agent });
+      }
+      const first = r.findings.length ? files.find((x) => x.rel === r.findings[0].file || r.findings[0].file.endsWith(`/${x.rel}`)) : undefined;
+      if (first) { setSel({ rel: first.rel, messageId: first.turns.at(-1)!.messageId }); setScope('conversation'); }
+      toast.success(r.findings.length ? `${who} left ${r.findings.length} ${r.findings.length === 1 ? 'comment' : 'comments'}` : `${who} found nothing to change`, { description: r.findings.length ? 'They are on the changed lines. Send them to the agent that made the change, or clear them.' : undefined });
+    } catch (e) { toast.error((e as Error).message.replace(/^Error invoking remote method '[^']*': (Error: )?/, '')); } finally { setReviewing(null); }
+  };
   if (!tid) return <p className="p-6 text-center text-sm text-muted-foreground">Start a thread to see every file the agents change.</p>;
   if (!list) return <div className="grid place-items-center p-8"><Spinner /></div>;
   if (!list.length) return <p className="p-6 text-center text-sm text-muted-foreground">No agent has changed a file in this thread yet.</p>;
   return (
     <div className="flex h-full min-h-0 flex-col">
+      <div className="flex shrink-0 items-center gap-2 border-b px-3 py-1.5">
+        <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{list.length} {list.length === 1 ? 'file' : 'files'} changed in this conversation</span>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild><Button size="xs" variant="outline" disabled={!!reviewing || s.running}>{reviewing ? <><Spinner /> {s.agentOf(reviewing).name} is reviewing…</> : 'Review with an agent'}</Button></DropdownMenuTrigger>
+          <DropdownMenuContent align="end">{s.ready.map((a) => <DropdownMenuItem key={a.id} onSelect={() => review(a.id)}><AgentAvatar agent={a} size="xs" />{a.name}</DropdownMenuItem>)}</DropdownMenuContent>
+        </DropdownMenu>
+      </div>
       <ul className="max-h-[45%] shrink-0 overflow-auto border-b py-1">
         {list.map((f) => (
           <li key={f.rel} className="px-3 py-1.5">

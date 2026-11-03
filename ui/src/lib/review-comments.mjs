@@ -9,7 +9,7 @@ export function commentsMessage(comments) {
     const quote = c.quote.length > MAX_QUOTE ? `${c.quote.slice(0, MAX_QUOTE)}…` : c.quote;
     const note = c.note.trim().split('\n').map((l) => `   ${l}`);
     if (c.by) note[0] = `   (from ${c.by}'s review) ${note[0].trimStart()}`;
-    return [`${i + 1}. @${c.file}:${c.line}${c.side === 'before' ? ' (removed line)' : ''}`, `   > ${quote}`, ...note].join('\n');
+    return [`${i + 1}. @${c.file}:${c.line}${c.side === 'before' ? ' (removed line)' : ''}`, ...(quote ? [`   > ${quote}`] : []), ...note].join('\n');
   });
   return ['Please address these review comments on your changes:', '', items.join('\n\n')].join('\n');
 }

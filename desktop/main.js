@@ -108,6 +108,7 @@ const API = {
   mergeWorktree: (id, opts) => hub.mergeWorktree(id, { allowSecrets: !!opts?.allowSecrets }),
   discardWorktree: (id) => hub.discardWorktree(id),
   conversationDiff: (id, messageId, rel) => hub.conversationDiff(id, messageId, rel),
+  reviewChanges: (id, agentId) => hub.reviewChanges(id, agentId),
   runSetup: (id) => hub.runSetup(id),
   trustScript: (p, hash) => hub.trustScript(knownProject(p), hash),
   removeProject: (p) => hub.removeProject(p),
@@ -319,6 +320,8 @@ app.whenReady().then(async () => {
           el.dispatchEvent(new PointerEvent('pointerdown', at)); el.dispatchEvent(new MouseEvent('mousedown', at));
           el.dispatchEvent(new PointerEvent('pointerup', at)); el.dispatchEvent(new MouseEvent('mouseup', at));
           el.click();
+          // In the hidden window synthetic pointer events don't open Radix dropdown menus; Enter on the trigger does.
+          if (el.getAttribute('aria-haspopup') === 'menu' && el.getAttribute('data-state') === 'closed') { el.focus(); el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })); }
           return name(el);
         })()`).then((hit) => console.log(`SMOKE clicked ${JSON.stringify(hit)}`), () => console.log(`SMOKE no button ${JSON.stringify(label)}`));
         await new Promise((r) => setTimeout(r, 1500));

@@ -669,6 +669,8 @@ class Hub extends EventEmitter {
     return diffBetween(root, m.checkpoint, m.after || (next ? next.checkpoint : null), relRoot);
   }
 
+  // A read-only turn by agentId reviews what this conversation changed; findings come back by file and line.
+  reviewChanges(threadId, agentId) { return require('./review').reviewChanges(this, threadId, agentId); }
   // A file over the whole conversation: from before the first turn in the same folder that touched it, to now.
   async conversationDiff(threadId, messageId, rel) {
     const t = this.thread(threadId); if (!t) throw new Error('Thread not found');
