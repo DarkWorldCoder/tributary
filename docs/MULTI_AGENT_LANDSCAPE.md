@@ -76,10 +76,10 @@ A second pass read the code of AionUi (Apache-2.0), Vibe Kanban (Apache-2.0), Cl
 | Pass the project's MCP servers into every ACP session, HTTP only to agents that support it | Zed `agent_servers/src/acp`, Goose `provider.rs`, AionCore `session_injection.rs` | Done: `.mcp.json` servers go into `session/new` and `session/load` |
 | Keep each parallel attempt on its own branch after cleanup | Vibe Kanban, Claude Squad | Done: race candidates keep `tributary/race-<id>/<agent>` |
 | Check for conflicts with `git merge-tree` before applying | Crystal `worktreeManager.ts` | Done: apply merges against your current files and names conflicting files instead of writing conflict markers |
-| Install agents from the ACP registry | ACP registry `README.md`, AionCore `registry_npx_lock.rs` | Backend done in `core/registry.js` (npx and uvx agents). UI and binary downloads pending |
+| Install agents from the ACP registry | ACP registry `README.md`, AionCore `registry_npx_lock.rs` | Done: Settings, Agents, Browse agents installs npx and uvx agents. Binary downloads pending |
 | Approve or deny prompts using Claude's and Codex's own control protocols (`--permission-prompt-tool stdio`, `codex app-server`) | Vibe Kanban `claude.rs`, AionCore `adapter/claude.rs` | Not started. Needs UI changes in shared files |
-| Stream deltas over IPC, store history in SQLite, virtualize the transcript | OpenCode, Vibe Kanban, AionCore | Not started. Touches the hub, store and main process |
-| Attention states per thread (working, needs permission, needs review, failed) | Paradev `agent-status.ts`, Zed `message_queue.rs` | Partly: notifications and a follow-up queue exist; per-thread badges pending |
+| Stream deltas over IPC, store history in SQLite, virtualize the transcript | OpenCode, Vibe Kanban, AionCore | Partly: history is in SQLite (`core/store.js`). Deltas over IPC and a virtualized transcript are not started |
+| Attention states per thread (working, needs permission, needs review, failed) | Paradev `agent-status.ts`, Zed `message_queue.rs` | Partly: sidebar badges for working, needs review, failed and done (`core/status.js`). Needs permission waits on approve or deny prompts |
 | Keep checkpoints outside the user's repository | OpenCode `snapshot.ts` | Done: checkpoints live in Tributary's own object store and read the repo's objects through an alternate; race branches stay in the repo on purpose |
 
 Two findings support choices Tributary already made. Zed gives external agents no rewind, while Tributary's git checkpoints rewind every agent. AionUi's teams coordinate through free-form messaging between agents, which CooperBench found does not help, so Tributary keeps coordination structured.
