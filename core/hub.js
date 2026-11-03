@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { EventEmitter } = require('events');
-const { detectAgents, describe, MODES } = require('./agents');
+const { detectAgents, probeVersions, describe, MODES } = require('./agents');
 const { runTurn } = require('./runner');
 const { plan } = require('./handoff');
 const { gitInfo, fileDiff, touched, fingerprint, listFiles, commitAll } = require('./git');
@@ -24,6 +24,8 @@ const documents = require('./documents');
 const folderFiles = require('./files');
 const registry = require('./registry');
 const { threadStatus } = require('./status');
+const { activityOf, watchActivity } = require('./activity');
+const { judgeRace } = require('./manager');
 
 const uid = () => crypto.randomUUID();
 const PLAN_PREFIX = 'Plan only. Do not modify files or run commands that change anything. Investigate as needed, then reply with a concise numbered plan: the steps, the files you would change, and any risks or open questions.';
@@ -53,6 +55,7 @@ class Hub extends EventEmitter {
     this.running = new Map(); // threadId -> AbortController
     this.workspaceReservations = new Map();
     this.teams = new Map();   // threadId -> { abort, recipe, steps }
+    watchActivity(this); // 'activity' events for the live view
   }
 
   async init() {
@@ -70,13 +73,14 @@ class Hub extends EventEmitter {
   rescan() {
     if (this.agentScan) return this.agentScan;
     this.scanningAgents = true;
-    this.emit('state');
     this.agentScan = (async () => {
       try {
-        // Installed agents can run immediately; their version probes are informational.
+        // Installed agents can run immediately; their version probes are informational, so they wait for the
+        // window's first paint (probeDelayMs, set by the desktop app) and run a couple at a time.
         this.agents = await detectAgents({ customFile: this.customAgentsFile, probeVersions: false });
         this.emit('state');
-        this.agents = await detectAgents({ customFile: this.customAgentsFile });
+        if (this.probeDelayMs) await new Promise((r) => setTimeout(r, this.probeDelayMs));
+        this.agents = await probeVersions(this.agents);
         return this.agents.map(describe);
       } finally {
         this.scanningAgents = false;
@@ -188,7 +192,8 @@ class Hub extends EventEmitter {
       .sort((a, b) => b.updatedAt - a.updatedAt)
       .map((t) => {
         const running = this.running.has(t.id) || this.teams.has(t.id);
-        return { id: t.id, title: t.title, updatedAt: t.updatedAt, lastAgent: t.lastAgent, count: t.messages.length, running, agents: Object.keys(t.agentSessions || {}), status: threadStatus(t, { running }) };
+        const { count, last } = this.store.summary(t); // from the database, without loading the thread's messages
+        return { id: t.id, title: t.title, updatedAt: t.updatedAt, lastAgent: t.lastAgent, count, running, agents: Object.keys(t.agentSessions || {}), status: threadStatus({ seenAt: t.seenAt, messages: last ? [last] : [] }, { running }) };
       });
   }
   // Another process (the CLI, a second window) saved threads or settings: refresh whatever shows them.
@@ -203,6 +208,8 @@ class Hub extends EventEmitter {
     if (!t || threadStatus(t, { running: this.running.has(id) }) !== 'review') return;
     t.seenAt = now(); this.store.save(); this.emit('threads', t.project);
   }
+  // Every agent at work right now: conversations, team steps and race candidates (core/activity.js).
+  activity() { return activityOf(this); }
   thread(id) { return this.store.data.threads.find((t) => t.id === id) || null; }
   createThread(projectPath, title) {
     if (!this.project(projectPath)) this.addProject(projectPath);
@@ -303,7 +310,7 @@ class Hub extends EventEmitter {
     const p = plan({ thread: prior, agentId, text: request, names: this.names(), git });
     const beforePrints = git ? fingerprint(git.root, git.changed) : null;
 
-    const userMsg = { id: uid(), role: 'user', text: t.task && typeof displayText === 'string' ? displayText.slice(0, 4000) : text || (planFrom ? 'Run the plan' : ''), ts: now(), target: agentId, kind: planOnly ? 'plan' : (planFrom ? 'implement' : 'chat'), team: team || undefined };
+    const userMsg = { id: uid(), role: 'user', text: (t.task || team) && typeof displayText === 'string' ? displayText.slice(0, 4000) : text || (planFrom ? 'Run the plan' : ''), ts: now(), target: agentId, kind: planOnly ? 'plan' : (planFrom ? 'implement' : 'chat'), team: team || undefined };
     const msg = { id: uid(), role: 'assistant', agent: agentId, text: '', thinking: '', tools: [], files: [], plan: null, notices: [], error: null, ok: null,
       ts: now(), mode, gateway: gateway ? gateway.name : null, handoff: p.kind, resumed: !!p.resumeId, kind: planOnly ? 'plan' : (planFrom ? 'implement' : 'chat'), planFrom: planFrom || undefined, team: team || undefined };
     ac.signal.throwIfAborted();
@@ -466,7 +473,7 @@ class Hub extends EventEmitter {
         if (i >= 0) state.steps[i] = s; else state.steps.push(s);
         this.emit('state');
       } });
-      const text = { approved: 'The reviewer approved the work.', changes: 'The reviewer still requests changes after the last round.', unknown: 'The reviewer gave no clear verdict.', answered: 'Every agent answered and the answers were combined.' }[result.verdict];
+      const text = { merged: 'Every piece was merged.', partial: 'Some pieces were merged; the others need attention.', failed: 'No piece could be merged.', approved: 'The reviewer approved the work.', changes: 'The reviewer still requests changes after the last round.', unknown: 'The reviewer gave no clear verdict.', answered: 'Every agent answered and the answers were combined.' }[result.verdict];
       this.notify({ kind: result.verdict === 'approved' || result.verdict === 'answered' ? 'done' : 'attention', threadId, title: `${name} finished`, body: `${t.title}. ${text}` });
       return result;
     } catch (e) {
@@ -507,6 +514,8 @@ class Hub extends EventEmitter {
       this.emit('message', { threadId, message: msg }); this.emit('threads', t.project);
     }
   }
+  // One agent compares a finished race's candidates and recommends one (core/manager.js).
+  judgeRace(threadId, messageId, agentId) { return judgeRace(this, threadId, messageId, agentId); }
   async applyRace(threadId, messageId, agentId) {
     const t = this.thread(threadId); if (!t) throw new Error('Thread not found');
     const m = t.messages.find((x) => x.id === messageId && x.kind === 'race'); if (!m) throw new Error('Race not found');

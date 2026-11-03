@@ -32,7 +32,7 @@ export interface RaceCandidate {
   tests?: 'pending' | 'running' | 'passed' | 'failed' | 'skipped'; testOutput?: string; activity?: string; durationMs?: number; error?: string;
   branch?: string; commit?: string;
 }
-export interface RaceInfo { task: string; testCommand: string; agents: string[]; candidates: RaceCandidate[]; applied: string | null; base?: string }
+export interface RaceInfo { task: string; testCommand: string; agents: string[]; candidates: RaceCandidate[]; applied: string | null; base?: string; judge?: { agent: string; winner: string | null; messageId: string } }
 export interface AppNotification { id: string; ts: number; read: boolean; kind: 'done' | 'failed' | 'attention' | 'info' | 'permission'; threadId?: string; title: string; body?: string }
 export interface FileContent { rel: string; size: number; binary: boolean; truncated: boolean; content: string; mtime: number; base64?: string }
 export interface MemoryInfo { enabled: boolean; memory: string | null; worklog: string[] }
@@ -62,10 +62,17 @@ export interface GitInfo { root: string; branch: string; changed: { code: string
 
 export interface HubEvents {
   collaboration: import('../../core/collaboration/client.mjs').RoomState;
-  state: undefined; threads: string; message: { threadId: string; message: Message };
+  state: undefined; threads: string; message: { threadId: string; message: Message }; 'message-patch': { threadId: string; id: string; patch: import('./lib/message-patch.mjs').MessagePatch };
   running: { threadId: string; running: boolean }; insert: string; 'focus-project': string;
-  notification: AppNotification; 'term-data': { id: string; data: string }; 'term-exit': { id: string; code: number }; 'open-thread': string;
+  activity: ActivityEntry[]; notification: AppNotification; 'term-data': { id: string; data: string }; 'term-exit': { id: string; code: number }; 'open-thread': string;
 }
+// The live view (core/activity.js): every busy thread and the agents working in it.
+export interface ActivityWorker {
+  key: string; agent: string; role: string | null; messageId?: string; startedAt?: number; taskId?: string;
+  state: 'working' | 'testing' | 'merging' | 'waiting' | 'done' | 'failed' | 'skipped'; doing: string;
+  files: { rel: string; change?: string }[]; tests?: string; branch?: string; tools?: number;
+}
+export interface ActivityEntry { threadId: string; title: string; project: string; startedAt?: number; kind: 'turn' | 'team' | 'race' | 'manager'; recipe?: string; recipeName?: string; messageId?: string; phase?: string; workers: ActivityWorker[] }
 export interface HubBridge {
   platform: 'desktop' | 'vscode' | 'mock';
   call<T = unknown>(method: string, ...args: unknown[]): Promise<T>;

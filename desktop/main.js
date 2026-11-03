@@ -4,6 +4,7 @@ const { app, BrowserWindow, ipcMain, dialog, shell, safeStorage, Menu, nativeIma
 const fs = require('fs');
 const path = require('path');
 const { Hub } = require('../core');
+const { createPatcher } = require('../core/message-patch');
 const { inside } = require('../core/acp');
 const { TerminalManager } = require('../core/terminal');
 const { detectEditors, openInEditor } = require('../core/editors');
@@ -36,15 +37,24 @@ let hub = null;
 
 function send(name, data) { if (win && !win.isDestroyed()) win.webContents.send('hub-event', name, data); }
 
+// Streaming updates send only what changed (core/message-patch.js).
+const patcher = createPatcher();
+
 function wireEvents() {
   const pending = new Map();
   // Streaming events update a message many times a second; coalesce to ~12 updates/s per message.
   hub.on('event', ({ threadId, message }) => {
     if (pending.has(message.id)) return;
-    pending.set(message.id, setTimeout(() => { pending.delete(message.id); send('message', { threadId, message }); }, 80));
+    pending.set(message.id, setTimeout(() => {
+      pending.delete(message.id);
+      // Only what changed since the window's last update; the whole message the first time it sees it.
+      const patch = patcher.patch(message);
+      if (!patch) { patcher.full(message); send('message', { threadId, message }); } else if (Object.keys(patch).length) send('message-patch', { threadId, id: message.id, patch });
+    }, 80));
   });
-  hub.on('message', (d) => { const t = pending.get(d.message.id); if (t) { clearTimeout(t); pending.delete(d.message.id); } send('message', d); });
+  hub.on('message', (d) => { const t = pending.get(d.message.id); if (t) { clearTimeout(t); pending.delete(d.message.id); } patcher.full(d.message); send('message', d); });
   for (const n of ['state', 'threads', 'running', 'notification', 'collaboration']) hub.on(n, (d) => send(n, d));
+  hub.on('activity', (d) => send('activity', d)); // the live view
   // System notification when something finishes while the window is in the background.
   hub.on('notification', (n) => {
     if (SMOKE || !Notification.isSupported() || (win && !win.isDestroyed() && win.isFocused())) return;
@@ -89,6 +99,7 @@ const API = {
   renameThread: (id, t) => hub.renameThread(id, t),
   deleteThread: (id) => hub.deleteThread(id),
   markThreadSeen: (id) => hub.markThreadSeen(id),
+  activity: () => hub.activity(),
   removeProject: (p) => hub.removeProject(p),
   send: (o) => hub.send(o).then((m) => ({ id: m.id, ok: m.ok })),
   stop: (id) => hub.stop(id),
@@ -132,6 +143,7 @@ const API = {
   runTeam: (t, team) => hub.runTeam(t, team).then((r) => r, (e) => ({ error: e.message })),
   runRace: (t, opts) => hub.runRace(t, opts).then(() => ({ ok: true }), (e) => ({ error: e.message })),
   applyRace: (t, m, a) => hub.applyRace(t, m, a),
+  judgeRace: (t, m, a) => hub.judgeRace(t, m, a),
   async exportThread(id) {
     const t = hub.thread(id); if (!t) throw new Error('Thread not found');
     const r = await dialog.showSaveDialog(win, { title: 'Export thread', defaultPath: `${t.title.replace(/[^\w.-]+/g, '-').slice(0, 60) || 'thread'}.md`, filters: [{ name: 'Markdown', extensions: ['md'] }] });
@@ -206,6 +218,7 @@ app.whenReady().then(async () => {
   Menu.setApplicationMenu(process.platform === 'darwin' ? Menu.buildFromTemplate([{ role: 'appMenu' }, { role: 'editMenu' }, { role: 'viewMenu' }, { role: 'windowMenu' }]) : null);
   const dataDir = app.getPath('userData');
   hub = new Hub({ dataDir, secrets: new DesktopSecrets(path.join(dataDir, 'secrets.json')), approvals: true });
+  hub.probeDelayMs = 1500; // agent version probes wait until the window has painted
   // Projects passed on the command line: `tributary /path/to/project`
   for (const a of process.argv.slice(app.isPackaged ? 1 : 2)) { if (!a.startsWith('-')) { try { hub.addProject(a); } catch {} } }
   wireEvents();
@@ -214,7 +227,11 @@ app.whenReady().then(async () => {
   const initialized = hub.init();
   initialized.catch((e) => { console.error('Agent discovery failed:', e.message); });
   if (SMOKE) {
+    // Renderer errors in the report, so a blank or broken screen explains itself.
+    win.webContents.on('console-message', (e) => { if (e.level === 'error') console.log(`SMOKE renderer error: ${String(e.message).slice(0, 400)}`); });
+    win.webContents.on('render-process-gone', (_e, d) => console.log(`SMOKE renderer gone: ${d.reason}`));
     win.webContents.once('did-finish-load', async () => {
+      const loadedMs = Math.round(process.uptime() * 1000); // process start to page loaded
       await initialized;
       await new Promise((r) => setTimeout(r, 1500));
       const prompt = process.env.TRIBUTARY_SMOKE_PROMPT;
@@ -236,9 +253,20 @@ app.whenReady().then(async () => {
         while (Date.now() - t0 < 240000) {
           await new Promise((r) => setTimeout(r, 1000));
           const st = hub.state(); const done = !st.running.length && hub.store.data.threads.some((t) => t.messages.some((m) => m.role === 'assistant' && m.ok != null));
+          // Streaming progress: how much of the reply the window shows, against what the hub has.
+          const live = hub.store.data.threads.flatMap((t) => t.messages).filter((m) => m.role === 'assistant').pop();
+          if (live && !done) console.log(`SMOKE streaming hub=${(live.text || '').length} window=${await win.webContents.executeJavaScript(`([...document.querySelectorAll('.prose-reply')].pop() || {}).textContent?.length || 0`)}`);
           if (done || hub.permissions().length) break; // a turn waiting for permission: the clicks can answer it
         }
         await new Promise((r) => setTimeout(r, 800));
+      }
+      // TRIBUTARY_SMOKE_SEND='[{"agent":"id","text":"go"}]' (or {"team": {...}}, {"race": {...}}) starts a turn, team or race in each of the first threads, from here
+      // rather than through the composer, so a check can watch agents work without typing into the app.
+      for (const [i, r] of JSON.parse(process.env.TRIBUTARY_SMOKE_SEND || '[]').entries()) {
+        const t = hub.store.data.threads[i];
+        if (t && r.race) hub.runRace(t.id, r.race).catch((e) => console.log(`SMOKE race failed: ${e.message}`));
+        else if (t && r.team) hub.runTeam(t.id, r.team).catch((e) => console.log(`SMOKE team failed: ${e.message}`));
+        else if (t && r.agent) hub.send({ threadId: t.id, agentId: r.agent, text: r.text || 'go', mode: 'edit' }).catch((e) => console.log(`SMOKE send failed: ${e.message}`));
       }
       // TRIBUTARY_SMOKE_CLICKS="Settings|Agents|Browse agents|3000" clicks those buttons (label or text) before the
       // screenshot; a number waits that many milliseconds, "type:text" types and "key:control+f" presses keys.
@@ -256,9 +284,12 @@ app.whenReady().then(async () => {
         }
         await win.webContents.executeJavaScript(`(() => {
           const want = ${JSON.stringify(label)}.toLowerCase();
-          const name = (b) => (b.getAttribute('aria-label') || b.textContent || '').trim().toLowerCase();
-          const all = [...document.querySelectorAll('button, a, [role="button"], [role="menuitem"], [role="tab"], [role="radio"], [role="option"]')];
-          const el = all.find((b) => name(b) === want) || all.find((b) => name(b).startsWith(want));
+          // The accessible name: aria-label, or the text without decorative (aria-hidden) parts such as avatars.
+          const name = (b) => { if (b.getAttribute('aria-label')) return b.getAttribute('aria-label').trim().toLowerCase(); const c = b.cloneNode(true); c.querySelectorAll('[aria-hidden="true"]').forEach((x) => x.remove()); return (c.textContent || '').trim().toLowerCase(); };
+          // Look in the topmost open dialog first: clicking behind it would close it.
+          const pick = (root) => { const all = [...root.querySelectorAll('button, a, [role="button"], [role="menuitem"], [role="tab"], [role="radio"], [role="option"]')]; return all.find((b) => name(b) === want) || all.find((b) => name(b).startsWith(want)); };
+          const top = [...document.querySelectorAll('[role="dialog"]')].pop();
+          const el = (top && pick(top)) || pick(document);
           if (!el) throw new Error('smoke: no button ' + want);
           // Menus open on pointerdown, so send the whole sequence a mouse would.
           const at = { bubbles: true, cancelable: true, button: 0, pointerType: 'mouse', isPrimary: true };
@@ -279,7 +310,15 @@ app.whenReady().then(async () => {
       const out = process.env.TRIBUTARY_SMOKE_SHOT; if (out) fs.writeFileSync(out, img.toPNG());
       const last = hub.store.data.threads.flatMap((t) => t.messages).filter((m) => m.role === 'assistant').pop();
       if (last) report.turn = { agent: last.agent, ok: last.ok, text: (last.text || '').slice(0, 160), uiText: await win.webContents.executeJavaScript(`([...document.querySelectorAll('.prose-reply')].pop()||{}).innerText || ''`) };
-      console.log(`SMOKE ${JSON.stringify({ ...report, encryption: safeStorage.isEncryptionAvailable(), ready: hub.state().agents.filter((x) => x.available && x.headless).map((x) => x.id) })}`);
+      // Startup and memory, so speed and memory work can be measured: resident memory per process type, in MB.
+      const memoryMB = {};
+      for (const m of app.getAppMetrics()) memoryMB[m.type] = (memoryMB[m.type] || 0) + Math.round(m.memory.workingSetSize / 1024);
+      const mu = process.memoryUsage(); memoryMB.mainHeap = Math.round(mu.heapUsed / 1048576); memoryMB.mainExternal = Math.round(mu.external / 1048576);
+      memoryMB.processes = app.getAppMetrics().map((m) => m.type + (m.serviceName ? `:${m.serviceName}` : '')).join(',');
+      memoryMB.rendererHeap = await win.webContents.executeJavaScript(`Math.round((performance.memory || {}).usedJSHeapSize / 1048576 || 0)`);
+      memoryMB.domNodes = await win.webContents.executeJavaScript('document.getElementsByTagName("*").length');
+      const paint = await win.webContents.executeJavaScript(`Math.round((performance.getEntriesByName('first-contentful-paint')[0] || {}).startTime || 0)`);
+      console.log(`SMOKE ${JSON.stringify({ ...report, encryption: safeStorage.isEncryptionAvailable(), ready: hub.state().agents.filter((x) => x.available && x.headless).map((x) => x.id), loadedMs, firstPaintMs: paint, memoryMB })}`);
       app.quit();
     });
   }

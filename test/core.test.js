@@ -244,3 +244,38 @@ test('hub: the request appears before the checkpoint, which is still taken befor
   assert.match(await hub.turnDiff(t.id, m.id), /a\.txt|^$/, 'the turn can still be diffed against its checkpoint');
   hub.store.save(true);
 });
+
+test('custom agents can use a streaming protocol: their args list gets {prompt}, {cwd} and {mode}', async () => {
+  const dir = tmp(); const file = path.join(dir, 'agents.json');
+  const script = path.join(dir, 'agent.js');
+  fs.writeFileSync(script, "const [p, cwd, mode] = process.argv.slice(2); console.log(JSON.stringify({ type: 'item.completed', item: { id: 'i', type: 'agent_message', text: `got ${p} in ${require('path').basename(cwd)} as ${mode}` } })); console.log(JSON.stringify({ type: 'turn.completed' }));");
+  fs.writeFileSync(file, JSON.stringify({ agents: [{ id: 'mine', name: 'Mine', command: process.execPath, args: [script, '{prompt}', '{cwd}', '{mode}'], protocol: 'codex-exec' }] }));
+  const [agent] = (await detectAgents({ customFile: file, probeVersions: false })).filter((a) => a.id === 'mine');
+  const cwd = tmp(); const ev = [];
+  const r = await runTurn({ agent, cwd, prompt: 'hello', mode: 'read', onEvent: (e) => ev.push(e) });
+  assert.strictEqual(r.ok, true, JSON.stringify(ev));
+  assert.strictEqual(textOf(ev), `got hello in ${path.basename(cwd)} as read`);
+});
+
+test('version probes run once per binary and two at a time', { skip: process.platform === 'win32' }, async () => {
+  const { probeVersions } = require('../core/agents');
+  const dir = tmp(); const log = path.join(dir, 'log');
+  const bin = (name) => {
+    const p = path.join(dir, name);
+    fs.writeFileSync(p, `#!${process.execPath}\nconst fs=require('fs');fs.appendFileSync(${JSON.stringify(log)}, 'start ${name}\\n');setTimeout(()=>{fs.appendFileSync(${JSON.stringify(log)}, 'end ${name}\\n');console.log('${name} 1.0.0')},150);\n`, { mode: 0o755 });
+    return p;
+  };
+  const shared = bin('shared'); const one = bin('one'); const two = bin('two');
+  const customFile = path.join(dir, 'agents.json');
+  fs.writeFileSync(customFile, JSON.stringify({ agents: [
+    { id: 'a', name: 'A', command: shared, args: [] }, { id: 'b', name: 'B', command: shared, args: [] },
+    { id: 'c', name: 'C', command: one, args: [] }, { id: 'd', name: 'D', command: two, args: [] }] }));
+  const found = (await detectAgents({ customFile, probeVersions: false, env: { PATH: '' } })).filter((a) => a.custom);
+  const probed = await probeVersions(found, { concurrency: 2 });
+  assert.deepStrictEqual(probed.map((a) => a.version), ['shared 1.0.0', 'shared 1.0.0', 'one 1.0.0', 'two 1.0.0']);
+  const lines = fs.readFileSync(log, 'utf8').trim().split('\n');
+  assert.strictEqual(lines.filter((l) => l === 'start shared').length, 1, 'a binary shared by two agents is probed once');
+  let running = 0; let most = 0;
+  for (const l of lines) { running += l.startsWith('start') ? 1 : -1; most = Math.max(most, running); }
+  assert.strictEqual(most, 2, lines.join(', '));
+});

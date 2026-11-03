@@ -5,6 +5,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { AgentAvatar } from '@/components/agent-avatar';
 import { AppSidebar } from '@/components/app-sidebar';
 import { CommandPalette } from '@/components/command-palette';
+import { LiveActivity } from '@/components/live-activity';
 import { Composer, HandoffHint } from '@/components/composer';
 import { Conversation } from '@/components/conversation';
 import { NoProject, Starters } from '@/components/empty-states';
@@ -94,6 +95,7 @@ export default function App() {
       <TeamDialog />
       <CollaborationDialog />
       <CommandPalette />
+      <LiveActivity />
       <Toaster position="bottom-center" />
     </TooltipProvider>
   );

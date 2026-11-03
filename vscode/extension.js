@@ -8,6 +8,9 @@ const { execFile } = require('child_process');
 
 const DIST = path.join(__dirname, 'dist');
 const { Hub } = require(path.join(DIST, 'core'));
+const { createPatcher } = require(path.join(DIST, 'core', 'message-patch'));
+// Streaming updates send only what changed (core/message-patch.js).
+const patcher = createPatcher();
 const { inside } = require(path.join(DIST, 'core', 'acp'));
 
 let hub = null;
@@ -55,6 +58,7 @@ const API = {
   renameThread: (id, t) => hub.renameThread(id, t),
   deleteThread: (id) => hub.deleteThread(id),
   markThreadSeen: (id) => hub.markThreadSeen(id),
+  activity: () => hub.activity(),
   removeProject: () => false,
   async pickProject() { const r = await vscode.window.showOpenDialog({ canSelectFolders: true, canSelectFiles: false, openLabel: 'Open folder in Tributary' }); if (!r?.[0]) return null; hub.addProject(r[0].fsPath); return r[0].fsPath; },
   send: (o) => hub.send(o).then((m) => ({ id: m.id, ok: m.ok })),
@@ -80,6 +84,7 @@ const API = {
   runTeam: (t, team) => hub.runTeam(t, team).then((r) => r, (e) => ({ error: e.message })),
   runRace: (t, o) => hub.runRace(t, o).then(() => ({ ok: true }), (e) => ({ error: e.message })),
   applyRace: (t, m, a) => hub.applyRace(t, m, a),
+  judgeRace: (t, m, a) => hub.judgeRace(t, m, a),
   async exportThread(id) {
     const t = hub.thread(id); if (!t) throw new Error('Thread not found');
     const uri = await vscode.window.showSaveDialog({ defaultUri: vscode.Uri.file(path.join(t.project, `${t.title.replace(/[^\w.-]+/g, '-').slice(0, 60) || 'thread'}.md`)), filters: { Markdown: ['md'] } });
@@ -170,10 +175,16 @@ async function activate(context) {
   const pending = new Map();
   hub.on('event', ({ threadId, message }) => {
     if (pending.has(message.id)) return;
-    pending.set(message.id, setTimeout(() => { pending.delete(message.id); post('message', { threadId, message }); }, 80));
+    pending.set(message.id, setTimeout(() => {
+      pending.delete(message.id);
+      // Only what changed since the window's last update; the whole message the first time it sees it.
+      const patch = patcher.patch(message);
+      if (!patch) { patcher.full(message); post('message', { threadId, message }); } else if (Object.keys(patch).length) post('message-patch', { threadId, id: message.id, patch });
+    }, 80));
   });
-  hub.on('message', (d) => { const t = pending.get(d.message.id); if (t) { clearTimeout(t); pending.delete(d.message.id); } post('message', d); });
+  hub.on('message', (d) => { const t = pending.get(d.message.id); if (t) { clearTimeout(t); pending.delete(d.message.id); } patcher.full(d.message); post('message', d); });
   for (const n of ['state', 'threads', 'running', 'notification', 'collaboration']) hub.on(n, (d) => post(n, d));
+  hub.on('activity', (d) => post('activity', d)); // the live view
 
   const status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
   status.command = 'tributary.focus';
