@@ -1,7 +1,8 @@
 'use strict';
-process.env.TRIBUTARY_CHECKPOINT_DIR = process.env.TRIBUTARY_CHECKPOINT_DIR || require('fs').mkdtempSync(require('path').join(require('os').tmpdir(), 'tributary-ckpt-'));
+require('./helpers/tmp').useCheckpointDir();
 // The live view: every agent at work across conversations, teams and races, what it is doing and what it changed.
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
@@ -10,7 +11,7 @@ const { execFileSync } = require('child_process');
 const { Hub } = require('../core/hub');
 const { MemorySecrets } = require('../core/store');
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-activity-'));
+const tmp = () => mkTmp('activity');
 const repo = () => {
   const d = tmp(); execFileSync('git', ['init', '-q'], { cwd: d });
   fs.writeFileSync(path.join(d, 'a.txt'), 'one\n');

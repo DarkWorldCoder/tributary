@@ -1,5 +1,6 @@
 'use strict';
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert/strict');
 const http = require('node:http');
 const fs = require('node:fs');
@@ -103,7 +104,7 @@ test('ordinary JSON responses are supported and empty responses fail clearly', a
 
 test('personal task to direct response to document survives restart without agent installs or Git', async (t) => {
   const endpoint = await server(t, (_req, res) => stream(res, '# Workshop welcome\n\nWelcome to our community workshop.'));
-  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-everyday-'));
+  const dataDir = mkTmp('everyday');
   const secrets = new MemorySecrets(); const hub = new Hub({ dataDir, secrets });
   t.after(() => { hub.store.save(true); fs.rmSync(dataDir, { recursive: true, force: true }); });
   assert.equal(hub.agents.length, 0);

@@ -1,8 +1,9 @@
 'use strict';
-process.env.TRIBUTARY_CHECKPOINT_DIR = process.env.TRIBUTARY_CHECKPOINT_DIR || require('fs').mkdtempSync(require('path').join(require('os').tmpdir(), 'tributary-ckpt-'));
+require('./helpers/tmp').useCheckpointDir();
 // Secrets stay out of merges, commits and transcripts: values from the project's .env files are recognised by
 // name and value, well-known token shapes by pattern, and transcripts show [REDACTED] instead.
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
@@ -52,7 +53,7 @@ test('redaction replaces known values in text and in every string of an event', 
 });
 
 // A project with a gitignored .env, and a fake agent that runs a snippet of JavaScript in its folder.
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-sg-'));
+const tmp = () => mkTmp('sg');
 const sh = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
 const agent = (id, code, say = "'done'") => ({ id, name: id, protocol: 'codex-exec', available: true, headless: true, path: process.execPath, stdinPrompt: true,
   args: () => ['-e', `const fs = require('fs'); ${code}; console.log(JSON.stringify({type:'item.completed',item:{id:'i',type:'agent_message',text:${say}}})); console.log(JSON.stringify({type:'turn.completed'}));`] });

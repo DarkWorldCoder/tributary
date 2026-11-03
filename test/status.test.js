@@ -1,7 +1,8 @@
 'use strict';
-process.env.TRIBUTARY_CHECKPOINT_DIR = process.env.TRIBUTARY_CHECKPOINT_DIR || require('fs').mkdtempSync(require('path').join(require('os').tmpdir(), 'tributary-ckpt-'));
+require('./helpers/tmp').useCheckpointDir();
 // Sidebar status per thread: working, needs review, failed, done. Derived from the thread's last turn.
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
@@ -10,7 +11,7 @@ const { threadStatus } = require('../core/status');
 const { Hub } = require('../core/hub');
 const { MemorySecrets } = require('../core/store');
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-status-'));
+const tmp = () => mkTmp('status');
 const FAKE = path.join(__dirname, 'fake-agent.js');
 const thread = (last, extra = {}) => ({ messages: [{ role: 'user', text: 'x' }, { role: 'assistant', ts: 1000, durationMs: 500, notices: [], files: [], ...last }], ...extra });
 

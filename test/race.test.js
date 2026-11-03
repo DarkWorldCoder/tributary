@@ -1,7 +1,8 @@
 'use strict';
-process.env.TRIBUTARY_CHECKPOINT_DIR = process.env.TRIBUTARY_CHECKPOINT_DIR || require('fs').mkdtempSync(require('path').join(require('os').tmpdir(), 'tributary-ckpt-'));
+require('./helpers/tmp').useCheckpointDir();
 // Race: several agents attempt the same task in isolated git worktrees; tests run in each; the user applies one.
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
@@ -10,7 +11,7 @@ const { execFileSync } = require('child_process');
 const { Hub } = require('../core/hub');
 const { MemorySecrets } = require('../core/store');
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-race-'));
+const tmp = () => mkTmp('race');
 const repo = () => {
   const d = tmp(); execFileSync('git', ['init', '-q'], { cwd: d });
   fs.writeFileSync(path.join(d, 'calc.js'), 'module.exports = (a, b) => a - b;\n');

@@ -1,7 +1,8 @@
 'use strict';
-process.env.TRIBUTARY_CHECKPOINT_DIR = process.env.TRIBUTARY_CHECKPOINT_DIR || require('fs').mkdtempSync(require('path').join(require('os').tmpdir(), 'tributary-ckpt-'));
+require('./helpers/tmp').useCheckpointDir();
 // Undo one agent's change: put back what a single turn replaced in one place of a file, leaving everything else alone.
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
@@ -10,7 +11,7 @@ const { execFileSync } = require('child_process');
 const { Hub } = require('../core/hub');
 const { MemorySecrets } = require('../core/store');
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-undo-'));
+const tmp = () => mkTmp('undo');
 // An agent that runs a snippet of JavaScript in the project (fs is in scope).
 const agent = (id, code) => ({ id, name: id, protocol: 'codex-exec', available: true, path: process.execPath, stdinPrompt: true,
   args: () => ['-e', `const fs = require('fs'); ${code}; console.log(JSON.stringify({ type: 'item.completed', item: { id: 'i', type: 'agent_message', text: 'ok' } })); console.log(JSON.stringify({ type: 'turn.completed' }));`] });

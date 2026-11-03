@@ -1,15 +1,16 @@
 'use strict';
-process.env.TRIBUTARY_CHECKPOINT_DIR = process.env.TRIBUTARY_CHECKPOINT_DIR || require('fs').mkdtempSync(require('path').join(require('os').tmpdir(), 'tributary-ckpt-'));
+require('./helpers/tmp').useCheckpointDir();
 // SSH remote-host mode. A stand-in `ssh` on PATH (test/fake-ssh.js) runs every "remote" command on
 // this machine the way sshd would, so the suite stays offline.
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
 const skip = process.platform === 'win32';
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-remote-'));
+const tmp = () => mkTmp('remote');
 const BIN = tmp();
 const REMOTE_HOME = tmp();
 const LOG = path.join(tmp(), 'ssh.log');

@@ -1,6 +1,7 @@
 'use strict';
-process.env.TRIBUTARY_CHECKPOINT_DIR = process.env.TRIBUTARY_CHECKPOINT_DIR || require('fs').mkdtempSync(require('path').join(require('os').tmpdir(), 'tributary-ckpt-'));
+require('./helpers/tmp').useCheckpointDir();
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert');
 const { BUILTIN } = require('../core/agents');
 
@@ -30,7 +31,7 @@ const os = require('os');
 const path = require('path');
 const { Hub } = require('../core/hub');
 const { MemorySecrets } = require('../core/store');
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-ws-'));
+const tmp = () => mkTmp('ws');
 
 test('a project can include extra folders, and every turn passes them to the agent', async () => {
   const proj = tmp(); const lib = tmp(); const docs = tmp();

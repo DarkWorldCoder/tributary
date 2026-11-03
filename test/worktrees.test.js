@@ -1,8 +1,9 @@
 'use strict';
-process.env.TRIBUTARY_CHECKPOINT_DIR = process.env.TRIBUTARY_CHECKPOINT_DIR || require('fs').mkdtempSync(require('path').join(require('os').tmpdir(), 'tributary-ckpt-'));
+require('./helpers/tmp').useCheckpointDir();
 // Separate working copies: a conversation works in its own git worktree and branch, so two conversations
 // can change one repository at once; merging brings the work back into the project's current branch.
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
@@ -11,7 +12,7 @@ const { execFileSync } = require('child_process');
 const { Hub } = require('../core/hub');
 const { MemorySecrets } = require('../core/store');
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-wt-'));
+const tmp = () => mkTmp('wt');
 const sh = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
 const commit = (cwd, message) => execFileSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qam', message], { cwd });
 const read = (...p) => fs.readFileSync(path.join(...p), 'utf8');

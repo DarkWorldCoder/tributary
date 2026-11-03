@@ -1,6 +1,7 @@
 'use strict';
 // ACP registry: discover agents published at agentclientprotocol.com and add them as runnable ACP agents.
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
@@ -9,7 +10,7 @@ const { parseRegistry, registryEntry, addRegistryAgent, loadRegistry } = require
 const { detectAgents } = require('../core/agents');
 
 const FIX = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'acp-registry.json'), 'utf8'));
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-reg-'));
+const tmp = () => mkTmp('reg');
 
 test('registry entries say how each agent runs: npx, uvx, or a manual binary download', () => {
   const list = parseRegistry(FIX);

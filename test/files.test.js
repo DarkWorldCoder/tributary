@@ -1,5 +1,6 @@
 'use strict';
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -8,7 +9,7 @@ const { readDirectory } = require('../core/files');
 const { Hub, MemorySecrets } = require('../core');
 
 test('folder browser includes empty, ignored and deeply nested directories without Git', async (t) => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-files-')); t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const root = mkTmp('files'); t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   fs.mkdirSync(path.join(root, 'empty')); fs.mkdirSync(path.join(root, 'dist')); fs.writeFileSync(path.join(root, 'dist', 'page.html'), '<h1>Preview</h1>');
   fs.writeFileSync(path.join(root, '.notes'), 'hidden'); fs.writeFileSync(path.join(root, '.gitignore'), 'dist/\n');
   const deep = Array.from({ length: 10 }, (_, i) => `level${i}`).join('/'); fs.mkdirSync(path.join(root, deep), { recursive: true }); fs.writeFileSync(path.join(root, deep, 'note.md'), '# Deep note');
@@ -21,7 +22,7 @@ test('folder browser includes empty, ignored and deeply nested directories witho
 });
 
 test('folder listing paginates deterministically and rejects invalid pages and escapes', async (t) => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-pages-')); t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const root = mkTmp('pages'); t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   for (let i = 0; i < 405; i++) fs.writeFileSync(path.join(root, `file-${String(i).padStart(3, '0')}.txt`), '');
   const first = await readDirectory(root); const second = await readDirectory(root, '', { offset: first.next }); const last = await readDirectory(root, '', { offset: second.next });
   assert.equal(first.next, 200); assert.equal(second.next, 400); assert.equal(last.next, null);
@@ -32,7 +33,7 @@ test('folder listing paginates deterministically and rejects invalid pages and e
 });
 
 test('host file APIs refuse symlink escapes for directory reads, file reads and saves', async (t) => {
-  const base = fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-links-')); const root = path.join(base, 'project'); const outside = path.join(base, 'outside');
+  const base = mkTmp('links'); const root = path.join(base, 'project'); const outside = path.join(base, 'outside');
   fs.mkdirSync(root); fs.mkdirSync(outside); fs.writeFileSync(path.join(outside, 'secret.txt'), 'private');
   fs.symlinkSync(outside, path.join(root, 'escape'), 'dir');
   const hub = new Hub({ dataDir: path.join(base, 'data'), secrets: new MemorySecrets() }); hub.addProject(root);
@@ -46,7 +47,7 @@ test('host file APIs refuse symlink escapes for directory reads, file reads and 
 });
 
 test('image reads keep complete bounded payloads separate from text and binary fallbacks', async (t) => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-images-'));
+  const root = mkTmp('images');
   const hub = new Hub({ dataDir: path.join(root, 'data'), secrets: new MemorySecrets() }); hub.addProject(root);
   t.after(() => { hub.store.close(); fs.rmSync(root, { recursive: true, force: true }); });
   const large = Buffer.alloc(2 * 1024 * 1024, 127); large.set([137, 80, 78, 71, 13, 10, 26, 10]);

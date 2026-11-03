@@ -1,7 +1,8 @@
 'use strict';
-process.env.TRIBUTARY_CHECKPOINT_DIR = process.env.TRIBUTARY_CHECKPOINT_DIR || require('fs').mkdtempSync(require('path').join(require('os').tmpdir(), 'tributary-ckpt-'));
+require('./helpers/tmp').useCheckpointDir();
 // Shared history: threads and settings live in SQLite so the desktop app and the CLI can use one data folder at once.
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
@@ -9,7 +10,7 @@ const path = require('path');
 const { Hub } = require('../core/hub');
 const { MemorySecrets } = require('../core/store');
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-store-'));
+const tmp = () => mkTmp('store');
 const open = (dataDir) => new Hub({ dataDir, secrets: new MemorySecrets(), home: dataDir });
 const reply = (text) => ({ id: `m-${Math.random().toString(36).slice(2)}`, role: 'assistant', agent: 'claude', text, tools: [], files: [], notices: [], ok: true, ts: Date.now() });
 

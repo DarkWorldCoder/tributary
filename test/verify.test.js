@@ -1,9 +1,10 @@
 'use strict';
-process.env.TRIBUTARY_CHECKPOINT_DIR = process.env.TRIBUTARY_CHECKPOINT_DIR || require('fs').mkdtempSync(require('path').join(require('os').tmpdir(), 'tributary-ckpt-'));
+require('./helpers/tmp').useCheckpointDir();
 // Checks after every turn: the project's verify script (.tributary/settings.json, trusted like the setup script)
 // runs in the background after a turn that changed files. A failure keeps its output, marks the conversation
 // failed, and the next turn or Stop cancels a check still running.
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
@@ -14,7 +15,7 @@ const { MemorySecrets } = require('../core/store');
 const { threadStatus } = require('../core/status');
 const { scriptHash } = require('../core/workspace-setup');
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-verify-'));
+const tmp = () => mkTmp('verify');
 const node = JSON.stringify(process.execPath);
 // The check passes while calc.js adds; an agent that makes it subtract breaks it.
 const VERIFY = `${node} -e "const add = require('./calc.js'); if (add(2, 3) !== 5) { console.error('expected 5, got ' + add(2, 3)); process.exit(1) }"`;

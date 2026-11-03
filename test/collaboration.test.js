@@ -1,5 +1,6 @@
 'use strict';
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -10,7 +11,7 @@ const { Hub, MemorySecrets } = require('../core');
 const ownerKey = 'test-owner-access-key-000000000000000000000';
 const waitFor = async (fn) => { const until = Date.now() + 5000; while (!fn()) { if (Date.now() > until) throw new Error('Condition timed out'); await new Promise((r) => setTimeout(r, 10)); } };
 test('project service supports directly hosted HTTPS with certificate verification', async (t) => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-tls-')); t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const dir = mkTmp('tls'); t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
   const key = path.join(dir, 'key.pem'); const cert = path.join(dir, 'cert.pem');
   require('node:child_process').execFileSync('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-keyout', key, '-out', cert, '-days', '1', '-subj', '/CN=localhost', '-addext', 'subjectAltName=DNS:localhost,IP:127.0.0.1'], { stdio: 'ignore' });
   const service = createService({ dbPath: path.join(dir, 'db.sqlite'), bootstrapToken: ownerKey, tls: { key: fs.readFileSync(key), cert: fs.readFileSync(cert) } });
@@ -22,7 +23,7 @@ test('project service supports directly hosted HTTPS with certificate verificati
   assert.throws(() => createService({ dbPath: path.join(dir, 'bad.sqlite'), publicOrigin: 'https://example.com/path' }), /public origin/);
 });
 async function fixture(t) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-room-'));
+  const dir = mkTmp('room');
   let service; let url;
   const start = async () => { service = createService({ dbPath: path.join(dir, 'room.sqlite'), bootstrapToken: ownerKey, ownerName: 'Owner' }); await new Promise((r) => service.server.listen(0, '127.0.0.1', r)); url = `http://127.0.0.1:${service.server.address().port}`; };
   await start(); t.after(async () => { await service.close(); fs.rmSync(dir, { recursive: true, force: true }); });
@@ -121,7 +122,7 @@ test('client rejects insecure remote addresses and cross-project watches', async
 });
 
 test('local turn reservations prevent duplicate starts and competing workspace writes', async (t) => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-reserve-'));
+  const dir = mkTmp('reserve');
   const project = path.join(dir, 'project'); fs.mkdirSync(project);
   const hub = new Hub({ dataDir: path.join(dir, 'data'), secrets: new MemorySecrets() }); hub.addProject(project);
   const a = hub.createThread(project); const b = hub.createThread(project);

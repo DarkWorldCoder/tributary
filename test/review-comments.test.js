@@ -1,6 +1,7 @@
 'use strict';
 // Comments on diff lines go to the agent as one message: where, the line as it reads, and what to do.
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert');
 const path = require('path');
 
@@ -41,10 +42,10 @@ test('long lines are shortened, and a comment from a reviewer agent says so', as
 });
 
 test('a file\'s change over the whole conversation spans every turn; one turn shows only its own part', async () => {
-  process.env.TRIBUTARY_CHECKPOINT_DIR = process.env.TRIBUTARY_CHECKPOINT_DIR || require('fs').mkdtempSync(path.join(require('os').tmpdir(), 'tributary-ckpt-'));
+  require('./helpers/tmp').useCheckpointDir();
   const fs = require('fs'); const os = require('os'); const { execFileSync } = require('child_process');
   const { Hub } = require('../core/hub'); const { MemorySecrets } = require('../core/store');
-  const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-rc-'));
+  const tmp = () => mkTmp('rc');
   const d = tmp(); const git = (...a) => execFileSync('git', a, { cwd: d });
   git('init', '-q', '-b', 'main'); fs.writeFileSync(path.join(d, 'a.txt'), 'one\ntwo\n'); git('add', '.'); git('-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'init');
   const agent = (id, code) => ({ id, name: id, protocol: 'codex-exec', available: true, headless: true, path: process.execPath, stdinPrompt: true,
@@ -64,7 +65,7 @@ test('a file\'s change over the whole conversation spans every turn; one turn sh
 test('a reviewer agent reads the conversation\'s changes and its findings come back by file and line', async () => {
   const fs = require('fs'); const os = require('os'); const { execFileSync } = require('child_process');
   const { Hub } = require('../core/hub'); const { MemorySecrets } = require('../core/store'); const { parseFindings } = require('../core/review');
-  const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-rv-'));
+  const tmp = () => mkTmp('rv');
   const d = tmp(); const git = (...a) => execFileSync('git', a, { cwd: d });
   git('init', '-q', '-b', 'main'); fs.writeFileSync(path.join(d, 'calc.js'), 'const a = 1;\n'); git('add', '.'); git('-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'init');
   const out = (text) => `console.log(JSON.stringify({type:'item.completed',item:{id:'i',type:'agent_message',text:${text}}})); console.log(JSON.stringify({type:'turn.completed'}));`;
