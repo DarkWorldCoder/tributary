@@ -233,3 +233,19 @@ test('a Manager team in a conversation with a separate copy builds into the copy
   assert.ok(!fs.existsSync(path.join(d, 'a.txt')), 'the project folder is untouched');
   assert.deepStrictEqual(m.files.map((f) => f.path), [path.join(wt.cwd, 'a.txt')]);
 });
+
+test('agent blame counts the turns that ran in that folder: the project, or one separate copy', async () => {
+  const { d, hub } = await setup([writer('one', 'calc.js', 'module.exports = (a, b) => a + b;\n'), writer('two', 'notes.md', '# notes\n\nship it\n')]);
+  const p = hub.createThread(d); const c = hub.createThread(d);
+  await hub.send({ threadId: p.id, agentId: 'one', text: 'fix add' });
+  const wt = await hub.createWorktree(c.id);
+  await hub.send({ threadId: c.id, agentId: 'two', text: 'write notes' });
+  // The copy's later turn does not break the project folder's history.
+  const here = await hub.lineAuthors(d, 'calc.js');
+  assert.deepStrictEqual(here.turns.map((x) => x.agent), ['one']);
+  assert.deepStrictEqual(here.authors, [0]);
+  const there = await hub.lineAuthors(wt.cwd, 'notes.md');
+  assert.deepStrictEqual(there.turns.map((x) => x.agent), ['two']);
+  assert.deepStrictEqual(there.authors, [-1, 0, 0]);
+  assert.deepStrictEqual((await hub.lineAuthors(wt.cwd, 'calc.js')).turns, [], 'the project folder\'s turn is not in the copy');
+});
