@@ -7,7 +7,7 @@ export function takePendingTerminalCommand() { const command = pendingCommand; p
 export function useRunInTerminal() {
   const s = useStore();
   return React.useCallback((command: string) => {
-    if (s.hub.platform === 'vscode') { s.hub.call('createTerminal', { cwd: s.project, command }); return; }
+    if (s.hub.platform === 'vscode') { s.hub.call('createTerminal', { cwd: s.workdir, command }); return; }
     if (!s.terminalOpen) { pendingCommand = command; s.setTerminalOpen(true); return; }
     window.dispatchEvent(new CustomEvent('tributary:run-in-terminal', { detail: command }));
   }, [s]);

@@ -1,11 +1,11 @@
 import * as React from 'react';
 import { toast } from 'sonner';
 import {
-  AlertCircle, BookmarkPlus, Brain, Check, CircleCheck, CircleX, Copy, FileCode2, FileText, Flag, Globe, History, Info, ListChecks, Play, Repeat2, RotateCcw, Search, SquareTerminal, Wrench,
+  AlertCircle, BookmarkPlus, Brain, Check, CircleCheck, CircleX, Copy, FileCode2, FileText, Flag, Globe, History, Info, ListChecks, Play, Repeat2, RotateCcw, Search, ShieldQuestion, SquareTerminal, Wrench,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Bubble, BubbleContent } from '@/components/ui/bubble';
@@ -23,7 +23,7 @@ import { activitySummary, changeCode, duration, toolTarget, toolVerb } from '@/l
 import { cn } from '@/lib/utils';
 import { useStore } from '@/store';
 import { FileTypeIcon } from '@/components/file-type-icon';
-import type { Agent, AgentMessage, Message as Msg, RaceCandidate, Tool, UserMessage } from '@/types';
+import type { Agent, AgentMessage, Message as Msg, PermissionRequest, RaceCandidate, Tool, UserMessage } from '@/types';
 
 const MODE_LABEL = { read: 'Read-only', edit: 'Edit files', full: 'Full auto' } as const;
 const HANDOFF = { join: 'Joined with a summary of this thread', 'catch-up': 'Caught up on the other agents' } as Record<string, string>;
@@ -40,7 +40,7 @@ function Step({ t }: { t: Tool }) {
     <TraceLine status={t.status === 'running' ? 'running' : t.status === 'error' ? 'error' : undefined}>
       <TraceIcon>{t.status === 'running' ? <Spinner /> : toolIcon(t)}</TraceIcon>
       <TraceTitle>{toolVerb(t)}</TraceTitle>
-      <TraceDescription className="font-mono text-[12.5px]">{toolTarget(t, s.project)}</TraceDescription>
+      <TraceDescription className="font-mono text-[12.5px]">{toolTarget(t, s.workdir)}</TraceDescription>
     </TraceLine>
   );
   if (!t.output) return <div>{line}</div>;
@@ -63,13 +63,14 @@ function Activity({ m }: { m: AgentMessage }) {
     return live && !m.text ? <Trace><TraceLine status="running"><TraceIcon><Spinner /></TraceIcon><TraceTitle>Starting</TraceTitle></TraceLine></Trace> : null;
   }
   const lastRun = [...steps].reverse().find((t) => t.status === 'running');
+  const waiting = live && (m.permissions || []).some((p) => p.status === 'pending');
   return (
     <Trace>
       <TraceCollapsible open={isOpen} onOpenChange={setOpen}>
         <TraceCollapsibleTrigger>
           <TraceLine status={live ? 'running' : undefined}>
             <TraceIcon>{live ? <Spinner /> : <ListChecks />}</TraceIcon>
-            <TraceTitle>{live ? 'Working' : activitySummary(m) || 'Activity'}</TraceTitle>
+            <TraceTitle>{waiting ? 'Waiting for your answer' : live ? 'Working' : activitySummary(m) || 'Activity'}</TraceTitle>
             {live && lastRun && <TraceDescription className="font-mono text-[12.5px]">{toolTarget(lastRun, null)}</TraceDescription>}
           </TraceLine>
         </TraceCollapsibleTrigger>
@@ -96,6 +97,41 @@ function Activity({ m }: { m: AgentMessage }) {
       </TraceCollapsible>
     </Trace>
   );
+}
+
+const ASKS: Record<string, string> = { execute: 'run a command', edit: 'edit a file', delete: 'delete a file', move: 'move a file', read: 'read a file', search: 'search', fetch: 'fetch from the web' };
+
+/** A tool call the agent is waiting on: allow it once, for the rest of the agent session, or deny it. */
+function PermissionCard({ r, agent }: { r: PermissionRequest; agent: Agent }) {
+  const s = useStore(); const [busy, setBusy] = React.useState(false);
+  const answer = async (choice: 'once' | 'always' | 'reject') => {
+    setBusy(true);
+    try { await s.hub.call('answerPermission', r.id, choice); } catch (e) { toast.error((e as Error).message); setBusy(false); }
+  };
+  const rel = r.path && s.project && r.path.startsWith(`${s.project}/`) ? r.path.slice(s.project.length + 1) : r.path;
+  const detail = r.command || rel;
+  const always = r.kind === 'edit' ? 'Allow every edit for the rest of this agent session' : r.command ? 'Allow this exact command for the rest of this agent session' : 'Allow this tool for the rest of this agent session';
+  return (
+    <Alert className="border-brand/40" aria-label={`Permission request: ${r.title}`}>
+      <ShieldQuestion className="text-brand" />
+      <AlertTitle>{agent.name} wants to {ASKS[r.kind] ?? `use ${r.title}`}</AlertTitle>
+      <AlertDescription className="flex min-w-0 flex-col gap-1.5">
+        {detail ? <code className="block overflow-x-auto rounded-md bg-muted px-2 py-1 font-mono text-[12.5px] whitespace-pre-wrap break-all text-foreground">{detail}</code> : null}
+        {(!detail || !r.title.includes(detail)) && <span>{r.title}</span>}
+      </AlertDescription>
+      <div className="col-start-2 mt-2 flex flex-wrap items-center gap-1.5">
+        <Button size="sm" disabled={busy} onClick={() => answer('once')}>Allow once</Button>
+        <Tooltip><TooltipTrigger asChild><Button size="sm" variant="outline" disabled={busy} onClick={() => answer('always')}>Always allow</Button></TooltipTrigger><TooltipContent>{always}</TooltipContent></Tooltip>
+        <Button size="sm" variant="destructive" disabled={busy} onClick={() => answer('reject')}>Deny</Button>
+      </div>
+    </Alert>
+  );
+}
+
+function PermissionRequests({ m, agent }: { m: AgentMessage; agent: Agent }) {
+  const s = useStore();
+  const pending = m.ok == null && s.running ? (m.permissions || []).filter((p) => p.status === 'pending') : [];
+  return pending.map((r) => <PermissionCard key={r.id} r={r} agent={agent} />);
 }
 
 function FilesChanged({ m }: { m: AgentMessage }) {
@@ -349,6 +385,7 @@ function AgentTurn({ m, agent, prompt }: { m: AgentMessage; agent: Agent; prompt
           {m.handoff && HANDOFF[m.handoff] && <span className="text-xs text-muted-foreground">{HANDOFF[m.handoff]}</span>}
         </MessageHeader>
         <Activity m={m} />
+        <PermissionRequests m={m} agent={agent} />
         {m.text && <div className={cn(live && 'after:ml-1 after:inline-block after:size-2 after:animate-pulse after:rounded-full after:bg-foreground/70')}><Markdown text={m.text} /></div>}
         {(m.notices || []).map((n, i) => <p key={i} className="flex items-center gap-1.5 text-sm text-warning"><Info className="size-3.5" /> {n}</p>)}
         {m.memoryContext && <details className="text-xs text-muted-foreground"><summary className="cursor-pointer">Project memory included · {m.memoryContext.characters.toLocaleString()} characters</summary><ul className="mt-2 space-y-1">{m.memoryContext.sources.map((source) => <li key={`${source.source}:${source.line}`}>{source.source}:{source.line}</li>)}</ul></details>}

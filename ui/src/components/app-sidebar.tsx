@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Check, ChevronRight, CircleAlert, Folder, FolderPlus, Home, Keyboard, MoreHorizontal, PanelLeftClose, Search, Settings, SquarePen, Trash2, Users } from 'lucide-react';
+import { Check, ChevronRight, CircleAlert, Folder, FolderPlus, GitBranch, Home, Keyboard, MoreHorizontal, PanelLeftClose, Search, Settings, ShieldQuestion, SquarePen, Trash2, Users } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { modifierLabel } from '@/components/keyboard-shortcuts';
@@ -10,12 +10,14 @@ import {
 } from '@/components/ui/sidebar';
 import { Spinner } from '@/components/ui/spinner';
 import { ago } from '@/lib/format';
+import { cn } from '@/lib/utils';
 import { useStore } from '@/store';
 import type { ThreadStatus, ThreadSummary } from '@/types';
 
-// Working, needs review (finished with changes you have not opened), failed, done.
+// Working, waiting for permission, needs review, failed, done.
 function StatusBadge({ status }: { status?: ThreadStatus | null }) {
   if (status === 'working') return <Spinner className="size-3.5 shrink-0 text-brand" aria-label="Working" />;
+  if (status === 'permission') return <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-brand/15 px-1.5 text-[10px] leading-4 font-medium text-brand" title="Waiting for you to allow or deny a tool"><ShieldQuestion className="size-3" aria-hidden />Approve</span>;
   if (status === 'review') return <span className="shrink-0 rounded-full bg-warning/15 px-1.5 text-[10px] leading-4 font-medium text-warning" title="Finished with file changes you have not opened">Review</span>;
   if (status === 'failed') return <span role="img" aria-label="Failed" title="Failed" className="shrink-0 text-destructive"><CircleAlert className="size-3.5" aria-hidden /></span>;
   if (status === 'done') return <span role="img" aria-label="Done" title="Done" className="shrink-0 text-muted-foreground"><Check className="size-3.5" aria-hidden /></span>;
@@ -28,9 +30,13 @@ function ThreadRow({ t }: { t: ThreadSummary }) {
   const status = t.status ?? (t.running ? 'working' : null);
   return (
     <SidebarMenuSubItem>
-      <SidebarMenuSubButton isActive={active} onClick={() => { s.openThread(t.id); if (isMobile) setOpenMobile(false); }} className="h-8 gap-2 pr-1.5" title={t.title}>
-        <span className="min-w-0 flex-1 truncate">{t.title}</span>
-        {status === 'working' ? <StatusBadge status={status} /> : <><StatusBadge status={status} /><span className="w-7 shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">{ago(t.updatedAt)}</span></>}
+      <SidebarMenuSubButton isActive={active} onClick={() => { s.openThread(t.id); if (isMobile) setOpenMobile(false); }} className={cn('gap-2 pr-1.5', t.branch ? 'h-auto py-1' : 'h-8')} title={t.title}>
+        {/* A thread in a separate working copy shows its branch under the title. */}
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="truncate">{t.title}</span>
+          {t.branch && <span className="flex min-w-0 items-center gap-1 font-mono text-[10.5px] leading-4 text-muted-foreground" title={`Works in a separate copy on branch ${t.branch}`}><GitBranch className="size-3 shrink-0" aria-hidden /><span className="truncate">{t.branch}</span></span>}
+        </span>
+        {status === 'working' || status === 'permission' ? <StatusBadge status={status} /> : <><StatusBadge status={status} /><span className="w-7 shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">{ago(t.updatedAt)}</span></>}
       </SidebarMenuSubButton>
     </SidebarMenuSubItem>
   );

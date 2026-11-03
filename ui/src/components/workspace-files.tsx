@@ -55,12 +55,12 @@ function TreeNode({ n, depth, open, toggle, active, onOpen, loading }: { n: Node
 type OpenIntent = 'preview' | 'pinned';
 type Doc = FileContent & { text: string; dirty: boolean; pinned: boolean; mode: 'edit' | 'preview'; diskChanged?: boolean; diskError?: boolean; wrap?: boolean };
 const IMAGE = /\.(png|jpe?g|gif|webp|bmp|ico|avif)$/i;
-function FilePreview({ doc }: { doc: Doc }) {
+function FilePreview({ doc, project }: { doc: Doc; project: string }) {
   const html = React.useMemo(() => (/\.html?$/i.test(doc.rel) ? URL.createObjectURL(new Blob([doc.text], { type: 'text/html' })) : null), [doc.rel, doc.text]);
   const src = React.useMemo(() => imageMime(doc.rel) ? imageSource({ ...doc, content: doc.text }) : null, [doc.rel, doc.text, doc.base64, doc.truncated]);
   React.useEffect(() => () => { if (html) URL.revokeObjectURL(html); }, [html]);
   if (imageMime(doc.rel)) return <ImagePreview key={doc.rel} src={src} name={doc.rel} size={doc.size} revision={doc.mtime} unavailable={doc.truncated ? `Image exceeds the ${IMAGE.test(doc.rel) ? '16' : '1'} MB preview limit.` : undefined} />;
-  if (/\.(md|mdx|markdown)$/i.test(doc.rel)) return <div role="region" aria-label="File preview" tabIndex={0} className="h-full overflow-auto px-5 py-4"><Markdown text={doc.text} baseFile={doc.rel} /></div>;
+  if (/\.(md|mdx|markdown)$/i.test(doc.rel)) return <div role="region" aria-label="File preview" tabIndex={0} className="h-full overflow-auto px-5 py-4"><Markdown text={doc.text} baseFile={doc.rel} project={project} /></div>;
   if (html) return <iframe title={`Preview of ${doc.rel}`} sandbox="" src={html} className="h-full w-full bg-white" />;
   return null;
 }
@@ -323,8 +323,8 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
               <div className="min-h-0 flex-1">
                 {docs.map((item) => <TabsContent key={item.rel} value={item.rel} tabIndex={-1} className="h-full min-h-0">
                   {item.rel === active && (item.binary && !IMAGE.test(item.rel) ? <p className="p-6 text-center text-sm text-muted-foreground">Binary file · {item.size.toLocaleString()} bytes</p>
-                    : item.mode === 'preview' && previewable(item.rel) ? <FilePreview doc={item} />
-                      : <CodeEditor path={item.rel} value={item.text} line={line} readOnly={item.truncated} wrap={item.wrap} onToggleWrap={toggleWrap} onCursorChange={(position) => setCursors((all) => all[item.rel]?.line === position.line && all[item.rel]?.column === position.column ? all : { ...all, [item.rel]: position })} onSave={save} onChange={(value) => setDocs((all) => all.map((current) => current.rel === item.rel ? { ...current, text: value, dirty: value !== current.content, pinned: true } : current))} />)}
+                    : item.mode === 'preview' && previewable(item.rel) ? <FilePreview doc={item} project={project} />
+                      : <CodeEditor project={project} path={item.rel} value={item.text} line={line} readOnly={item.truncated} wrap={item.wrap} onToggleWrap={toggleWrap} onCursorChange={(position) => setCursors((all) => all[item.rel]?.line === position.line && all[item.rel]?.column === position.column ? all : { ...all, [item.rel]: position })} onSave={save} onChange={(value) => setDocs((all) => all.map((current) => current.rel === item.rel ? { ...current, text: value, dirty: value !== current.content, pinned: true } : current))} />)}
                 </TabsContent>)}
               </div>
               {!IMAGE.test(doc.rel) && <div className="workspace-file-footer flex min-w-0 shrink-0 items-center gap-1 border-t pr-2 pl-3">

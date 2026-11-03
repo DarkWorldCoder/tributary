@@ -35,7 +35,7 @@ function activityOf(hub) {
     const t = hub.thread(threadId); if (!t) continue;
     const m = [...t.messages].reverse().find((x) => x.role === 'assistant');
     const team = hub.teams.get(threadId);
-    const entry = { threadId, title: t.title, project: t.project, startedAt: m?.ts, kind: 'turn', workers: [] };
+    const entry = { threadId, title: t.title, project: t.project, workdir: m?.workdir || t.worktree?.cwd || t.project, startedAt: m?.ts, kind: 'turn', workers: [] };
     if (m?.kind === 'race' && m.race) {
       Object.assign(entry, { kind: 'race', messageId: m.id });
       entry.workers = m.race.candidates.map((c) => ({ key: `${m.id}:${c.agent}`, agent: c.agent, role: 'candidate', messageId: m.id, state: candidateState(c),

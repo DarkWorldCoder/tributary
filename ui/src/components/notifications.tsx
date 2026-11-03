@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Bell, CheckCheck, CircleAlert, CircleCheck, Info, Trash2 } from 'lucide-react';
+import { Bell, CheckCheck, CircleAlert, CircleCheck, Info, ShieldQuestion, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ago } from '@/lib/format';
@@ -7,9 +7,9 @@ import { cn } from '@/lib/utils';
 import { useStore } from '@/store';
 import type { AppNotification } from '@/types';
 
-const ICON = { done: <CircleCheck className="text-success" />, failed: <CircleAlert className="text-destructive" />, attention: <CircleAlert className="text-warning" />, info: <Info className="text-muted-foreground" /> };
+const ICON = { done: <CircleCheck className="text-success" />, failed: <CircleAlert className="text-destructive" />, attention: <CircleAlert className="text-warning" />, permission: <ShieldQuestion className="text-brand" />, info: <Info className="text-muted-foreground" /> };
 
-/** In-app notification center: finished turns, failures, team and race results. */
+/** In-app notification center: finished turns, failures, permission requests, team and race results. */
 export function NotificationsBell() {
   const s = useStore(); const [open, setOpen] = React.useState(false); const [list, setList] = React.useState<AppNotification[]>([]);
   const unread = s.st?.unread ?? 0;

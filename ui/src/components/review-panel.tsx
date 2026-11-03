@@ -19,17 +19,18 @@ export function ReviewTab() {
   const [msg, setMsg] = React.useState(''); const [busy, setBusy] = React.useState(false);
   const [filter, setFilter] = React.useState(''); const [error, setError] = React.useState(''); const [loading, setLoading] = React.useState(false);
   const selected = React.useRef(rel); selected.current = rel;
-  const activeProject = React.useRef(s.project); activeProject.current = s.project;
+  const activeProject = React.useRef(s.workdir); activeProject.current = s.workdir;
   const request = React.useRef(0);
   const label = (code: string) => code.includes('D') ? 'Deleted' : code.includes('R') ? 'Renamed' : code === '??' || code.includes('A') ? 'Added' : code.includes('U') ? 'Conflict' : 'Modified';
-  const localPath = (file: string) => { if (!g || !s.project || s.project === g.root) return file; const prefix = s.project.slice(g.root.length).replace(/^[\\/]+/, '').replace(/\\/g, '/'); return file.startsWith(prefix + '/') ? file.slice(prefix.length + 1) : null; };
+  const localPath = (file: string) => { if (!g || !s.workdir || s.workdir === g.root) return file; const prefix = s.workdir.slice(g.root.length).replace(/^[\\/]+/, '').replace(/\\/g, '/'); return file.startsWith(prefix + '/') ? file.slice(prefix.length + 1) : null; };
   const pick = async (r: string) => {
-    const id = ++request.current; const project = s.project; setLoading(true); setError(''); s.setReview({ open: true, rel: r, diff: '' });
+    if (s.hub.platform === 'vscode') s.hub.call('openDiff', s.workdir, r);
+    const id = ++request.current; const project = s.workdir; setLoading(true); setError(''); s.setReview({ open: true, rel: r, diff: '' });
     try { const text = await s.hub.call<string>('fileDiff', g?.root || project, r); if (id === request.current && project === activeProject.current) s.setReview({ open: true, rel: r, diff: text }); }
     catch (e) { setError((e as Error).message); } finally { if (id === request.current) setLoading(false); }
   };
   React.useEffect(() => {
-    let active = true; let checking = false; const project = s.project;
+    let active = true; let checking = false; const project = s.workdir;
     const refresh = async () => {
       if (checking || !project) return; checking = true;
       try {
@@ -39,11 +40,11 @@ export function ReviewTab() {
     };
     refresh(); const timer = setInterval(refresh, 3000);
     return () => { active = false; clearInterval(timer); };
-  }, [s.project, g?.root]);
+  }, [s.workdir, g?.root]);
   const shown = (g?.changed || []).filter((file) => `${file.path} ${label(file.code)}`.toLowerCase().includes(filter.toLowerCase()));
   const commit = async () => {
     setBusy(true);
-    try { const r = await s.hub.call<string>('commit', s.project, msg); toast.success(`Committed: ${r || msg}`); setMsg(''); await s.refreshGit(); s.setReview({ open: true, rel: null, diff: '' }); }
+    try { const r = await s.hub.call<string>('commit', s.workdir, msg); toast.success(`Committed: ${r || msg}`); setMsg(''); await s.refreshGit(); s.setReview({ open: true, rel: null, diff: '' }); }
     catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
   };
   if (!g) return <p className="p-6 text-center text-sm text-muted-foreground">This folder has no Git comparison baseline yet. Use Files to browse and watch live edits. Initialize Git when you want a version history and before/after comparisons.</p>;
@@ -69,7 +70,7 @@ export function ReviewTab() {
             <div className="flex items-center gap-2">
               <span className="min-w-0 flex-1 truncate font-mono text-[12.5px]" title={rel}>{rel}</span><Button size="icon-xs" variant="ghost" aria-label="Copy file patch" disabled={!diff} onClick={async () => { try { await navigator.clipboard.writeText(diff); toast.success('Patch copied'); } catch { toast.error('Could not copy this patch'); } }}><Copy /></Button>
               <Button size="xs" variant="outline" disabled={localPath(rel) === null} onClick={() => s.openFile(localPath(rel)!)}><FileCode2 /> Edit</Button>
-              <Button size="xs" variant="ghost" disabled={localPath(rel) === null} onClick={() => s.hub.call('openFile', s.project, localPath(rel))} aria-label="Open with the system app"><ExternalLink /></Button>
+              <Button size="xs" variant="ghost" disabled={localPath(rel) === null} onClick={() => s.hub.call('openFile', s.workdir, localPath(rel))} aria-label="Open with the system app"><ExternalLink /></Button>
             </div>
             {!loading && <ChangeContext rel={rel} projectRel={localPath(rel)} diff={diff} />}
             {loading ? <p role="status" className="text-sm text-muted-foreground">Loading comparison…</p> : diff ? <FileDiff diff={diff} /> : <p className="text-sm text-muted-foreground">No changes in this file.</p>}

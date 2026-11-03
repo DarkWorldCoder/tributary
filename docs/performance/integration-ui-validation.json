@@ -1,0 +1,301 @@
+{
+  "checks": [
+    "Project file draft becomes unsaved",
+    "Switching to the separate-copy chat opens its own document",
+    "Saving writes only the separate copy",
+    "Project draft survives visiting the same filename in the working copy",
+    "Live watcher updates the separate-copy document",
+    "Markdown preview resolves the image from its own working copy",
+    "Original project Markdown keeps its own image",
+    "Direct image preview uses the working-copy file",
+    "Terminal starts in the separate working copy",
+    "Switching back creates a terminal in the project folder",
+    "Working-copy and project terminals have different sessions",
+    "1920px: merged header stays inside the viewport",
+    "1920px: branch control does not overlap the chat title",
+    "1920px: separate-copy status remains available",
+    "1280px: merged header stays inside the viewport",
+    "1280px: branch control does not overlap the chat title",
+    "1280px: separate-copy status remains available",
+    "900px: merged header stays inside the viewport",
+    "900px: branch control does not overlap the chat title",
+    "900px: separate-copy status remains available",
+    "768px: merged header stays inside the viewport",
+    "768px: branch control does not overlap the chat title",
+    "768px: separate-copy status remains available",
+    "390px: merged header stays inside the viewport",
+    "390px: branch control does not overlap the chat title",
+    "390px: separate-copy status remains available",
+    "320px: merged header stays inside the viewport",
+    "320px: branch control does not overlap the chat title",
+    "320px: separate-copy status remains available",
+    "Native UI checks send no model prompt"
+  ],
+  "geometry": [
+    {
+      "buttons": [
+        {
+          "label": null,
+          "right": 324,
+          "w": 32,
+          "x": 292
+        },
+        {
+          "label": "Branch tributary/thread-67898875: status, merge and discard",
+          "right": 1768,
+          "w": 160,
+          "x": 1608
+        },
+        {
+          "label": "Notifications",
+          "right": 1804,
+          "w": 32,
+          "x": 1772
+        },
+        {
+          "label": "Switch to workbench",
+          "right": 1840,
+          "w": 32,
+          "x": 1808
+        },
+        {
+          "label": "Project context",
+          "right": 1876,
+          "w": 32,
+          "x": 1844
+        },
+        {
+          "label": "More options",
+          "right": 1912,
+          "w": 32,
+          "x": 1880
+        }
+      ],
+      "headerRight": 1920,
+      "page": 1920,
+      "titleRight": 445.015625,
+      "width": 1920
+    },
+    {
+      "buttons": [
+        {
+          "label": null,
+          "right": 324,
+          "w": 32,
+          "x": 292
+        },
+        {
+          "label": "Branch tributary/thread-67898875: status, merge and discard",
+          "right": 1128,
+          "w": 160,
+          "x": 968
+        },
+        {
+          "label": "Notifications",
+          "right": 1164,
+          "w": 32,
+          "x": 1132
+        },
+        {
+          "label": "Switch to workbench",
+          "right": 1200,
+          "w": 32,
+          "x": 1168
+        },
+        {
+          "label": "Project context",
+          "right": 1236,
+          "w": 32,
+          "x": 1204
+        },
+        {
+          "label": "More options",
+          "right": 1272,
+          "w": 32,
+          "x": 1240
+        }
+      ],
+      "headerRight": 1280,
+      "page": 1280,
+      "titleRight": 445.015625,
+      "width": 1280
+    },
+    {
+      "buttons": [
+        {
+          "label": null,
+          "right": 324,
+          "w": 32,
+          "x": 292
+        },
+        {
+          "label": "Branch tributary/thread-67898875: status, merge and discard",
+          "right": 748,
+          "w": 160,
+          "x": 588
+        },
+        {
+          "label": "Notifications",
+          "right": 784,
+          "w": 32,
+          "x": 752
+        },
+        {
+          "label": "Switch to workbench",
+          "right": 820,
+          "w": 32,
+          "x": 788
+        },
+        {
+          "label": "Project context",
+          "right": 856,
+          "w": 32,
+          "x": 824
+        },
+        {
+          "label": "More options",
+          "right": 892,
+          "w": 32,
+          "x": 860
+        }
+      ],
+      "headerRight": 900,
+      "page": 900,
+      "titleRight": 445.015625,
+      "width": 900
+    },
+    {
+      "buttons": [
+        {
+          "label": null,
+          "right": 324,
+          "w": 32,
+          "x": 292
+        },
+        {
+          "label": "Branch tributary/thread-67898875: status, merge and discard",
+          "right": 616,
+          "w": 160,
+          "x": 456
+        },
+        {
+          "label": "Notifications",
+          "right": 652,
+          "w": 32,
+          "x": 620
+        },
+        {
+          "label": "Switch to workbench",
+          "right": 688,
+          "w": 32,
+          "x": 656
+        },
+        {
+          "label": "Project context",
+          "right": 724,
+          "w": 32,
+          "x": 692
+        },
+        {
+          "label": "More options",
+          "right": 760,
+          "w": 32,
+          "x": 728
+        }
+      ],
+      "headerRight": 768,
+      "page": 768,
+      "titleRight": 445.015625,
+      "width": 768
+    },
+    {
+      "buttons": [
+        {
+          "label": null,
+          "right": 48,
+          "w": 44,
+          "x": 4
+        },
+        {
+          "label": "Branch tributary/thread-67898875: status, merge and discard",
+          "right": 190,
+          "w": 44,
+          "x": 146
+        },
+        {
+          "label": "Notifications",
+          "right": 238,
+          "w": 44,
+          "x": 194
+        },
+        {
+          "label": "Switch to workbench",
+          "right": 286,
+          "w": 44,
+          "x": 242
+        },
+        {
+          "label": "Project context",
+          "right": 334,
+          "w": 44,
+          "x": 290
+        },
+        {
+          "label": "More options",
+          "right": 382,
+          "w": 44,
+          "x": 338
+        }
+      ],
+      "headerRight": 390,
+      "page": 390,
+      "titleRight": 142,
+      "width": 390
+    },
+    {
+      "buttons": [
+        {
+          "label": null,
+          "right": 48,
+          "w": 44,
+          "x": 4
+        },
+        {
+          "label": "Branch tributary/thread-67898875: status, merge and discard",
+          "right": 120,
+          "w": 44,
+          "x": 76
+        },
+        {
+          "label": "Notifications",
+          "right": 168,
+          "w": 44,
+          "x": 124
+        },
+        {
+          "label": "Switch to workbench",
+          "right": 216,
+          "w": 44,
+          "x": 172
+        },
+        {
+          "label": "Project context",
+          "right": 264,
+          "w": 44,
+          "x": 220
+        },
+        {
+          "label": "More options",
+          "right": 312,
+          "w": 44,
+          "x": 268
+        }
+      ],
+      "headerRight": 320,
+      "page": 320,
+      "titleRight": 72,
+      "width": 320
+    }
+  ],
+  "scope": "Isolated temporary project, profile and working copy. No model requests. Real file reads/writes and terminal output."
+}

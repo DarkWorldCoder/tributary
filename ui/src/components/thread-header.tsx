@@ -10,6 +10,7 @@ import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { AgentAvatar } from '@/components/agent-avatar';
 import { NotificationsBell } from '@/components/notifications';
+import { SeparateCopy } from '@/components/separate-copy';
 import { useStore } from '@/store';
 import { FileText } from 'lucide-react';
 
@@ -75,6 +76,7 @@ export function ThreadHeader({ compact = false }: { compact?: boolean }) {
           </button>
         )}
       </div>
+      <SeparateCopy />
       {!compact && team && <span className="hidden items-center gap-1.5 rounded-full bg-brand/10 px-2.5 py-0.5 text-xs text-brand sm:inline-flex">{s.st?.recipes?.[team.recipe]?.name ?? 'Team'}: step {team.steps.length}</span>}
       {!compact && !conversationView && agentsHere.length > 0 && (
         <Tooltip><TooltipTrigger asChild>
@@ -128,7 +130,7 @@ export function ThreadHeader({ compact = false }: { compact?: boolean }) {
       </Dialog>
       <AlertDialog open={del} onOpenChange={setDel}>
         <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Delete “{t?.title}”?</AlertDialogTitle><AlertDialogDescription>This removes the thread from Tributary. Each agent keeps its own session history, and no files change.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Delete “{t?.title}”?</AlertDialogTitle><AlertDialogDescription>This removes the thread from Tributary. Each agent keeps its own session history{t?.worktree ? `, and your project folder does not change. Its separate copy is removed, and its work stays on branch ${t.worktree.branch}.` : ', and no files change.'}</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction variant="destructive" onClick={async () => { const p = t!.project; await s.hub.call('deleteThread', t!.id); await s.loadThreads(p); s.newThread(p); }}>Delete thread</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

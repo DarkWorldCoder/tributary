@@ -124,16 +124,16 @@ export function Composer({ autoFocus, className }: { autoFocus?: boolean; classN
   const text = useDraft();
 
   React.useEffect(() => { if (autoFocus && window.matchMedia('(pointer: fine)').matches) ref.current?.focus(); }, [autoFocus, s.thread?.id]);
-  React.useEffect(() => { setFiles(null); setSkills(null); }, [s.project]);
+  React.useEffect(() => { setFiles(null); setSkills(null); }, [s.project, s.workdir]);
 
   // Mention / command detection at the caret.
   const before = text.slice(0, caret);
   const at = everyday ? null : /(^|\s)@([^\s@]*)$/.exec(before);
   const slash = everyday ? null : /^\/([\w-]*)$/.exec(before);
   React.useEffect(() => {
-    if (at && s.project && (!files || files.project !== s.project)) s.hub.call<string[]>('listFiles', s.project).then((list) => setFiles({ project: s.project!, list })).catch(() => setFiles({ project: s.project!, list: [] }));
+    if (at && s.workdir && (!files || files.project !== s.workdir)) s.hub.call<string[]>('listFiles', s.workdir).then((list) => setFiles({ project: s.workdir!, list })).catch(() => setFiles({ project: s.workdir!, list: [] }));
     if (slash && s.project && !skills) s.hub.call<{ name: string; description: string }[]>('skills', s.project).then(setSkills).catch(() => setSkills([]));
-  }, [at, slash, s.project, files, skills, s.hub]);
+  }, [at, slash, s.project, s.workdir, files, skills, s.hub]);
 
   const replaceToken = (start: number, insert: string) => {
     const next = text.slice(0, start) + insert + text.slice(caret);

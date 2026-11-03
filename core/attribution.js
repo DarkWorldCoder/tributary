@@ -68,11 +68,14 @@ async function history(hub, project, rel) {
   const g = await gitInfo(project);
   if (!g) return null;
   const relRoot = path.relative(g.root, abs).split(path.sep).join('/');
-  // Every checkpointed turn in this repository, oldest first, whichever conversation it was in.
+  // Every checkpointed turn in this repository, oldest first, whichever conversation it was in. A turn counts where
+  // it ran: a conversation's separate copy (m.workdir) is a working tree of its own, with its own checkpoints.
   const all = [];
   for (const t of hub.store.data.threads) {
-    if (!(t.project === g.root || t.project.startsWith(`${g.root}${path.sep}`) || t.project === project)) continue;
     t.messages.forEach((m, i) => {
+      // Keep each checkpoint and undo in the working copy where the turn ran.
+      const where = m.workdir || t.project;
+      if (!(where === g.root || where.startsWith(`${g.root}${path.sep}`) || where === project)) return;
       if (m.role === 'assistant' && m.checkpoint) all.push({ t, m, prompt: t.messages[i - 1], ts: m.ts || 0, checkpoint: m.checkpoint });
       for (const u of m.undone || []) if (u.rel === relRoot) all.push({ ts: u.ts, checkpoint: u.checkpoint });
     });

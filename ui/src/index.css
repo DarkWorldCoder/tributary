@@ -326,7 +326,7 @@
   flex-shrink: 0; align-items: center;
 }
 .workbench-toolbar-wrap { height: auto; min-height: var(--workbench-row-height, 40px); }
-.workbench-action, .chat-toolbar button {
+.workbench-action, .chat-toolbar button[data-size^="icon"] {
   width: var(--workbench-action-size, 32px); height: var(--workbench-action-size, 32px);
   padding: 0; flex-shrink: 0; border-radius: 6px;
   transition-property: color, background-color, border-color, box-shadow;
@@ -466,4 +466,13 @@
 @media (forced-colors: active) {
   .explorer-row[aria-current="page"], .project-sidebar [data-active="true"] { outline: 1px solid Highlight; }
   .activity-button[aria-pressed="true"] { outline: 1px solid Highlight; }
+}
+
+/* Separate-copy actions share the compact header without competing with the title. */
+.chat-toolbar .separate-copy-toggle { width: 32px; height: 32px; padding: 0; }
+.chat-toolbar .separate-copy-toggle > span { display: none; }
+.chat-toolbar .separate-copy-toggle[aria-pressed="true"] { display: none; }
+.chat-toolbar .separate-copy-branch { max-width: 160px; height: 32px; }
+@media (max-width: 639px) {
+  .chat-toolbar .separate-copy-toggle, .chat-toolbar .separate-copy-branch { width: 44px; height: 44px; min-width: 44px; padding: 0; }
 }

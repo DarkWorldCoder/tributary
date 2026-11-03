@@ -32,14 +32,20 @@ const { threadStatus } = require('./status');
 const { activityOf, watchActivity } = require('./activity');
 const { judgeRace } = require('./manager');
 const { lineAuthors, revertTurnHunk } = require('./attribution');
+const worktrees = require('./worktrees');
 
 const uid = () => crypto.randomUUID();
 const PLAN_PREFIX = 'Plan only. Do not modify files or run commands that change anything. Investigate as needed, then reply with a concise numbered plan: the steps, the files you would change, and any risks or open questions.';
 const now = () => Date.now();
 
 class Hub extends EventEmitter {
-  constructor({ dataDir, secrets, home, fetchImpl }) {
+  // approvals: this host can show tool permission requests and answer them (the desktop app and
+  // VS Code). Without it, requests the permission mode does not settle are declined automatically.
+  constructor({ dataDir, secrets, home, fetchImpl, approvals = false }) {
     super();
+    this.approvals = approvals;
+    this.pendingPermissions = new Map(); // request id -> { threadId, request, settle }
+    this.alwaysAllowed = new Map();      // `${threadId}\0${agent session}` -> tool keys the person always allowed
     this.home = home || os.homedir();
     this.fetchImpl = fetchImpl; // registry downloads; tests pass a stand-in
     this.dataDir = dataDir;
@@ -55,6 +61,7 @@ class Hub extends EventEmitter {
     this.agentScan = null;
     this.running = new Map(); // threadId -> AbortController
     this.workspaceReservations = new Map();
+    this.copyChanges = new Set(); // threads whose separate copy is being made, merged or discarded
     this.teams = new Map();   // threadId -> { abort, recipe, steps }
     watchActivity(this); // 'activity' events for the live view
     this.fileWatches = new FileWatches((event) => this.emit('files-changed', event));
@@ -106,7 +113,7 @@ class Hub extends EventEmitter {
   async collaborationDisconnect() { (await this.collaboration()).disconnect(); }
   async collaborationWatch(id) { return (await this.collaboration()).watch(id); }
   async collaborationCommand(action, input, commandId) { return (await this.collaboration()).command(action, input, commandId); }
-  watchFiles(project, files) { if (!this.project(project)) throw new Error('Unknown project'); return this.fileWatches.start(project, files); }
+  watchFiles(project, files) { if (!this.isWorkspace(project)) throw new Error('Unknown project'); return this.fileWatches.start(project, files); }
   unwatchFiles(id) { this.fileWatches.stop(id); }
   agent(id) { return this.allAgents().find((a) => a.id === id); }
   names() { return Object.fromEntries(this.allAgents().map((a) => [a.id, a.name])); }
@@ -212,7 +219,7 @@ class Hub extends EventEmitter {
       .map((t) => {
         const running = this.running.has(t.id) || this.teams.has(t.id);
         const { count, last } = this.store.summary(t); // from the database, without loading the thread's messages
-        return { id: t.id, title: t.title, updatedAt: t.updatedAt, lastAgent: t.lastAgent, count, running, agents: Object.keys(t.agentSessions || {}), status: threadStatus({ seenAt: t.seenAt, messages: last ? [last] : [] }, { running }) };
+        return { id: t.id, title: t.title, updatedAt: t.updatedAt, lastAgent: t.lastAgent, count, running, agents: Object.keys(t.agentSessions || {}), status: threadStatus({ seenAt: t.seenAt, messages: last ? [last] : [] }, { running }), branch: t.worktree ? t.worktree.branch : undefined };
       });
   }
   // Another process (the CLI, a second window) saved threads or settings: refresh whatever shows them.
@@ -230,9 +237,9 @@ class Hub extends EventEmitter {
   // Every agent at work right now: conversations, team steps and race candidates (core/activity.js).
   activity() { return activityOf(this); }
   // Which agent's turn last changed each line of a file (core/attribution.js), for agent blame in the editor.
-  async lineAuthors(dir, rel) { if (!this.project(dir)) throw new Error('Unknown project'); return lineAuthors(this, dir, rel); }
-  // Undo one change a turn made to a file, leaving the rest of it alone (core/attribution.js), from the blame gutter.
-  async revertTurnHunk(dir, rel, messageId, line) { if (!this.project(dir)) throw new Error('Unknown project'); return revertTurnHunk(this, dir, rel, messageId, line); }
+  async lineAuthors(dir, rel) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return lineAuthors(this, dir, rel); }
+  // Keep hunk undo available inside a conversation's separate working copy too.
+  async revertTurnHunk(dir, rel, messageId, line) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return revertTurnHunk(this, dir, rel, messageId, line); }
   thread(id) { return this.store.data.threads.find((t) => t.id === id) || null; }
   createThread(projectPath, title) {
     if (!this.project(projectPath)) this.addProject(projectPath);
@@ -244,8 +251,11 @@ class Hub extends EventEmitter {
   deleteThread(id) {
     const t = this.thread(id); if (!t) return;
     this.stop(id);
+    for (const scope of this.alwaysAllowed.keys()) if (scope.startsWith(`${id}\0`)) this.alwaysAllowed.delete(scope);
     this.store.data.threads = this.store.data.threads.filter((x) => x.id !== id);
     this.store.save(); this.emit('threads', t.project);
+    // Its separate copy goes with it. Its work is committed to its branch first, and the branch stays.
+    if (t.worktree) return gitInfo(t.project).then((g) => this.removeCopy(g ? g.root : t.project, t.worktree, { keepBranch: true, message: t.title })).catch(() => {});
   }
 
   // ---- gateways (API keys live in the secret store, never in the data files)
@@ -288,17 +298,15 @@ class Hub extends EventEmitter {
   async withTurn(threadId, writing, teamStep, execute) {
     const t = this.thread(threadId); if (!t) throw new Error('Thread not found');
     if (this.running.has(threadId) || (this.teams.has(threadId) && !teamStep)) throw new Error('This thread is already running. Stop it first.');
+    if (this.copyChanges.has(threadId)) throw new Error('This conversation\'s separate copy is being changed. Try again in a moment.');
     const ac = new AbortController();
     this.running.set(threadId, ac); this.emit('running', { threadId, running: true });
     try {
-      const git = await gitInfo(t.project); ac.signal.throwIfAborted();
-      const normalize = (p) => { try { return fs.realpathSync(p); } catch { return path.resolve(p); } };
-      const roots = [git?.root || t.project, ...(this.project(t.project)?.folders || [])].map(normalize);
-      const overlap = (a, b) => { const rel = path.relative(a, b); return rel === '' || (rel !== '..' && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel)); };
-      for (const r of this.workspaceReservations.values()) {
-        if ((writing || r.writing) && roots.some((a) => r.roots.some((b) => overlap(a, b) || overlap(b, a)))) throw new Error('This workspace is busy in another conversation. Wait for it to finish or use a separate working copy.');
-      }
-      this.workspaceReservations.set(threadId, { roots, writing });
+      const dir = this.workdir(t);
+      if (t.worktree && !fs.existsSync(dir)) throw new Error(`This conversation's separate copy is missing (${dir}). Discard it to work in the project folder again.`);
+      const git = await gitInfo(dir); ac.signal.throwIfAborted();
+      // A separate copy is a workspace of its own, so conversations in different copies never block each other.
+      this.reserve(threadId, [git?.root || dir, ...(this.project(t.project)?.folders || [])], writing);
       return await execute(git, ac);
     } finally {
       this.workspaceReservations.delete(threadId);
@@ -306,6 +314,17 @@ class Hub extends EventEmitter {
       this.emit('running', { threadId, running: false });
       this.emit('threads', t.project); // its status changed from working
     }
+  }
+
+  // Hold folders for a turn. A writer may not share a folder, or one inside another, with anyone else.
+  reserve(key, folders, writing) {
+    const normalize = (p) => { try { return fs.realpathSync(p); } catch { return path.resolve(p); } };
+    const roots = folders.map(normalize);
+    const overlap = (a, b) => { const rel = path.relative(a, b); return rel === '' || (rel !== '..' && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel)); };
+    for (const r of this.workspaceReservations.values()) {
+      if ((writing || r.writing) && roots.some((a) => r.roots.some((b) => overlap(a, b) || overlap(b, a)))) throw new Error('This workspace is busy in another conversation. Wait for it to finish or use a separate working copy.');
+    }
+    this.workspaceReservations.set(key, { roots, writing });
   }
 
   async sendReserved({ threadId, agentId, text, displayText, mode, gatewayId, model, plan: planOnly = false, planFrom = null, team = null }, git, ac) {
@@ -341,9 +360,11 @@ class Hub extends EventEmitter {
     const p = plan({ thread: prior, agentId, text: request, names: this.names(), git });
     const beforePrints = git ? fingerprint(git.root, git.changed) : null;
 
+    const dir = this.workdir(t);
     const userMsg = { id: uid(), role: 'user', text: (t.task || team) && typeof displayText === 'string' ? displayText.slice(0, 4000) : text || (planFrom ? 'Run the plan' : ''), ts: now(), target: agentId, kind: planOnly ? 'plan' : (planFrom ? 'implement' : 'chat'), team: team || undefined };
     const msg = { id: uid(), role: 'assistant', agent: agentId, text: '', thinking: '', tools: [], files: [], plan: null, notices: [], error: null, ok: null,
-      ts: now(), mode, model: model || gateway?.model || null, gatewayId: gateway?.id || null, gateway: gateway ? gateway.name : null, handoff: p.kind, resumed: !!p.resumeId, kind: planOnly ? 'plan' : (planFrom ? 'implement' : 'chat'), planFrom: planFrom || undefined, team: team || undefined };
+      ts: now(), mode, model: model || gateway?.model || null, gatewayId: gateway?.id || null, gateway: gateway ? gateway.name : null, handoff: p.kind, resumed: !!p.resumeId, kind: planOnly ? 'plan' : (planFrom ? 'implement' : 'chat'), planFrom: planFrom || undefined, team: team || undefined,
+      workdir: t.worktree ? dir : undefined };
     if (sharedContext?.text) msg.memoryContext = { characters: sharedContext.characters, budget: sharedContext.budget, sources: sharedContext.sources };
     ac.signal.throwIfAborted();
     if (t.messages.length === 0 && t.title === 'New thread') t.title = text.split('\n')[0].slice(0, 60) || 'New thread';
@@ -360,25 +381,28 @@ class Hub extends EventEmitter {
 
     const started = now();
     const onEvent = (e) => {
+      if (e.kind === 'permission') { if (this.approvals) e.answer = this.askPermission(t, msg, agent, e.request, ac.signal); return; }
       this.apply(t, msg, e);
       this.emit('event', { threadId, messageId: msg.id, event: e, message: msg });
       this.store.save(false, t.id); // only this thread changed: don't re-serialize all history
     };
     try {
-      const r = await runTurn({ agent, cwd: t.project, prompt: p.prompt, mode, resumeId: p.resumeId, gateway, model, trusted: proj.trusted !== false, extraDirs: proj.folders || [], onEvent, signal: ac.signal });
+      const r = await runTurn({ agent, cwd: dir, prompt: p.prompt, mode, resumeId: p.resumeId, gateway, model, trusted: proj.trusted !== false, extraDirs: proj.folders || [], onEvent, signal: ac.signal });
       if (r.sessionId) t.agentSessions = { ...t.agentSessions, [sessKey]: r.sessionId };
       msg.ok = r.ok;
     } catch (e) {
       onEvent({ kind: 'error', message: e.message }); onEvent({ kind: 'done', ok: false }); msg.ok = false;
     } finally {
+      // An agent that ended its turn (or crashed) while asking no longer needs an answer.
+      for (const [id, p] of this.pendingPermissions) if (p.messageId === msg.id) p.settle('cancelled', null);
       // Catch every file the turn changed, including shell edits that emit no file event.
       if (git) {
         try {
-          const after = await gitInfo(t.project);
+          const after = await gitInfo(dir);
           const changedNow = touched(beforePrints, after);
           for (const c of changedNow) {
             const abs = path.join(after.root, c.path);
-            if (!msg.files.find((f) => f.path === abs)) msg.files.push({ path: abs, rel: path.relative(t.project, abs), external: false, change: c.code || 'modified', viaGit: true });
+            if (!msg.files.find((f) => f.path === abs)) msg.files.push({ path: abs, rel: path.relative(dir, abs), external: false, change: c.code || 'modified', viaGit: true });
           }
         } catch {}
       }
@@ -405,8 +429,9 @@ class Hub extends EventEmitter {
         break;
       }
       case 'file': {
-        const abs = path.isAbsolute(e.path) ? e.path : path.join(t.project, e.path);
-        const rel = path.relative(t.project, abs);
+        const dir = msg.workdir || t.project;
+        const abs = path.isAbsolute(e.path) ? e.path : path.join(dir, e.path);
+        const rel = path.relative(dir, abs);
         const entry = { path: abs, rel: rel.startsWith('..') ? abs : rel, external: rel.startsWith('..'), change: e.change };
         if (!msg.files.find((f) => f.path === abs)) msg.files.push(entry);
         const last = [...msg.tools].reverse().find((x) => x.status === 'running' || x.status === 'done');
@@ -425,6 +450,55 @@ class Hub extends EventEmitter {
   stop(threadId) {
     const team = this.teams.get(threadId); if (team) team.abort.abort();
     const ac = this.running.get(threadId); if (ac) ac.abort();
+  }
+
+  // ---- tool permission requests (ACP agents; see core/acp.js and docs/TOOL_APPROVAL.md)
+  // A request waits on the turn until the person answers, the turn is stopped, or the turn ends.
+  // "Always" is remembered for the rest of the agent session: edits as a group, anything else by
+  // its exact command (or title), on top of the agent's own allow_always option.
+  askPermission(t, msg, agent, request, signal) {
+    const scope = `${t.id}\0${request.sessionId || ''}`;
+    const key = request.kind === 'edit' ? 'edit' : `${request.kind}\0${request.command || request.title}`;
+    if (this.alwaysAllowed.get(scope)?.has(key)) return Promise.resolve('always');
+    const req = { id: uid(), threadId: t.id, messageId: msg.id, agent: agent.id, ...request, status: 'pending', ts: now() };
+    (msg.permissions || (msg.permissions = [])).push(req);
+    return new Promise((resolve) => {
+      const settle = (status, choice) => {
+        if (!this.pendingPermissions.has(req.id)) return;
+        this.pendingPermissions.delete(req.id); signal.removeEventListener('abort', onAbort);
+        req.status = status; req.answeredAt = now();
+        if (status === 'always') { if (!this.alwaysAllowed.has(scope)) this.alwaysAllowed.set(scope, new Set()); this.alwaysAllowed.get(scope).add(key); }
+        if (status === 'rejected') msg.notices.push(`Denied: ${req.title}`);
+        resolve(choice);
+        this.changedPermission(t, msg, req);
+      };
+      const onAbort = () => settle('cancelled', null); // ACP: a cancelled turn answers its requests "cancelled"
+      this.pendingPermissions.set(req.id, { threadId: t.id, messageId: msg.id, request: req, settle });
+      if (signal.aborted) { onAbort(); return; }
+      signal.addEventListener('abort', onAbort, { once: true });
+      this.changedPermission(t, msg, req);
+      this.notify({ kind: 'permission', threadId: t.id, title: `${agent.name} asks to ${req.command ? `run ${req.command}` : req.title}`.slice(0, 160), body: t.title });
+    });
+  }
+  changedPermission(t, msg, req) {
+    this.store.save(false, t.id);
+    this.emit('message', { threadId: t.id, message: msg });
+    this.emit('threads', t.project); // working <-> needs permission
+    this.emit('permission', { threadId: t.id, request: req });
+  }
+  // Requests waiting for an answer, for one thread or every thread.
+  permissions(threadId) {
+    return [...this.pendingPermissions.values()].filter((p) => !threadId || p.threadId === threadId).map((p) => p.request);
+  }
+  // choice: 'once', 'always', 'reject', or one of the request's own option ids.
+  answerPermission(id, choice) {
+    const p = this.pendingPermissions.get(id);
+    if (!p) throw new Error('That request is no longer waiting for an answer.');
+    const option = p.request.options.find((o) => o.optionId === choice);
+    if (!option && !['once', 'always', 'reject'].includes(choice)) throw new Error('Choose once, always or reject.');
+    const kind = option ? option.kind : { once: 'allow_once', always: 'allow_always', reject: 'reject_once' }[choice];
+    p.settle(/^reject/.test(kind) ? 'rejected' : kind === 'allow_always' ? 'always' : 'allowed', choice);
+    return p.request;
   }
 
   // ---- notifications (kept for every host, newest first)
@@ -496,7 +570,7 @@ class Hub extends EventEmitter {
     this.emit('message', { threadId, message: user }); this.emit('message', { threadId, message: msg }); this.emit('threads', t.project);
     const started = now();
     try {
-      const r = await race(this, { root: git.root, project: t.project, prompts, agents, mode, testCommand, extraDirs: proj.folders || [], trusted: proj.trusted !== false, signal: ac.signal,
+      const r = await race(this, { root: git.root, project: this.workdir(t), prompts, agents, mode, testCommand, extraDirs: proj.folders || [], trusted: proj.trusted !== false, signal: ac.signal,
         onUpdate: (c) => { const i = msg.race.candidates.findIndex((x) => x.agent === c.agent); msg.race.candidates[i] = { ...c }; this.emit('event', { threadId, messageId: msg.id, event: { kind: 'race' }, message: msg }); } });
       msg.race.base = r.base; msg.race.candidates = r.candidates; msg.ok = r.candidates.some((c) => c.ok);
       const passed = r.candidates.filter((c) => c.tests === 'passed').map((c) => this.agent(c.agent).name);
@@ -515,10 +589,11 @@ class Hub extends EventEmitter {
     const m = t.messages.find((x) => x.id === messageId && x.kind === 'race'); if (!m) throw new Error('Race not found');
     if (m.race.applied) throw new Error(`A result was already applied (${m.race.applied})`);
     const c = m.race.candidates.find((x) => x.agent === agentId); if (!c) throw new Error('Candidate not found');
-    const git = await gitInfo(t.project); if (!git) throw new Error('Not a git repository');
+    const dir = this.workdir(t);
+    const git = await gitInfo(dir); if (!git) throw new Error('Not a git repository');
     await applyDiff(git.root, c.diff || '');
     m.race.applied = agentId;
-    m.files = (c.files || []).map((rel) => ({ path: path.join(t.project, rel), rel, change: 'M' }));
+    m.files = (c.files || []).map((rel) => ({ path: path.join(dir, rel), rel, change: 'M' }));
     m.notices = [...(m.notices || []), `Applied ${this.agent(agentId) ? this.agent(agentId).name : agentId}'s changes`];
     try { memory.logTurn(t.project, { agentName: `${this.agent(agentId) ? this.agent(agentId).name : agentId} (race winner)`, request: m.race.task, files: c.files, ok: true }); } catch {}
     this.store.save(); this.emit('message', { threadId, message: m });
@@ -526,9 +601,9 @@ class Hub extends EventEmitter {
   }
 
   // ---- files
-  async readDirectory(dir, rel, options) { if (!this.project(dir)) throw new Error('Unknown project'); return folderFiles.readDirectory(dir, rel, options); }
+  async readDirectory(dir, rel, options) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return folderFiles.readDirectory(dir, rel, options); }
   async readFile(dir, rel) {
-    if (!this.project(dir)) throw new Error('Unknown project');
+    if (!this.isWorkspace(dir)) throw new Error('Unknown project');
     const abs = await folderFiles.projectPath(dir, rel);
     const st = fs.statSync(abs);
     const raster = /\.(png|jpe?g|gif|webp|bmp|ico|avif)$/i.test(abs);
@@ -559,10 +634,11 @@ class Hub extends EventEmitter {
     const t = this.thread(threadId); if (!t) throw new Error('Thread not found');
     const i = t.messages.findIndex((m) => m.id === messageId); const m = t.messages[i];
     if (!m || !m.checkpoint) throw new Error('No checkpoint for this turn');
-    const next = t.messages.slice(i + 1).find((x) => x.role === 'assistant' && x.checkpoint);
-    const g = await gitInfo(t.project); if (!g) throw new Error('Not a git repository');
-    const relRoot = rel ? path.relative(g.root, path.resolve(t.project, rel)) : undefined;
-    return diffBetween(g.root, m.checkpoint, next ? next.checkpoint : null, relRoot);
+    const { dir, root } = await this.turnFolder(t, m);
+    // The next turn in the same folder; turns in another copy say nothing about this one.
+    const next = t.messages.slice(i + 1).find((x) => x.role === 'assistant' && x.checkpoint && (x.workdir || null) === (m.workdir || null));
+    const relRoot = rel ? path.relative(root, path.resolve(dir, rel)) : undefined;
+    return diffBetween(root, m.checkpoint, next ? next.checkpoint : null, relRoot);
   }
 
   // Every file touched in a thread, by turn.
@@ -583,7 +659,7 @@ class Hub extends EventEmitter {
 
   // Save from the built-in editor. expectedMtime guards against overwriting an agent's newer edit.
   async writeFile(dir, rel, content, expectedMtime) {
-    if (!this.project(dir)) throw new Error('Unknown project');
+    if (!this.isWorkspace(dir)) throw new Error('Unknown project');
     const abs = await folderFiles.projectPath(dir, rel, true);
     if (expectedMtime != null && fs.existsSync(abs) && Math.abs(fs.statSync(abs).mtimeMs - expectedMtime) > 1) {
       throw new Error('This file changed on disk since you opened it. Reload it before saving.');
@@ -609,9 +685,9 @@ class Hub extends EventEmitter {
   }
 
   async gitInfo(dir) { return gitInfo(dir); }
-  async listFiles(dir) { if (!this.project(dir)) throw new Error('Unknown project'); return listFiles(dir); }
+  async listFiles(dir) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return listFiles(dir); }
   async commit(dir, message) {
-    if (!this.project(dir)) throw new Error('Unknown project');
+    if (!this.isWorkspace(dir)) throw new Error('Unknown project');
     if (!String(message || '').trim()) throw new Error('Write a commit message first');
     const r = await commitAll(dir, String(message).trim()); this.emit('state'); return r;
   }
@@ -620,12 +696,80 @@ class Hub extends EventEmitter {
     if (this.running.has(threadId)) throw new Error('Stop the running turn first');
     const m = t.messages.find((x) => x.id === messageId);
     if (!m || !m.checkpoint) throw new Error('No checkpoint for this turn');
-    const g = await gitInfo(t.project); if (!g) throw new Error('Not a git repository');
-    const r = await restoreCheckpoint(g.root, m.checkpoint);
+    const r = await restoreCheckpoint((await this.turnFolder(t, m)).root, m.checkpoint);
     m.notices = [...(m.notices || []), `Files restored to before this turn (${r.restored} restored, ${r.removed} removed)`];
     this.store.save(); this.emit('message', { threadId, message: m });
     return r;
   }
+  // The folder a turn ran in (the conversation's separate copy at the time, or the project) and its repository.
+  async turnFolder(t, m) {
+    const dir = m.workdir || t.project;
+    if (m.workdir && !fs.existsSync(dir)) throw new Error('This turn ran in a separate copy that has been discarded.');
+    const g = await gitInfo(dir); if (!g) throw new Error('Not a git repository');
+    return { dir, root: g.root };
+  }
+
+  // ---- separate working copies: a conversation's own git worktree and branch (core/worktrees.js)
+  workdir(t) { return t.worktree ? t.worktree.cwd : t.project; }
+  // A project folder, or a conversation's separate copy of one.
+  isWorkspace(dir) { return !!this.project(dir) || this.store.data.threads.some((t) => t.worktree && t.worktree.cwd === dir); }
+  async changeCopy(threadId, { needCopy = true } = {}, work) {
+    const t = this.thread(threadId); if (!t) throw new Error('Thread not found');
+    if (needCopy && !t.worktree) throw new Error('This conversation is not working in a separate copy.');
+    if (this.running.has(threadId) || this.teams.has(threadId) || this.copyChanges.has(threadId)) throw new Error('Stop the running turn first.');
+    this.copyChanges.add(threadId);
+    try {
+      const g = await gitInfo(t.project);
+      if (!g) throw new Error('A separate copy needs a git repository. Run "git init" and make a first commit.');
+      return await work(t, g.root);
+    } finally { this.copyChanges.delete(threadId); this.emit('threads', t.project); }
+  }
+  // A copy lives in <data>/worktrees/thread-<id>/<repository>; the emptied thread folder goes with it.
+  async removeCopy(root, copy, options) {
+    await worktrees.removeWorktree(root, copy, options);
+    try { fs.rmdirSync(path.dirname(copy.path)); } catch { /* not empty, or already gone */ }
+  }
+  // Turning it on: a branch tributary/thread-<id> and a worktree for it in the data folder.
+  async createWorktree(threadId) {
+    if (this.thread(threadId)?.worktree) return this.worktreeStatus(threadId);
+    await this.changeCopy(threadId, { needCopy: false }, async (t, root) => {
+      const short = t.id.replace(/-/g, '').slice(0, 8);
+      const repo = fs.realpathSync(root);
+      const w = await worktrees.createWorktree(root, { dir: path.join(this.dataDir, 'worktrees', `thread-${short}`, path.basename(repo)), branch: `tributary/thread-${short}` });
+      t.worktree = { ...w, cwd: path.join(w.path, path.relative(repo, fs.realpathSync(t.project))), createdAt: now() };
+      // Agent sessions belong to the folder they ran in; the next turn joins with a summary instead.
+      t.agentSessions = {};
+      this.store.save(true);
+    });
+    return this.worktreeStatus(threadId);
+  }
+  async worktreeStatus(threadId) {
+    const t = this.thread(threadId); if (!t) throw new Error('Thread not found');
+    if (!t.worktree) throw new Error('This conversation is not working in a separate copy.');
+    const g = await gitInfo(t.project); if (!g) throw new Error('Not a git repository');
+    return { ...(await worktrees.worktreeStatus(g.root, t.worktree)), cwd: t.worktree.cwd, from: t.worktree.from };
+  }
+  // Into the project's current branch. Refused, with the files named, when it would conflict.
+  async mergeWorktree(threadId) {
+    return this.changeCopy(threadId, {}, async (t, root) => {
+      this.reserve(`merge:${t.id}`, [root], true); // nobody else is writing in the project folder
+      try {
+        const r = await worktrees.mergeWorktree(root, t.worktree, { message: t.title });
+        if (r.files.length) { t.worktree.mergedAt = now(); this.store.save(true); this.emit('state'); }
+        return r;
+      } finally { this.workspaceReservations.delete(`merge:${t.id}`); }
+    });
+  }
+  // Remove the copy and its branch; the conversation works in the project folder again.
+  async discardWorktree(threadId) {
+    return this.changeCopy(threadId, {}, async (t, root) => {
+      await this.removeCopy(root, t.worktree);
+      delete t.worktree; t.agentSessions = {};
+      this.store.save(true);
+      return true;
+    });
+  }
+
   // ---- ACP registry (agentclientprotocol.com): installing adds the agent to agents.json
   async registry({ refresh = false } = {}) {
     if (refresh || !this.registryList) this.registryList = await registry.loadRegistry({ cacheFile: path.join(this.dataDir, 'acp-registry.json'), fetchImpl: this.fetchImpl || globalThis.fetch });

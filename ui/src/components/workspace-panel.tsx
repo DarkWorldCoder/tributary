@@ -109,7 +109,7 @@ export function WorkspacePanel() {
   const [fileProjects, setFileProjects] = React.useState<string[]>([]);
   const [memoryOpened, setMemoryOpened] = React.useState(s.panel.tab === 'memory');
   React.useEffect(() => { if (s.panel.tab === 'memory') setMemoryOpened(true); }, [s.panel.tab]);
-  const currentFilesProject = s.panel.tab === 'files' ? s.project : null;
+  const currentFilesProject = s.panel.tab === 'files' ? s.workdir : null;
   React.useEffect(() => { if (currentFilesProject) setFileProjects((projects) => projects.includes(currentFilesProject) ? projects : [...projects, currentFilesProject]); }, [currentFilesProject]);
   const projects = currentFilesProject && !fileProjects.includes(currentFilesProject) ? [...fileProjects, currentFilesProject] : fileProjects;
   const changed = s.git?.changed.length ?? 0;
@@ -132,7 +132,7 @@ export function WorkspacePanel() {
         <div className="min-h-0 flex-1">
           <TabsContent value="review" className="flex h-full min-h-0 flex-col"><div role="group" aria-label="Changes to show" className="flex shrink-0 gap-1 border-b p-2"><Button size="xs" variant={s.panel.tab === 'review' ? 'secondary' : 'ghost'} aria-pressed={s.panel.tab === 'review'} onClick={() => s.openPanel('review')}>Working tree</Button><Button size="xs" variant={s.panel.tab === 'changes' ? 'secondary' : 'ghost'} aria-pressed={s.panel.tab === 'changes'} onClick={() => s.openPanel('changes')}>Conversation activity</Button></div><div className="min-h-0 flex-1">{s.panel.tab === 'changes' ? <ChangesTab /> : <ReviewTab />}</div></TabsContent>
           <TabsContent value="files" forceMount className={s.panel.tab === 'files' ? 'h-full min-h-0' : 'hidden'}>
-            {projects.map((project) => <div key={project} className={s.project === project ? 'h-full min-h-0' : 'hidden'}><FilesTab project={project} visible={s.project === project && s.panel.open && s.panel.tab === 'files' && !s.document} /></div>)}
+            {projects.map((project) => <div key={project} className={s.workdir === project ? 'h-full min-h-0' : 'hidden'}><FilesTab project={project} visible={s.workdir === project && s.panel.open && s.panel.tab === 'files' && !s.document} /></div>)}
           </TabsContent>
           <TabsContent value="memory" forceMount className={s.panel.tab === 'memory' ? 'h-full min-h-0' : 'hidden'}>{memoryOpened && s.project && <MemoryTab key={s.project} />}</TabsContent>
           <TabsContent value="preview" className="h-full min-h-0"><PreviewTab /></TabsContent>

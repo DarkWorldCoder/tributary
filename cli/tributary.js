@@ -16,10 +16,13 @@ Work with agents
       -m read|edit|full           Permission mode (default: edit)
       --plan                      Plan only; nothing is changed
       --new                       Start a new thread
+      --separate                  Start a new thread in its own git worktree and branch (with -t, move that thread there)
       -t <thread>                 Continue a specific thread (id or id prefix)
       -                           Read the request from stdin
   race -a a,b [--test cmd] "task" Several agents try the same task in separate git worktrees
   apply <agent>                   Apply that agent's result from the latest race
+  merge [-t thread]               Merge a thread's separate copy into this folder's current branch
+  discard [-t thread]             Remove a thread's separate copy and its branch
   agents                          List installed agents
 
 Threads
@@ -50,14 +53,16 @@ Examples
   tributary ask -a codex "review what claude just changed"
   git diff | tributary ask -a gemini --plan -
   tributary race -a claude,codex --test "npm test" "fix the failing date parser test"
-  tributary apply codex`;
+  tributary apply codex
+  tributary ask --separate -a claude "try the new parser"   # its own branch; merge it later
+  tributary merge`;
 
 class UsageError extends Error {}
 
 // ---- arguments
 const VALUE_FLAGS = { '-a': 'agent', '--agent': 'agent', '-m': 'mode', '--mode': 'mode', '-t': 'thread', '--thread': 'thread', '--test': 'test',
   '-o': 'output', '--output': 'output', '-C': 'dir', '--dir': 'dir', '--data-dir': 'dataDir', '--model': 'model', '--gateway': 'gateway' };
-const BOOL_FLAGS = { '--json': 'json', '--plan': 'plan', '--new': 'new', '--no-color': 'noColor', '-h': 'help', '--help': 'help',
+const BOOL_FLAGS = { '--json': 'json', '--plan': 'plan', '--new': 'new', '--separate': 'separate', '--no-color': 'noColor', '-h': 'help', '--help': 'help',
   '-v': 'version', '--version': 'version', '-q': 'quiet', '--quiet': 'quiet' };
 
 function parseArgs(argv) {
@@ -227,17 +232,19 @@ commands.agents = async (o) => {
 commands.ask = async (o) => {
   const hub = await openHub(o);
   const project = projectDir(hub, o);
-  const prior = findThread(hub, project, o, { required: false });
+  // --separate starts a new thread unless -t names one, so two of them can run side by side.
+  const prior = o.separate && !o.thread ? null : findThread(hub, project, o, { required: false });
   const agent = chooseAgent(hub, o, prior);
   if (o.mode && !MODES.includes(o.mode)) throw new UsageError(`Mode must be one of ${MODES.join(', ')}`);
   const text = await requestText(o, 'What should the agent do?');
   const thread = prior || hub.createThread(project);
+  if (o.separate && !thread.worktree) await hub.createWorktree(thread.id);
 
   let atLineStart = true; let streamed = false; const seenTools = new Set();
   const write = (s) => { if (!s) return; process.stdout.write(s); atLineStart = s.endsWith('\n'); };
   const line = (s) => { if (!atLineStart) write('\n'); write(`${s}\n`); };
   const live = !o.json;
-  if (live && !o.quiet) line(dim(`${agent.name} · ${o.plan ? 'plan' : (o.mode || hub.store.data.settings.mode || 'edit')} · ${path.basename(project)}`));
+  if (live && !o.quiet) line(dim(`${agent.name} · ${o.plan ? 'plan' : (o.mode || hub.store.data.settings.mode || 'edit')} · ${path.basename(project)}${thread.worktree ? ` · separate copy on ${thread.worktree.branch}` : ''}`));
   hub.on('event', ({ threadId, event: e }) => {
     if (!live || threadId !== thread.id) return;
     if (e.kind === 'text') { write(e.text); streamed = true; }
@@ -265,6 +272,7 @@ commands.ask = async (o) => {
     const facts = [agent.name, seconds(msg.durationMs), msg.costUsd != null ? `$${msg.costUsd.toFixed(4)}` : '', `thread ${short(thread.id)}`].filter(Boolean);
     out(dim(facts.join(' · ')));
     if (o.plan && msg.ok) out(dim(`Run it: tributary ask -a ${agent.id} "Implement the plan above"`));
+    if (thread.worktree && files.length) out(dim(`Your folder is unchanged. Merge it: tributary merge -t ${short(thread.id)}`));
   }
   if (msg.ok === false && process.exitCode !== 130) process.exitCode = 1;
 };
@@ -332,6 +340,33 @@ commands.apply = async (o) => {
   out(`Applied ${(hub.agent(c.agent) || {}).name || c.agent}'s changes${r.files && r.files.length ? `: ${r.files.join(', ')}` : ''}`);
 };
 
+// The thread named with -t, else the latest one in this folder that works in a separate copy.
+function copyThread(hub, project, o) {
+  const t = o.thread ? findThread(hub, project, o) : hub.threads(project).map((x) => hub.thread(x.id)).find((x) => x.worktree);
+  if (!t) throw new Error('No thread here works in a separate copy. Start one with: tributary ask --separate "..."');
+  if (!t.worktree) throw new Error(`Thread ${short(t.id)} is not working in a separate copy.`);
+  return t;
+}
+
+commands.merge = async (o) => {
+  const hub = await openHub(o);
+  const t = copyThread(hub, projectDir(hub, o), o);
+  const r = await hub.mergeWorktree(t.id);
+  hub.store.save(true);
+  if (o.json) return json(r);
+  out(r.files.length ? `Merged ${r.branch} into ${r.into}: ${r.files.join(', ')}` : `Nothing new to merge from ${r.branch}.`);
+};
+
+commands.discard = async (o) => {
+  const hub = await openHub(o);
+  const t = copyThread(hub, projectDir(hub, o), o);
+  const { branch } = t.worktree;
+  await hub.discardWorktree(t.id);
+  hub.store.save(true);
+  if (o.json) return json({ thread: t.id, discarded: branch });
+  out(`Removed the separate copy and branch ${branch}. Thread ${short(t.id)} works in this folder again.`);
+};
+
 commands.threads = async (o) => {
   const hub = await openHub(o);
   const project = projectDir(hub, o);
@@ -339,7 +374,7 @@ commands.threads = async (o) => {
   if (o.json) return json(rows);
   if (!rows.length) return out(dim('No threads in this folder yet. Start one with: tributary ask "..."'));
   const names = hub.names();
-  rows.forEach((t, i) => out(`${i === 0 ? '*' : ' '} ${short(t.id)}  ${t.title}  ${dim(`${(t.agents.length ? t.agents : [t.lastAgent].filter(Boolean)).map((a) => names[a] || a).join(', ') || '-'} · ${t.count} messages · ${ago(t.updatedAt)}`)}`));
+  rows.forEach((t, i) => out(`${i === 0 ? '*' : ' '} ${short(t.id)}  ${t.title}  ${dim(`${(t.agents.length ? t.agents : [t.lastAgent].filter(Boolean)).map((a) => names[a] || a).join(', ') || '-'} · ${t.count} messages · ${ago(t.updatedAt)}${t.branch ? ` · ${t.branch}` : ''}`)}`));
 };
 
 commands.show = async (o) => {

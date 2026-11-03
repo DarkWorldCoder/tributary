@@ -24,7 +24,7 @@ function ContextContents({ close, onNavigate = () => {} }: { close: () => void; 
     <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-4 text-[13px]">
       <div className="space-y-0.5 border-b pb-3">
         <p className="context-row"><Laptop /><span>This computer</span></p>
-        <button className="context-row w-full hover:bg-muted" title={s.project || ''} onClick={() => leave(() => s.openPanel('files'))}><Folder /><span className="min-w-0 truncate">{project?.name || 'Project files'}</span><ChevronRight className="ml-auto" /></button>
+        <button className="context-row w-full hover:bg-muted" title={s.workdir || ''} onClick={() => leave(() => s.openPanel('files'))}><Folder /><span className="min-w-0 truncate">{project?.name || 'Project files'}</span><ChevronRight className="ml-auto" /></button>
         <p className="context-row" title={s.git?.root}><GitBranch /><span className="min-w-0 truncate">{s.git?.branch || (s.git ? 'No commits yet' : 'Not a Git project')}</span></p>
         <p className="context-row"><AgentAvatar agent={s.agent} size="xs" /><span className="min-w-0 truncate">{s.agent.name}</span><span className="ml-auto text-xs text-muted-foreground">{s.running ? 'Working' : 'Ready'}</span></p>
         <button className="context-row w-full hover:bg-muted" onClick={() => leave(() => s.setRoomOpen(true))}><Users /><span>Project room</span><ChevronRight className="ml-auto" /></button>

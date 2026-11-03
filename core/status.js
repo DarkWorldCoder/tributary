@@ -1,6 +1,7 @@
 'use strict';
-// What the sidebar shows for a thread, derived from its last turn:
-// working, review (finished with file changes you have not opened since), failed, done, or null.
+// What the sidebar shows for a thread, derived from its last turn: working, permission (a running
+// turn waiting for you to allow or deny a tool), review (finished with file changes you have not
+// opened since), failed, done, or null.
 
 const stopped = (m) => m.error === 'Stopped' || (m.notices || []).includes('Stopped by user');
 
@@ -10,8 +11,8 @@ function changedFiles(m) {
 }
 
 function threadStatus(t, { running = false } = {}) {
-  if (running) return 'working';
   const last = [...(t.messages || [])].reverse().find((m) => m.role === 'assistant');
+  if (running) return last && (last.permissions || []).some((p) => p.status === 'pending') ? 'permission' : 'working';
   if (!last || last.ok == null) return null;
   if (last.ok === false) return stopped(last) ? null : 'failed';
   const finishedAt = (last.ts || 0) + (last.durationMs || 0);

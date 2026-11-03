@@ -20,9 +20,9 @@ export function TerminalPanel({ hidden = false }: { hidden?: boolean } = {}) {
   const desktop = s.hub.platform === 'desktop';
   const create = React.useCallback(async (command?: string) => {
     wire();
-    const id = await s.hub.call<string>('createTerminal', { cwd: s.project, command });
-    setTerms((t) => [...t, { id, project: s.project, title: command ? command.split(' ')[0] : `Terminal ${t.filter((x) => x.project === s.project).length + 1}` }]); setActive(id);
-  }, [s.hub, s.project]);
+    const id = await s.hub.call<string>('createTerminal', { cwd: s.workdir, command });
+    setTerms((t) => [...t, { id, project: s.workdir, title: command ? command.split(' ')[0] : `Terminal ${t.filter((x) => x.project === s.workdir).length + 1}` }]); setActive(id);
+  }, [s.hub, s.workdir]);
   // The first terminal opens with the panel, running a pending setup command if there is one.
   React.useEffect(() => { if (desktop && !terms.length) { create(takePendingTerminalCommand() ?? undefined); } // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [desktop]);
@@ -30,14 +30,14 @@ export function TerminalPanel({ hidden = false }: { hidden?: boolean } = {}) {
     const h = (e: Event) => { takePendingTerminalCommand(); create((e as CustomEvent<string>).detail); };
     window.addEventListener('tributary:run-in-terminal', h); return () => window.removeEventListener('tributary:run-in-terminal', h);
   }, [create]);
-  const kill = (id: string) => { s.hub.call('termKill', id).catch(() => {}); setTerms((t) => { const rest = t.filter((x) => x.id !== id); const mine = rest.filter((x) => x.project === s.project); if (active === id) setActive(mine[mine.length - 1]?.id ?? null); return rest; }); };
-  const visible = terms.filter((t) => t.project === s.project);
+  const kill = (id: string) => { s.hub.call('termKill', id).catch(() => {}); setTerms((t) => { const rest = t.filter((x) => x.id !== id); const mine = rest.filter((x) => x.project === s.workdir); if (active === id) setActive(mine[mine.length - 1]?.id ?? null); return rest; }); };
+  const visible = terms.filter((t) => t.project === s.workdir);
   // Each project keeps its own terminals: switching projects shows that project's, starting one if needed.
   React.useEffect(() => {
     if (!desktop || hidden || !terms.length) return;
     if (!visible.length) create(); else if (!visible.some((t) => t.id === active)) setActive(visible[visible.length - 1].id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [s.project, hidden]);
+  }, [s.workdir, hidden]);
   // Shells end with the panel (closing the window or removing the project), not when it is only hidden.
   const termsRef = React.useRef(terms); termsRef.current = terms;
   React.useEffect(() => () => { for (const t of termsRef.current) hub.call('termKill', t.id).catch(() => {}); }, []);
@@ -74,13 +74,13 @@ export function TerminalPanel({ hidden = false }: { hidden?: boolean } = {}) {
       </header>
       <div className="min-h-0 flex-1">
         {desktop ? terms.map((t) => (
-          <XtermView key={t.id} id={t.id} project={t.project} active={!hidden && t.id === active && t.project === s.project}
+          <XtermView key={t.id} id={t.id} project={t.project} active={!hidden && t.id === active && t.project === s.workdir}
             onExit={() => setTerms((x) => x.map((y) => (y.id === t.id ? { ...y, done: true } : y)))}
             onTitle={(title) => setTerms((x) => x.map((y) => (y.id === t.id ? { ...y, shellTitle: title } : y)))}
             onKill={() => kill(t.id)} onOpenFile={(rel, line) => s.openFile(rel, line)} />
         ))
           : <div className="grid h-full place-items-center p-4 text-center text-sm text-muted-foreground">
-              {s.hub.platform === 'vscode' ? <Button variant="outline" onClick={() => s.hub.call('createTerminal', { cwd: s.project })}>Open a VS Code terminal in this project</Button> : 'The terminal runs in the desktop app.'}
+              {s.hub.platform === 'vscode' ? <Button variant="outline" onClick={() => s.hub.call('createTerminal', { cwd: s.workdir })}>Open a VS Code terminal in this project</Button> : 'The terminal runs in the desktop app.'}
             </div>}
       </div>
     </section>

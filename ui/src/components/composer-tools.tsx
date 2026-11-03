@@ -24,7 +24,7 @@ export function ComposerTools({ everyday, planOn, setPlanOn, focusMessage }: { e
   const [guides, setGuides] = React.useState<UiSkill[]>([]); const [servers, setServers] = React.useState<Mcp[]>([]);
   const [using, setUsing] = React.useState(false); const trigger = React.useRef<HTMLButtonElement>(null);
   const searchInput = React.useRef<HTMLInputElement>(null);
-  const context = React.useRef(s.project); context.current = s.project;
+  const context = React.useRef(s.workdir); context.current = s.workdir;
   const inserting = React.useRef(false);
   const changePage = (next: Page) => { setPage(next); setQuery(''); setError(''); };
   const changeOpen = (value: boolean) => { setOpen(value); if (value) changePage('main'); };
@@ -33,7 +33,7 @@ export function ComposerTools({ everyday, planOn, setPlanOn, focusMessage }: { e
     s.setDraft((draft) => prepend ? `${text}\n\n${draft}` : `${draft}${draft && !/\s$/.test(draft) ? ' ' : ''}${text} `);
     inserting.current = true; setOpen(false);
   };
-  React.useEffect(() => { setOpen(false); }, [s.project, s.agentId]);
+  React.useEffect(() => { setOpen(false); }, [s.project, s.workdir, s.agentId]);
   React.useEffect(() => { if (open) requestAnimationFrame(() => searchInput.current?.focus()); }, [open, page]);
   React.useEffect(() => {
     if (!open) return;
@@ -49,7 +49,7 @@ export function ComposerTools({ everyday, planOn, setPlanOn, focusMessage }: { e
     if (page === 'skills') { setSkills([]); setGuides([]); }
     const load = async () => {
       try {
-        if (page === 'files') { const list = await s.hub.call<string[]>('listFiles', s.project); if (alive) setFiles(list); }
+        if (page === 'files') { const list = await s.hub.call<string[]>('listFiles', s.workdir); if (alive) setFiles(list); }
         if (page === 'mcp') { const list = await s.hub.call<Mcp[]>('mcp', s.project); if (alive) setServers(list); }
         if (page === 'skills') {
           const [builtIn, installed] = await Promise.allSettled([s.hub.call<UiSkill[]>('uiSkills'), s.hub.call<Skill[]>('skills', s.project)]);
@@ -62,9 +62,9 @@ export function ComposerTools({ everyday, planOn, setPlanOn, focusMessage }: { e
       finally { if (alive) setBusy(false); }
     };
     void load(); return () => { alive = false; };
-  }, [open, page, retry, s.project, s.hub]);
+  }, [open, page, retry, s.project, s.workdir, s.hub]);
   const useGuide = async (id: string) => {
-    if (using) return; const project = s.project; setUsing(true); setError('');
+    if (using) return; const project = s.workdir; setUsing(true); setError('');
     try { const guide = await s.hub.call<UiSkill>('uiSkill', id); if (!guide.instructions) throw new Error(); if (context.current === project) insert(guide.instructions, true); }
     catch { setError('Could not add this skill. Try again.'); } finally { setUsing(false); }
   };

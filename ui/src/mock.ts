@@ -56,7 +56,7 @@ export function createMockHub(): HubBridge {
   let seq = 10;
   const api: Record<string, (...a: any[]) => unknown> = {
     state: () => st, rescan: () => st.agents, pickProject: () => proj, removeProject: () => undefined,
-    threads: (p: string) => summaries()[p] || [],
+    threads: (p: string) => (summaries()[p] || []).map((x) => ({ ...x, branch: threads[x.id]?.worktree?.branch })),
     thread: (id: string) => threads[id] || { id, project: id === 't4' ? '/home/me/projects/api' : proj, title: summaries()[proj].find((x) => x.id === id)?.title || 'Thread', messages: [], agentSessions: {} },
     createThread: (p: string) => { const t: Thread = { id: `t${++seq}`, project: p, title: 'New thread', messages: [], agentSessions: {} }; threads[t.id] = t; return t; },
     renameThread: (id: string, title: string) => { if (threads[id]) threads[id].title = title; },
@@ -95,6 +95,15 @@ export function createMockHub(): HubBridge {
     editors: () => [{ id: 'vscode', name: 'VS Code' }, { id: 'cursor', name: 'Cursor' }], openInEditor: () => true,
     setProjectFolders: () => [], pickFolder: () => null,
     runTeam: () => ({}), applyRace: () => ({ applied: 'claude' }),
+    createWorktree: (id: string) => {
+      const t = threads[id] || (threads[id] = api.thread(id) as Thread); const branch = `tributary/thread-${id.padEnd(8, '0').slice(0, 8)}`;
+      t.worktree = { path: `/home/me/.config/Tributary/worktrees/thread-${id}/shop`, cwd: `/home/me/.config/Tributary/worktrees/thread-${id}/shop`, branch, base: '4f2c1aa', from: 'main', createdAt: now };
+      setTimeout(() => emit('threads', t.project));
+      return api.worktreeStatus(id);
+    },
+    worktreeStatus: (id: string) => ({ branch: threads[id]?.worktree?.branch, path: threads[id]?.worktree?.path, cwd: threads[id]?.worktree?.cwd, into: 'main', ahead: 0, behind: 1, uncommitted: 2, files: [{ path: 'src/routes/auth.ts', code: 'M' }, { path: 'test/auth.test.ts', code: 'A' }] }),
+    mergeWorktree: (id: string) => { throw new Error(`Can't merge cleanly: these files conflict with changes made on main since this conversation started: src/routes/auth.ts. The work is kept on branch ${threads[id]?.worktree?.branch} so you or an agent can merge it.`); },
+    discardWorktree: (id: string) => { const t = threads[id]; if (t) { delete t.worktree; setTimeout(() => emit('threads', t.project)); } return true; },
     runRace: async (threadId: string, o: any) => {
       const t = threads[threadId];
       const u: UserMessage = { id: `u${Date.now()}`, role: 'user', text: o.task, target: o.agents.join(','), kind: 'race' };

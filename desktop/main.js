@@ -68,7 +68,7 @@ function wireEvents() {
 
 const terminals = new TerminalManager();
 let editors = [];
-const knownProject = (p) => { if (!hub.project(p)) throw new Error('Unknown project'); return p; };
+const knownProject = (p) => { if (!hub.isWorkspace(p)) throw new Error('Unknown project'); return p; };
 
 const API = {
   collaborationState: () => hub.collaborationState(),
@@ -103,9 +103,16 @@ const API = {
   activity: () => hub.activity(),
   lineAuthors: (p, rel) => hub.lineAuthors(p, rel),
   revertTurnHunk: (p, rel, messageId, line) => hub.revertTurnHunk(p, rel, messageId, line),
+  // A conversation's separate working copy (its own git worktree and branch)
+  createWorktree: (id) => hub.createWorktree(id),
+  worktreeStatus: (id) => hub.worktreeStatus(id),
+  mergeWorktree: (id) => hub.mergeWorktree(id),
+  discardWorktree: (id) => hub.discardWorktree(id),
   removeProject: (p) => hub.removeProject(p),
   send: (o) => hub.send(o).then((m) => ({ id: m.id, ok: m.ok })),
   stop: (id) => hub.stop(id),
+  permissions: (threadId) => hub.permissions(threadId),
+  answerPermission: (id, choice) => hub.answerPermission(id, choice),
   saveGateway: (g) => hub.saveGateway(g),
   deleteGateway: (id) => hub.deleteGateway(id),
   setSettings: (s) => hub.setSettings(s),
@@ -118,8 +125,7 @@ const API = {
     return hub.addProject(r.filePaths[0]);
   },
   openFile(p, rel) {
-    if (!hub.project(p)) throw new Error('Unknown project');
-    const abs = path.resolve(p, rel);
+    const abs = path.resolve(knownProject(p), rel);
     if (!inside(p, abs)) throw new Error('Path outside project');
     return shell.openPath(abs);
   },
@@ -228,7 +234,7 @@ function createWindow() {
 app.whenReady().then(async () => {
   Menu.setApplicationMenu(process.platform === 'darwin' ? Menu.buildFromTemplate([{ role: 'appMenu' }, { role: 'editMenu' }, { role: 'viewMenu' }, { role: 'windowMenu' }]) : null);
   const dataDir = app.getPath('userData');
-  hub = new Hub({ dataDir, secrets: new DesktopSecrets(path.join(dataDir, 'secrets.json')) });
+  hub = new Hub({ dataDir, secrets: new DesktopSecrets(path.join(dataDir, 'secrets.json')), approvals: true });
   hub.probeDelayMs = 1500; // agent version probes wait until the window has painted
   // Projects passed on the command line: `tributary /path/to/project`
   for (const a of process.argv.slice(app.isPackaged ? 1 : 2)) { if (!a.startsWith('-')) { try { hub.addProject(a); } catch {} } }
@@ -267,7 +273,7 @@ app.whenReady().then(async () => {
           // Streaming progress: how much of the reply the window shows, against what the hub has.
           const live = hub.store.data.threads.flatMap((t) => t.messages).filter((m) => m.role === 'assistant').pop();
           if (live && !done) console.log(`SMOKE streaming hub=${(live.text || '').length} window=${await win.webContents.executeJavaScript(`([...document.querySelectorAll('.prose-reply')].pop() || {}).textContent?.length || 0`)}`);
-          if (done) break;
+          if (done || hub.permissions().length) break; // a turn waiting for permission: the clicks can answer it
         }
         await new Promise((r) => setTimeout(r, 800));
       }

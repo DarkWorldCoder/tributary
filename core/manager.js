@@ -86,6 +86,7 @@ async function runManager(hub, threadId, team, { step, signal } = {}) {
   return hub.withTurn(threadId, true, true, async (git, ac) => {
     if (!git) throw new Error('The manager needs a git repository, so each worker can build in its own copy.');
     const t = hub.thread(threadId); const proj = hub.project(t.project) || {};
+    const dir = hub.workdir(t); // the conversation's separate copy, when it has one
     const stop = signal && AbortSignal.any ? AbortSignal.any([ac.signal, signal]) : ac.signal;
     const items = tasks.map((x, i) => ({ ...x, agent: workers[i % workers.length].id, state: 'waiting', activity: '', tests: testCommand ? 'pending' : 'skipped', files: [], diff: '', branch: '', note: '', attempts: 0 }));
     const msg = { id: crypto.randomUUID(), role: 'assistant', agent: roles.planner, kind: 'manager', text: '', thinking: '', tools: [], files: [], plan: null, notices: [], error: null, ok: null,
@@ -106,7 +107,7 @@ async function runManager(hub, threadId, team, { step, signal } = {}) {
       const before = await createCheckpoint(git.root, `manager-${msg.id}-${task.id}-${task.attempts}`);
       try { await applyDiff(git.root, c.diff); } catch (e) { return `It conflicted with the pieces merged before it. ${e.message}`; }
       if (testCommand) {
-        const tr = await runTests(t.project, testCommand);
+        const tr = await runTests(dir, testCommand);
         if (!tr.passed) { await restoreCheckpoint(git.root, before); return `The tests failed after merging it with the other pieces, so it was rolled back.\n${tr.output.slice(-2000)}`; }
       }
       return null;
@@ -118,7 +119,7 @@ async function runManager(hub, threadId, team, { step, signal } = {}) {
         if (stop.aborted) return fail(task, 'Stopped');
         Object.assign(task, { state: 'working', activity: '', note: task.attempts > 1 ? 'Second attempt' : '' }); update();
         const agent = hub.agent(task.agent);
-        const r = await race(hub, { root: git.root, project: t.project, prompts: { [agent.id]: workerPrompt(task, items, team.task, feedback) }, agents: [agent], mode, testCommand,
+        const r = await race(hub, { root: git.root, project: dir, prompts: { [agent.id]: workerPrompt(task, items, team.task, feedback) }, agents: [agent], mode, testCommand,
           extraDirs: proj.folders || [], trusted: proj.trusted !== false, signal: stop,
           onUpdate: (c) => { task.state = c.status === 'running' ? 'working' : c.tests === 'running' ? 'testing' : task.state; task.activity = c.activity || ''; task.tests = c.tests; update(); } });
         const c = r.candidates[0];
@@ -153,7 +154,7 @@ async function runManager(hub, threadId, team, { step, signal } = {}) {
 
     const merged = items.filter((x) => x.state === 'done').length;
     msg.manager.phase = 'done';
-    msg.files = [...mergedFiles].map((rel) => ({ path: path.join(t.project, rel), rel, change: 'M' }));
+    msg.files = [...mergedFiles].map((rel) => ({ path: path.join(dir, rel), rel, change: 'M' }));
     msg.ok = merged > 0; msg.durationMs = Date.now() - msg.ts;
     if (stop.aborted) msg.notices.push('Stopped by user');
     update(); hub.store.save(true); hub.emit('message', { threadId, message: msg }); hub.emit('threads', t.project);

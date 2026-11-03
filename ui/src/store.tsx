@@ -73,6 +73,9 @@ function useStoreValue() {
   const [activeDocument, setDocument] = React.useState<{ threadId: string; id: string } | null>(null);
   const threadRef = React.useRef<Thread | null>(null); threadRef.current = thread;
   const projectRef = React.useRef<string | null>(null); projectRef.current = project;
+  // Where this conversation's files are: its separate working copy, or the project folder.
+  const workdir = thread?.worktree?.cwd ?? project;
+  const workdirRef = React.useRef<string | null>(null); workdirRef.current = workdir;
 
   const ready = React.useMemo(() => (st ? st.agents.filter((a) => a.available && a.headless) : []), [st]);
   const agentOf = React.useCallback((id?: string | null): Agent => (st?.agents.find((a) => a.id === id)) ?? { id: id || '?', name: id || 'Agent', color: '#8a8f98', available: false, headless: false, protocol: '' }, [st]);
@@ -81,7 +84,7 @@ function useStoreValue() {
 
   const refreshState = React.useCallback(async () => { const s = await hub.call<HubState>('state'); setSt(s); return s; }, []);
   const loadThreads = React.useCallback(async (p: string) => { const list = await hub.call<ThreadSummary[]>('threads', p); setThreadsBy((m) => ({ ...m, [p]: list })); return list; }, []);
-  const refreshGit = React.useCallback(async (p = projectRef.current) => { const result = p ? await hub.call<GitInfo | null>('gitInfo', p) : null; if (p === projectRef.current) setGit(result); }, []);
+  const refreshGit = React.useCallback(async (p = workdirRef.current) => { const result = p ? await hub.call<GitInfo | null>('gitInfo', p) : null; if (p === workdirRef.current) setGit(result); }, []);
 
   // Opening a thread (or watching it finish) clears its "needs review" badge.
   const markSeen = React.useCallback((id: string) => { hub.call('markThreadSeen', id).catch(() => { /* older host */ }); }, []);
@@ -90,13 +93,13 @@ function useStoreValue() {
     const t = await hub.call<Thread | null>('thread', id);
     if (!t) return;
     markSeen(t.id);
-    threadRef.current = t; projectRef.current = t.project;
-    setWorkspaceExpanded(false); setHome(false); setThread(t); setThreadIdRaw(t.id); setProjectRaw(t.project); refreshGit(t.project);
+    threadRef.current = t; projectRef.current = t.project; workdirRef.current = t.worktree?.cwd ?? t.project;
+    setWorkspaceExpanded(false); setHome(false); setThread(t); setThreadIdRaw(t.id); setProjectRaw(t.project); refreshGit(workdirRef.current);
   }, [refreshGit, setProjectRaw, setThreadIdRaw, markSeen, setWorkspaceExpanded]);
 
   const newThread = React.useCallback((p?: string | null) => {
     const target = p ?? projectRef.current; if (!target) return;
-    threadRef.current = null; projectRef.current = target;
+    threadRef.current = null; projectRef.current = target; workdirRef.current = target;
     setWorkspaceExpanded(false); setHome(false); setThread(null); setThreadIdRaw(null); setProjectRaw(target); refreshGit(target);
   }, [refreshGit, setProjectRaw, setThreadIdRaw, setWorkspaceExpanded]);
 
@@ -109,11 +112,12 @@ function useStoreValue() {
       let t: Thread | null = null;
       if (threadId) { t = await hub.call<Thread | null>('thread', threadId); if (t) p = t.project; }
       if (!t && p) { const first = (await hub.call<ThreadSummary[]>('threads', p))[0]; if (first) t = await hub.call<Thread | null>('thread', first.id); }
+      projectRef.current = p; threadRef.current = t; workdirRef.current = t?.worktree?.cwd ?? p;
       setProjectRaw(p); setThread(t); setThreadIdRaw(t?.id ?? null);
       if (t) markSeen(t.id);
       setLoaded(true);
       // Repository status may be slow on large projects; the conversation is already usable.
-      refreshGit(p).catch((e) => toast.error(`Could not load repository status: ${e.message || e}`));
+      refreshGit(t?.worktree?.cwd ?? p).catch((e) => toast.error(`Could not load repository status: ${e.message || e}`));
     })().catch((e) => toast.error(`Could not load: ${e.message || e}`));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -152,7 +156,7 @@ function useStoreValue() {
     });
     hub.on('insert', (text) => setDraft((d) => (d ? `${d}\n${text}` : text)));
     hub.on('open-thread', (id) => { if (id) openThread(id); });
-    hub.on('notification', (n) => { (n.kind === 'failed' ? toast.error : toast.success)(n.title, { description: n.body }); });
+    hub.on('notification', (n) => { (n.kind === 'failed' ? toast.error : n.kind === 'permission' ? toast.warning : toast.success)(n.title, { description: n.body }); });
     hub.on('focus-project', async (p) => { await refreshState(); await loadThreads(p); if (projectRef.current !== p) newThread(p); });
   }, [loadThreads, newThread, refreshGit, refreshState, openThread, markSeen]);
 
@@ -209,10 +213,10 @@ function useStoreValue() {
   const setPanel = React.useCallback((p: { open: boolean; tab: PanelTab }) => { setPanelRaw(p); ls.set('panelTab', p.tab); }, []);
   const openPanel = React.useCallback((tab: PanelTab) => { setPanel({ open: true, tab }); }, [setPanel]);
   const fileIntentId = React.useRef(0);
-  const openFile = React.useCallback((rel: string, line?: number, intent: 'preview' | 'pinned' = 'preview') => { setFileToOpen({ rel, line, intent, project: projectRef.current, n: ++fileIntentId.current }); setPanel({ open: true, tab: 'files' }); }, [setPanel]);
+  const openFile = React.useCallback((rel: string, line?: number, intent: 'preview' | 'pinned' = 'preview') => { setFileToOpen({ rel, line, intent, project: workdirRef.current, n: ++fileIntentId.current }); setPanel({ open: true, tab: 'files' }); }, [setPanel]);
 
   const openReview = React.useCallback(async (rel?: string | null) => {
-    const p = projectRef.current; if (!p) return;
+    const p = workdirRef.current; if (!p) return;
     await refreshGit(p);
     if (rel && hub.platform === 'vscode') hub.call('openDiff', p, rel);
     setPanel({ open: true, tab: 'review' });
@@ -223,7 +227,7 @@ function useStoreValue() {
     const who = ready.find((a) => a.id === agentId)?.id || ready[0]?.id;
     if (!who) throw new Error('Connect an assistant before starting this task.');
     const result = await hub.call<{ thread: Thread; prompt: string; displayText: string }>('createTask', input);
-    threadRef.current = result.thread; projectRef.current = result.thread.project;
+    threadRef.current = result.thread; projectRef.current = result.thread.project; workdirRef.current = result.thread.worktree?.cwd ?? result.thread.project;
     setProjectRaw(result.thread.project); setThreadIdRaw(result.thread.id); setThread(result.thread); setHome(false); setDraft('');
     await refreshState(); await loadThreads(result.thread.project);
     hub.call('send', { threadId: result.thread.id, agentId: who, text: result.prompt, displayText: result.displayText, mode: 'read', gatewayId: who.startsWith('direct:') ? null : gatewayId || null })
@@ -238,7 +242,7 @@ function useStoreValue() {
   }, []);
 
   return {
-    hub, loaded, st, threadsBy, project, thread, git, agentId, agent, mode, gatewayId, theme, review, settings, palette, ready, running,
+    hub, loaded, st, threadsBy, project, workdir, thread, git, agentId, agent, mode, gatewayId, theme, review, settings, palette, ready, running,
     get draft() { return getDraft(); },
     home, goHome: () => { setHome(true); setPanelRaw((p) => ({ ...p, open: false })); }, startTask, document: activeDocument, setDocument, makeDocument,
     shortcutsOpen, setShortcutsOpen, panel, setPanel, openPanel, fileToOpen, openFile, terminalOpen, teamOpen, setTeamOpen, roomOpen, setRoomOpen,

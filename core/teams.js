@@ -46,13 +46,14 @@ function validateTeam(hub, team) {
   for (const role of recipe.roles) {
     const value = team.roles?.[role.id];
     const ids = role.multi ? value : [value];
-    if (!Array.isArray(ids) || (role.multi && new Set(ids).size < 2)) throw new Error('Pick at least two different agents to ask');
+    const minimum = role.id === 'workers' ? 1 : 2;
+    if (!Array.isArray(ids) || (role.multi && new Set(ids).size < minimum)) throw new Error(role.id === 'workers' ? 'Pick at least one worker agent.' : 'Pick at least two different agents to ask');
     if (ids.length > 8 || new Set(ids).size !== ids.length) throw new Error('Pick up to eight different agents.');
     for (const id of ids) {
       if (!id) throw new Error(`Pick an agent for ${role.id}`);
       const agent = hub.agent(id);
       if (!agent || !agent.available || agent.headless === false) throw new Error(`The selected ${role.id} agent is unavailable.`);
-      if (role.id === 'builder' && agent.protocol === 'direct-chat') throw new Error('Choose an installed coding agent for the builder. Direct text connections cannot change files.');
+      if ((role.id === 'builder' || role.id === 'workers') && agent.protocol === 'direct-chat') throw new Error('Choose an installed coding agent for building. Direct text connections cannot change files.');
     }
   }
   return team;

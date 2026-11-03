@@ -6,14 +6,14 @@ import { imageSource, projectImagePath } from '@/lib/image-preview.mjs';
 import { useStore } from '@/store';
 import type { FileContent } from '@/types';
 
-export function MarkdownImage({ source, alt, baseFile }: { source: string; alt?: string; baseFile?: string }) {
-  const s = useStore(); const host = React.useRef<HTMLSpanElement>(null);
+export function MarkdownImage({ source, alt, baseFile, project: previewProject }: { source: string; alt?: string; baseFile?: string; project?: string }) {
+  const s = useStore(); const project = previewProject ?? s.workdir; const host = React.useRef<HTMLSpanElement>(null);
   const returnFocus = React.useRef<HTMLElement | null>(null);
   const [visible, setVisible] = React.useState(false); const [open, setOpen] = React.useState(false);
   const [file, setFile] = React.useState<FileContent | null>(null); const [failed, setFailed] = React.useState(false);
   const [loaded, setLoaded] = React.useState(false); const [attempt, setAttempt] = React.useState(0);
   const remote = /^https?:\/\//i.test(source);
-  const rel = remote ? null : projectImagePath(source, s.project, baseFile);
+  const rel = remote ? null : projectImagePath(source, project, baseFile);
   React.useEffect(() => {
     if (!host.current) return;
     const observer = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect(); } }, { rootMargin: '200px' });
@@ -24,9 +24,9 @@ export function MarkdownImage({ source, alt, baseFile }: { source: string; alt?:
     if (!visible || remote) return;
     if (!rel) { setFailed(true); return; }
     let current = true;
-    s.hub.call<FileContent>('readFile', s.project, rel).then((result) => { if (current) { setFile(result); if (!imageSource(result)) setFailed(true); } }).catch(() => { if (current) setFailed(true); });
+    s.hub.call<FileContent>('readFile', project, rel).then((result) => { if (current) { setFile(result); if (!imageSource(result)) setFailed(true); } }).catch(() => { if (current) setFailed(true); });
     return () => { current = false; };
-  }, [source, rel, s.project, s.hub, visible, remote, attempt]);
+  }, [source, rel, project, s.hub, visible, remote, attempt]);
   const src = React.useMemo(() => file ? imageSource(file) : null, [file]);
   const name = alt || rel?.split('/').pop() || 'Image';
   if (remote) return <span className="my-2 inline-flex max-w-full items-center gap-2 rounded-lg border px-3 py-1 text-xs"><ImageIcon className="size-4 shrink-0 text-muted-foreground" /><button type="button" className="min-h-8 truncate text-left underline underline-offset-4 max-sm:min-h-11" onClick={() => s.hub.call('openExternal', source)}>{alt || 'Open image'}</button></span>;

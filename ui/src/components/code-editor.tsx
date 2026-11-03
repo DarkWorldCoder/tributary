@@ -86,8 +86,8 @@ const highlight = HighlightStyle.define([
 const undoKey = typeof navigator !== 'undefined' && /Mac/.test(navigator.platform) ? '⌘⌥Z' : 'Ctrl+Alt+Z';
 
 /** A real code editor (CodeMirror 6): multi-cursor, search, folding, bracket matching, undo history. */
-export function CodeEditor({ path, value, onChange, onSave, readOnly, line, wrap = false, onCursorChange, onToggleWrap }: {
-  path: string; value: string; onChange?: (v: string) => void; onSave?: () => void; readOnly?: boolean; line?: number; wrap?: boolean; onCursorChange?: (position: { line: number; column: number }) => void; onToggleWrap?: () => void;
+export function CodeEditor({ project: documentProject, path, value, onChange, onSave, readOnly, line, wrap = false, onCursorChange, onToggleWrap }: {
+  project?: string; path: string; value: string; onChange?: (v: string) => void; onSave?: () => void; readOnly?: boolean; line?: number; wrap?: boolean; onCursorChange?: (position: { line: number; column: number }) => void; onToggleWrap?: () => void;
 }) {
   const host = React.useRef<HTMLDivElement>(null);
   const view = React.useRef<EditorView | null>(null);
@@ -96,7 +96,7 @@ export function CodeEditor({ path, value, onChange, onSave, readOnly, line, wrap
   const wrapping = React.useRef(new Compartment());
   const cb = React.useRef({ onChange, onSave, onCursorChange, onToggleWrap }); cb.current = { onChange, onSave, onCursorChange, onToggleWrap };
   // Agent-aware editing: who wrote each line (Alt+B toggles it), agent edits highlighted, a selection handed to an agent.
-  const s = useStore(); const store = React.useRef(s); store.current = s;
+  const s = useStore(); const workspace = documentProject ?? s.workdir; const store = React.useRef(s); store.current = s;
   const [blameOn, setBlameOn] = React.useState(() => { try { return localStorage.getItem('tributary.blame') !== 'off'; } catch { return true; } });
   const [diskChanged, setDiskChanged] = React.useState(0);
   // Undo one agent's change: click its blame bar for a menu, or press Mod-Alt-Z on a line it wrote. The hub puts back
@@ -105,7 +105,7 @@ export function CodeEditor({ path, value, onChange, onSave, readOnly, line, wrap
   const refocus = React.useRef(true);
   const undo = React.useRef(async (_turn: BlameTurn, _line: number) => {});
   undo.current = async (turn, line) => {
-    const v = view.current; const st = store.current; const project = st.project; if (!v || !project || readOnly) return;
+    const v = view.current; const st = store.current; const project = documentProject ?? st.workdir; if (!v || !project || readOnly) return;
     const name = st.agentOf(turn.agent).name;
     try {
       // Line numbers and the text written back come from the saved file, so unsaved edits would be lost.
@@ -170,16 +170,16 @@ export function CodeEditor({ path, value, onChange, onSave, readOnly, line, wrap
   // Agents changing this file in the project right now (not those working in their own copy).
   const [editing, setEditing] = React.useState<string[]>([]);
   React.useEffect(() => {
-    const pick = (all: ActivityEntry[]) => setEditing([...new Set(all.filter((e) => e.project === s.project && (e.kind === 'turn' || e.kind === 'team'))
+    const pick = (all: ActivityEntry[]) => setEditing([...new Set(all.filter((e) => (e.workdir || e.project) === workspace && (e.kind === 'turn' || e.kind === 'team'))
       .flatMap((e) => e.workers.filter((w) => w.state === 'working' && w.files.some((f) => f.rel === path)).map((w) => w.agent)))]);
     s.hub.call<ActivityEntry[]>('activity').then(pick).catch(() => {});
     const off = s.hub.on('activity', pick);
     return () => { if (typeof off === 'function') off(); };
-  }, [s.hub, s.project, path]);
+  }, [s.hub, workspace, path]);
 
   // Blame for this file, fetched when it opens, after it changes on disk, and when blame is switched on.
   React.useEffect(() => {
-    const v = view.current; const project = s.project; if (!v) return;
+    const v = view.current; const project = workspace; if (!v) return;
     if (!blameOn || !project) { showBlame(v, null, s.agentOf); return; }
     let alive = true;
     const timer = setTimeout(() => {
@@ -187,7 +187,7 @@ export function CodeEditor({ path, value, onChange, onSave, readOnly, line, wrap
     }, 300);
     return () => { alive = false; clearTimeout(timer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [path, blameOn, s.project, diskChanged]);
+  }, [path, blameOn, workspace, diskChanged]);
 
   return (
     <div className="relative h-full min-h-0 overflow-hidden">

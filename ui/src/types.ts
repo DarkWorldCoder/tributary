@@ -36,12 +36,18 @@ export interface RaceCandidate {
   branch?: string; commit?: string;
 }
 export interface RaceInfo { task: string; testCommand: string; agents: string[]; candidates: RaceCandidate[]; applied: string | null; base?: string; judge?: { agent: string; winner: string | null; messageId: string } }
-export interface AppNotification { id: string; ts: number; read: boolean; kind: 'done' | 'failed' | 'attention' | 'info'; threadId?: string; title: string; body?: string }
+export interface AppNotification { id: string; ts: number; read: boolean; kind: 'done' | 'failed' | 'attention' | 'info' | 'permission'; threadId?: string; title: string; body?: string }
 export interface FileContent { rel: string; size: number; binary: boolean; truncated: boolean; content: string; mtime: number; base64?: string }
 export interface MemoryInfo { enabled: boolean; memory: string | null; worklog: string[]; revision?: string; bytes?: number; context?: { includeInPrompts: boolean; budget: number } }
 export interface ThreadChange { rel: string; turns: { messageId: string; agent: string; ts?: number; change?: string; team?: string }[] }
-export type ThreadStatus = 'working' | 'review' | 'failed' | 'done';
-export interface ThreadSummary { id: string; title: string; updatedAt: number; lastAgent: string | null; count?: number; running?: boolean; agents: string[]; status?: ThreadStatus | null }
+export type ThreadStatus = 'working' | 'permission' | 'review' | 'failed' | 'done';
+export interface PermissionOption { optionId: string; name: string; kind: 'allow_once' | 'allow_always' | 'reject_once' | 'reject_always' | string }
+/** A tool call the agent asked to make. Pending until the person answers, the turn is stopped, or it ends. */
+export interface PermissionRequest {
+  id: string; threadId: string; messageId: string; agent: string; toolCallId?: string; title: string; kind: string;
+  command?: string; path?: string; options: PermissionOption[]; status: 'pending' | 'allowed' | 'always' | 'rejected' | 'cancelled'; ts: number;
+}
+export interface ThreadSummary { id: string; title: string; updatedAt: number; lastAgent: string | null; count?: number; running?: boolean; agents: string[]; status?: ThreadStatus | null; branch?: string }
 export interface Tool { id?: string; name: string; input?: Record<string, unknown> & { command?: unknown }; status: 'running' | 'done' | 'error'; output?: string; files?: string[] }
 export interface FileChange { path: string; rel: string; external?: boolean; change?: string; viaGit?: boolean }
 export interface UserMessage { id: string; role: 'user'; text: string; target: string; ts?: number; kind?: 'chat' | 'plan' | 'implement' | 'race'; team?: { recipe: string; role: string } }
@@ -52,10 +58,14 @@ export interface AgentMessage {
   mode: Mode; gateway?: string | null; handoff?: 'new' | 'resume' | 'join' | 'catch-up'; resumed?: boolean;
   durationMs?: number; costUsd?: number; usage?: Record<string, number>; ts?: number;
   kind?: 'chat' | 'plan' | 'implement' | 'race'; planFrom?: string; checkpoint?: string;
-  team?: { recipe: string; role: string }; race?: RaceInfo;
+  team?: { recipe: string; role: string }; race?: RaceInfo; permissions?: PermissionRequest[];
 }
 export type Message = UserMessage | AgentMessage;
-export interface Thread { id: string; project: string; title: string; messages: Message[]; agentSessions: Record<string, string>; lastAgent?: string | null; updatedAt?: number; task?: { templateId: string; material?: string }; documents?: SavedDocument[] }
+/** A conversation's separate working copy: its own git worktree (path) and branch, made from the project's last commit on `from`. */
+export interface Worktree { path: string; cwd: string; branch: string; base: string; from: string; createdAt: number; mergedAt?: number }
+export interface WorktreeStatus { branch: string; path: string; cwd: string; into: string; ahead: number; behind: number; uncommitted: number; files: { path: string; code: string }[]; missing?: boolean }
+export interface MergeResult { into: string; branch: string; commit: string; files: string[] }
+export interface Thread { id: string; project: string; title: string; messages: Message[]; agentSessions: Record<string, string>; lastAgent?: string | null; updatedAt?: number; task?: { templateId: string; material?: string }; documents?: SavedDocument[]; worktree?: Worktree }
 export interface GitInfo { root: string; branch: string; changed: { code: string; path: string; from?: string }[]; stat?: string }
 
 export interface HubEvents {
@@ -71,7 +81,7 @@ export interface ActivityWorker {
   state: 'working' | 'testing' | 'merging' | 'waiting' | 'done' | 'failed' | 'skipped'; doing: string;
   files: { rel: string; change?: string }[]; tests?: string; branch?: string; tools?: number;
 }
-export interface ActivityEntry { threadId: string; title: string; project: string; startedAt?: number; kind: 'turn' | 'team' | 'race' | 'manager'; recipe?: string; recipeName?: string; messageId?: string; phase?: string; workers: ActivityWorker[] }
+export interface ActivityEntry { threadId: string; title: string; project: string; workdir?: string; startedAt?: number; kind: 'turn' | 'team' | 'race' | 'manager'; recipe?: string; recipeName?: string; messageId?: string; phase?: string; workers: ActivityWorker[] }
 export interface HubBridge {
   platform: 'desktop' | 'vscode' | 'mock';
   call<T = unknown>(method: string, ...args: unknown[]): Promise<T>;

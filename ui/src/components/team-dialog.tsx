@@ -56,7 +56,7 @@ export function TeamDialog() {
   const multi = kind === 'race' || kind === 'council' || kind === 'manager';
   const roleList = kind === 'plan-build-review' ? ['planner', 'builder', 'reviewer'] : kind === 'build-review' ? ['builder', 'reviewer'] : kind === 'council' ? ['synthesizer'] : kind === 'manager' ? ['planner'] : [];
   const LABEL: Record<string, string> = { planner: 'Planner', builder: 'Builder', reviewer: 'Reviewer', synthesizer: 'Summarizer' };
-  const canStart = task.trim() && (multi ? picked.length >= 2 : roleList.every((r) => ready.some((a) => a.id === roles[r] && (r !== 'builder' || !a.connectionId)))) && (kind !== 'council' || roles.synthesizer);
+  const canStart = task.trim() && (multi ? picked.length >= (kind === 'manager' ? 1 : 2) && (kind !== 'manager' || ready.some((a) => a.id === roles.planner) && picked.every((id) => ready.some((a) => a.id === id && !a.connectionId))) : roleList.every((r) => ready.some((a) => a.id === roles[r] && (r !== 'builder' || !a.connectionId)))) && (kind !== 'council' || roles.synthesizer);
 
   const start = async () => {
     let t = s.thread;
@@ -95,7 +95,7 @@ export function TeamDialog() {
                   <ToggleGroupItem key={a.id} value={a.id} className="h-9 max-w-full gap-2 rounded-lg px-2 text-[13px] data-[state=on]:bg-muted"><AgentAvatar agent={a} size="sm" muted={!picked.includes(a.id)} /><span className="truncate">{a.name}</span></ToggleGroupItem>
                 ))}
               </ToggleGroup>
-              <FieldDescription>Pick at least two.</FieldDescription></Field>
+              <FieldDescription>{kind === 'manager' ? 'Pick at least one worker.' : 'Pick at least two.'}</FieldDescription></Field>
           )}
           {roleList.length > 0 && (
             <div className="grid gap-3 sm:grid-cols-3">
