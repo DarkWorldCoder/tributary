@@ -64,7 +64,9 @@ export interface AgentMessage {
 export type Message = UserMessage | AgentMessage;
 /** A conversation's separate working copy: its own git worktree (path) and branch, made from the project's last commit on `from`. */
 export interface Worktree { path: string; cwd: string; branch: string; base: string; from: string; createdAt: number; mergedAt?: number }
-export interface WorktreeStatus { branch: string; path: string; cwd: string; into: string; ahead: number; behind: number; uncommitted: number; files: { path: string; code: string }[]; missing?: boolean; copied?: string[]; port?: number }
+export interface WorktreeStatus { branch: string; path: string; cwd: string; into: string; ahead: number; behind: number; uncommitted: number; files: { path: string; code: string }[]; missing?: boolean; copied?: string[]; port?: number; setup?: CopySetup }
+/** The project's setup script in a separate copy (.tributary/settings.json scripts.setup). */
+export interface CopySetup { state: 'untrusted' | 'pending' | 'running' | 'done' | 'failed' | 'stopped'; command: string; hash: string; output?: string; ms?: number }
 export interface MergeResult { into: string; branch: string; commit: string; files: string[] }
 export interface Thread { id: string; project: string; title: string; messages: Message[]; agentSessions: Record<string, string>; lastAgent?: string | null; updatedAt?: number; task?: { templateId: string; material?: string }; documents?: SavedDocument[]; worktree?: Worktree }
 export interface GitInfo { root: string; branch: string; changed: { code: string; path: string; from?: string }[]; stat?: string }

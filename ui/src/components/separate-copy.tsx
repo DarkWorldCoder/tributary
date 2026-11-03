@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { GitBranch, GitMerge, Trash2 } from 'lucide-react';
+import { CircleCheck, CircleX, GitBranch, GitMerge, Play, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -25,8 +25,8 @@ export function SeparateCopy() {
   const s = useStore(); const t = s.thread; const copy = t?.worktree;
   const project = s.st?.projects.find((p) => p.path === s.project);
   const [status, setStatus] = React.useState<WorktreeStatus | null>(null);
-  const [busy, setBusy] = React.useState<'create' | 'merge' | 'discard' | null>(null);
-  const [confirm, setConfirm] = React.useState<'merge' | 'discard' | null>(null);
+  const [busy, setBusy] = React.useState<'create' | 'merge' | 'discard' | 'setup' | null>(null);
+  const [confirm, setConfirm] = React.useState<'merge' | 'discard' | 'setup' | null>(null);
   const [open, setOpen] = React.useState(false);
   const [problem, setProblem] = React.useState<string | null>(null);
 
@@ -40,6 +40,9 @@ export function SeparateCopy() {
   React.useEffect(() => { setProblem(null); }, [threadId, branch]);
   React.useEffect(() => { if (!s.running) load(); }, [load, s.running, turns]);
   React.useEffect(() => { if (open) load(); }, [open, load]);
+  // Follow a setup script while it runs.
+  const setupRunning = status?.setup?.state === 'running';
+  React.useEffect(() => { if (!setupRunning) return; const id = setInterval(load, 1500); return () => clearInterval(id); }, [setupRunning, load]);
 
   // Tasks and the personal workspace are not repositories you merge into.
   if (!s.project || !project || project.kind || t?.task || (!s.git && !copy)) return null;
@@ -51,6 +54,8 @@ export function SeparateCopy() {
       const st = await s.hub.call<WorktreeStatus>('createWorktree', target.id);
       await s.openThread(target.id); s.loadThreads(target.project);
       toast.success('This conversation now works in a separate copy', { description: `On branch ${st.branch}, from the last commit on ${st.into}. Your project folder is unchanged until you merge.` });
+      setStatus(st);
+      if (st.setup?.state === 'untrusted') setConfirm('setup'); // the project's setup script runs only once you've read it
     } catch (e) { toast.error(message(e)); } finally { setBusy(null); }
   };
   const merge = async () => {
@@ -61,6 +66,16 @@ export function SeparateCopy() {
       toast.success(r.files.length ? `Merged ${plural(r.files.length, 'file')} into ${r.into}` : `Nothing new to merge from ${r.branch}`);
       s.refreshState();
     } catch (e) { setProblem(message(e)); setOpen(true); } finally { setBusy(null); load(); } // a refused merge still commits the copy's work
+  };
+  const runSetup = async (trust?: string) => {
+    if (!t) return;
+    setBusy('setup');
+    try {
+      if (trust) await s.hub.call('trustScript', t.project, trust);
+      const p = s.hub.call('runSetup', t.id); setTimeout(load, 300);
+      const r = await p as { state: string };
+      if (r.state === 'failed') toast.error('The setup script failed', { description: 'Its output is in the branch popover.' });
+    } catch (e) { toast.error(message(e)); } finally { setBusy(null); load(); }
   };
   const discard = async () => {
     if (!t) return;
@@ -103,6 +118,18 @@ export function SeparateCopy() {
               </PopoverDescription>
             </PopoverHeader>
             <p className="truncate font-mono text-[11px] text-muted-foreground" title={copy.path}>{copy.path}</p>
+            {status?.setup && !status.missing && (
+              <div className="flex items-center gap-1.5 text-xs">
+                {status.setup.state === 'running' ? <Spinner className="size-3.5" /> : status.setup.state === 'done' ? <CircleCheck className="size-3.5 text-green-600 dark:text-green-500" />
+                  : status.setup.state === 'failed' ? <CircleX className="size-3.5 text-destructive" /> : <Play className="size-3.5 text-muted-foreground" />}
+                <span className="min-w-0 flex-1 truncate" title={status.setup.command}>
+                  {{ untrusted: 'Setup script not run yet', pending: 'Setup starting…', running: 'Running setup…', done: `Setup done${status.setup.ms ? ` in ${Math.round(status.setup.ms / 1000)} s` : ''}`, failed: 'Setup failed', stopped: 'Setup stopped' }[status.setup.state]}
+                </span>
+                {status.setup.state === 'untrusted' ? <Button size="xs" variant="outline" disabled={!!busy} onClick={() => setConfirm('setup')}>Review and run</Button>
+                  : ['failed', 'stopped', 'done'].includes(status.setup.state) && <Button size="xs" variant="ghost" disabled={!!busy} onClick={() => runSetup()}>Run again</Button>}
+              </div>
+            )}
+            {status?.setup?.state === 'failed' && status.setup.output && <pre className="max-h-32 overflow-auto whitespace-pre-wrap rounded-md bg-muted p-2 font-mono text-[11px]">{status.setup.output.slice(-1500)}</pre>}
             {status && !status.missing && (status.port || status.copied?.length) ? (
               <p className="text-xs text-muted-foreground" title={status.copied?.join('\n')}>
                 {status.copied?.length ? `Copied ${plural(status.copied.length, 'ignored file')} (${status.copied.slice(0, 3).join(', ')}${status.copied.length > 3 ? ', …' : ''}). ` : ''}
@@ -137,6 +164,18 @@ export function SeparateCopy() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={merge}>Merge</AlertDialogAction></AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={confirm === 'setup'} onOpenChange={(v) => setConfirm(v ? 'setup' : null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Run this project's setup script?</AlertDialogTitle>
+            <AlertDialogDescription>
+              It comes from .tributary/settings.json in the repository and runs in the copy, with the copy's own ports. Once you trust it, it runs by itself in every new copy of this project, until its text changes.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded-md bg-muted p-3 font-mono text-xs">{status?.setup?.command}</pre>
+          <AlertDialogFooter><AlertDialogCancel>Not now</AlertDialogCancel><AlertDialogAction onClick={() => runSetup(status?.setup?.hash)}>Trust and run</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
       <AlertDialog open={confirm === 'discard'} onOpenChange={(v) => setConfirm(v ? 'discard' : null)}>

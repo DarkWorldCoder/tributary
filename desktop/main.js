@@ -121,6 +121,8 @@ const API = {
   worktreeStatus: (id) => hub.worktreeStatus(id),
   mergeWorktree: (id) => hub.mergeWorktree(id),
   discardWorktree: (id) => hub.discardWorktree(id),
+  runSetup: (id) => hub.runSetup(id),
+  trustScript: (p, hash) => hub.trustScript(knownProject(p), hash),
   removeProject: (p) => hub.removeProject(p),
   send: (o) => hub.send(o).then((m) => ({ id: m.id, ok: m.ok })),
   stop: (id) => hub.stop(id),

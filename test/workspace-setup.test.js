@@ -106,3 +106,67 @@ test('each copy gets its own block of ports, which its turns and terminals see',
   assert.strictEqual((await hub.createWorktree(c.id)).port, sa.port);
   hub.store.save(true);
 });
+
+// A project whose committed .tributary/settings.json has a setup script.
+const withSetup = (d, script) => {
+  put(d, '.tributary/settings.json', JSON.stringify({ scripts: { setup: script } }, null, 2));
+  sh(d, 'add', '.tributary/settings.json'); sh(d, '-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'setup script');
+};
+const until = async (fn, ms = 15000) => { const t0 = Date.now(); while (!(await fn())) { if (Date.now() - t0 > ms) throw new Error('timed out'); await new Promise((r) => setTimeout(r, 50)); } };
+const node = JSON.stringify(process.execPath);
+
+test('a setup script runs in a new copy only after you trust that exact script', async () => {
+  const { d, hub } = await setup();
+  withSetup(d, `${node} -e "require('fs').writeFileSync('setup-ran.txt', process.env.TRIBUTARY_PORT + ' ' + require('fs').existsSync('.env'))"`);
+  const a = hub.createThread(d);
+  const st = await hub.createWorktree(a.id);
+  assert.strictEqual(st.setup.state, 'untrusted');
+  assert.match(st.setup.command, /setup-ran\.txt/); assert.match(st.setup.hash, /^[0-9a-f]{64}$/);
+  await new Promise((r) => setTimeout(r, 300));
+  assert.ok(!fs.existsSync(path.join(st.path, 'setup-ran.txt')), 'an untrusted script never runs');
+  await assert.rejects(hub.runSetup(a.id), /trust/i);
+
+  hub.trustScript(d, st.setup.hash);
+  const done = await hub.runSetup(a.id);
+  assert.strictEqual(done.state, 'done');
+  assert.strictEqual(fs.readFileSync(path.join(st.path, 'setup-ran.txt'), 'utf8'), `${st.port} true`, 'it sees the copy\'s ports and the copied .env');
+  // The next copy of this project runs the trusted script by itself, without holding up anything.
+  const b = hub.createThread(d);
+  const sb = await hub.createWorktree(b.id);
+  assert.ok(['running', 'done'].includes(sb.setup.state), sb.setup.state);
+  await until(() => hub.thread(b.id).worktree.setup.state === 'done');
+  assert.ok(fs.existsSync(path.join(sb.path, 'setup-ran.txt')));
+  hub.store.save(true);
+});
+
+test('a changed setup script needs your OK again, and a failing one keeps its output', async () => {
+  const { d, hub } = await setup();
+  withSetup(d, 'echo first');
+  const a = hub.createThread(d); const sa = await hub.createWorktree(a.id);
+  hub.trustScript(d, sa.setup.hash);
+  withSetup(d, 'echo changed && echo broken >&2 && exit 3');
+  const b = hub.createThread(d); const sb = await hub.createWorktree(b.id);
+  assert.strictEqual(sb.setup.state, 'untrusted');
+  hub.trustScript(d, sb.setup.hash);
+  const r = await hub.runSetup(b.id);
+  assert.strictEqual(r.state, 'failed');
+  assert.match(r.output, /changed[\s\S]*broken/);
+  assert.strictEqual((await hub.worktreeStatus(b.id)).setup.state, 'failed');
+  hub.store.save(true);
+});
+
+test('a long setup does not hold up turns, and discarding the copy stops it', async () => {
+  const { d, hub } = await setup([agent('dev', "fs.writeFileSync('turn.txt', 'ok')")]);
+  withSetup(d, `${node} -e "setTimeout(() => require('fs').writeFileSync('late.txt', 'x'), 4000)"`);
+  const a = hub.createThread(d); const sa = await hub.createWorktree(a.id);
+  hub.trustScript(d, sa.setup.hash);
+  const running = hub.runSetup(a.id);
+  await until(() => hub.thread(a.id).worktree.setup.state === 'running');
+  const t0 = Date.now();
+  await hub.send({ threadId: a.id, agentId: 'dev', text: 'go' });
+  assert.ok(Date.now() - t0 < 3500, 'the turn ran while setup was still going');
+  assert.ok(fs.existsSync(path.join(sa.cwd, 'turn.txt')));
+  await hub.discardWorktree(a.id);
+  assert.strictEqual((await running).state, 'stopped');
+  hub.store.save(true);
+});

@@ -3,6 +3,7 @@
 // run: .env files, local config. These are copied in, never linked, so one agent's edit can't change every copy.
 // Which files: those listed in .worktreeinclude (gitignore syntax, the file Claude Code, the Codex app and
 // Conductor also read), or by default the gitignored .env files. Only files git ignores are ever copied.
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const { execFile } = require('child_process');
@@ -77,4 +78,14 @@ const copyEnv = (copy, root) => (copy && copy.port ? {
   TRIBUTARY_PORT: String(copy.port), PORT: String(copy.port), TRIBUTARY_WORKSPACE: copy.path, TRIBUTARY_ROOT_PATH: copy.root || root,
 } : {});
 
-module.exports = { includedFiles, copyIncluded, unignoredCopies, freePort, copyEnv, PORTS };
+// The project's own scripts, from a checkout's committed .tributary/settings.json: { scripts: { setup, verify } },
+// each a shell command. A script runs only once you trust it, by the hash of its exact text.
+function projectScripts(dir) {
+  try {
+    const s = JSON.parse(fs.readFileSync(path.join(dir, '.tributary', 'settings.json'), 'utf8')).scripts || {};
+    return Object.fromEntries(['setup', 'verify'].filter((k) => typeof s[k] === 'string' && s[k].trim()).map((k) => [k, s[k].trim()]));
+  } catch { return {}; }
+}
+const scriptHash = (command) => crypto.createHash('sha256').update(command).digest('hex');
+
+module.exports = { includedFiles, copyIncluded, unignoredCopies, freePort, copyEnv, PORTS, projectScripts, scriptHash };

@@ -64,6 +64,7 @@ const API = {
   lineAuthors: (p, rel) => hub.lineAuthors(p, rel),
   revertTurnHunk: (p, rel, messageId, line) => hub.revertTurnHunk(p, rel, messageId, line),
   createWorktree: (id) => hub.createWorktree(id), worktreeStatus: (id) => hub.worktreeStatus(id), mergeWorktree: (id) => hub.mergeWorktree(id), discardWorktree: (id) => hub.discardWorktree(id),
+  runSetup: (id) => hub.runSetup(id), trustScript: (p, hash) => hub.trustScript(knownProject(p), hash),
   removeProject: () => false,
   async pickProject() { const r = await vscode.window.showOpenDialog({ canSelectFolders: true, canSelectFiles: false, openLabel: 'Open folder in Tributary' }); if (!r?.[0]) return null; hub.addProject(r[0].fsPath); return r[0].fsPath; },
   send: (o) => hub.send(o).then((m) => ({ id: m.id, ok: m.ok })),

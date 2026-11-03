@@ -33,7 +33,8 @@ const { activityOf, watchActivity } = require('./activity');
 const { judgeRace } = require('./manager');
 const { lineAuthors, revertTurnHunk } = require('./attribution');
 const worktrees = require('./worktrees');
-const { copyIncluded, freePort, copyEnv } = require('./workspace-setup');
+const { copyIncluded, freePort, copyEnv, projectScripts, scriptHash } = require('./workspace-setup');
+const { runScript } = require('./run-script');
 
 const attachments = require('./attachments');
 const uid = () => crypto.randomUUID();
@@ -262,6 +263,7 @@ class Hub extends EventEmitter {
     for (const scope of this.alwaysAllowed.keys()) if (scope.startsWith(`${id}\0`)) this.alwaysAllowed.delete(scope);
     this.store.data.threads = this.store.data.threads.filter((x) => x.id !== id);
     this.store.save(); this.emit('threads', t.project);
+    this.setupRuns?.get(id)?.abort();
     // Its separate copy goes with it. Its work is committed to its branch first, and the branch stays.
     if (t.worktree) return gitInfo(t.project).then((g) => this.removeCopy(g ? g.root : t.project, t.worktree, { keepBranch: true, message: t.title })).catch(() => {});
   }
@@ -744,6 +746,36 @@ class Hub extends EventEmitter {
     const t = dir && this.store.data.threads.find((x) => x.worktree && (dir === x.worktree.path || dir.startsWith(x.worktree.path + path.sep)));
     return t ? this.workspaceEnv(t) : {};
   }
+  // The project's setup script (.tributary/settings.json) runs in a new copy once you trust its exact text; it runs
+  // in the background, so turns can start meanwhile, and stops when the copy is discarded.
+  trustScript(dir, hash) {
+    const project = this.project(dir); if (!project) throw new Error('Unknown project');
+    if (!/^[0-9a-f]{64}$/.test(hash)) throw new Error('Not a script hash');
+    project.trustedScripts = [...new Set([...(project.trustedScripts || []), hash])];
+    this.store.save(true); this.emit('state');
+    return true;
+  }
+  async runSetup(threadId) {
+    const t = this.thread(threadId); const copy = t?.worktree;
+    if (!copy) throw new Error('This conversation is not working in a separate copy.');
+    const command = projectScripts(copy.path).setup;
+    if (!command) throw new Error('This project has no setup script. Add scripts.setup to .tributary/settings.json.');
+    const hash = scriptHash(command);
+    if (!(this.project(t.project)?.trustedScripts || []).includes(hash)) {
+      copy.setup = { state: 'untrusted', command, hash };
+      throw new Error('Trust this setup script before it runs in the copy.');
+    }
+    const runs = this.setupRuns || (this.setupRuns = new Map());
+    runs.get(threadId)?.abort();
+    const ac = new AbortController(); runs.set(threadId, ac);
+    copy.setup = { state: 'running', command, hash, startedAt: now() };
+    this.store.save(true); this.emit('threads', t.project);
+    const r = await runScript(command, { cwd: copy.path, env: this.workspaceEnv(t), signal: ac.signal });
+    if (runs.get(threadId) === ac) runs.delete(threadId);
+    copy.setup = { state: r.aborted ? 'stopped' : r.passed ? 'done' : 'failed', command, hash, output: r.output, ms: r.ms, finishedAt: now() };
+    this.store.save(true); this.emit('threads', t.project);
+    return copy.setup;
+  }
   // A project folder, or a conversation's separate copy of one.
   isWorkspace(dir) { return !!this.project(dir) || this.store.data.threads.some((t) => t.worktree && t.worktree.cwd === dir); }
   async changeCopy(threadId, { needCopy = true } = {}, work) {
@@ -773,10 +805,13 @@ class Hub extends EventEmitter {
       const copied = await copyIncluded(root, w.path).catch(() => []);
       t.worktree = { ...w, cwd: path.join(w.path, path.relative(repo, fs.realpathSync(t.project))), createdAt: now(), copied, root: repo };
       this.workspaceEnv(t); // takes its block of ports
+      const setup = projectScripts(w.path).setup;
+      if (setup) t.worktree.setup = { state: (this.project(t.project)?.trustedScripts || []).includes(scriptHash(setup)) ? 'pending' : 'untrusted', command: setup, hash: scriptHash(setup) };
       // Agent sessions belong to the folder they ran in; the next turn joins with a summary instead.
       t.agentSessions = {};
       this.store.save(true);
     });
+    if (this.thread(threadId)?.worktree?.setup?.state === 'pending') this.runSetup(threadId).catch(() => {});
     return this.worktreeStatus(threadId);
   }
   async worktreeStatus(threadId) {
@@ -784,7 +819,7 @@ class Hub extends EventEmitter {
     if (!t.worktree) throw new Error('This conversation is not working in a separate copy.');
     const g = await gitInfo(t.project); if (!g) throw new Error('Not a git repository');
     this.workspaceEnv(t); // a copy made before ports existed takes its block now
-    return { ...(await worktrees.worktreeStatus(g.root, t.worktree)), cwd: t.worktree.cwd, from: t.worktree.from, copied: t.worktree.copied || [], port: t.worktree.port };
+    return { ...(await worktrees.worktreeStatus(g.root, t.worktree)), cwd: t.worktree.cwd, from: t.worktree.from, copied: t.worktree.copied || [], port: t.worktree.port, setup: t.worktree.setup };
   }
   // Into the project's current branch. Refused, with the files named, when it would conflict.
   async mergeWorktree(threadId) {
@@ -799,6 +834,7 @@ class Hub extends EventEmitter {
   }
   // Remove the copy and its branch; the conversation works in the project folder again.
   async discardWorktree(threadId) {
+    this.setupRuns?.get(threadId)?.abort();
     return this.changeCopy(threadId, {}, async (t, root) => {
       await this.removeCopy(root, t.worktree);
       delete t.worktree; t.agentSessions = {};
