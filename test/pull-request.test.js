@@ -1,18 +1,18 @@
 'use strict';
-process.env.TRIBUTARY_CHECKPOINT_DIR = process.env.TRIBUTARY_CHECKPOINT_DIR || require('fs').mkdtempSync(require('path').join(require('os').tmpdir(), 'tributary-ckpt-'));
+require('./helpers/tmp').useCheckpointDir();
 // A separate copy's GitHub pull request, through a stand-in `gh` on PATH (test/fake-gh.js) and a bare repository as
 // origin: create (commit, secret guard, push, a drafted title and body), checks, Fix failing CI, and merged.
 const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
+const { mkdtemp } = require('./helpers/tmp');
 const { execFileSync } = require('child_process');
 const { Hub } = require('../core/hub');
 const { MemorySecrets } = require('../core/store');
 const { parseDraft } = require('../core/pull-request');
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-pr-'));
+const tmp = () => mkdtemp('pr');
 const BIN = tmp(); const STATE = path.join(tmp(), 'gh.json'); const LOG = path.join(tmp(), 'gh.log');
 fs.writeFileSync(path.join(BIN, 'gh'), `#!${process.execPath}\nrequire(${JSON.stringify(path.join(__dirname, 'fake-gh.js'))});\n`, { mode: 0o755 });
 process.env.PATH = `${BIN}${path.delimiter}${process.env.PATH}`;
