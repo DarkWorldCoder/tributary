@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { toast } from 'sonner';
 import { createMockHub } from './mock';
+import { applyPatch } from '@/lib/message-patch.mjs';
 import type { Agent, AgentMessage, GitInfo, HubBridge, HubState, Message, Mode, Thread, ThreadSummary, TaskInput, SavedDocument } from './types';
 
 export type PanelTab = 'review' | 'changes' | 'files' | 'memory' | 'preview';
@@ -119,6 +120,15 @@ function useStoreValue() {
         const i = t.messages.findIndex((m) => m.id === message.id);
         const messages = i >= 0 ? t.messages.map((m, j) => (j === i ? message : m)) : [...t.messages, message];
         return { ...t, messages, title: t.messages.length === 0 && message.role === 'user' ? message.text.split('\n')[0].slice(0, 60) : t.title };
+      });
+    });
+    // While a reply streams, only what changed arrives (core/message-patch.js).
+    hub.on('message-patch', ({ threadId: tid, id, patch }) => {
+      setThread((t) => {
+        if (!t || t.id !== tid) return t;
+        const i = t.messages.findIndex((m) => m.id === id); if (i < 0) return t;
+        const next = applyPatch(t.messages[i], patch); if (!next) return t;
+        return { ...t, messages: t.messages.map((m, j) => (j === i ? next : m)) };
       });
     });
     hub.on('running', async ({ threadId: tid, running: r }) => {

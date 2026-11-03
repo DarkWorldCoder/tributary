@@ -4,6 +4,7 @@ const { app, BrowserWindow, ipcMain, dialog, shell, safeStorage, Menu, nativeIma
 const fs = require('fs');
 const path = require('path');
 const { Hub } = require('../core');
+const { createPatcher } = require('../core/message-patch');
 const { inside } = require('../core/acp');
 const { TerminalManager } = require('../core/terminal');
 const { detectEditors, openInEditor } = require('../core/editors');
@@ -36,14 +37,22 @@ let hub = null;
 
 function send(name, data) { if (win && !win.isDestroyed()) win.webContents.send('hub-event', name, data); }
 
+// Streaming updates send only what changed (core/message-patch.js).
+const patcher = createPatcher();
+
 function wireEvents() {
   const pending = new Map();
   // Streaming events update a message many times a second; coalesce to ~12 updates/s per message.
   hub.on('event', ({ threadId, message }) => {
     if (pending.has(message.id)) return;
-    pending.set(message.id, setTimeout(() => { pending.delete(message.id); send('message', { threadId, message }); }, 80));
+    pending.set(message.id, setTimeout(() => {
+      pending.delete(message.id);
+      // Only what changed since the window's last update; the whole message the first time it sees it.
+      const patch = patcher.patch(message);
+      if (!patch) { patcher.full(message); send('message', { threadId, message }); } else if (Object.keys(patch).length) send('message-patch', { threadId, id: message.id, patch });
+    }, 80));
   });
-  hub.on('message', (d) => { const t = pending.get(d.message.id); if (t) { clearTimeout(t); pending.delete(d.message.id); } send('message', d); });
+  hub.on('message', (d) => { const t = pending.get(d.message.id); if (t) { clearTimeout(t); pending.delete(d.message.id); } patcher.full(d.message); send('message', d); });
   for (const n of ['state', 'threads', 'running', 'notification', 'collaboration']) hub.on(n, (d) => send(n, d));
   // System notification when something finishes while the window is in the background.
   hub.on('notification', (n) => {
@@ -235,6 +244,9 @@ app.whenReady().then(async () => {
         while (Date.now() - t0 < 240000) {
           await new Promise((r) => setTimeout(r, 1000));
           const st = hub.state(); const done = !st.running.length && hub.store.data.threads.some((t) => t.messages.some((m) => m.role === 'assistant' && m.ok != null));
+          // Streaming progress: how much of the reply the window shows, against what the hub has.
+          const live = hub.store.data.threads.flatMap((t) => t.messages).filter((m) => m.role === 'assistant').pop();
+          if (live && !done) console.log(`SMOKE streaming hub=${(live.text || '').length} window=${await win.webContents.executeJavaScript(`([...document.querySelectorAll('.prose-reply')].pop() || {}).textContent?.length || 0`)}`);
           if (done) break;
         }
         await new Promise((r) => setTimeout(r, 800));

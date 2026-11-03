@@ -56,7 +56,7 @@ export interface GitInfo { root: string; branch: string; changed: { code: string
 
 export interface HubEvents {
   collaboration: import('../../core/collaboration/client.mjs').RoomState;
-  state: undefined; threads: string; message: { threadId: string; message: Message };
+  state: undefined; threads: string; message: { threadId: string; message: Message }; 'message-patch': { threadId: string; id: string; patch: import('./lib/message-patch.mjs').MessagePatch };
   running: { threadId: string; running: boolean }; insert: string; 'focus-project': string;
   notification: AppNotification; 'term-data': { id: string; data: string }; 'term-exit': { id: string; code: number }; 'open-thread': string;
 }

@@ -8,6 +8,9 @@ const { execFile } = require('child_process');
 
 const DIST = path.join(__dirname, 'dist');
 const { Hub } = require(path.join(DIST, 'core'));
+const { createPatcher } = require(path.join(DIST, 'core', 'message-patch'));
+// Streaming updates send only what changed (core/message-patch.js).
+const patcher = createPatcher();
 const { inside } = require(path.join(DIST, 'core', 'acp'));
 
 let hub = null;
@@ -168,9 +171,14 @@ async function activate(context) {
   const pending = new Map();
   hub.on('event', ({ threadId, message }) => {
     if (pending.has(message.id)) return;
-    pending.set(message.id, setTimeout(() => { pending.delete(message.id); post('message', { threadId, message }); }, 80));
+    pending.set(message.id, setTimeout(() => {
+      pending.delete(message.id);
+      // Only what changed since the window's last update; the whole message the first time it sees it.
+      const patch = patcher.patch(message);
+      if (!patch) { patcher.full(message); post('message', { threadId, message }); } else if (Object.keys(patch).length) post('message-patch', { threadId, id: message.id, patch });
+    }, 80));
   });
-  hub.on('message', (d) => { const t = pending.get(d.message.id); if (t) { clearTimeout(t); pending.delete(d.message.id); } post('message', d); });
+  hub.on('message', (d) => { const t = pending.get(d.message.id); if (t) { clearTimeout(t); pending.delete(d.message.id); } patcher.full(d.message); post('message', d); });
   for (const n of ['state', 'threads', 'running', 'notification', 'collaboration']) hub.on(n, (d) => post(n, d));
 
   const status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
