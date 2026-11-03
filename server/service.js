@@ -31,7 +31,8 @@ function createService({ dbPath, bootstrapToken, ownerName = 'Project owner', pu
     CREATE TABLE IF NOT EXISTS members(project_id TEXT NOT NULL REFERENCES projects(id), user_id TEXT NOT NULL REFERENCES users(id), PRIMARY KEY(project_id,user_id));
     CREATE TABLE IF NOT EXISTS tasks(id TEXT PRIMARY KEY, project_id TEXT NOT NULL REFERENCES projects(id), data TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS events(project_id TEXT NOT NULL, cursor INTEGER NOT NULL, data TEXT NOT NULL, PRIMARY KEY(project_id,cursor));
-    CREATE TABLE IF NOT EXISTS commands(actor_id TEXT NOT NULL, command_id TEXT NOT NULL, payload_hash TEXT NOT NULL, response TEXT NOT NULL, PRIMARY KEY(actor_id,command_id));`);
+    CREATE TABLE IF NOT EXISTS commands(actor_id TEXT NOT NULL, command_id TEXT NOT NULL, payload_hash TEXT NOT NULL, response TEXT NOT NULL, PRIMARY KEY(actor_id,command_id));
+    CREATE TABLE IF NOT EXISTS age_keys(user_id TEXT PRIMARY KEY REFERENCES users(id), recipient TEXT NOT NULL);`);
   let bootstrap = null;
   if (!db.prepare('SELECT 1 FROM users LIMIT 1').get()) {
     bootstrap = bootstrapToken || randomBytes(32).toString('base64url');
@@ -55,7 +56,7 @@ function createService({ dbPath, bootstrapToken, ownerName = 'Project owner', pu
   const tasks = (id) => db.prepare('SELECT data FROM tasks WHERE project_id=? ORDER BY rowid DESC').all(id).map((r) => JSON.parse(r.data));
   const snapshot = (user, id) => {
     const project = access(user, id);
-    const members = db.prepare('SELECT u.id,u.name,u.admin FROM users u JOIN members m ON u.id=m.user_id WHERE m.project_id=? ORDER BY u.name').all(id).map((u) => ({ ...u, admin: !!u.admin }));
+    const members = db.prepare('SELECT u.id,u.name,u.admin,k.recipient AS ageKey FROM users u JOIN members m ON u.id=m.user_id LEFT JOIN age_keys k ON k.user_id=u.id WHERE m.project_id=? ORDER BY u.name').all(id).map((u) => ({ ...u, admin: !!u.admin, ageKey: u.ageKey || undefined }));
     return { project, tasks: tasks(id), members, online: [...new Set([...(rooms.get(id) || [])].map((c) => c.user.id))] };
   };
   const record = (id, payload) => {
@@ -163,6 +164,12 @@ function createService({ dbPath, bootstrapToken, ownerName = 'Project owner', pu
           if (!user.admin || input.userId === user.id) fail(403, 'Only the owner can remove a teammate.');
           if (!db.prepare('DELETE FROM members WHERE project_id=? AND user_id=?').run(id, input.userId).changes) fail(404, 'Teammate not found.');
           return { result: { removed: input.userId }, event: record(id, { kind: 'removed', userId: input.userId }) };
+        }
+        // A member's age public key, so teammates can add them to the repository's team secrets. Never a private key.
+        if (parts[3] === 'age-key' && parts.length === 4) {
+          if (typeof input.recipient !== 'string' || !/^age1[02-9ac-hj-np-z]{58}$/.test(input.recipient)) fail(400, 'Share an age public key: age1 followed by 58 characters.');
+          db.prepare('INSERT INTO age_keys VALUES(?,?) ON CONFLICT(user_id) DO UPDATE SET recipient=excluded.recipient').run(user.id, input.recipient);
+          return { result: { recipient: input.recipient }, event: record(id, { kind: 'member', member: { id: user.id, name: user.name, admin: user.admin, ageKey: input.recipient } }) };
         }
         if (parts[3] !== 'tasks') fail(404, 'Unknown route.');
         if (parts.length === 4) {

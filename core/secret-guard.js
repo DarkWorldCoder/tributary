@@ -11,6 +11,7 @@ const SECRET_NAME = /SECRET|TOKEN|KEY|PASSWORD|PASSWD|PASS|AUTH|CREDENTIAL|PRIVA
 const URL_WITH_PASSWORD = /^[a-z][a-z0-9+.-]*:\/\/[^\s:/@]+:[^\s@/]+@/i;
 const PATTERNS = [
   { kind: 'a private key', re: /-----BEGIN [A-Z ]*PRIVATE KEY-----/ },
+  { kind: 'an age private key', re: /\bAGE-SECRET-KEY-(?:PQ-)?1[02-9AC-HJ-NP-Z]{58,}/ },
   { kind: 'an AWS access key', re: /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/ },
   { kind: 'a GitHub token', re: /\b(?:gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{60,})\b/ },
   { kind: 'a Slack token', re: /\bxox[abpr]-[A-Za-z0-9-]{10,}/ },

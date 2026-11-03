@@ -1,4 +1,4 @@
-export interface RoomUser { id: string; name: string; admin: boolean }
+export interface RoomUser { id: string; name: string; admin: boolean; ageKey?: string }
 export interface RoomProject { id: string; name: string; cursor: number }
 export interface RoomTask { id: string; title: string; description: string; dependencies: string[]; status: 'ready' | 'claimed' | 'working' | 'blocked' | 'review' | 'done'; owner: string | null; agent: string; result: string; revision: number; createdBy: string; updatedAt: number }
 export interface RoomSnapshot { project: RoomProject; tasks: RoomTask[]; members: RoomUser[]; online: string[] }
