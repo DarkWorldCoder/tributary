@@ -125,6 +125,11 @@ const API = {
   reviewChanges: (id, agentId) => hub.reviewChanges(id, agentId),
   resolveCopyConflicts: (id, agentId) => hub.resolveCopyConflicts(id, agentId),
   abortCopyMerge: (id) => hub.abortCopyMerge(id),
+  // Its GitHub pull request, through the gh CLI
+  createPullRequest: (id, agentId, opts) => hub.createPullRequest(id, agentId, { allowSecrets: !!opts?.allowSecrets }),
+  pushPullRequest: (id, opts) => hub.pushPullRequest(id, { allowSecrets: !!opts?.allowSecrets }),
+  pullRequestStatus: (id) => hub.pullRequestStatus(id),
+  fixFailingChecks: (id, agentId) => hub.fixFailingChecks(id, agentId),
   runVerify: (id, messageId) => hub.runVerify(id, messageId),
   attention: () => hub.attention(),
   runSetup: (id) => hub.runSetup(id),

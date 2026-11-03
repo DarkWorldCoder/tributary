@@ -107,6 +107,13 @@ export function createMockHub(): HubBridge {
     worktreeStatus: (id: string) => ({ branch: threads[id]?.worktree?.branch, path: threads[id]?.worktree?.path, cwd: threads[id]?.worktree?.cwd, into: 'main', ahead: 0, behind: 1, uncommitted: 2, files: [{ path: 'src/routes/auth.ts', code: 'M' }, { path: 'test/auth.test.ts', code: 'A' }] }),
     mergeWorktree: (id: string) => { throw new Error(`Can't merge cleanly: these files conflict with changes made on main since this conversation started: src/routes/auth.ts. The work is kept on branch ${threads[id]?.worktree?.branch} so you or an agent can merge it.`); },
     discardWorktree: (id: string) => { const t = threads[id]; if (t) { delete t.worktree; setTimeout(() => emit('threads', t.project)); } return true; },
+    createPullRequest: (id: string) => { const copy = threads[id]?.worktree; if (!copy) throw new Error('This conversation is not working in a separate copy.'); copy.pr = { number: 7, url: 'https://github.com/acme/shop/pull/7', title: 'Fix the login redirect loop', base: 'main', state: 'OPEN', createdAt: now }; return copy.pr; },
+    pullRequestStatus: (id: string) => { const pr = threads[id]?.worktree?.pr; return pr ? { ...pr, isDraft: false, unpushed: 0, checks: [
+      { name: 'lint', workflow: 'CI', state: 'SUCCESS', bucket: 'pass', link: 'https://github.com/acme/shop/actions/runs/1/job/1', description: '', runId: '1' },
+      { name: 'test', workflow: 'CI', state: 'FAILURE', bucket: 'fail', link: 'https://github.com/acme/shop/actions/runs/1/job/2', description: '', runId: '1' },
+      { name: 'e2e', workflow: 'CI', state: 'IN_PROGRESS', bucket: 'pending', link: 'https://github.com/acme/shop/actions/runs/1/job/3', description: '', runId: '1' }] } : null; },
+    pushPullRequest: (id: string) => api.pullRequestStatus(id),
+    fixFailingChecks: () => ({ ok: true, checks: ['test'] }),
     runRace: async (threadId: string, o: any) => {
       const t = threads[threadId];
       const u: UserMessage = { id: `u${Date.now()}`, role: 'user', text: o.task, target: o.agents.join(','), kind: 'race' };

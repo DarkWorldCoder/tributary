@@ -9,6 +9,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Toggle } from '@/components/ui/toggle';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ChangeCode } from '@/components/conversation';
+import { PullRequestPanel, usePullRequest } from '@/components/pull-request';
 import { changeCode } from '@/lib/format';
 import { useStore } from '@/store';
 import type { MergeResult, Thread, WorktreeStatus } from '@/types';
@@ -43,6 +44,7 @@ export function SeparateCopy() {
   // Follow a setup script while it runs.
   const setupRunning = status?.setup?.state === 'running';
   React.useEffect(() => { if (!setupRunning) return; const id = setInterval(load, 1500); return () => clearInterval(id); }, [setupRunning, load]);
+  const pull = usePullRequest({ open, close: () => setOpen(false), refreshCopy: load });
 
   // Tasks and the personal workspace are not repositories you merge into.
   if (!s.project || !project || project.kind || t?.task || (!s.git && !copy)) return null;
@@ -121,6 +123,7 @@ export function SeparateCopy() {
             <Button variant="ghost" size="sm" className="separate-copy-branch max-w-48 min-w-0 gap-1 font-mono text-xs text-muted-foreground" aria-label={`Branch ${copy.branch}: status, merge and discard`}>
               <GitBranch className="shrink-0" /><span className="hidden truncate sm:inline">{copy.branch}</span>
               {files.length > 0 && <span className="hidden rounded-full bg-brand/15 sm:inline px-1.5 font-sans text-[10px] leading-4 text-brand">{files.length}</span>}
+              {pull.pr && <span className="hidden font-sans text-[11px] sm:inline">#{pull.pr.number}</span>}
             </Button>
           </PopoverTrigger>
           <PopoverContent align="end" className="w-96">
@@ -183,6 +186,7 @@ export function SeparateCopy() {
               <Button variant="outline" size="sm" disabled={!!busy || s.running} onClick={() => setConfirm('discard')}><Trash2 /> Discard</Button>
               <Button size="sm" disabled={!!busy || s.running || status?.missing || status?.merging || !files.length} onClick={() => setConfirm('merge')}>{busy === 'merge' ? <Spinner /> : <GitMerge />} Merge into {into}</Button>
             </div>
+            <PullRequestPanel p={pull} into={into} branch={copy.branch} status={status} disabled={!!busy} onDiscard={() => setConfirm('discard')} />
           </PopoverContent>
         </Popover>
       )}
@@ -215,7 +219,7 @@ export function SeparateCopy() {
           <AlertDialogHeader>
             <AlertDialogTitle>Discard this separate copy?</AlertDialogTitle>
             <AlertDialogDescription>
-              This deletes the folder and the branch {copy?.branch}, with any work you have not merged. The conversation then works in the project folder again. Your project folder does not change.
+              {pull.pr?.state === 'MERGED' ? `Pull request #${pull.pr.number} was merged, so its work is on GitHub. This deletes the copy's folder and its branch ${copy?.branch} on this computer.` : `This deletes the folder and the branch ${copy?.branch}, with any work you have not merged.`} The conversation then works in the project folder again. Your project folder does not change.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter><AlertDialogCancel>Keep it</AlertDialogCancel><AlertDialogAction variant="destructive" onClick={discard}>Discard copy</AlertDialogAction></AlertDialogFooter>
