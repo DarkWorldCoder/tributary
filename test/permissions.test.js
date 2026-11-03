@@ -62,6 +62,7 @@ test('a command waits for the person: the thread shows it, Allow once lets it ru
   const msg = await sent;
   assert.strictEqual(msg.ok, true);
   assert.match(msg.text, /\|ran:npm test=once$/);
+  assert.deepStrictEqual(msg.tools.map((x) => [x.name, x.status]), [['Write notes.md', 'done'], ['Run npm test', 'done']], 'updates without a title keep the tool name');
   assert.strictEqual(fs.readFileSync(path.join(proj, 'notes.md'), 'utf8'), 'from acp\n', 'edits in Edit mode still go ahead without asking');
   assert.deepStrictEqual(hub.permissions(thread.id), []);
   assert.strictEqual(msg.permissions[0].status, 'allowed');

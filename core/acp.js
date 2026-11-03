@@ -234,7 +234,8 @@ function runAcp({ command, args, cwd, env, prompt, mode, resumeId, onEvent, sign
           case 'tool_call': case 'tool_call_update': {
             const status = u.status === 'completed' ? 'done' : u.status === 'failed' ? 'error' : 'running';
             const output = Array.isArray(u.content) ? u.content.map((c) => (c.content && c.content.text) || (c.type === 'diff' ? `diff ${c.path}` : '')).filter(Boolean).join('\n') : undefined;
-            onEvent({ kind: 'tool', id: u.toolCallId, name: u.title || u.kind || 'tool', input: u.rawInput, status, output: output ? clip(output) : undefined });
+            const known = calls.get(u.toolCallId) || {}; // updates often leave out the title
+            onEvent({ kind: 'tool', id: u.toolCallId, name: known.title || known.kind || u.title || u.kind || 'tool', input: u.rawInput, status, output: output ? clip(output) : undefined });
             for (const c of u.content || []) if (c.type === 'diff' && c.path) onEvent({ kind: 'file', path: c.path, change: 'edit' });
             for (const l of u.locations || []) if (u.kind === 'edit' && l.path) onEvent({ kind: 'file', path: l.path, change: 'edit' });
             break;
