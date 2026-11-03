@@ -214,7 +214,7 @@ class Hub extends EventEmitter {
     this.store.data.threads = this.store.data.threads.filter((x) => x.id !== id);
     this.store.save(); this.emit('threads', t.project);
     // Its separate copy goes with it. Its work is committed to its branch first, and the branch stays.
-    if (t.worktree) return gitInfo(t.project).then((g) => worktrees.removeWorktree(g ? g.root : t.project, t.worktree, { keepBranch: true, message: t.title })).catch(() => {});
+    if (t.worktree) return gitInfo(t.project).then((g) => this.removeCopy(g ? g.root : t.project, t.worktree, { keepBranch: true, message: t.title })).catch(() => {});
   }
 
   // ---- gateways (API keys live in the secret store, never in the data files)
@@ -596,6 +596,11 @@ class Hub extends EventEmitter {
       return await work(t, g.root);
     } finally { this.copyChanges.delete(threadId); this.emit('threads', t.project); }
   }
+  // A copy lives in <data>/worktrees/thread-<id>/<repository>; the emptied thread folder goes with it.
+  async removeCopy(root, copy, options) {
+    await worktrees.removeWorktree(root, copy, options);
+    try { fs.rmdirSync(path.dirname(copy.path)); } catch { /* not empty, or already gone */ }
+  }
   // Turning it on: a branch tributary/thread-<id> and a worktree for it in the data folder.
   async createWorktree(threadId) {
     if (this.thread(threadId)?.worktree) return this.worktreeStatus(threadId);
@@ -630,7 +635,7 @@ class Hub extends EventEmitter {
   // Remove the copy and its branch; the conversation works in the project folder again.
   async discardWorktree(threadId) {
     return this.changeCopy(threadId, {}, async (t, root) => {
-      await worktrees.removeWorktree(root, t.worktree);
+      await this.removeCopy(root, t.worktree);
       delete t.worktree; t.agentSessions = {};
       this.store.save(true);
       return true;

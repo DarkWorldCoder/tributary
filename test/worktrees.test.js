@@ -70,25 +70,30 @@ test('turning on a separate copy makes a branch and a worktree in the data folde
 });
 
 test('two conversations write to the same repository at once, each in its own copy, and both merge back', async () => {
-  const { d, hub } = await setup([writer('one', 'calc.js', 'module.exports = (a, b) => a + b;\n', 400), writer('two', 'notes.md', '# notes\n\nship it\n', 400)]);
-  const a = hub.createThread(d); const b = hub.createThread(d);
-  // Without separate copies the second writer is refused.
-  const blocked = hub.send({ threadId: a.id, agentId: 'one', text: 'fix add' });
-  await new Promise((r) => setTimeout(r, 100));
+  const { d, hub } = await setup([writer('one', 'calc.js', 'module.exports = (a, b) => a + b;\n'), writer('two', 'notes.md', '# notes\n\nship it\n')]);
+  const a = hub.createThread(d); const b = hub.createThread(d); const c = hub.createThread(d);
+  // Holds a writing turn in `a` open until release() is called.
+  const hold = async () => {
+    let entered; const inside = new Promise((r) => { entered = r; }); let release; const held = new Promise((r) => { release = r; });
+    const turn = hub.withTurn(a.id, true, false, async () => { entered(); await held; });
+    await inside;
+    return async () => { release(); await turn; };
+  };
+  // Without separate copies a second writer is refused while the first is working.
+  let done = await hold();
   await assert.rejects(hub.send({ threadId: b.id, agentId: 'two', text: 'write notes' }), /workspace is busy/);
-  await blocked;
-  sh(d, 'checkout', '--', 'calc.js');
+  await done();
 
   await hub.createWorktree(a.id); await hub.createWorktree(b.id);
-  const started = Date.now();
-  const [ma, mb] = await Promise.all([hub.send({ threadId: a.id, agentId: 'one', text: 'fix add' }), hub.send({ threadId: b.id, agentId: 'two', text: 'write notes' })]);
-  assert.strictEqual(ma.ok, true, ma.error); assert.strictEqual(mb.ok, true, mb.error);
-  assert.ok(Date.now() - started < 1500, 'the two turns ran side by side');
-  // A third conversation can still write in the project folder itself.
-  const c = hub.createThread(d);
-  await hub.withTurn(c.id, true, false, async () => {
-    await hub.withTurn(a.id, true, false, async () => {});
-  });
+  // Now `b` writes in its copy, and `c` in the project folder itself, while `a` is still working in its copy.
+  done = await hold();
+  const mb = await hub.send({ threadId: b.id, agentId: 'two', text: 'write notes' });
+  assert.strictEqual(mb.ok, true, mb.error);
+  await hub.withTurn(c.id, true, false, async () => {});
+  await done();
+  // And both can run real turns at the same moment.
+  const [ma, again] = await Promise.all([hub.send({ threadId: a.id, agentId: 'one', text: 'fix add' }), hub.send({ threadId: b.id, agentId: 'two', text: 'write notes again' })]);
+  assert.strictEqual(ma.ok, true, ma.error); assert.strictEqual(again.ok, true, again.error);
 
   const ra = await hub.mergeWorktree(a.id);
   assert.deepStrictEqual(ra.files, ['calc.js']); assert.strictEqual(ra.into, 'main');
@@ -160,7 +165,7 @@ test('discarding removes the copy and its branch, and the conversation works in 
   assert.match(await hub.turnDiff(t.id, first.id), /\+module\.exports = \(a, b\) => a \+ b;/);
   assert.match(await hub.turnDiff(t.id, second.id), /\+module\.exports = \(a, b\) => a \+ b;/);
   await hub.discardWorktree(t.id);
-  assert.ok(!fs.existsSync(wt.path));
+  assert.ok(!fs.existsSync(path.dirname(wt.path)), 'the thread folder in the data folder goes too');
   assert.strictEqual(sh(d, 'branch', '--list', wt.branch), '');
   assert.strictEqual(sh(d, 'worktree', 'list').split('\n').length, 1);
   assert.strictEqual(hub.thread(t.id).worktree, undefined);
@@ -178,7 +183,7 @@ test('deleting a conversation removes its copy but keeps the branch', async () =
   const wt = await hub.createWorktree(t.id);
   await hub.send({ threadId: t.id, agentId: 'one', text: 'x' });
   await hub.deleteThread(t.id);
-  assert.ok(!fs.existsSync(wt.path));
+  assert.ok(!fs.existsSync(path.dirname(wt.path)));
   assert.strictEqual(sh(d, 'worktree', 'list').split('\n').length, 1);
   assert.ok(sh(d, 'branch', '--list', wt.branch));
 });
