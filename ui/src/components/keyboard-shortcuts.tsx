@@ -21,6 +21,7 @@ export function KeyboardShortcuts() {
         event.preventDefault();
         if (action === 'help') s.setShortcutsOpen(true);
         else if (action === 'search') s.setPalette(true);
+        else if (action === 'attention') window.dispatchEvent(new Event('tributary:next-attention'));
         else if (action === 'new') { if (s.project) s.newThread(); else s.goHome(); }
         else if (action === 'sidebar') toggleSidebar();
         else if (action === 'settings') s.openSettings('appearance');

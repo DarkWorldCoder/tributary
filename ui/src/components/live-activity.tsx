@@ -10,6 +10,7 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
+import { NeedsYou } from '@/components/needs-you';
 import { useStore } from '@/store';
 import type { ActivityEntry, ActivityWorker, AgentMessage, Thread } from '@/types';
 
@@ -136,6 +137,7 @@ export function LiveActivity() {
 
   return (
     <>
+      {!open && <NeedsYou />}
       {(busy.length > 0 || (recent.length > 0 && !open)) && !open && (
         <Button variant="outline" onClick={() => setOpen(true)} aria-label={busy.length ? `${busy.length} agents working. Open the live view` : 'Open the live view'}
           className="fixed right-4 bottom-24 z-40 h-9 gap-2 rounded-full bg-popover pr-3 pl-1.5 shadow-md">

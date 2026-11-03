@@ -1,6 +1,7 @@
 export const SHORTCUTS = [
   { id: 'new', label: 'New chat', group: 'Chat', keys: ['Mod', 'Shift', 'O'], aliases: [['Mod', 'N']] },
   { id: 'search', label: 'Search chats and commands', group: 'Chat', keys: ['Mod', 'K'] },
+  { id: 'attention', label: 'Next chat that needs you', group: 'Chat', keys: ['Mod', 'Shift', 'J'] },
   { id: 'focus', label: 'Focus message', group: 'Chat', keys: ['Shift', 'Escape'] },
   { id: 'sidebar', label: 'Toggle sidebar', group: 'Navigation', keys: ['Mod', 'B'], aliases: [['Mod', 'Shift', 'S']] },
   { id: 'workspace', label: 'Toggle workspace', group: 'Navigation', keys: ['Mod', 'J'] },

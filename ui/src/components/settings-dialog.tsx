@@ -13,6 +13,7 @@ import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle }
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
+import { AttentionSettings } from '@/components/needs-you';
 import { Textarea } from '@/components/ui/textarea';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { AgentAvatar } from '@/components/agent-avatar';
@@ -123,6 +124,7 @@ function AgentsTab() {
         <Button size="sm" onClick={() => setBrowsing(true)}><LayoutGrid /> Browse agents</Button>
       </>}>
       <BrowseAgents open={browsing} onOpenChange={setBrowsing} />
+      <AttentionSettings />
       <div className="flex flex-col gap-2">
         {agents.map((a) => (
           <Item key={a.id} variant="outline" className="items-start">

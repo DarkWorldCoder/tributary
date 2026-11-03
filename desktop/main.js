@@ -16,6 +16,7 @@ if (SMOKE) { app.commandLine.appendSwitch('disable-backgrounding-occluded-window
 if (process.env.TRIBUTARY_DATA_DIR) app.setPath('userData', path.resolve(process.env.TRIBUTARY_DATA_DIR));
 
 // API keys: encrypted with the OS keychain; see desktop/secrets.js.
+const { shouldNotify, keepAwake } = require('../core/attention');
 const { DesktopSecrets, storageKind } = require('./secrets');
 
 let win = null;
@@ -43,7 +44,8 @@ function wireEvents() {
   hub.on('activity', (d) => send('activity', d)); // the live view
   // System notification when something finishes while the window is in the background.
   hub.on('notification', (n) => {
-    if (SMOKE || !Notification.isSupported() || (win && !win.isDestroyed() && win.isFocused())) return;
+    // System notifications only when an agent needs you (core/attention.js); everything still goes to the bell.
+    if (SMOKE || !Notification.isSupported() || (win && !win.isDestroyed() && win.isFocused()) || !shouldNotify(n, hub.store.data.settings)) return;
     const note = new Notification({ title: n.title, body: n.body || '', silent: false });
     note.on('click', () => { if (win) { win.show(); win.focus(); send('open-thread', n.threadId); } });
     note.show();
@@ -112,6 +114,7 @@ const API = {
   resolveCopyConflicts: (id, agentId) => hub.resolveCopyConflicts(id, agentId),
   abortCopyMerge: (id) => hub.abortCopyMerge(id),
   runVerify: (id, messageId) => hub.runVerify(id, messageId),
+  attention: () => hub.attention(),
   runSetup: (id) => hub.runSetup(id),
   trustScript: (p, hash) => hub.trustScript(knownProject(p), hash),
   removeProject: (p) => hub.removeProject(p),
@@ -245,6 +248,7 @@ app.whenReady().then(async () => {
   Menu.setApplicationMenu(process.platform === 'darwin' ? Menu.buildFromTemplate([{ role: 'appMenu' }, { role: 'editMenu' }, { role: 'viewMenu' }, { role: 'windowMenu' }]) : null);
   const dataDir = app.getPath('userData');
   hub = new Hub({ dataDir, secrets: new DesktopSecrets(path.join(dataDir, 'secrets.json'), safeStorage), approvals: true });
+  keepAwake(require('electron').powerSaveBlocker, hub); // while agents run
   hub.probeDelayMs = 1500; // agent version probes wait until the window has painted
   // Projects passed on the command line: `tributary /path/to/project`
   for (const a of process.argv.slice(app.isPackaged ? 1 : 2)) { if (!a.startsWith('-')) { try { hub.addProject(a); } catch {} } }
