@@ -25,6 +25,7 @@ const folderFiles = require('./files');
 const registry = require('./registry');
 const { threadStatus } = require('./status');
 const { activityOf, watchActivity } = require('./activity');
+const { judgeRace } = require('./manager');
 
 const uid = () => crypto.randomUUID();
 const PLAN_PREFIX = 'Plan only. Do not modify files or run commands that change anything. Investigate as needed, then reply with a concise numbered plan: the steps, the files you would change, and any risks or open questions.';
@@ -455,6 +456,8 @@ class Hub extends EventEmitter {
       this.emit('message', { threadId, message: msg }); this.emit('threads', t.project);
     }
   }
+  // One agent compares a finished race's candidates and recommends one (core/manager.js).
+  judgeRace(threadId, messageId, agentId) { return judgeRace(this, threadId, messageId, agentId); }
   async applyRace(threadId, messageId, agentId) {
     const t = this.thread(threadId); if (!t) throw new Error('Thread not found');
     const m = t.messages.find((x) => x.id === messageId && x.kind === 'race'); if (!m) throw new Error('Race not found');

@@ -161,4 +161,27 @@ async function runManager(hub, threadId, team, { step, signal } = {}) {
   });
 }
 
-module.exports = { runManager, parsePlan, workerPrompt, PLAN_PROMPT };
+// Selection is where parallel candidates win or lose (CodeMonkeys): one agent reads every finished candidate's diff
+// and test result and recommends one. It is an ordinary read-only turn, so its reasoning stays in the thread.
+const JUDGE_PROMPT = 'Several agents attempted the same task, each in its own copy of the project. Compare their results and pick the one to apply. Judge first whether it does the task correctly without breaking anything, then the test results, then how small and clear the change is. Do not change any files.';
+async function judgeRace(hub, threadId, messageId, agentId) {
+  const t = hub.thread(threadId); if (!t) throw new Error('Thread not found');
+  const m = t.messages.find((x) => x.id === messageId && x.role === 'assistant' && x.race); if (!m) throw new Error('Race not found');
+  const done = m.race.candidates.filter((c) => c.status === 'done');
+  if (!done.length) throw new Error('No candidate has finished yet');
+  const room = Math.max(2000, Math.floor(60000 / done.length));
+  const body = done.map((c) => {
+    const diff = c.diff || '';
+    return `## Candidate: ${hub.agent(c.agent)?.name || c.agent} (id: ${c.agent})\nTests: ${c.tests === 'passed' ? 'passed' : c.tests === 'failed' ? 'failed' : 'not run'}${c.error ? `\nError: ${c.error.split('\n')[0]}` : ''}`
+      + `\nChanged files: ${(c.files || []).join(', ') || 'none'}\n\`\`\`diff\n${diff.slice(0, room)}${diff.length > room ? '\n[diff cut short]' : ''}\n\`\`\``;
+  }).join('\n\n');
+  const text = `${JUDGE_PROMPT}\n\n## Task\n${m.race.task}\n\n${body}\n\nEnd your reply with exactly one line: "WINNER: <id>" with the id of the candidate to apply, or "WINNER: none" if none should be applied.`;
+  const reply = await hub.send({ threadId, agentId, text, displayText: 'Pick the best result of the race', mode: 'read', team: { recipe: 'race', role: 'judge' } });
+  const pick = /^WINNER:\s*([\w:.@-]+)\s*$/i.exec(String(reply.text || '').trim().split('\n').pop().trim())?.[1];
+  const winner = pick && done.some((c) => c.agent === pick) ? pick : null;
+  m.race.judge = { agent: agentId, winner, messageId: reply.id };
+  hub.store.save(true); hub.emit('message', { threadId, message: m });
+  return { winner, messageId: reply.id };
+}
+
+module.exports = { runManager, parsePlan, workerPrompt, judgeRace, PLAN_PROMPT, JUDGE_PROMPT };

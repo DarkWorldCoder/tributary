@@ -79,3 +79,28 @@ test('the manager splits the work, workers build pieces in parallel, and only pa
   assert.strictEqual(hub.threads(proj)[0].status, 'review', 'merged changes wait for review');
   hub.store.save(true);
 });
+
+test('a judge agent compares race candidates by their diffs and tests, and its pick is recorded', async () => {
+  const proj = repo();
+  const hub = new Hub({ dataDir: tmp(), secrets: new MemorySecrets(), home: tmp() });
+  const writes = (id, body) => agent(id, `require('fs').writeFileSync('calc.js', ${JSON.stringify(body)}); ${reply(`done by ${id}`)}`);
+  // The judge reads the candidates from its prompt and picks the one whose tests passed.
+  const judge = agent('judge', `let s = ''; process.stdin.on('data', (d) => (s += d)).on('end', () => {
+    const passed = [...s.matchAll(/## Candidate: \\S+ \\(id: (\\w+)\\)\\nTests: passed/g)].map((m) => m[1]);
+    const seesDiffs = s.includes('+module.exports = (a, b) => a + b;') && s.includes('+module.exports = (a, b) => a * b;');
+    ${reply('').replace('""', "(seesDiffs ? 'Both diffs read. ' : 'Missing diffs. ') + 'The first one is right.\\nWINNER: ' + (passed[0] || 'none')")}
+  });`);
+  hub.agents = [writes('alpha', 'module.exports = (a, b) => a + b;\n'), writes('beta', 'module.exports = (a, b) => a * b;\n'), judge];
+  const t = hub.createThread(proj, 'Fix calc');
+  await hub.runRace(t.id, { task: 'make calc add', agents: ['alpha', 'beta'], testCommand: `node -e "process.exit(require('./calc.js')(2, 3) === 5 ? 0 : 1)"` });
+  const race = hub.thread(t.id).messages.find((m) => m.role === 'assistant' && m.kind === 'race');
+  const verdict = await hub.judgeRace(t.id, race.id, 'judge');
+  assert.strictEqual(verdict.winner, 'alpha');
+  assert.deepStrictEqual(hub.thread(t.id).messages.find((m) => m.id === race.id).race.judge, { agent: 'judge', winner: 'alpha', messageId: verdict.messageId });
+  const turn = hub.thread(t.id).messages.find((m) => m.id === verdict.messageId);
+  assert.match(turn.text, /^Both diffs read\./);
+  assert.strictEqual(turn.team.role, 'judge'); assert.strictEqual(turn.mode, 'read');
+  assert.strictEqual(hub.thread(t.id).messages.at(-2).text, 'Pick the best result of the race');
+  await assert.rejects(hub.judgeRace(t.id, 'nope', 'judge'), /Race not found/);
+  hub.store.save(true);
+});

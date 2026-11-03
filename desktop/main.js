@@ -141,6 +141,7 @@ const API = {
   runTeam: (t, team) => hub.runTeam(t, team).then((r) => r, (e) => ({ error: e.message })),
   runRace: (t, opts) => hub.runRace(t, opts).then(() => ({ ok: true }), (e) => ({ error: e.message })),
   applyRace: (t, m, a) => hub.applyRace(t, m, a),
+  judgeRace: (t, m, a) => hub.judgeRace(t, m, a),
   async exportThread(id) {
     const t = hub.thread(id); if (!t) throw new Error('Thread not found');
     const r = await dialog.showSaveDialog(win, { title: 'Export thread', defaultPath: `${t.title.replace(/[^\w.-]+/g, '-').slice(0, 60) || 'thread'}.md`, filters: [{ name: 'Markdown', extensions: ['md'] }] });

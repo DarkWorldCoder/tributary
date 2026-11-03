@@ -82,6 +82,7 @@ const API = {
   runTeam: (t, team) => hub.runTeam(t, team).then((r) => r, (e) => ({ error: e.message })),
   runRace: (t, o) => hub.runRace(t, o).then(() => ({ ok: true }), (e) => ({ error: e.message })),
   applyRace: (t, m, a) => hub.applyRace(t, m, a),
+  judgeRace: (t, m, a) => hub.judgeRace(t, m, a),
   async exportThread(id) {
     const t = hub.thread(id); if (!t) throw new Error('Thread not found');
     const uri = await vscode.window.showSaveDialog({ defaultUri: vscode.Uri.file(path.join(t.project, `${t.title.replace(/[^\w.-]+/g, '-').slice(0, 60) || 'thread'}.md`)), filters: { Markdown: ['md'] } });

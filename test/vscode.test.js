@@ -98,6 +98,6 @@ test('VS Code extension: activates, serves the UI with the bridge, and answers h
 test('the desktop app allows the same registry and thread status calls as the extension', () => {
   const block = (file) => { const src = fs.readFileSync(path.join(__dirname, '..', file), 'utf8'); return src.slice(src.indexOf('const API = {'), src.indexOf('\n};', src.indexOf('const API = {'))); };
   for (const file of ['desktop/main.js', 'vscode/extension.js']) {
-    for (const m of ['registry', 'installRegistryAgent', 'removeRegistryAgent', 'markThreadSeen', 'activity']) assert.match(block(file), new RegExp(`\\b${m}: \\(`), `${file} exposes ${m}`);
+    for (const m of ['registry', 'installRegistryAgent', 'removeRegistryAgent', 'markThreadSeen', 'activity', 'judgeRace']) assert.match(block(file), new RegExp(`\\b${m}: \\(`), `${file} exposes ${m}`);
   }
 });

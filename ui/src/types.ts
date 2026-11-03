@@ -32,7 +32,7 @@ export interface RaceCandidate {
   tests?: 'pending' | 'running' | 'passed' | 'failed' | 'skipped'; testOutput?: string; activity?: string; durationMs?: number; error?: string;
   branch?: string; commit?: string;
 }
-export interface RaceInfo { task: string; testCommand: string; agents: string[]; candidates: RaceCandidate[]; applied: string | null; base?: string }
+export interface RaceInfo { task: string; testCommand: string; agents: string[]; candidates: RaceCandidate[]; applied: string | null; base?: string; judge?: { agent: string; winner: string | null; messageId: string } }
 export interface AppNotification { id: string; ts: number; read: boolean; kind: 'done' | 'failed' | 'attention' | 'info'; threadId?: string; title: string; body?: string }
 export interface FileContent { rel: string; size: number; binary: boolean; truncated: boolean; content: string; mtime: number; base64?: string }
 export interface MemoryInfo { enabled: boolean; memory: string | null; worklog: string[] }
