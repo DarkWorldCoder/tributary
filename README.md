@@ -10,9 +10,11 @@ It drives each agent through its own official headless or protocol mode, so your
 
 - **One conversation, any agent.** Pick Claude Code for one turn and Codex for the next. Handoff, resume and catch-up are automatic.
 - **Teams.**
-  - **Race:** several agents attempt the same task, each in its own git worktree and branch. Your test command runs in each, you compare the diffs, and you apply one. Your files are untouched until then, and a conflict is reported instead of written into your files.
+  - **Race:** several agents attempt the same task, each in its own git worktree and branch. Your test command runs in each, you compare the diffs, and you apply one. Your files are untouched until then, and a conflict is reported instead of written into your files. **Pick the best with…** then asks an agent to compare every candidate's diff and test result and recommend one.
+  - **Manager:** one agent splits the task into a small graph of independent pieces. Workers build them at the same time, each in its own git worktree. A piece is merged into your files only if it applies cleanly and your test command passes after the merge; otherwise it is rolled back and tried once more with the failure as feedback. Pieces that depend on another wait until it is merged.
   - **Plan, build, review:** one agent plans, another builds, a third reviews until it approves. Build and review, and Ask everyone, follow the same pattern.
 - **Safety.** A git checkpoint is taken before every turn and can be restored. Permission modes are Read-only, Edit files and Full auto. Plan mode plans first and runs after you approve.
+- **Live activity:** while agents work, a pill shows how many are running. It opens a view of every agent across conversations, teams, races and managed runs: what each one is doing now, the files it changed, and each file's diff as it changes.
 - **Thread status:** the sidebar marks each thread as working, needs review (it finished with file changes you have not opened yet), failed, or done.
 - **Workspace panel:** Review (uncommitted changes and commit), Changes (exactly what each turn changed), Files (a CodeMirror code editor with previews for Markdown, images and HTML), Memory, and Preview (your local dev server).
 - **Terminal:** xterm.js with GPU rendering on real pseudo-terminals (node-pty).
@@ -35,7 +37,7 @@ It drives each agent through its own official headless or protocol mode, so your
 | Gemini CLI | `gemini -p` with stream-json output. Personal Google sign-in was retired, so use a Gemini API key gateway. |
 | Antigravity | `agy -p` with stream-json output |
 | ACP agents (OpenCode, Goose, Qwen Code, Kimi, registry agents) | Agent Client Protocol over stdio, one process per agent and folder |
-| Anything else | Add it to `agents.json` (Settings, Agents, Add a custom agent) |
+| Anything else | Add it to `agents.json` (Settings, Agents, Add a custom agent), with protocol `text`, `acp`, `claude-stream`, `codex-exec` or `gemini-stream`. `{prompt}`, `{cwd}` and `{mode}` in its args are filled in. |
 
 ## Run it
 
@@ -119,7 +121,7 @@ npm run test:e2e
 node test/e2e/real-race.js /tmp/tributary-data /tmp/tributary-race claude codex
 ```
 
-Smoke mode starts the desktop app in a hidden window, prints a JSON report and saves a screenshot. `TRIBUTARY_SMOKE_CLICKS` clicks buttons by label first (a number waits that many milliseconds), which is how to check a screen such as Browse agents:
+Smoke mode starts the desktop app in a hidden window, prints a JSON report (including startup time, memory per process and renderer errors) and saves a screenshot. `TRIBUTARY_SMOKE_SEND` starts turns, team runs or races from the main process with an explicit agent id, so a check can watch agents work without typing into the app. `TRIBUTARY_SMOKE_CLICKS` clicks buttons by label first (a number waits that many milliseconds), which is how to check a screen such as Browse agents:
 
 ```bash
 TRIBUTARY_DATA_DIR=/tmp/tributary-smoke TRIBUTARY_SMOKE_SHOT=/tmp/browse.png TRIBUTARY_SMOKE_CLICKS="Settings|Agents|Browse agents|4000" npm start -- --smoke-test
