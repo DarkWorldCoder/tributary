@@ -7,6 +7,18 @@ export type PanelTab = 'review' | 'changes' | 'files' | 'memory' | 'preview';
 
 export const hub: HubBridge = window.hub ?? createMockHub();
 
+// The message being typed lives outside the store's React state: a keystroke re-renders only the composer
+// (through useDraft), not every component that reads the store. s.draft and s.setDraft still work.
+const draftSubscribers = new Set<() => void>();
+let draftValue = '';
+const getDraft = () => draftValue;
+const setDraft = (next: string | ((current: string) => string)) => {
+  draftValue = typeof next === 'function' ? next(draftValue) : next;
+  for (const fn of draftSubscribers) fn();
+};
+const subscribeDraft = (fn: () => void) => { draftSubscribers.add(fn); return () => { draftSubscribers.delete(fn); }; };
+export function useDraft() { return React.useSyncExternalStore(subscribeDraft, getDraft); }
+
 const ls = {
   get<T>(k: string, d: T): T { try { const v = localStorage.getItem(`tributary.${k}`); return v == null ? d : (JSON.parse(v) as T); } catch { return d; } },
   set(k: string, v: unknown) { try { localStorage.setItem(`tributary.${k}`, JSON.stringify(v)); } catch { /* storage unavailable */ } },
@@ -44,7 +56,6 @@ function useStoreValue() {
   const [queue, setQueue] = React.useState<Record<string, { text: string; plan?: boolean; mode?: Mode; agentId: string }[]>>({});
   const [settings, setSettings] = React.useState<{ open: boolean; tab: SettingsTab }>({ open: false, tab: 'agents' });
   const [palette, setPalette] = React.useState(false);
-  const [draft, setDraft] = React.useState('');
   const [loaded, setLoaded] = React.useState(false);
   const [home, setHome] = React.useState(false);
   const [activeDocument, setDocument] = React.useState<{ threadId: string; id: string } | null>(null);
@@ -202,7 +213,8 @@ function useStoreValue() {
   }, []);
 
   return {
-    hub, loaded, st, threadsBy, project, thread, git, agentId, agent, mode, gatewayId, theme, review, settings, palette, draft, ready, running,
+    hub, loaded, st, threadsBy, project, thread, git, agentId, agent, mode, gatewayId, theme, review, settings, palette, ready, running,
+    get draft() { return getDraft(); },
     home, goHome: () => setHome(true), startTask, document: activeDocument, setDocument, makeDocument,
     panel, setPanel, openPanel, fileToOpen, openFile, terminalOpen, teamOpen, setTeamOpen, roomOpen, setRoomOpen,
     interfaceFont, setInterfaceFont, readingSize, setReadingSize,

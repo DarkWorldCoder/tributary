@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { AgentAvatar } from '@/components/agent-avatar';
 import { cn } from '@/lib/utils';
-import { useStore } from '@/store';
+import { useDraft, useStore } from '@/store';
 import type { Mode } from '@/types';
 
 export const MODES: Record<Mode, { label: string; help: string; icon: React.ReactNode }> = {
@@ -118,7 +118,7 @@ export function Composer({ autoFocus, className }: { autoFocus?: boolean; classN
   const [skills, setSkills] = React.useState<{ name: string; description: string }[] | null>(null);
   const [sel, setSel] = React.useState(0);
   const [caret, setCaret] = React.useState(0);
-  const text = s.draft;
+  const text = useDraft();
 
   React.useEffect(() => { if (autoFocus && window.matchMedia('(pointer: fine)').matches) ref.current?.focus(); }, [autoFocus, s.thread?.id]);
   React.useEffect(() => { setFiles(null); setSkills(null); }, [s.project]);
