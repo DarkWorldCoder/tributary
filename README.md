@@ -13,7 +13,8 @@ It drives each agent through its own official headless or protocol mode, so your
   - **Race:** several agents attempt the same task, each in its own git worktree and branch. Your test command runs in each, you compare the diffs, and you apply one. Your files are untouched until then, and a conflict is reported instead of written into your files.
   - **Plan, build, review:** one agent plans, another builds, a third reviews until it approves. Build and review, and Ask everyone, follow the same pattern.
 - **Safety.** A git checkpoint is taken before every turn and can be restored. Permission modes are Read-only, Edit files and Full auto. Plan mode plans first and runs after you approve.
-- **Thread status:** the sidebar marks each thread as working, needs review (it finished with file changes you have not opened yet), failed, or done.
+- **Tool approval.** When an ACP agent asks to run a command or use a tool that the permission mode doesn't cover, the request appears in the running turn. You pick **Allow once**, **Always allow** (for the rest of that agent session) or **Deny**, and stopping the turn cancels it. Edit files mode still allows edits without asking, and Read-only still declines them. Full auto never asks. Claude Code and Codex get this through their ACP adapters (`claude-acp` and `codex-acp` in Browse agents); [docs/TOOL_APPROVAL.md](docs/TOOL_APPROVAL.md) describes how their own protocols would plug in.
+- **Thread status:** the sidebar marks each thread as working, waiting for your approval, needs review (it finished with file changes you have not opened yet), failed, or done.
 - **Workspace panel:** Review (uncommitted changes and commit), Changes (exactly what each turn changed), Files (a CodeMirror code editor with previews for Markdown, images and HTML), Memory, and Preview (your local dev server).
 - **Terminal:** xterm.js with GPU rendering on real pseudo-terminals (node-pty).
 - **Shared memory:** `.tributary/memory.md` holds project facts, and `.tributary/worklog.md` logs who did what. AGENTS.md points every agent to both. "Remember this" on any reply adds a note.
@@ -91,7 +92,7 @@ tributary apply codex
 | `memory`, `memory enable`, `memory remember "note"` | Shared project memory in `.tributary/memory.md` |
 | `mcp`, `skills`, `registry [add\|remove <id>]`, `doctor` | MCP servers, skills, ACP registry agents, and a setup check |
 
-Every command accepts `--json`, `-C <dir>` and `--no-color`. Ctrl+C stops the running agent and keeps what it wrote so far.
+Every command accepts `--json`, `-C <dir>` and `--no-color`. Ctrl+C stops the running agent and keeps what it wrote so far. The command line can't show tool approval requests, so a request the permission mode doesn't allow is declined, and the turn shows a `Declined:` notice.
 
 The CLI uses the desktop app's data folder (`~/.config/Tributary` on Linux, `~/Library/Application Support/Tributary` on macOS, `%APPDATA%\Tributary` on Windows), so a thread started in the app continues in the terminal and the other way round, even with both open. `--data-dir` or `TRIBUTARY_DATA_DIR` picks another folder. Threads from the separate `Tributary/cli` folder that earlier versions used are imported the first time.
 
@@ -109,7 +110,7 @@ On first start, the `hub.json` file older versions wrote is imported once and ke
 npm test
 ```
 
-The suite covers the stream parsers (with recorded output from the real agents), handoff, gateways, the process runner, the ACP client and pool, teams, race mode in worktrees, checkpoints, memory, MCP, skills, the registry client and Browse agents calls, thread status, the shared SQLite store (migration, and two processes writing at once), the terminal manager, editor detection, the command line, and the VS Code extension (against a stand-in `vscode` module). Two scripts run real agents and use a little of your quota:
+The suite covers the stream parsers (with recorded output from the real agents), handoff, gateways, the process runner, the ACP client and pool, tool approval requests, teams, race mode in worktrees, checkpoints, memory, MCP, skills, the registry client and Browse agents calls, thread status, the shared SQLite store (migration, and two processes writing at once), the terminal manager, editor detection, the command line, and the VS Code extension (against a stand-in `vscode` module). Two scripts run real agents and use a little of your quota:
 
 ```bash
 npm run test:e2e
@@ -124,6 +125,16 @@ Smoke mode starts the desktop app in a hidden window, prints a JSON report and s
 ```bash
 TRIBUTARY_DATA_DIR=/tmp/tributary-smoke TRIBUTARY_SMOKE_SHOT=/tmp/browse.png TRIBUTARY_SMOKE_CLICKS="Settings|Agents|Browse agents|4000" npm start -- --smoke-test
 ```
+
+`TRIBUTARY_SMOKE_PROMPT` sends a message first, and `TRIBUTARY_SMOKE_AGENT_NAME` picks the agent for it. Smoke mode waits until the turn finishes, or until it asks for permission, so the clicks can answer it. To see a tool approval request, use a new data folder with the fake ACP agent from the tests in its `agents.json`. `RUN <command>` makes that agent ask to run the command:
+
+```bash
+mkdir -p /tmp/tributary-approve /tmp/approve-project
+echo "{ \"agents\": [{ \"id\": \"fake-acp\", \"name\": \"Fake ACP\", \"command\": \"$(which node)\", \"protocol\": \"acp\", \"acpArgs\": [\"$PWD/test/fake-acp.js\"] }] }" > /tmp/tributary-approve/agents.json
+TRIBUTARY_DATA_DIR=/tmp/tributary-approve TRIBUTARY_SMOKE_SHOT=/tmp/approve.png TRIBUTARY_SMOKE_PROMPT="RUN npm test" TRIBUTARY_SMOKE_AGENT_NAME="Fake ACP" TRIBUTARY_SMOKE_CLICKS="Allow once|1500" npm start -- --smoke-test /tmp/approve-project
+```
+
+Leave out `TRIBUTARY_SMOKE_CLICKS` to capture the request while it is still waiting.
 
 ## Layout
 
@@ -140,6 +151,7 @@ TRIBUTARY_DATA_DIR=/tmp/tributary-smoke TRIBUTARY_SMOKE_SHOT=/tmp/browse.png TRI
 ## Security notes
 
 - Agents run with your user's permissions. Read-only and Edit modes map to each agent's own permission settings; Full auto approves everything, so use it only in projects you trust.
+- In the desktop app and VS Code, an ACP agent's request to run a tool that the mode doesn't cover waits for your answer. The command line declines these requests.
 - API keys for gateways are stored encrypted with the OS keychain when available, never in `tributary.db`.
 - MCP listings mask keys, tokens and header values.
 - The window runs with context isolation and sandboxing, and the page can only call an allowlisted set of methods.
@@ -148,3 +160,4 @@ TRIBUTARY_DATA_DIR=/tmp/tributary-smoke TRIBUTARY_SMOKE_SHOT=/tmp/browse.png TRI
 
 - [docs/MULTI_AGENT_LANDSCAPE.md](docs/MULTI_AGENT_LANDSCAPE.md): competing apps, what makes multi-agent coordination work, and patterns read from open-source apps' source.
 - [docs/IMPROVEMENT_PLAN.md](docs/IMPROVEMENT_PLAN.md) and [docs/PERFORMANCE_ARCHITECTURE.md](docs/PERFORMANCE_ARCHITECTURE.md): product and performance plans.
+- [docs/TOOL_APPROVAL.md](docs/TOOL_APPROVAL.md): how tool approval works for ACP agents, and how Claude Code's stdio control protocol and `codex app-server` would plug into it.
