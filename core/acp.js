@@ -10,6 +10,11 @@
 // and the agent requests session/request_permission, fs/read_text_file and fs/write_text_file.
 // The folder check on fs writes is a courtesy, not a sandbox: agents can also write directly,
 // which is why the hub fingerprints the git working tree around every turn.
+//
+// Permission requests: Full auto allows everything, Edit allows edits and Read-only declines them.
+// Anything else is offered to whoever handles the turn's events as { kind: 'permission', request };
+// a handler that will ask the person sets event.answer to a promise of 'once', 'always', 'reject',
+// one of the agent's option ids, or null for cancelled. Nobody answering means declined, as before.
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
@@ -19,6 +24,32 @@ const { localHost } = require('./host');
 
 // pathMod: path.posix for a folder on an SSH host.
 const inside = (root, p, pathMod = path) => { const r = pathMod.relative(root, pathMod.resolve(root, p)); return r === '' || (!r.startsWith('..') && !pathMod.isAbsolute(r)); };
+
+// The agent option for a choice: 'once', 'always', 'reject' or the option's own id. null = cancelled.
+function pickOption(options, choice) {
+  if (choice == null) return null;
+  const exact = options.find((o) => o.optionId === choice); if (exact) return exact;
+  const kind = (k) => options.find((o) => o.kind === k);
+  const like = (re) => options.find((o) => re.test(o.kind || ''));
+  if (choice === 'always') return kind('allow_always') || kind('allow_once') || like(/allow/);
+  if (choice === 'once') return kind('allow_once') || like(/allow/);
+  return kind('reject_once') || like(/reject/);
+}
+
+// What the person needs to decide: the tool, the command or path, and the agent's options.
+// call merges what earlier tool_call updates said about this tool call with the request itself.
+function permissionRequest(call, options, sessionId) {
+  const input = call.rawInput && typeof call.rawInput === 'object' ? call.rawInput : {};
+  const cmd = input.command ?? input.cmd;
+  const command = Array.isArray(cmd) ? cmd.join(' ') : typeof cmd === 'string' ? cmd : undefined;
+  const diff = (call.content || []).find((c) => c && c.type === 'diff' && c.path);
+  const p = input.file_path || input.filePath || input.path || input.abs_path || ((call.locations || [])[0] || {}).path || (diff && diff.path);
+  return {
+    sessionId, toolCallId: call.toolCallId, title: call.title || call.kind || 'Tool', kind: call.kind || 'other',
+    command: command ? clip(command, 2000) : undefined, path: typeof p === 'string' ? p : undefined,
+    options: options.map(({ optionId, name, kind }) => ({ optionId, name, kind })),
+  };
+}
 
 // Project MCP servers (.mcp.json, the format Claude Code and others use) in ACP's shape.
 function projectMcpServers(cwd, caps = {}) {
@@ -98,11 +129,7 @@ class AcpConnection {
     if (!h) { fail(-32000, 'No active prompt for this session'); return; }
     try {
       if (msg.method === 'session/request_permission') {
-        const opts = p.options || [];
-        const isEdit = p.toolCall && (p.toolCall.kind === 'edit' || EDIT_TOOLS.test(p.toolCall.title || ''));
-        const allow = h.mode === 'full' || (h.mode === 'edit' && isEdit);
-        const pick = opts.find((o) => o.kind === (allow ? 'allow_once' : 'reject_once')) || opts.find((o) => (allow ? /allow/ : /reject/).test(o.kind));
-        if (!allow) h.onEvent({ kind: 'notice', text: `Declined: ${(p.toolCall && p.toolCall.title) || 'tool'} (mode: ${h.mode})` });
+        const pick = pickOption(p.options || [], await h.permission(p));
         reply(pick ? { outcome: { outcome: 'selected', optionId: pick.optionId } } : { outcome: { outcome: 'cancelled' } });
       } else if (msg.method === 'fs/read_text_file') {
         if (!inside(h.cwd, p.path, hp)) throw new Error('Path outside project');
@@ -140,6 +167,8 @@ class AcpConnection {
     for (const h of [this.child, this.child.stdin, this.child.stdout, this.child.stderr]) { try { if (h && typeof h[m] === 'function') h[m](); } catch { /* closed */ } }
   }
 }
+
+const defined = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined && v !== null));
 
 const envKey = (env) => {
   const diff = Object.entries(env || {}).filter(([k, v]) => process.env[k] !== v).sort(([a], [b]) => a.localeCompare(b));
@@ -180,9 +209,25 @@ function runAcp({ command, args, cwd, env, prompt, mode, resumeId, onEvent, sign
       onEvent({ kind: 'done', ok });
       acpPool.release(conn); resolve({ ok, sessionId });
     };
+    const calls = new Map(); // toolCallId -> what the agent has said about it so far
     const handler = {
       mode, cwd, onEvent, fail: (reason) => finish(false, reason),
+      async permission(p) {
+        const call = { ...calls.get(p.toolCall && p.toolCall.toolCallId), ...defined(p.toolCall || {}) };
+        const isEdit = call.kind === 'edit' || EDIT_TOOLS.test(call.title || '');
+        if (mode === 'full' || (mode === 'edit' && isEdit)) return 'once';
+        if (mode !== 'read' || !isEdit) {
+          const ask = { kind: 'permission', request: permissionRequest(call, p.options || [], sessionId) };
+          onEvent(ask);
+          if (ask.answer) return ask.answer;
+        }
+        onEvent({ kind: 'notice', text: `Declined: ${call.title || 'tool'} (mode: ${mode})` });
+        return 'reject';
+      },
       update(u) {
+        if ((u.sessionUpdate === 'tool_call' || u.sessionUpdate === 'tool_call_update') && u.toolCallId) {
+          calls.set(u.toolCallId, { ...calls.get(u.toolCallId), ...defined({ toolCallId: u.toolCallId, title: u.title, kind: u.kind, rawInput: u.rawInput, locations: u.locations, content: u.content }) });
+        }
         switch (u.sessionUpdate) {
           case 'agent_message_chunk': if (u.content && u.content.type === 'text') onEvent({ kind: 'text', text: u.content.text }); break;
           case 'agent_thought_chunk': if (u.content && u.content.type === 'text') onEvent({ kind: 'thinking', text: u.content.text }); break;
@@ -219,4 +264,4 @@ function runAcp({ command, args, cwd, env, prompt, mode, resumeId, onEvent, sign
 // Agents run in their own process group, so stop them when Tributary exits.
 process.once('exit', () => acpPool.closeAll());
 
-module.exports = { runAcp, inside, acpPool, projectMcpServers };
+module.exports = { runAcp, inside, acpPool, projectMcpServers, pickOption };

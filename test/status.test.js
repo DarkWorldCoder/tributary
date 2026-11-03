@@ -17,6 +17,10 @@ const thread = (last, extra = {}) => ({ messages: [{ role: 'user', text: 'x' }, 
 test('status comes from the running list and the last turn: ok, error and changed files', () => {
   assert.strictEqual(threadStatus(thread({ ok: true }), { running: true }), 'working');
   assert.strictEqual(threadStatus(thread({ ok: null }), { running: true }), 'working');
+  const asking = (status) => thread({ ok: null, permissions: [{ id: 'p1', title: 'Run npm test', status }] });
+  assert.strictEqual(threadStatus(asking('pending'), { running: true }), 'permission', 'a running turn waiting on a request');
+  assert.strictEqual(threadStatus(asking('allowed'), { running: true }), 'working');
+  assert.strictEqual(threadStatus(asking('pending')), null, 'a request left over from a turn that is no longer running');
   assert.strictEqual(threadStatus(thread({ ok: false, error: 'Exited with code 3' })), 'failed');
   assert.strictEqual(threadStatus(thread({ ok: true })), 'done');
   assert.strictEqual(threadStatus(thread({ ok: true, files: [{ rel: 'a.js' }] })), 'review', 'changed files you have not looked at');

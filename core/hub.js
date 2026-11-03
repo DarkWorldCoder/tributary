@@ -30,8 +30,13 @@ const PLAN_PREFIX = 'Plan only. Do not modify files or run commands that change 
 const now = () => Date.now();
 
 class Hub extends EventEmitter {
-  constructor({ dataDir, secrets, home, fetchImpl }) {
+  // approvals: this host can show tool permission requests and answer them (the desktop app and
+  // VS Code). Without it, requests the permission mode does not settle are declined automatically.
+  constructor({ dataDir, secrets, home, fetchImpl, approvals = false }) {
     super();
+    this.approvals = approvals;
+    this.pendingPermissions = new Map(); // request id -> { threadId, request, settle }
+    this.alwaysAllowed = new Map();      // `${threadId}\0${agent session}` -> tool keys the person always allowed
     this.home = home || os.homedir();
     this.fetchImpl = fetchImpl; // registry downloads; tests pass a stand-in
     this.dataDir = dataDir;
@@ -209,6 +214,7 @@ class Hub extends EventEmitter {
   deleteThread(id) {
     const t = this.thread(id); if (!t) return;
     this.stop(id);
+    for (const scope of this.alwaysAllowed.keys()) if (scope.startsWith(`${id}\0`)) this.alwaysAllowed.delete(scope);
     this.store.data.threads = this.store.data.threads.filter((x) => x.id !== id);
     this.store.save(); this.emit('threads', t.project);
   }
@@ -315,6 +321,7 @@ class Hub extends EventEmitter {
 
     const started = now();
     const onEvent = (e) => {
+      if (e.kind === 'permission') { if (this.approvals) e.answer = this.askPermission(t, msg, agent, e.request, ac.signal); return; }
       this.apply(t, msg, e);
       this.emit('event', { threadId, messageId: msg.id, event: e, message: msg });
       this.store.save(false, t.id); // only this thread changed: don't re-serialize all history
@@ -326,6 +333,8 @@ class Hub extends EventEmitter {
     } catch (e) {
       onEvent({ kind: 'error', message: e.message }); onEvent({ kind: 'done', ok: false }); msg.ok = false;
     } finally {
+      // An agent that ended its turn (or crashed) while asking no longer needs an answer.
+      for (const [id, p] of this.pendingPermissions) if (p.messageId === msg.id) p.settle('cancelled', null);
       // Catch every file the turn changed, including shell edits that emit no file event.
       if (git) {
         try {
@@ -380,6 +389,55 @@ class Hub extends EventEmitter {
   stop(threadId) {
     const team = this.teams.get(threadId); if (team) team.abort.abort();
     const ac = this.running.get(threadId); if (ac) ac.abort();
+  }
+
+  // ---- tool permission requests (ACP agents; see core/acp.js and docs/TOOL_APPROVAL.md)
+  // A request waits on the turn until the person answers, the turn is stopped, or the turn ends.
+  // "Always" is remembered for the rest of the agent session: edits as a group, anything else by
+  // its exact command (or title), on top of the agent's own allow_always option.
+  askPermission(t, msg, agent, request, signal) {
+    const scope = `${t.id}\0${request.sessionId || ''}`;
+    const key = request.kind === 'edit' ? 'edit' : `${request.kind}\0${request.command || request.title}`;
+    if (this.alwaysAllowed.get(scope)?.has(key)) return Promise.resolve('always');
+    const req = { id: uid(), threadId: t.id, messageId: msg.id, agent: agent.id, ...request, status: 'pending', ts: now() };
+    (msg.permissions || (msg.permissions = [])).push(req);
+    return new Promise((resolve) => {
+      const settle = (status, choice) => {
+        if (!this.pendingPermissions.has(req.id)) return;
+        this.pendingPermissions.delete(req.id); signal.removeEventListener('abort', onAbort);
+        req.status = status; req.answeredAt = now();
+        if (status === 'always') { if (!this.alwaysAllowed.has(scope)) this.alwaysAllowed.set(scope, new Set()); this.alwaysAllowed.get(scope).add(key); }
+        if (status === 'rejected') msg.notices.push(`Denied: ${req.title}`);
+        resolve(choice);
+        this.changedPermission(t, msg, req);
+      };
+      const onAbort = () => settle('cancelled', null); // ACP: a cancelled turn answers its requests "cancelled"
+      this.pendingPermissions.set(req.id, { threadId: t.id, messageId: msg.id, request: req, settle });
+      if (signal.aborted) { onAbort(); return; }
+      signal.addEventListener('abort', onAbort, { once: true });
+      this.changedPermission(t, msg, req);
+      this.notify({ kind: 'permission', threadId: t.id, title: `${agent.name} asks to ${req.command ? `run ${req.command}` : req.title}`.slice(0, 160), body: t.title });
+    });
+  }
+  changedPermission(t, msg, req) {
+    this.store.save(false, t.id);
+    this.emit('message', { threadId: t.id, message: msg });
+    this.emit('threads', t.project); // working <-> needs permission
+    this.emit('permission', { threadId: t.id, request: req });
+  }
+  // Requests waiting for an answer, for one thread or every thread.
+  permissions(threadId) {
+    return [...this.pendingPermissions.values()].filter((p) => !threadId || p.threadId === threadId).map((p) => p.request);
+  }
+  // choice: 'once', 'always', 'reject', or one of the request's own option ids.
+  answerPermission(id, choice) {
+    const p = this.pendingPermissions.get(id);
+    if (!p) throw new Error('That request is no longer waiting for an answer.');
+    const option = p.request.options.find((o) => o.optionId === choice);
+    if (!option && !['once', 'always', 'reject'].includes(choice)) throw new Error('Choose once, always or reject.');
+    const kind = option ? option.kind : choice;
+    p.settle(/always/.test(kind) ? 'always' : /allow|once/.test(kind) ? 'allowed' : 'rejected', choice);
+    return p.request;
   }
 
   // ---- notifications (kept for every host, newest first)

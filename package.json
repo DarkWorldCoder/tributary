@@ -13,7 +13,7 @@
     "start": "npm run build:ui && electron .",
     "dev": "electron .",
     "build:ui": "npm --prefix ui run build",
-    "test": "node --test test/core.test.js test/features.test.js test/workspace.test.js test/race.test.js test/acp-pool.test.js test/registry.test.js test/vscode.test.js test/everyday.test.js test/collaboration.test.js test/cli.test.js test/files.test.js test/remote.test.js test/status.test.js test/store.test.js test/terminal-links.test.js",
+    "test": "node --test test/core.test.js test/features.test.js test/workspace.test.js test/race.test.js test/acp-pool.test.js test/registry.test.js test/vscode.test.js test/everyday.test.js test/collaboration.test.js test/cli.test.js test/files.test.js test/remote.test.js test/status.test.js test/permissions.test.js test/store.test.js test/terminal-links.test.js",
     "test:e2e": "node test/e2e/real-handoff.js claude codex",
     "ui:dev": "npm --prefix ui run dev",
     "vscode:build": "npm run build:ui && node vscode/build.js",
