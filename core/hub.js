@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { EventEmitter } = require('events');
-const { detectAgents, describe, MODES } = require('./agents');
+const { detectAgents, probeVersions, describe, MODES } = require('./agents');
 const { runTurn } = require('./runner');
 const { plan } = require('./handoff');
 const { gitInfo, fileDiff, touched, fingerprint, listFiles, commitAll } = require('./git');
@@ -67,13 +67,14 @@ class Hub extends EventEmitter {
   rescan() {
     if (this.agentScan) return this.agentScan;
     this.scanningAgents = true;
-    this.emit('state');
     this.agentScan = (async () => {
       try {
-        // Installed agents can run immediately; their version probes are informational.
+        // Installed agents can run immediately; their version probes are informational, so they wait for the
+        // window's first paint (probeDelayMs, set by the desktop app) and run a couple at a time.
         this.agents = await detectAgents({ customFile: this.customAgentsFile, probeVersions: false });
         this.emit('state');
-        this.agents = await detectAgents({ customFile: this.customAgentsFile });
+        if (this.probeDelayMs) await new Promise((r) => setTimeout(r, this.probeDelayMs));
+        this.agents = await probeVersions(this.agents);
         return this.agents.map(describe);
       } finally {
         this.scanningAgents = false;

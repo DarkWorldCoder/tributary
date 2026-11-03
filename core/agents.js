@@ -139,10 +139,20 @@ async function detectAgents({ customFile, env = process.env, probeVersions = tru
     let found = null;
     for (const b of def.bins) { found = path.isAbsolute(b) ? (fs.existsSync(b) ? b : null) : which(b, env); if (found) break; }
     if (!found) for (const p of def.extraPaths || []) if (fs.existsSync(p)) { found = p; break; }
-    const ver = found && probeVersions ? await version(found, env) : null;
     const headless = def.protocol !== 'text' || !!def.textArgs || !!def.args;
-    return { ...def, path: found, version: ver, available: !!found, headless };
-  }));
+    return { ...def, path: found, version: null, available: !!found, headless };
+  })).then((agents) => (probeVersions ? probeAgentVersions(agents, { env }) : agents));
+}
+
+// `--version` for each installed binary: once per binary (two agents can share one), a few at a time, so starting
+// the app does not launch every agent at once.
+async function probeAgentVersions(agents, { env = process.env, concurrency = 2 } = {}) {
+  const versions = new Map();
+  for (const a of agents) if (a.available && a.path) versions.set(a.path, null);
+  const paths = [...versions.keys()]; let next = 0;
+  const worker = async () => { while (next < paths.length) { const p = paths[next++]; versions.set(p, await version(p, env)); } };
+  await Promise.all(Array.from({ length: Math.min(concurrency, paths.length) }, worker));
+  return agents.map((a) => (a.available && a.path ? { ...a, version: versions.get(a.path) } : a));
 }
 
 // Plain JSON view of an agent for UIs (drops functions).
@@ -151,4 +161,4 @@ function describe(a) {
   return JSON.parse(JSON.stringify(rest));
 }
 
-module.exports = { BUILTIN, MODES, detectAgents, describe, which, pathDirs };
+module.exports = { BUILTIN, MODES, detectAgents, probeVersions: probeAgentVersions, describe, which, pathDirs };
