@@ -15,22 +15,8 @@ const SMOKE = process.argv.includes('--smoke-test');
 if (SMOKE) { app.commandLine.appendSwitch('disable-backgrounding-occluded-windows'); app.commandLine.appendSwitch('disable-renderer-backgrounding'); app.commandLine.appendSwitch('disable-background-timer-throttling'); }
 if (process.env.TRIBUTARY_DATA_DIR) app.setPath('userData', path.resolve(process.env.TRIBUTARY_DATA_DIR));
 
-// API keys: encrypted with the OS keychain (Keychain, DPAPI, libsecret/kwallet) when available.
-class DesktopSecrets {
-  constructor(file) { this.file = file; this.session = new Map(); try { this.data = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { this.data = {}; } }
-  save() { fs.mkdirSync(path.dirname(this.file), { recursive: true }); fs.writeFileSync(this.file, JSON.stringify(this.data), { mode: 0o600 }); }
-  async get(k) {
-    if (this.session.has(k)) return this.session.get(k);
-    const v = this.data[k]; if (!v) return undefined;
-    return v.enc ? safeStorage.decryptString(Buffer.from(v.enc, 'base64')) : v.plain;
-  }
-  async set(k, value) {
-    if (safeStorage.isEncryptionAvailable()) { this.data[k] = { enc: safeStorage.encryptString(value).toString('base64') }; this.session.delete(k); }
-    else { this.session.set(k, value); delete this.data[k]; }
-    this.save();
-  }
-  async delete(k) { delete this.data[k]; this.session.delete(k); this.save(); }
-}
+// API keys: encrypted with the OS keychain; see desktop/secrets.js.
+const { DesktopSecrets, storageKind } = require('./secrets');
 
 let win = null;
 let hub = null;
@@ -89,7 +75,7 @@ const API = {
   collaborationDisconnect: () => hub.collaborationDisconnect(),
   collaborationWatch: (id) => hub.collaborationWatch(id),
   collaborationCommand: (action, input, commandId) => hub.collaborationCommand(action, input, commandId),
-  state: () => ({ ...hub.state(), credentialStorage: safeStorage.isEncryptionAvailable() ? 'encrypted' : 'session' }),
+  state: () => ({ ...hub.state(), credentialStorage: storageKind(safeStorage) }),
   createTask: (input) => hub.createTask(input),
   personalWorkspace: () => hub.personalWorkspace(),
   testConnection: (id) => hub.testConnection(id),
@@ -253,7 +239,7 @@ function createWindow() {
 app.whenReady().then(async () => {
   Menu.setApplicationMenu(process.platform === 'darwin' ? Menu.buildFromTemplate([{ role: 'appMenu' }, { role: 'editMenu' }, { role: 'viewMenu' }, { role: 'windowMenu' }]) : null);
   const dataDir = app.getPath('userData');
-  hub = new Hub({ dataDir, secrets: new DesktopSecrets(path.join(dataDir, 'secrets.json')), approvals: true });
+  hub = new Hub({ dataDir, secrets: new DesktopSecrets(path.join(dataDir, 'secrets.json'), safeStorage), approvals: true });
   hub.probeDelayMs = 1500; // agent version probes wait until the window has painted
   // Projects passed on the command line: `tributary /path/to/project`
   for (const a of process.argv.slice(app.isPackaged ? 1 : 2)) { if (!a.startsWith('-')) { try { hub.addProject(a); } catch {} } }

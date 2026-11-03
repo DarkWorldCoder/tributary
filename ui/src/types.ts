@@ -24,7 +24,7 @@ export interface TeamRole { id: string; label: string; multi?: boolean }
 export interface Recipe { name: string; description: string; roles: TeamRole[] }
 export interface TeamStep { role: string; agentId: string; state: 'running' | 'done' | 'failed'; messageId?: string }
 export interface HubState {
-  taskTemplates?: TaskTemplate[]; credentialStorage?: 'encrypted' | 'session';
+  taskTemplates?: TaskTemplate[]; credentialStorage?: 'encrypted' | 'weak' | 'session';
   scanningAgents?: boolean;
   agents: Agent[]; projects: Project[]; gateways: Gateway[]; presets: Preset[];
   settings: Record<string, unknown>; running: string[]; customAgentsFile: string;
