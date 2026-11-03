@@ -14,6 +14,11 @@ It drives each agent through its own official headless or protocol mode, so your
   - **Manager:** one agent splits the task into a small graph of independent pieces. Workers build them at the same time, each in its own git worktree. A piece is merged into your files only if it applies cleanly and your test command passes after the merge; otherwise it is rolled back and tried once more with the failure as feedback. Pieces that depend on another wait until it is merged.
   - **Plan, build, review:** one agent plans, another builds, a third reviews until it approves. Build and review, and Ask everyone, follow the same pattern.
 - **Separate working copies.** Turn on **Separate copy** in a conversation's header and it gets its own git worktree and branch (`tributary/thread-<id>`), made from the project's last commit and kept in Tributary's data folder. Its turns, checkpoints, diffs and files use that copy, so several conversations can change the same repository at once. The branch shows on the conversation's sidebar row. **Merge** commits the copy's work and merges it into the project's current branch; it is refused, with the files named, if they conflict with changes made there or with uncommitted changes in your folder, and the work stays on the branch. **Discard** deletes the copy and its branch. Deleting a conversation removes its copy but keeps the branch, with any unfinished work committed to it.
+- **Copies that run.** A new copy gets the project's gitignored `.env` files (or whatever `.worktreeinclude` lists), its own block of ten ports (`$TRIBUTARY_PORT`, also set as `$PORT`) for agents and terminals in it, and the project's setup script once you trust it. Copied files are never committed. See [Copies that run](#copies-that-run).
+- **Secret guard.** Agents commit with hooks off, so Tributary checks what a merge from a copy, or **Commit all**, would add: values from the project's `.env` files whose names say they're secret, and well-known token shapes (private keys, AWS, GitHub, Slack, OpenAI and Anthropic, Google). A hit is refused, naming the file and the kind of secret but never the value, until you choose **Merge anyway** or **Commit anyway**. Agent output is redacted as it streams, so transcripts show `[REDACTED]`.
+- **Review loop.** In either Changes view, hover a line and press **+** to comment. Comments go to the agent as one message (`@path:line`, the line, your note): to the agent whose turn made the change, or the selected agent for the working tree. **Review with an agent** has another agent review everything the conversation changed, read-only, and its findings become comments on those lines. A copy that conflicts with the project's branch says so before you merge; **Resolve with** an agent merges that branch into the copy and has the agent fix the markers there, so your folder never sees one.
+- **Checks after every turn.** Name a `verify` script in `.tributary/settings.json` and, once you trust it, it runs in the background after each turn that changed files. The turn shows **Checks passed**, or **Checks failed** with the output and a **Fix** button that hands it to the same agent.
+- **What needs you.** A chip names the conversations waiting for your OK, failed, or finished with changes to review, across every project; Ctrl/Cmd+Shift+J opens the next one. System notifications come only when an agent is blocked (finished turns still go to the bell), and the computer stays awake while agents run.
 - **Safety.** A git checkpoint is taken before every turn and can be restored. Another is taken when the turn ends, so blame and the Changes tab never credit your later edits to the agent. Permission modes are Read-only, Edit files and Full auto. Plan mode plans first and runs after you approve.
 - **Agent-aware editor:** a blame gutter shows which agent's turn last changed each line (hover for the request and conversation; click a bar for **Open conversation** or **Undo this change**, or press Ctrl+Alt+Z (⌘⌥Z) on a line an agent wrote; Alt+B hides it). Undo puts back only what that turn changed in that spot, leaves the rest of the file and other agents' lines alone, and refuses if those lines changed since; Ctrl/Cmd+Z brings the change back as an unsaved edit. When an agent edits the open file, only the changed lines update and light up, your cursor stays where it was, and a notice says which agent is editing. Select code and press Ctrl/Cmd+L (or click **Ask an agent**) to send it to the message box. Language support loads when a file of that kind opens.
 - **Tool approval.** When an ACP agent asks to run a command or use a tool that the permission mode doesn't cover, the request appears in the running turn. You pick **Allow once**, **Always allow** (for the rest of that agent session) or **Deny**, and stopping the turn cancels it. Edit files mode still allows edits without asking, and Read-only still declines them. Full auto never asks. Claude Code and Codex get this through their ACP adapters (`claude-acp` and `codex-acp` in Browse agents); [docs/TOOL_APPROVAL.md](docs/TOOL_APPROVAL.md) describes how their own protocols would plug in.
@@ -111,6 +116,20 @@ The CLI uses the desktop app's data folder (`~/.config/Tributary` on Linux, `~/L
 
 Gateway keys saved in the app are encrypted with the system keychain, which a terminal cannot read. The CLI keeps its own keys in `cli-secrets.json` in the data folder, readable only by your user.
 
+## Copies that run
+
+A separate copy starts from the last commit, so it lacks the files a project needs that git ignores. Tributary copies them in when the copy is made:
+
+- **`.worktreeinclude`** at the repository root lists them in gitignore syntax, with `!` to leave some out. It's the same file Claude Code, the Codex app and Conductor read. Without it, the gitignored `.env` files are copied. Only files git ignores are copied, never symlinks or folders, and they're readable by you only. Commits from the copy leave them out even if an agent un-ignores them.
+- **Ports.** Each copy takes ten ports from 4400 up: `$TRIBUTARY_PORT` to `$TRIBUTARY_PORT + 9`, with `$PORT` set to the first. `$TRIBUTARY_WORKSPACE` and `$TRIBUTARY_ROOT_PATH` name the copy and the project. Agents and terminals in the copy see them; the project folder keeps its usual ports.
+- **`.tributary/settings.json`**, committed so the team shares it, names the project's scripts:
+
+```json
+{ "scripts": { "setup": "npm ci", "verify": "npm test" } }
+```
+
+`setup` runs in every new copy, in the background. `verify` runs after each turn that changed files. Each runs only after you've trusted its exact text (the copy's branch popover, or the turn, shows it first); a changed script asks again.
+
 ## Where data lives
 
 Projects, threads, gateway settings (never their keys), notifications and preferences are stored in `tributary.db`, a SQLite database in the data folder that only your user can read. Each process writes only the rows it changed, so the desktop app and the CLI can work at the same time; each picks up the other's changes within a second. If both change the same thread title or setting at once, the later save wins; messages from both are always kept.
@@ -123,7 +142,7 @@ On first start, the `hub.json` file older versions wrote is imported once and ke
 npm test
 ```
 
-The suite covers the stream parsers (with recorded output from the real agents), handoff, gateways, the process runner, the ACP client and pool, tool approval requests, teams, race mode in worktrees, separate working copies (two conversations writing at once, merging back, and conflicts), checkpoints, memory, MCP, skills, the registry client and Browse agents calls, thread status, the shared SQLite store (migration, and two processes writing at once), the terminal manager, editor detection, the command line, and the VS Code extension (against a stand-in `vscode` module). Two scripts run real agents and use a little of your quota:
+The suite covers the stream parsers (with recorded output from the real agents), handoff, gateways, the process runner, the ACP client and pool, tool approval requests, teams, race mode in worktrees, copies that run (copied `.env` files, ports, trusted setup scripts), the secret guard, review comments and reviewer agents, resolving a copy's conflicts, checks after each turn, what needs you, separate working copies (two conversations writing at once, merging back, and conflicts), checkpoints, memory, MCP, skills, the registry client and Browse agents calls, thread status, the shared SQLite store (migration, and two processes writing at once), the terminal manager, editor detection, the command line, and the VS Code extension (against a stand-in `vscode` module). Two scripts run real agents and use a little of your quota:
 
 ```bash
 npm run test:e2e
@@ -173,12 +192,15 @@ Leave out `TRIBUTARY_SMOKE_CLICKS` to capture the request while it is still wait
 
 - Agents run with your user's permissions. Read-only and Edit modes map to each agent's own permission settings; Full auto approves everything, so use it only in projects you trust.
 - In the desktop app and VS Code, an ACP agent's request to run a tool that the mode doesn't cover waits for your answer. The command line declines these requests.
-- API keys for gateways are stored encrypted with the OS keychain when available, never in `tributary.db`.
+- API keys for gateways are stored encrypted with the OS keychain when available, never in `tributary.db`. On Linux with no keyring running, Electron would fall back to a fixed password; Tributary then keeps new keys for the session only.
+- Merges from a copy and **Commit all** are checked for secrets before anything is committed, and agent output is redacted (see **Secret guard**).
+- Setup and verify scripts from `.tributary/settings.json` never run until you have trusted their exact text.
 - MCP listings mask keys, tokens and header values.
 - The window runs with context isolation and sandboxing, and the page can only call an allowlisted set of methods.
 
 ## Research
 
+- [docs/research/2026-11-agent-workflows.md](docs/research/2026-11-agent-workflows.md): what developers struggle with when running several agents, what 16 competing apps do, sharing `.env` and config across a team, and what makes agents more effective, with sources.
 - [docs/MULTI_AGENT_LANDSCAPE.md](docs/MULTI_AGENT_LANDSCAPE.md): competing apps, what makes multi-agent coordination work, and patterns read from open-source apps' source.
 - [docs/IMPROVEMENT_PLAN.md](docs/IMPROVEMENT_PLAN.md) and [docs/PERFORMANCE_ARCHITECTURE.md](docs/PERFORMANCE_ARCHITECTURE.md): product and performance plans.
 - [docs/UI_IMPROVEMENTS.md](docs/UI_IMPROVEMENTS.md): implemented interface polish, included UI skills, component references and screenshots.
