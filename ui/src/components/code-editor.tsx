@@ -18,6 +18,8 @@ import { cpp } from '@codemirror/lang-cpp';
 import { sql } from '@codemirror/lang-sql';
 import { yaml } from '@codemirror/lang-yaml';
 import { php } from '@codemirror/lang-php';
+import { agentFlash, applyRemoteText, askAboutSelection, blameGutter, showBlame, type Blame } from '@/lib/agent-editor';
+import { useStore } from '@/store';
 
 export function languageFor(path: string): Extension | null {
   const ext = path.split('.').pop()?.toLowerCase() ?? '';
@@ -79,6 +81,10 @@ export function CodeEditor({ path, value, onChange, onSave, readOnly, line }: {
   const view = React.useRef<EditorView | null>(null);
   const ro = React.useRef(new Compartment());
   const cb = React.useRef({ onChange, onSave }); cb.current = { onChange, onSave };
+  // Agent-aware editing: who wrote each line (Alt+B toggles it), agent edits highlighted, a selection handed to an agent.
+  const s = useStore(); const store = React.useRef(s); store.current = s;
+  const [blameOn, setBlameOn] = React.useState(() => { try { return localStorage.getItem('tributary.blame') !== 'off'; } catch { return true; } });
+  const [diskChanged, setDiskChanged] = React.useState(0);
 
   React.useEffect(() => {
     const lang = languageFor(path);
@@ -91,6 +97,13 @@ export function CodeEditor({ path, value, onChange, onSave, readOnly, line }: {
           ro.current.of([EditorState.readOnly.of(!!readOnly), EditorView.editable.of(!readOnly)]),
           EditorView.updateListener.of((u) => { if (u.docChanged) cb.current.onChange?.(u.state.doc.toString()); }),
           ...(lang ? [lang] : []),
+          agentFlash,
+          blameGutter((turn) => store.current.openThread(turn.threadId)),
+          askAboutSelection(({ text, fromLine, toLine }) => {
+            const st = store.current; const fence = path.split('.').pop() || '';
+            st.setDraft(`${st.draft ? `${st.draft}\n` : ''}In @${path}:${fromLine}${toLine > fromLine ? `-${toLine}` : ''}:\n\`\`\`${fence}\n${text}\n\`\`\`\n`);
+          }),
+          keymap.of([{ key: 'Alt-b', run: () => { setBlameOn((on) => { try { localStorage.setItem('tributary.blame', on ? 'off' : 'on'); } catch { /* storage unavailable */ } return !on; }); return true; } }]),
         ],
       }),
     });
@@ -103,7 +116,8 @@ export function CodeEditor({ path, value, onChange, onSave, readOnly, line }: {
   // Replace the document when it changes from outside (reload after an agent edit).
   React.useEffect(() => {
     const v = view.current; if (!v) return;
-    if (v.state.doc.toString() !== value) v.dispatch({ changes: { from: 0, to: v.state.doc.length, insert: value } });
+    // Only the changed part is replaced, so the cursor and scroll position stay put; the changed lines light up.
+    if (applyRemoteText(v, value)) setDiskChanged((n) => n + 1);
   }, [value]);
   React.useEffect(() => { view.current?.dispatch({ effects: ro.current.reconfigure([EditorState.readOnly.of(!!readOnly), EditorView.editable.of(!readOnly)]) }); }, [readOnly]);
   React.useEffect(() => {
@@ -111,6 +125,18 @@ export function CodeEditor({ path, value, onChange, onSave, readOnly, line }: {
     const l = v.state.doc.line(Math.min(Math.max(1, line), v.state.doc.lines));
     v.dispatch({ selection: { anchor: l.from }, effects: EditorView.scrollIntoView(l.from, { y: 'center' }) }); v.focus();
   }, [line, path]);
+
+  // Blame for this file, fetched when it opens, after it changes on disk, and when blame is switched on.
+  React.useEffect(() => {
+    const v = view.current; const project = s.project; if (!v) return;
+    if (!blameOn || !project) { showBlame(v, null, s.agentOf); return; }
+    let alive = true;
+    const timer = setTimeout(() => {
+      s.hub.call<Blame>('lineAuthors', project, path).then((b) => { if (alive && view.current === v) showBlame(v, b, (id) => store.current.agentOf(id)); }).catch(() => {});
+    }, 300);
+    return () => { alive = false; clearTimeout(timer); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [path, blameOn, s.project, diskChanged]);
 
   return <div ref={host} className="h-full min-h-0 overflow-hidden" />;
 }
