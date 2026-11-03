@@ -1,9 +1,10 @@
 'use strict';
 const test = require('node:test'); const assert = require('node:assert/strict');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const fs = require('node:fs'); const os = require('node:os'); const path = require('node:path'); const { execFileSync } = require('node:child_process');
 const { Hub } = require('../core/hub'); const { MemorySecrets } = require('../core/store'); const { BUILTIN } = require('../core/agents');
 const files = require('../core/attachments');
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-usability-'));
+const tmp = () => mkTmp('usability');
 
 test('project renaming persists without changing paths, folders or conversations', (t) => {
   const root = tmp(); t.after(() => fs.rmSync(root, { recursive: true, force: true })); const project = path.join(root, 'project'); fs.mkdirSync(project);

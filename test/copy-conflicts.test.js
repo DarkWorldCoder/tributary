@@ -1,9 +1,10 @@
 'use strict';
-process.env.TRIBUTARY_CHECKPOINT_DIR = process.env.TRIBUTARY_CHECKPOINT_DIR || require('fs').mkdtempSync(require('path').join(require('os').tmpdir(), 'tributary-ckpt-'));
+require('./helpers/tmp').useCheckpointDir();
 // When a separate copy conflicts with the project's branch, an agent resolves it inside the copy: the project's
 // changes are merged into the copy, the agent fixes the conflict markers there, and Merge is then clean. Your
 // project folder never sees a conflict marker.
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
@@ -12,7 +13,7 @@ const { execFileSync } = require('child_process');
 const { Hub } = require('../core/hub');
 const { MemorySecrets } = require('../core/store');
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-cc-'));
+const tmp = () => mkTmp('cc');
 const sh = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
 const commit = (cwd, message) => sh(cwd, '-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qam', message);
 const agent = (id, code) => ({ id, name: id, protocol: 'codex-exec', available: true, headless: true, path: process.execPath, stdinPrompt: true,

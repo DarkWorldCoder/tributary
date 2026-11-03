@@ -1,6 +1,7 @@
 'use strict';
 // While a reply streams, the window receives what changed instead of the whole message every 80 ms.
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert');
 const path = require('path');
 const { createPatcher } = require('../core/message-patch');
@@ -56,11 +57,11 @@ test('a window that is behind ignores a patch it cannot apply, and unchanged too
 });
 
 test('a real streamed turn: the window rebuilt from patches matches the hub after every update', async () => {
-  process.env.TRIBUTARY_CHECKPOINT_DIR = process.env.TRIBUTARY_CHECKPOINT_DIR || require('fs').mkdtempSync(path.join(require('os').tmpdir(), 'tributary-ckpt-'));
+  require('./helpers/tmp').useCheckpointDir();
   const { applyPatch } = await loadApply();
   const fs = require('fs'); const os = require('os');
   const { Hub } = require('../core/hub'); const { MemorySecrets } = require('../core/store');
-  const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-patch-'));
+  const tmp = () => mkTmp('patch');
   const hub = new Hub({ dataDir: tmp(), secrets: new MemorySecrets(), home: tmp() });
   hub.agents = [{ id: 'claude', name: 'Fake', protocol: 'claude-stream', available: true, path: process.execPath, stdinPrompt: true, args: () => [path.join(__dirname, 'fake-agent.js'), 'claude-stream'] }];
   const t = hub.createThread(tmp());

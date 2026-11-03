@@ -1,6 +1,7 @@
 'use strict';
 // Exercises the VS Code extension against a stand-in `vscode` module (no VS Code download needed).
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
@@ -39,14 +40,14 @@ function fakeVscode(workspace) {
 
 test('VS Code extension: activates, serves the UI with the bridge, and answers hub calls', async () => {
   assert.ok(fs.existsSync(path.join(__dirname, '..', 'vscode', 'dist', 'ui', 'index.html')), 'run node vscode/build.js first');
-  const ws = fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-vsc-ws-'));
+  const ws = mkTmp('vsc-ws');
   const fake = fakeVscode(ws);
   const orig = Module._resolveFilename;
   Module._resolveFilename = function (req, ...rest) { return req === 'vscode' ? 'vscode' : orig.call(this, req, ...rest); };
   require.cache.vscode = { id: 'vscode', filename: 'vscode', loaded: true, exports: fake.api };
   try {
     const ext = require('../vscode/extension.js');
-    const storage = fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-vsc-data-'));
+    const storage = mkTmp('vsc-data');
     const secrets = new Map();
     const context = {
       extensionUri: fake.api.Uri.file(path.join(__dirname, '..', 'vscode')), globalStorageUri: fake.api.Uri.file(storage), subscriptions: [],

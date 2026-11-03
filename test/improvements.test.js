@@ -1,5 +1,6 @@
 'use strict';
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -16,7 +17,7 @@ const { verdict } = require('../core/teams');
 const { listMcp } = require('../core/mcp');
 const { redact } = require('../core/mcp');
 
-function temp(t) { const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-improvements-')); t.after(() => fs.rmSync(dir, { force: true, recursive: true })); return dir; }
+function temp(t) { const dir = mkTmp('improvements'); t.after(() => fs.rmSync(dir, { force: true, recursive: true })); return dir; }
 test('memory rejects stale edits, preserves versions, bounds retrieval and defaults to private prompts', (t) => {
   const root = temp(t); memory.enableMemory(root);
   assert.equal(memory.readMemory(root).context.includeInPrompts, false);

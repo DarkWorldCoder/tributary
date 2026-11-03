@@ -1,8 +1,9 @@
 'use strict';
-process.env.TRIBUTARY_CHECKPOINT_DIR = process.env.TRIBUTARY_CHECKPOINT_DIR || require('fs').mkdtempSync(require('path').join(require('os').tmpdir(), 'tributary-ckpt-'));
+require('./helpers/tmp').useCheckpointDir();
 // Fewer things to watch: one list of the conversations that need you, most urgent first; system notifications only
 // when an agent is blocked; and the computer stays awake while agents run.
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
@@ -12,7 +13,7 @@ const { Hub } = require('../core/hub');
 const { MemorySecrets } = require('../core/store');
 const { shouldNotify, keepAwake } = require('../core/attention');
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-att-'));
+const tmp = () => mkTmp('att');
 const turn = (extra) => ({ id: Math.random().toString(36).slice(2), role: 'assistant', agent: 'claude', text: '', tools: [], files: [], notices: [], ok: true, ts: Date.now(), durationMs: 10, ...extra });
 
 test('what needs you: approvals first, then failures, then changes you have not looked at, across projects', async () => {

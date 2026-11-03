@@ -1,6 +1,7 @@
 'use strict';
 // ACP agents stay alive per agent and folder, get the project's MCP servers, respawn after a crash.
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
@@ -8,7 +9,7 @@ const path = require('path');
 const { runAcp, acpPool } = require('../core/acp');
 
 const FAKE = path.join(__dirname, 'fake-acp-pool.js');
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-acp-'));
+const tmp = () => mkTmp('acp');
 const logOf = (f) => (fs.existsSync(f) ? fs.readFileSync(f, 'utf8').trim().split('\n').filter(Boolean).map((l) => JSON.parse(l)) : []);
 const turn = (cwd, env, prompt, resumeId) => new Promise((resolve) => {
   let text = '';

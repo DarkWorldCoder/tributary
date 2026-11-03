@@ -1,8 +1,9 @@
 'use strict';
-process.env.TRIBUTARY_CHECKPOINT_DIR = process.env.TRIBUTARY_CHECKPOINT_DIR || require('fs').mkdtempSync(require('path').join(require('os').tmpdir(), 'tributary-ckpt-'));
+require('./helpers/tmp').useCheckpointDir();
 // Copies that run: a separate copy gets the project's gitignored .env files (or what .worktreeinclude lists),
 // and those copied files never end up in a commit, even if an agent un-ignores them.
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
@@ -12,7 +13,7 @@ const { Hub } = require('../core/hub');
 const { MemorySecrets } = require('../core/store');
 const { includedFiles } = require('../core/workspace-setup');
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-ws-'));
+const tmp = () => mkTmp('ws');
 const sh = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
 const put = (root, rel, body) => { fs.mkdirSync(path.dirname(path.join(root, rel)), { recursive: true }); fs.writeFileSync(path.join(root, rel), body); };
 // A repository with tracked code, gitignored env files, an ignored dependency folder and an untracked note.

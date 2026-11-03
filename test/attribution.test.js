@@ -1,7 +1,8 @@
 'use strict';
-process.env.TRIBUTARY_CHECKPOINT_DIR = process.env.TRIBUTARY_CHECKPOINT_DIR || require('fs').mkdtempSync(require('path').join(require('os').tmpdir(), 'tributary-ckpt-'));
+require('./helpers/tmp').useCheckpointDir();
 // Agent blame: which agent's turn last changed each line of a file, across every conversation in the project.
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
@@ -11,7 +12,7 @@ const { Hub } = require('../core/hub');
 const { MemorySecrets } = require('../core/store');
 const { replay } = require('../core/attribution');
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-blame-'));
+const tmp = () => mkTmp('blame');
 // An agent that runs a snippet of JavaScript in the project (fs and the file name are in scope).
 const agent = (id, code) => ({ id, name: id, protocol: 'codex-exec', available: true, path: process.execPath, stdinPrompt: true,
   args: () => ['-e', `const fs = require('fs'); ${code}; console.log(JSON.stringify({ type: 'item.completed', item: { id: 'i', type: 'agent_message', text: 'ok' } })); console.log(JSON.stringify({ type: 'turn.completed' }));`] });

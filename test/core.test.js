@@ -1,6 +1,7 @@
 'use strict';
-process.env.TRIBUTARY_CHECKPOINT_DIR = process.env.TRIBUTARY_CHECKPOINT_DIR || require('fs').mkdtempSync(require('path').join(require('os').tmpdir(), 'tributary-ckpt-'));
+require('./helpers/tmp').useCheckpointDir();
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
@@ -18,7 +19,7 @@ const FAKE = path.join(__dirname, 'fake-agent.js');
 const FAKE_ACP = path.join(__dirname, 'fake-acp.js');
 const parse = (proto, file) => { const p = createParser(proto); return fs.readFileSync(path.join(FIX, file), 'utf8').split('\n').flatMap((l) => p.line(l)); };
 const textOf = (ev) => ev.filter((e) => e.kind === 'text').map((e) => e.text).join('');
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-test-'));
+const tmp = () => mkTmp('test');
 const fakeAgent = (id, proto, extra = []) => ({
   id, name: `Fake ${id}`, protocol: proto, available: true, path: process.execPath, stdinPrompt: true, gateways: ['openai', 'anthropic'],
   args: ({ resumeId }) => [FAKE, proto, ...(resumeId ? ['--resume', resumeId] : []), ...extra],

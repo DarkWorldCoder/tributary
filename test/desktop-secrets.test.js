@@ -2,6 +2,7 @@
 // The desktop key store encrypts with the OS keychain. On Linux without a keyring Electron would fall back to
 // "basic_text" (a fixed password), which is not treated as encryption: new keys stay in memory for the session.
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
@@ -12,7 +13,7 @@ const fake = (backend, available = true) => ({
   isEncryptionAvailable: () => available, getSelectedStorageBackend: () => backend,
   encryptString: (s) => Buffer.from(`enc:${s}`), decryptString: (b) => b.toString().replace(/^enc:/, ''),
 });
-const file = () => path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-keys-')), 'secrets.json');
+const file = () => path.join(mkTmp('keys'), 'secrets.json');
 
 test('a real keyring encrypts keys to disk; basic_text on Linux keeps them for the session only', async () => {
   assert.strictEqual(storageKind(fake('gnome_libsecret'), 'linux'), 'encrypted');

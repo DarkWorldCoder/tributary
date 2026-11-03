@@ -1,8 +1,9 @@
 'use strict';
-process.env.TRIBUTARY_CHECKPOINT_DIR = process.env.TRIBUTARY_CHECKPOINT_DIR || require('fs').mkdtempSync(require('path').join(require('os').tmpdir(), 'tributary-ckpt-'));
+require('./helpers/tmp').useCheckpointDir();
 // Interactive approval of agent tool calls: an ACP session/request_permission the permission mode
 // does not settle waits on the thread until the person allows it once, always, or denies it.
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
@@ -12,7 +13,7 @@ const { MemorySecrets } = require('../core/store');
 const { runAcp, acpPool } = require('../core/acp');
 
 const FAKE_ACP = path.join(__dirname, 'fake-acp.js');
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-perm-'));
+const tmp = () => mkTmp('perm');
 const agent = { id: 'acp', name: 'Fake ACP', protocol: 'acp', available: true, path: process.execPath, acpArgs: [FAKE_ACP] };
 
 test.after(() => acpPool.closeAll());

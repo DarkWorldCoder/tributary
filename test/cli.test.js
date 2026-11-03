@@ -1,7 +1,8 @@
 'use strict';
-process.env.TRIBUTARY_CHECKPOINT_DIR = process.env.TRIBUTARY_CHECKPOINT_DIR || require('fs').mkdtempSync(require('path').join(require('os').tmpdir(), 'tributary-ckpt-'));
+require('./helpers/tmp').useCheckpointDir();
 // The tributary command line, run as a real subprocess against fake agents.
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
@@ -10,7 +11,7 @@ const { execFileSync, spawnSync } = require('child_process');
 
 const CLI = path.join(__dirname, '..', 'cli', 'tributary.js');
 const FAKE = path.join(__dirname, 'fake-text-agent.js');
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-cli-'));
+const tmp = () => mkTmp('cli');
 
 function setup() {
   const data = tmp(); const proj = tmp();

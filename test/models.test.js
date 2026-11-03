@@ -1,12 +1,13 @@
 'use strict';
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
 const { validateModel, selectable, normalize, providerModels, codexModels, catalog } = require('../core/models');
 const { Hub, MemorySecrets } = require('../core');
-function temp(t) { const root = fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-models-')); t.after(() => fs.rmSync(root, { recursive: true, force: true })); return root; }
+function temp(t) { const root = mkTmp('models'); t.after(() => fs.rmSync(root, { recursive: true, force: true })); return root; }
 const json = (data) => new Response(JSON.stringify(data), { headers: { 'content-type': 'application/json' } });
 
 test('model IDs are bounded, catalogs handle malformed entries, and unsupported integrations are explicit', async () => {

@@ -1,8 +1,9 @@
 'use strict';
-process.env.TRIBUTARY_CHECKPOINT_DIR = process.env.TRIBUTARY_CHECKPOINT_DIR || require('fs').mkdtempSync(require('path').join(require('os').tmpdir(), 'tributary-ckpt-'));
+require('./helpers/tmp').useCheckpointDir();
 // Manager: one agent splits the task into a graph of pieces; workers build pieces at the same time in their own
 // copies; a piece is merged only when it applies cleanly and the tests pass with it.
 const test = require('node:test');
+const { mkdtemp: mkTmp } = require('./helpers/tmp');
 const assert = require('node:assert');
 const fs = require('fs');
 const os = require('os');
@@ -12,7 +13,7 @@ const { Hub } = require('../core/hub');
 const { MemorySecrets } = require('../core/store');
 const { parsePlan } = require('../core/manager');
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-manager-'));
+const tmp = () => mkTmp('manager');
 const repo = () => {
   const d = tmp(); execFileSync('git', ['init', '-q'], { cwd: d });
   fs.writeFileSync(path.join(d, 'README.md'), '# demo\n');
