@@ -242,4 +242,6 @@ app.whenReady().then(async () => {
   }
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });
+// Write anything still waiting in the store before the process ends.
+app.on('will-quit', () => { try { hub?.store.close(); } catch (e) { console.error(`Could not save on quit: ${e.message}`); } });
 app.on('window-all-closed', () => { if (hub) { for (const id of hub.running.keys()) hub.stop(id); hub.collaborationClient?.disconnect(); } terminals.killAll(); if (process.platform !== 'darwin' || SMOKE) app.quit(); });

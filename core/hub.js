@@ -17,7 +17,7 @@ const { RECIPES, runTeam } = require('./teams');
 const { race, applyDiff } = require('./race');
 const { inside } = require('./acp');
 const { PRESETS, supports } = require('./gateways');
-const { Store } = require('./store');
+const { openStore } = require('./store');
 const { directAgents, connectionConfig, runDirectTurn } = require('./direct');
 const { TEMPLATES, taskPrompt } = require('./tasks');
 const documents = require('./documents');
@@ -37,9 +37,11 @@ class Hub extends EventEmitter {
     this.dataDir = dataDir;
     this.secrets = secrets;
     this.customAgentsFile = path.join(dataDir, 'agents.json');
-    this.store = new Store(path.join(dataDir, 'hub.json'), {
+    // tributary.db, shared safely with the CLI and any other process using this data folder.
+    this.store = openStore(dataDir, {
       version: 1, projects: [], threads: [], gateways: [], notifications: [], settings: { mode: 'edit', agent: 'claude' },
     });
+    this.store.watch((c) => this.externalChange(c));
     this.agents = [];
     this.scanningAgents = false;
     this.agentScan = null;
@@ -184,6 +186,12 @@ class Hub extends EventEmitter {
         return { id: t.id, title: t.title, updatedAt: t.updatedAt, lastAgent: t.lastAgent, count: t.messages.length, running, agents: Object.keys(t.agentSessions || {}), status: threadStatus(t, { running }) };
       });
   }
+  // Another process (the CLI, a second window) saved threads or settings: refresh whatever shows them.
+  externalChange({ state, projects, messages }) {
+    if (state) this.emit('state');
+    for (const p of projects) this.emit('threads', p);
+    for (const m of messages) this.emit('message', m);
+  }
   // The person opened this thread: its finished changes no longer need review.
   markThreadSeen(id) {
     const t = this.thread(id);
@@ -205,7 +213,7 @@ class Hub extends EventEmitter {
     this.store.save(); this.emit('threads', t.project);
   }
 
-  // ---- gateways (API keys live in the secret store, never in hub.json)
+  // ---- gateways (API keys live in the secret store, never in the data files)
   async saveGateway(g) {
     const d = this.store.data;
     const id = g.id || uid();

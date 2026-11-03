@@ -93,7 +93,15 @@ tributary apply codex
 
 Every command accepts `--json`, `-C <dir>` and `--no-color`. Ctrl+C stops the running agent and keeps what it wrote so far.
 
-The CLI keeps its threads in `~/.config/Tributary/cli` (or `--data-dir`, or `TRIBUTARY_DATA_DIR`), apart from the desktop app, because both rewrite their thread file. Gateway keys are stored in a `secrets.json` file there that only your user can read, since a terminal has no keychain bridge.
+The CLI uses the desktop app's data folder (`~/.config/Tributary` on Linux, `~/Library/Application Support/Tributary` on macOS, `%APPDATA%\Tributary` on Windows), so a thread started in the app continues in the terminal and the other way round, even with both open. `--data-dir` or `TRIBUTARY_DATA_DIR` picks another folder. Threads from the separate `Tributary/cli` folder that earlier versions used are imported the first time.
+
+Gateway keys saved in the app are encrypted with the system keychain, which a terminal cannot read. The CLI keeps its own keys in `cli-secrets.json` in the data folder, readable only by your user.
+
+## Where data lives
+
+Projects, threads, gateway settings (never their keys), notifications and preferences are stored in `tributary.db`, a SQLite database in the data folder that only your user can read. Each process writes only the rows it changed, so the desktop app and the CLI can work at the same time; each picks up the other's changes within a second. If both change the same thread title or setting at once, the later save wins; messages from both are always kept.
+
+On first start, the `hub.json` file older versions wrote is imported once and kept as `hub.json.migrated`. On a Node.js without `node:sqlite` (older VS Code builds), Tributary falls back to `hub.json`, which supports one process at a time.
 
 ## Tests
 
@@ -101,7 +109,7 @@ The CLI keeps its threads in `~/.config/Tributary/cli` (or `--data-dir`, or `TRI
 npm test
 ```
 
-The suite covers the stream parsers (with recorded output from the real agents), handoff, gateways, the process runner, the ACP client and pool, teams, race mode in worktrees, checkpoints, memory, MCP, skills, the registry client, the terminal manager, editor detection, the command line, and the VS Code extension (against a stand-in `vscode` module). Two scripts run real agents and use a little of your quota:
+The suite covers the stream parsers (with recorded output from the real agents), handoff, gateways, the process runner, the ACP client and pool, teams, race mode in worktrees, checkpoints, memory, MCP, skills, the registry client and Browse agents calls, thread status, the shared SQLite store (migration, and two processes writing at once), the terminal manager, editor detection, the command line, and the VS Code extension (against a stand-in `vscode` module). Two scripts run real agents and use a little of your quota:
 
 ```bash
 npm run test:e2e
@@ -115,7 +123,7 @@ node test/e2e/real-race.js /tmp/tributary-data /tmp/tributary-race claude codex
 
 | Folder | What is in it |
 |---|---|
-| `core/` | Agent registry and detection, stream parsers, runner, ACP client, handoff, hub, git checkpoints, race, teams, memory, MCP, skills, gateways, registry, terminal, editors |
+| `core/` | Agent registry and detection, stream parsers, runner, ACP client, handoff, hub, SQLite store, thread status, git checkpoints, race, teams, memory, MCP, skills, gateways, registry, terminal, editors |
 | `desktop/` | Electron main process and the preload bridge |
 | `cli/` | The `tributary` command line |
 | `ui/` | React, Tailwind and shadcn/ui interface, shared by the desktop app and the extension |
@@ -126,7 +134,7 @@ node test/e2e/real-race.js /tmp/tributary-data /tmp/tributary-race claude codex
 ## Security notes
 
 - Agents run with your user's permissions. Read-only and Edit modes map to each agent's own permission settings; Full auto approves everything, so use it only in projects you trust.
-- API keys for gateways are stored encrypted with the OS keychain when available, never in `hub.json`.
+- API keys for gateways are stored encrypted with the OS keychain when available, never in `tributary.db`.
 - MCP listings mask keys, tokens and header values.
 - The window runs with context isolation and sandboxing, and the page can only call an allowlisted set of methods.
 

@@ -126,7 +126,8 @@ test('personal task to direct response to document survives restart without agen
   assert.equal(restarted.document(thread.id, doc.id).content, 'Welcome, everyone!');
   assert.equal(restarted.thread(thread.id).task.material, 'Meeting starts at 9am.');
   assert.ok(!JSON.stringify(hub.state()).includes('fixture-private-key'));
-  assert.ok(!fs.readFileSync(path.join(dataDir, 'hub.json'), 'utf8').includes('fixture-private-key'));
+  hub.store.save(true);
+  for (const f of fs.readdirSync(dataDir).filter((x) => x.startsWith('tributary.db'))) assert.ok(!fs.readFileSync(path.join(dataDir, f)).includes('fixture-private-key'), f);
   const count = hub.store.data.threads.length;
   assert.equal((await hub.testConnection(id)).ok, true); assert.equal(hub.store.data.threads.length, count);
   await hub.deleteGateway(id); assert.equal(hub.state().agents.length, 0);

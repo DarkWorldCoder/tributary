@@ -181,7 +181,7 @@ test('ACP: read-only mode rejects the edit', async () => {
   assert.ok(ev.find((e) => e.kind === 'notice' && /Declined/.test(e.text)));
 });
 
-test('hub: two agents share one thread with handoff, sessions resume, keys stay out of hub.json', async () => {
+test('hub: two agents share one thread with handoff, sessions resume, keys stay out of the data files', async () => {
   const dataDir = tmp(); const proj = tmp();
   const hub = new Hub({ dataDir, secrets: new MemorySecrets() });
   await hub.init();
@@ -203,7 +203,7 @@ test('hub: two agents share one thread with handoff, sessions resume, keys stay 
   assert.strictEqual(thread.messages.length, 6);
   const gid = await hub.saveGateway({ name: 'Local', protocol: 'openai', baseUrl: 'http://localhost:4000/v1', apiKey: 'sk-secret-123' });
   hub.store.save(true);
-  assert.ok(!fs.readFileSync(path.join(dataDir, 'hub.json'), 'utf8').includes('sk-secret-123'));
+  for (const f of fs.readdirSync(dataDir).filter((x) => x.startsWith('tributary.db'))) assert.ok(!fs.readFileSync(path.join(dataDir, f)).includes('sk-secret-123'), f);
   assert.strictEqual((await hub.resolveGateway(gid)).apiKey, 'sk-secret-123');
   await assert.rejects(hub.send({ threadId: t.id, agentId: 'claude', text: 'x', gatewayId: (await hub.saveGateway({ name: 'G', protocol: 'gemini' })) }), /can't use/);
   assert.deepStrictEqual(hub.syncInstructions(proj).sort(), ['AGENTS.md', 'CLAUDE.md', 'GEMINI.md']);

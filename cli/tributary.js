@@ -39,7 +39,7 @@ Project
 Options
   -C <dir>        Run in another folder
   --json          Machine-readable output
-  --data-dir <d>  Where threads are stored (default: ~/.config/Tributary/cli, or TRIBUTARY_DATA_DIR)
+  --data-dir <d>  Where threads are stored (default: the desktop app's folder, or TRIBUTARY_DATA_DIR)
   --no-color      Plain output (NO_COLOR is respected too)
   -q, --quiet     Print only the reply
   -h, --help      Show this help
@@ -100,16 +100,28 @@ function readStdin() {
   });
 }
 
-// ---- storage. The CLI keeps its own folder so it never overwrites the desktop app's hub.json.
-function defaultDataDir() {
-  if (process.env.TRIBUTARY_DATA_DIR) return process.env.TRIBUTARY_DATA_DIR;
+// ---- storage. The CLI shares the desktop app's data folder (Electron's userData); the SQLite store lets both write at once.
+function appDataDir() {
   const base = process.platform === 'darwin' ? path.join(os.homedir(), 'Library', 'Application Support')
     : process.platform === 'win32' ? (process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'))
       : (process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'));
-  return path.join(base, 'Tributary', 'cli');
+  return path.join(base, 'Tributary');
+}
+function defaultDataDir() { return process.env.TRIBUTARY_DATA_DIR || appDataDir(); }
+
+// Earlier CLI versions kept their own folder (Tributary/cli). Bring its projects and threads over once.
+function importOldCliFolder(hub) {
+  const file = path.join(appDataDir(), 'cli', 'hub.json');
+  let old; try { old = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return; }
+  const d = hub.store.data;
+  for (const p of old.projects || []) if (p && p.path && !hub.project(p.path)) d.projects.push(p);
+  for (const t of old.threads || []) if (t && t.id && !hub.thread(t.id)) d.threads.push(t);
+  hub.store.save(true);
+  fs.renameSync(file, `${file}.migrated`);
 }
 
-// Gateway keys in a file only this user can read. The terminal has no keychain bridge like Electron's safeStorage.
+// Gateway keys in a file only this user can read. The terminal has no keychain bridge like Electron's safeStorage,
+// so it cannot read keys the desktop app encrypted, and it keeps its own file instead of rewriting the app's secrets.json.
 class FileSecrets {
   constructor(file) { this.file = file; try { this.data = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { this.data = {}; } }
   save() {
@@ -124,7 +136,8 @@ class FileSecrets {
 
 async function openHub(o, { versions = false } = {}) {
   const dataDir = path.resolve(o.dataDir || defaultDataDir());
-  const hub = new Hub({ dataDir, secrets: new FileSecrets(path.join(dataDir, 'secrets.json')) });
+  const hub = new Hub({ dataDir, secrets: new FileSecrets(path.join(dataDir, 'cli-secrets.json')) });
+  if (dataDir === path.resolve(appDataDir())) importOldCliFolder(hub);
   if (!fs.existsSync(hub.customAgentsFile)) {
     fs.mkdirSync(dataDir, { recursive: true });
     fs.writeFileSync(hub.customAgentsFile, JSON.stringify({ agents: [],

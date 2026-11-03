@@ -227,6 +227,6 @@ async function activate(context) {
   );
 }
 
-function deactivate() { if (hub) { for (const id of hub.running.keys()) hub.stop(id); hub.collaborationClient?.disconnect(); } }
+function deactivate() { if (hub) { for (const id of hub.running.keys()) hub.stop(id); hub.collaborationClient?.disconnect(); try { hub.store.close(); } catch {} } }
 
 module.exports = { activate, deactivate };

@@ -101,3 +101,52 @@ test('helpful errors: unknown command, unknown agent, missing prompt', () => {
   const h = run(['--help']);
   assert.strictEqual(h.status, 0); assert.match(h.stdout, /Usage: tributary/);
 });
+
+test('by default the CLI uses the desktop app’s data folder, and both see the same history at once', { skip: process.platform !== 'linux' }, () => {
+  const { proj, data, run } = setup();
+  const home = tmp(); const desktopDir = path.join(home, '.config', 'Tributary');
+  fs.mkdirSync(desktopDir, { recursive: true });
+  fs.copyFileSync(path.join(data, 'agents.json'), path.join(desktopDir, 'agents.json'));
+  const env = { ...process.env, HOME: home, PATH: path.dirname(process.execPath) + path.delimiter + '/usr/bin:/bin', NO_COLOR: '1' };
+  delete env.TRIBUTARY_DATA_DIR; delete env.XDG_CONFIG_HOME;
+  const cli = (args) => spawnSync(process.execPath, [CLI, ...args], { cwd: proj, env, encoding: 'utf8', timeout: 60000 });
+  const doctor = JSON.parse(cli(['doctor', '--json']).stdout);
+  assert.strictEqual(doctor.find((c) => c.label === 'Data folder').detail, desktopDir);
+  assert.ok(!fs.existsSync(path.join(desktopDir, 'cli')), 'no separate CLI store');
+
+  // The desktop app is open on the same folder while the CLI works.
+  const { Hub } = require('../core/hub'); const { MemorySecrets } = require('../core/store');
+  const desktop = new Hub({ dataDir: desktopDir, secrets: new MemorySecrets(), home });
+  const started = desktop.createThread(fs.realpathSync(proj), 'Started in the app'); desktop.store.save(true);
+  const listed = JSON.parse(cli(['threads', '--json']).stdout);
+  assert.deepStrictEqual(listed.map((t) => t.title), ['Started in the app']);
+  const r = cli(['ask', '-a', 'alpha', 'continue from the CLI']);
+  assert.strictEqual(r.status, 0, r.stderr);
+  desktop.store.sync();
+  assert.deepStrictEqual(desktop.thread(started.id).messages.map((m) => m.text.trim()), ['continue from the CLI', 'alpha says: continue from the CLI']);
+  desktop.setSettings({ mode: 'read' }); desktop.store.save(true);
+  const shown = cli(['show']);
+  assert.match(shown.stdout, /alpha says: continue from the CLI/);
+  desktop.store.close();
+});
+
+test('threads from the old separate CLI folder are imported into the shared history once', { skip: process.platform !== 'linux' }, () => {
+  const { proj, run } = setup();
+  const home = tmp(); const desktopDir = path.join(home, '.config', 'Tributary'); const old = path.join(desktopDir, 'cli');
+  fs.mkdirSync(old, { recursive: true });
+  const real = fs.realpathSync(proj);
+  fs.writeFileSync(path.join(old, 'hub.json'), JSON.stringify({ version: 1, settings: {}, gateways: [], notifications: [],
+    projects: [{ path: real, name: 'demo', trusted: true, addedAt: 1 }],
+    threads: [{ id: 'old-cli-thread', project: real, title: 'From the old CLI folder', createdAt: 1, updatedAt: 2, agentSessions: {}, lastAgent: 'alpha', messages: [{ id: 'u1', role: 'user', text: 'old request', target: 'alpha' }] }] }));
+  const env = { ...process.env, HOME: home, PATH: path.dirname(process.execPath) + path.delimiter + '/usr/bin:/bin', NO_COLOR: '1' };
+  delete env.TRIBUTARY_DATA_DIR; delete env.XDG_CONFIG_HOME;
+  const cli = (args) => spawnSync(process.execPath, [CLI, ...args], { cwd: proj, env, encoding: 'utf8', timeout: 60000 });
+  assert.deepStrictEqual(JSON.parse(cli(['threads', '--json']).stdout).map((t) => t.title), ['From the old CLI folder']);
+  assert.ok(!fs.existsSync(path.join(old, 'hub.json')) && fs.existsSync(path.join(old, 'hub.json.migrated')));
+  assert.ok(!fs.existsSync(path.join(old, 'tributary.db')), 'the old folder is not used as a store');
+  assert.strictEqual(JSON.parse(cli(['threads', '--json']).stdout).length, 1, 'imported once');
+  const { Hub } = require('../core/hub'); const { MemorySecrets } = require('../core/store');
+  const desktop = new Hub({ dataDir: desktopDir, secrets: new MemorySecrets(), home });
+  assert.strictEqual(desktop.thread('old-cli-thread').messages[0].text, 'old request', 'the desktop app sees it too');
+  desktop.store.close();
+});
