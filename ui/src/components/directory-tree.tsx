@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { ChevronRight, FileCode2, Folder, FolderOpen, Link as LinkIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import type { HubBridge } from '@/types';
@@ -30,5 +31,5 @@ function Directory({ bridge, project, rel, name, hidden, active, openFile, depth
 }
 export function DirectoryTree({ bridge, project, active, openFile, revision }: { bridge: HubBridge; project: string; active: string | null; openFile: (p: string) => void; revision: number }) {
   const [hidden, setHidden] = React.useState(false);
-  return <><label className="mb-2 flex items-center gap-2 px-2 text-xs text-muted-foreground"><input type="checkbox" checked={hidden} onChange={(e) => setHidden(e.target.checked)} />Show hidden files</label><nav aria-label="Folder contents"><ul className="m-0 list-none p-0"><Directory key={`${project}:${hidden}:${revision}`} bridge={bridge} project={project} rel="" name="" hidden={hidden} active={active} openFile={openFile} /></ul></nav></>;
+  return <><label className="mb-2 flex items-center gap-2 px-2 text-xs text-muted-foreground"><Checkbox checked={hidden} onCheckedChange={(v) => setHidden(v === true)} />Show hidden files</label><nav aria-label="Folder contents"><ul className="m-0 list-none p-0"><Directory key={`${project}:${hidden}:${revision}`} bridge={bridge} project={project} rel="" name="" hidden={hidden} active={active} openFile={openFile} /></ul></nav></>;
 }

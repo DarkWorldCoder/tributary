@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from '@/components/ui/badge';
 import { Bubble, BubbleContent } from '@/components/ui/bubble';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Message, MessageContent, MessageFooter, MessageHeader } from '@/components/ui/message';
 import { MessageScroller, MessageScrollerButton, MessageScrollerContent, MessageScrollerItem, MessageScrollerProvider, MessageScrollerViewport } from '@/components/ui/message-scroller';
@@ -83,7 +84,7 @@ function Activity({ m }: { m: AgentMessage }) {
               <ul className="flex flex-col gap-1 py-0.5 text-sm" aria-label="Agent plan">
                 {m.plan.map((p, i) => (
                   <li key={i} className={cn('flex items-start gap-2', p.done && 'text-muted-foreground line-through')}>
-                    <span className={cn('mt-0.5 grid size-4 shrink-0 place-items-center rounded-[5px] border', p.done && 'border-success bg-success text-white')}>{p.done && <Check className="size-3" />}</span>{p.text}
+                    <Checkbox checked={!!p.done} disabled aria-hidden tabIndex={-1} className="mt-0.5 disabled:cursor-default disabled:opacity-100" /><span className="sr-only">{p.done ? 'Done: ' : 'To do: '}</span>{p.text}
                   </li>
                 ))}
               </ul>

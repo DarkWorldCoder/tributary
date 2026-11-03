@@ -7,6 +7,7 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui
 import { Input } from '@/components/ui/input';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 import { Textarea } from '@/components/ui/textarea';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { AgentAvatar } from '@/components/agent-avatar';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/store';
@@ -58,28 +59,25 @@ export function TeamDialog() {
           <DialogTitle className="flex items-center gap-2"><Users className="size-5" /> Work as a team</DialogTitle>
           <DialogDescription>Several agents take on one task together. Each step shows up in this thread.</DialogDescription>
         </DialogHeader>
-        <div role="radiogroup" aria-label="How the agents work together" className="grid gap-2 sm:grid-cols-2">
+        <ToggleGroup type="single" variant="outline" spacing={2} value={kind} onValueChange={(v) => { if (v) setKind(v as Kind); }} aria-label="How the agents work together" className="grid w-full gap-2 sm:grid-cols-2">
           {KINDS.map((k) => (
-            <button key={k.id} role="radio" aria-checked={kind === k.id} onClick={() => setKind(k.id)}
-              className={cn('rounded-xl border p-3 text-left transition-colors hover:bg-muted/50', kind === k.id && 'border-brand ring-1 ring-brand')}>
+            <ToggleGroupItem key={k.id} value={k.id} className="h-auto flex-col items-start gap-0 rounded-xl p-3 text-left font-normal whitespace-normal text-foreground data-[state=on]:border-brand data-[state=on]:bg-transparent data-[state=on]:ring-1 data-[state=on]:ring-brand">
               <div className="flex items-center gap-2 font-medium">{k.id === 'race' && <Flag className="size-4 text-brand" />}{k.name}</div>
               <div className="mt-0.5 text-xs text-brand">{k.evidence}</div>
               <p className="mt-1 text-xs text-muted-foreground">{k.description}</p>
-            </button>
+            </ToggleGroupItem>
           ))}
-        </div>
+        </ToggleGroup>
         <FieldGroup>
           <Field><FieldLabel htmlFor="team-task">Task</FieldLabel>
             <Textarea id="team-task" rows={3} value={task} onChange={(e) => setTask(e.target.value)} placeholder="Add pagination to the orders API, with tests…" /></Field>
           {multi && (
             <Field><FieldLabel>{kind === 'race' ? 'Agents racing' : 'Agents answering'}</FieldLabel>
-              <div className="flex flex-wrap gap-2">
-                {ready.map((a) => {
-                  const on = picked.includes(a.id);
-                  return <button key={a.id} role="checkbox" aria-checked={on} onClick={() => setPicked(on ? picked.filter((x) => x !== a.id) : [...picked, a.id])}
-                    className={cn('inline-flex items-center gap-1.5 rounded-full border py-1 pr-3 pl-1 text-sm', on ? 'border-foreground/40 bg-muted' : 'text-muted-foreground')}><AgentAvatar agent={a} size="sm" muted={!on} />{a.name}</button>;
-                })}
-              </div>
+              <ToggleGroup type="multiple" variant="outline" spacing={2} value={picked} onValueChange={setPicked} aria-label={kind === 'race' ? 'Agents racing' : 'Agents answering'} className="flex-wrap">
+                {ready.map((a) => (
+                  <ToggleGroupItem key={a.id} value={a.id} className="h-auto rounded-full py-1 pr-3 pl-1"><AgentAvatar agent={a} size="sm" muted={!picked.includes(a.id)} />{a.name}</ToggleGroupItem>
+                ))}
+              </ToggleGroup>
               <FieldDescription>Pick at least two.</FieldDescription></Field>
           )}
           {roleList.length > 0 && (

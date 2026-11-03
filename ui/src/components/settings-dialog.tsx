@@ -14,6 +14,7 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { AgentAvatar } from '@/components/agent-avatar';
 import { cn } from '@/lib/utils';
 import { useStore, type SettingsTab, type Theme, type InterfaceFont } from '@/store';
@@ -346,11 +347,11 @@ function AppearanceTab() {
         </Field>
         <div className="rounded-lg border bg-card px-4 py-3"><p className="mb-1 text-sm font-semibold">A clearer space to work together</p><p className="prose-reply text-muted-foreground">Keep your tasks, decisions and progress in one place.</p></div>
       </FieldGroup>
-      <div role="radiogroup" aria-label="Theme" className="grid max-w-md grid-cols-3 gap-2">
+      <ToggleGroup type="single" variant="outline" spacing={2} value={s.theme} onValueChange={(v) => { if (v) s.setTheme(v as Theme); }} aria-label="Theme" className="grid w-full max-w-md grid-cols-3">
         {opts.map((o) => (
-          <button key={o.id} role="radio" aria-checked={s.theme === o.id} onClick={() => s.setTheme(o.id)} className={cn('flex flex-col items-center gap-2 rounded-xl border p-4 text-sm [&_svg]:size-5', s.theme === o.id ? 'border-brand ring-1 ring-brand' : 'hover:bg-muted/60')}>{o.icon}{o.label}</button>
+          <ToggleGroupItem key={o.id} value={o.id} className="h-auto flex-col gap-2 rounded-xl p-4 text-sm text-foreground [&_svg:not([class*='size-'])]:size-5 data-[state=on]:border-brand data-[state=on]:bg-transparent data-[state=on]:ring-1 data-[state=on]:ring-brand">{o.icon}{o.label}</ToggleGroupItem>
         ))}
-      </div>
+      </ToggleGroup>
     </Section>
   );
 }
