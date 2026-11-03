@@ -253,6 +253,12 @@ app.whenReady().then(async () => {
         }
         await new Promise((r) => setTimeout(r, 800));
       }
+      // TRIBUTARY_SMOKE_SEND='[{"agent":"id","text":"go"}]' starts a turn in each of the first threads, from here
+      // rather than through the composer, so a check can watch agents work without typing into the app.
+      for (const [i, r] of JSON.parse(process.env.TRIBUTARY_SMOKE_SEND || '[]').entries()) {
+        const t = hub.store.data.threads[i];
+        if (t && r.agent) hub.send({ threadId: t.id, agentId: r.agent, text: r.text || 'go', mode: 'edit' }).catch((e) => console.log(`SMOKE send failed: ${e.message}`));
+      }
       // TRIBUTARY_SMOKE_CLICKS="Settings|Agents|Browse agents|3000" clicks those buttons (label or text) before the
       // screenshot; a number waits that many milliseconds, "type:text" types and "key:control+f" presses keys.
       // Animations are switched off: a background window may never advance them, leaving dialogs invisible.
@@ -270,8 +276,10 @@ app.whenReady().then(async () => {
         await win.webContents.executeJavaScript(`(() => {
           const want = ${JSON.stringify(label)}.toLowerCase();
           const name = (b) => (b.getAttribute('aria-label') || b.textContent || '').trim().toLowerCase();
-          const all = [...document.querySelectorAll('button, a, [role="button"], [role="menuitem"], [role="tab"], [role="radio"], [role="option"]')];
-          const el = all.find((b) => name(b) === want) || all.find((b) => name(b).startsWith(want));
+          // Look in the topmost open dialog first: clicking behind it would close it.
+          const pick = (root) => { const all = [...root.querySelectorAll('button, a, [role="button"], [role="menuitem"], [role="tab"], [role="radio"], [role="option"]')]; return all.find((b) => name(b) === want) || all.find((b) => name(b).startsWith(want)); };
+          const top = [...document.querySelectorAll('[role="dialog"]')].pop();
+          const el = (top && pick(top)) || pick(document);
           if (!el) throw new Error('smoke: no button ' + want);
           // Menus open on pointerdown, so send the whole sequence a mouse would.
           const at = { bubbles: true, cancelable: true, button: 0, pointerType: 'mouse', isPrimary: true };
