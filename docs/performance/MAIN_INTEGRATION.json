@@ -1,0 +1,53 @@
+{
+  "date": "2026-11-03",
+  "scope": "Commit all pending work and integrate all remaining local Claude feature branches into main",
+  "workspaceCommit": "e14d900",
+  "mergeCommits": {
+    "mcpCredentialProtection": "0e02621",
+    "encryptedTeamSecrets": "28ee5c1",
+    "pullRequestWorkflow": "5e6d076"
+  },
+  "mergedFeatureHeads": [
+    "a99d22165f7ba63b0470f8fa5ced35c6336e363c",
+    "cc653e21f34353113c1df9aae5c60eba2faa1db4",
+    "ab304737aa4f0678339f416371e8fb744c0cd6e0"
+  ],
+  "conflictResolution": [
+    "Retain shared secrets, agent-specific MCP variables, workspace values and delegation credentials in the turn environment",
+    "Keep every project-check, native-agent and navigation suite while adding team-secret and pull-request suites",
+    "Retain density and keyboard settings alongside the new Team secrets section",
+    "Combine security and feature documentation without dropping either branch"
+  ],
+  "integrationFixes": [
+    "Copy the age-encryption production dependency tree into the VS Code distribution",
+    "Generate and read back a public team key from a standalone copied core outside the checkout",
+    "Make the stand-in pull-request agent locate the requested code after delegation instructions are added",
+    "Exercise shared and MCP values together in the agent environment",
+    "Use automatically cleaned scratch folders for the new team-secret tests"
+  ],
+  "validation": {
+    "fullRegression": {
+      "passed": 290,
+      "failed": 0,
+      "skipped": 0
+    },
+    "focusedMergeChecks": {
+      "passed": 28,
+      "failed": 0
+    },
+    "standaloneRuntimeChecks": {
+      "passed": 3,
+      "failed": 0
+    },
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "diffWhitespace": "passed",
+    "secretPatternScan": "no findings",
+    "remainingUnmergedLocalBranches": 0
+  },
+  "boundaries": [
+    "Checks use fake coding agents and a fake GitHub CLI with local bare repositories; no live GitHub pull request was created",
+    "The actual user app and LAN host were not restarted",
+    "This integration targets local main; no remote push was performed"
+  ]
+}

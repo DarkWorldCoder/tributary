@@ -1,5 +1,5 @@
 'use strict';
-process.env.TRIBUTARY_CHECKPOINT_DIR = process.env.TRIBUTARY_CHECKPOINT_DIR || require('fs').mkdtempSync(require('path').join(require('os').tmpdir(), 'tributary-ckpt-'));
+require('./helpers/tmp').useCheckpointDir();
 // Team secrets: a SOPS-encrypted dotenv file in the repository, one age key per member. Values reach agents and
 // terminals only through their environment, transcripts redact them, and a removed member loses access to the
 // rotated file. The SOPS tests need the sops binary and are skipped without it.
@@ -22,7 +22,7 @@ const TOKEN = ['tok', 'team', 'Q7wP2xL9vR4nK8sT'].join('_');
 const URL = `https://hooks.example.test/${'c3VwZXJzZWNyZXQ'.repeat(2)}`;
 const CERT = ['line one of a test value', 'line two'].join('\n');
 
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-ts-'));
+const tmp = () => require('./helpers/tmp').mkdtemp('team-secrets');
 const sh = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
 function repo() {
   const d = tmp(); sh(d, 'init', '-q', '-b', 'main');

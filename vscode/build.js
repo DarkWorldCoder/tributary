@@ -14,6 +14,21 @@ if (!fs.existsSync(path.join(uiDist, 'index.html'))) { console.error('Build the 
 fs.cpSync(path.join(root, 'core'), path.join(dist, 'core'), { recursive: true });
 fs.cpSync(uiDist, path.join(dist, 'ui'), { recursive: true });
 fs.copyFileSync(path.join(here, 'bridge.js'), path.join(dist, 'ui', 'vscode-bridge.js'));
+// The shared core loads age on demand. Copy its production dependency tree so an
+// installed extension can create team keys without the source checkout nearby.
+function copyDependency(name, from, modules) {
+  let source = path.dirname(require.resolve(name, { paths: [from] }));
+  while (!fs.existsSync(path.join(source, 'package.json')) || JSON.parse(fs.readFileSync(path.join(source, 'package.json'), 'utf8')).name !== name) {
+    const parent = path.dirname(source);
+    if (parent === source) throw new Error(`Cannot locate runtime package ${name}`);
+    source = parent;
+  }
+  const target = path.join(modules, name);
+  fs.cpSync(source, target, { recursive: true });
+  const pkg = JSON.parse(fs.readFileSync(path.join(source, 'package.json'), 'utf8'));
+  for (const dependency of Object.keys(pkg.dependencies || {})) copyDependency(dependency, source, path.join(target, 'node_modules'));
+}
+copyDependency('age-encryption', root, path.join(dist, 'node_modules'));
 console.log(`Built ${path.relative(root, dist)}`);
 
 if (process.argv.includes('--install')) {

@@ -30,7 +30,7 @@ const dev = { id: 'dev', name: 'Dev', protocol: 'codex-exec', available: true, h
     const fs = require('fs'); let say = 'done';
     if (s.includes('TITLE: <one line')) say = s.includes('+module.exports = (a, b) => a + b;') ? 'TITLE: Add the numbers instead of subtracting them\\nBODY:\\nadd() subtracted.\\n\\n- calc.js adds' : 'TITLE: no diff';
     else if (s.includes('These checks failed')) { fs.writeFileSync('calc.js', 'module.exports = (a, b) => Number(a) + Number(b);\\n'); say = JSON.stringify({ first: s.includes('log line 101\\n'), cut: s.includes('log line 100\\n'), last: s.includes('log line 300'), redacted: s.includes('[REDACTED]'), preview: s.includes('Build failed') }); }
-    else fs.writeFileSync('calc.js', s.trim().split('\\n')[0] + '\\n');
+    else fs.writeFileSync('calc.js', s.trim().split('\\n').findLast((line) => line.startsWith('module.exports =')) + '\\n');
     console.log(JSON.stringify({type:'item.completed',item:{id:'i',type:'agent_message',text:say}})); console.log(JSON.stringify({type:'turn.completed'}));
   });`] };
 

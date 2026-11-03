@@ -154,17 +154,18 @@ test('mcp: values go to the secret store, each agent\'s turn gets them in its en
 
     // A turn: the agent prints the variables it was given; the reply is redacted, the file shows what it saw.
     const seen = path.join(home, 'seen.json');
+    hub.teamSecrets.env = async () => ({ env: { TEST_TEAM_VALUE: 'shared-value' } });
     const turnAgent = (id) => ({ id, name: id, protocol: 'codex-exec', available: true, headless: true, path: process.execPath, stdinPrompt: true,
-      args: () => ['-e', `const e = process.env; const v = { scoped: e.MCP_GH_GITHUB_TOKEN || null, own: e.GITHUB_TOKEN === ${JSON.stringify(MCP_TOKEN)} ? e.GITHUB_TOKEN : null, bearer: e.MCP_DOCS_AUTHORIZATION || null, header: e.MCP_DOCS_X_API_KEY || null };
+      args: () => ['-e', `const e = process.env; const v = { team: e.TEST_TEAM_VALUE, scoped: e.MCP_GH_GITHUB_TOKEN || null, own: e.GITHUB_TOKEN === ${JSON.stringify(MCP_TOKEN)} ? e.GITHUB_TOKEN : null, bearer: e.MCP_DOCS_AUTHORIZATION || null, header: e.MCP_DOCS_X_API_KEY || null };
         require('fs').writeFileSync(${JSON.stringify(seen)}, JSON.stringify(v));
         console.log(JSON.stringify({type:'item.completed',item:{id:'i',type:'agent_message',text:'token ' + (v.scoped || v.own) + ' and bearer ' + v.bearer}})); console.log(JSON.stringify({type:'turn.completed'}));`] });
     hub.agents = [turnAgent('claude'), turnAgent('codex')];
     const t = hub.createThread(d);
     const claudeReply = await hub.send({ threadId: t.id, agentId: 'claude', text: 'show the token', mode: 'read' });
-    assert.deepStrictEqual(JSON.parse(fs.readFileSync(seen, 'utf8')), { scoped: MCP_TOKEN, own: null, bearer: MCP_BEARER, header: MCP_HEADER }, 'Claude reads the server-named variables');
+    assert.deepStrictEqual(JSON.parse(fs.readFileSync(seen, 'utf8')), { team: 'shared-value', scoped: MCP_TOKEN, own: null, bearer: MCP_BEARER, header: MCP_HEADER }, 'Claude reads the server-named variables');
     assert.strictEqual(claudeReply.text, 'token [REDACTED] and bearer [REDACTED]');
     const codexReply = await hub.send({ threadId: t.id, agentId: 'codex', text: 'show the token', mode: 'read' });
-    assert.deepStrictEqual(JSON.parse(fs.readFileSync(seen, 'utf8')), { scoped: null, own: MCP_TOKEN, bearer: MCP_BEARER, header: MCP_HEADER }, 'Codex env_vars read the variable by its own name');
+    assert.deepStrictEqual(JSON.parse(fs.readFileSync(seen, 'utf8')), { team: 'shared-value', scoped: null, own: MCP_TOKEN, bearer: MCP_BEARER, header: MCP_HEADER }, 'Codex env_vars read the variable by its own name');
     assert.strictEqual(codexReply.text, 'token [REDACTED] and bearer [REDACTED]');
     const stored = JSON.stringify(hub.thread(t.id).messages);
     for (const v of [MCP_TOKEN, MCP_BEARER]) assert.ok(!stored.includes(v), 'nothing stored holds a value');

@@ -7,6 +7,26 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const Module = require('module');
+const { execFileSync } = require('child_process');
+
+test('packaged shared core creates team keys outside the source checkout', () => {
+  const isolated = mkTmp('vsc-runtime');
+  for (const directory of ['core', 'node_modules']) fs.cpSync(path.join(__dirname, '..', 'vscode', 'dist', directory), path.join(isolated, directory), { recursive: true });
+  const result = execFileSync(process.execPath, ['-e', `
+    const assert = require('node:assert/strict');
+    const { TeamSecrets } = require('./core/team-secrets');
+    const { MemorySecrets } = require('./core/store');
+    const { SecretGuard } = require('./core/secret-guard');
+    (async () => {
+      const team = new TeamSecrets(new MemorySecrets(), new SecretGuard());
+      const publicKey = await team.createKey();
+      assert.match(publicKey, /^age1[02-9ac-hj-np-z]{58}$/);
+      assert.equal(await team.key(), publicKey);
+      console.log('ok');
+    })().catch(() => process.exit(1));
+  `], { cwd: isolated, encoding: 'utf8', env: { ...process.env, NODE_PATH: '' } });
+  assert.equal(result.trim(), 'ok');
+});
 
 function fakeVscode(workspace) {
   const commands = new Map(); const views = new Map(); const shown = [];

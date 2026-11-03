@@ -504,6 +504,6 @@
     "Tree arrow-key navigation applies to the unfiltered explorer; filtered results retain their existing buttons",
     "No native Windows/macOS run or screen-reader audio validation was performed",
     "The real user app was not restarted; checks ran in a disposable profile",
-    "Changes remain uncommitted and unpublished"
+    "Validation captured before integration; Git status is reported separately"
   ]
 }
