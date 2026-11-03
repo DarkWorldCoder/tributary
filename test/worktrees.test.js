@@ -218,3 +218,18 @@ test('a project in a subfolder of the repository works in the same subfolder of 
   assert.deepStrictEqual(r.files, ['app/index.js']);
   assert.strictEqual(read(d, 'app', 'index.js'), '2\n');
 });
+
+test('a Manager team in a conversation with a separate copy builds into the copy', async () => {
+  const reply = (text) => `console.log(JSON.stringify({ type: 'item.completed', item: { id: 'i', type: 'agent_message', text: ${JSON.stringify(text)} } })); console.log(JSON.stringify({ type: 'turn.completed' }));`;
+  const plan = { tasks: [{ id: 'a', title: 'Write a', instructions: 'Create a.txt', files: ['a.txt'], dependsOn: [] }] };
+  const boss = { ...writer('boss', 'unused.txt', ''), args: () => ['-e', reply(`\`\`\`json\n${JSON.stringify(plan)}\n\`\`\``)] };
+  const { d, hub } = await setup([boss, writer('w1', 'a.txt', 'a\n')]);
+  const t = hub.createThread(d, 'Build it');
+  const wt = await hub.createWorktree(t.id);
+  await hub.runTeam(t.id, { recipe: 'manager', task: 'Build it', roles: { planner: 'boss', workers: ['w1'] }, testCommand: 'node -e "process.exit(require(\'fs\').existsSync(\'a.txt\') ? 0 : 1)"' });
+  const m = hub.thread(t.id).messages.find((x) => x.kind === 'manager');
+  assert.deepStrictEqual(m.manager.tasks.map((x) => x.state), ['done'], JSON.stringify(m.manager.tasks.map((x) => x.note)));
+  assert.strictEqual(read(wt.cwd, 'a.txt'), 'a\n');
+  assert.ok(!fs.existsSync(path.join(d, 'a.txt')), 'the project folder is untouched');
+  assert.deepStrictEqual(m.files.map((f) => f.path), [path.join(wt.cwd, 'a.txt')]);
+});
