@@ -120,7 +120,15 @@ function loadCustom(file) {
   try {
     const list = JSON.parse(fs.readFileSync(file, 'utf8'));
     return (Array.isArray(list) ? list : list.agents || []).filter((a) => a && a.id && a.command)
-      .map((a) => ({ protocol: 'text', gateways: [], color: '#888888', ...a, bins: [a.command], custom: true }));
+      .map((a) => {
+        const def = { protocol: 'text', gateways: [], color: '#888888', ...a, bins: [a.command], custom: true };
+        // The runner calls args() for streaming protocols; a list from agents.json gets {prompt}, {cwd} and {mode}.
+        if (def.protocol !== 'text' && def.protocol !== 'acp' && Array.isArray(a.args)) {
+          const list = a.args.map(String);
+          def.args = (o = {}) => list.map((x) => x.replace(/\{prompt\}/g, o.prompt ?? '').replace(/\{cwd\}/g, o.cwd ?? '').replace(/\{mode\}/g, o.mode ?? ''));
+        }
+        return def;
+      });
   } catch { return []; }
 }
 

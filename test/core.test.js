@@ -244,3 +244,15 @@ test('hub: the request appears before the checkpoint, which is still taken befor
   assert.match(await hub.turnDiff(t.id, m.id), /a\.txt|^$/, 'the turn can still be diffed against its checkpoint');
   hub.store.save(true);
 });
+
+test('custom agents can use a streaming protocol: their args list gets {prompt}, {cwd} and {mode}', async () => {
+  const dir = tmp(); const file = path.join(dir, 'agents.json');
+  const script = path.join(dir, 'agent.js');
+  fs.writeFileSync(script, "const [p, cwd, mode] = process.argv.slice(2); console.log(JSON.stringify({ type: 'item.completed', item: { id: 'i', type: 'agent_message', text: `got ${p} in ${require('path').basename(cwd)} as ${mode}` } })); console.log(JSON.stringify({ type: 'turn.completed' }));");
+  fs.writeFileSync(file, JSON.stringify({ agents: [{ id: 'mine', name: 'Mine', command: process.execPath, args: [script, '{prompt}', '{cwd}', '{mode}'], protocol: 'codex-exec' }] }));
+  const [agent] = (await detectAgents({ customFile: file, probeVersions: false })).filter((a) => a.id === 'mine');
+  const cwd = tmp(); const ev = [];
+  const r = await runTurn({ agent, cwd, prompt: 'hello', mode: 'read', onEvent: (e) => ev.push(e) });
+  assert.strictEqual(r.ok, true, JSON.stringify(ev));
+  assert.strictEqual(textOf(ev), `got hello in ${path.basename(cwd)} as read`);
+});
