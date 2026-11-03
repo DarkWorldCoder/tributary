@@ -100,6 +100,7 @@ const API = {
   deleteThread: (id) => hub.deleteThread(id),
   markThreadSeen: (id) => hub.markThreadSeen(id),
   activity: () => hub.activity(),
+  lineAuthors: (p, rel) => hub.lineAuthors(p, rel),
   removeProject: (p) => hub.removeProject(p),
   send: (o) => hub.send(o).then((m) => ({ id: m.id, ok: m.ok })),
   stop: (id) => hub.stop(id),
