@@ -5,41 +5,45 @@ import { EditorView, keymap } from '@codemirror/view';
 import { indentWithTab } from '@codemirror/commands';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { tags as t } from '@lezer/highlight';
-import { javascript } from '@codemirror/lang-javascript';
-import { python } from '@codemirror/lang-python';
-import { json } from '@codemirror/lang-json';
-import { css } from '@codemirror/lang-css';
-import { html } from '@codemirror/lang-html';
-import { markdown } from '@codemirror/lang-markdown';
-import { rust } from '@codemirror/lang-rust';
-import { go } from '@codemirror/lang-go';
-import { java } from '@codemirror/lang-java';
-import { cpp } from '@codemirror/lang-cpp';
-import { sql } from '@codemirror/lang-sql';
-import { yaml } from '@codemirror/lang-yaml';
-import { php } from '@codemirror/lang-php';
 import { agentFlash, applyRemoteText, askAboutSelection, blameGutter, showBlame, type Blame } from '@/lib/agent-editor';
 import { useStore } from '@/store';
+import type { ActivityEntry } from '@/types';
 
-export function languageFor(path: string): Extension | null {
+// Language support loads the first time a file of that kind opens, not with the app.
+const load = {
+  javascript: (o?: { jsx?: boolean; typescript?: boolean }) => import('@codemirror/lang-javascript').then((m) => m.javascript(o)),
+  python: () => import('@codemirror/lang-python').then((m) => m.python()),
+  json: () => import('@codemirror/lang-json').then((m) => m.json()),
+  css: () => import('@codemirror/lang-css').then((m) => m.css()),
+  html: () => import('@codemirror/lang-html').then((m) => m.html()),
+  markdown: () => import('@codemirror/lang-markdown').then((m) => m.markdown()),
+  rust: () => import('@codemirror/lang-rust').then((m) => m.rust()),
+  go: () => import('@codemirror/lang-go').then((m) => m.go()),
+  java: () => import('@codemirror/lang-java').then((m) => m.java()),
+  cpp: () => import('@codemirror/lang-cpp').then((m) => m.cpp()),
+  sql: () => import('@codemirror/lang-sql').then((m) => m.sql()),
+  yaml: () => import('@codemirror/lang-yaml').then((m) => m.yaml()),
+  php: () => import('@codemirror/lang-php').then((m) => m.php()),
+};
+export async function languageFor(path: string): Promise<Extension | null> {
   const ext = path.split('.').pop()?.toLowerCase() ?? '';
   switch (ext) {
-    case 'js': case 'mjs': case 'cjs': return javascript();
-    case 'jsx': return javascript({ jsx: true });
-    case 'ts': case 'mts': case 'cts': return javascript({ typescript: true });
-    case 'tsx': return javascript({ jsx: true, typescript: true });
-    case 'py': case 'pyi': return python();
-    case 'json': case 'jsonc': return json();
-    case 'css': case 'scss': case 'less': return css();
-    case 'html': case 'htm': case 'vue': case 'svelte': return html();
-    case 'md': case 'mdx': case 'markdown': return markdown();
-    case 'rs': return rust();
-    case 'go': return go();
-    case 'java': case 'kt': return java();
-    case 'c': case 'h': case 'cc': case 'cpp': case 'hpp': case 'cxx': return cpp();
-    case 'sql': return sql();
-    case 'yml': case 'yaml': return yaml();
-    case 'php': return php();
+    case 'js': case 'mjs': case 'cjs': return load.javascript();
+    case 'jsx': return load.javascript({ jsx: true });
+    case 'ts': case 'mts': case 'cts': return load.javascript({ typescript: true });
+    case 'tsx': return load.javascript({ jsx: true, typescript: true });
+    case 'py': case 'pyi': return load.python();
+    case 'json': case 'jsonc': return load.json();
+    case 'css': case 'scss': case 'less': return load.css();
+    case 'html': case 'htm': case 'vue': case 'svelte': return load.html();
+    case 'md': case 'mdx': case 'markdown': return load.markdown();
+    case 'rs': return load.rust();
+    case 'go': return load.go();
+    case 'java': case 'kt': return load.java();
+    case 'c': case 'h': case 'cc': case 'cpp': case 'hpp': case 'cxx': return load.cpp();
+    case 'sql': return load.sql();
+    case 'yml': case 'yaml': return load.yaml();
+    case 'php': return load.php();
     default: return null;
   }
 }
@@ -80,6 +84,7 @@ export function CodeEditor({ path, value, onChange, onSave, readOnly, line }: {
   const host = React.useRef<HTMLDivElement>(null);
   const view = React.useRef<EditorView | null>(null);
   const ro = React.useRef(new Compartment());
+  const language = React.useRef(new Compartment());
   const cb = React.useRef({ onChange, onSave }); cb.current = { onChange, onSave };
   // Agent-aware editing: who wrote each line (Alt+B toggles it), agent edits highlighted, a selection handed to an agent.
   const s = useStore(); const store = React.useRef(s); store.current = s;
@@ -87,7 +92,6 @@ export function CodeEditor({ path, value, onChange, onSave, readOnly, line }: {
   const [diskChanged, setDiskChanged] = React.useState(0);
 
   React.useEffect(() => {
-    const lang = languageFor(path);
     const v = new EditorView({
       parent: host.current!,
       state: EditorState.create({
@@ -96,7 +100,7 @@ export function CodeEditor({ path, value, onChange, onSave, readOnly, line }: {
           basicSetup, theme, syntaxHighlighting(highlight), keymap.of([indentWithTab, { key: 'Mod-s', preventDefault: true, run: () => { cb.current.onSave?.(); return true; } }]),
           ro.current.of([EditorState.readOnly.of(!!readOnly), EditorView.editable.of(!readOnly)]),
           EditorView.updateListener.of((u) => { if (u.docChanged) cb.current.onChange?.(u.state.doc.toString()); }),
-          ...(lang ? [lang] : []),
+          language.current.of([]),
           agentFlash,
           blameGutter((turn) => store.current.openThread(turn.threadId)),
           askAboutSelection(({ text, fromLine, toLine }) => {
@@ -108,6 +112,7 @@ export function CodeEditor({ path, value, onChange, onSave, readOnly, line }: {
       }),
     });
     view.current = v;
+    languageFor(path).then((lang) => { if (lang && view.current === v) v.dispatch({ effects: language.current.reconfigure(lang) }); }).catch(() => { /* plain text */ });
     return () => { v.destroy(); view.current = null; };
     // A new path means a new document; the value is synced below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -126,6 +131,16 @@ export function CodeEditor({ path, value, onChange, onSave, readOnly, line }: {
     v.dispatch({ selection: { anchor: l.from }, effects: EditorView.scrollIntoView(l.from, { y: 'center' }) }); v.focus();
   }, [line, path]);
 
+  // Agents changing this file in the project right now (not those working in their own copy).
+  const [editing, setEditing] = React.useState<string[]>([]);
+  React.useEffect(() => {
+    const pick = (all: ActivityEntry[]) => setEditing([...new Set(all.filter((e) => e.project === s.project && (e.kind === 'turn' || e.kind === 'team'))
+      .flatMap((e) => e.workers.filter((w) => w.state === 'working' && w.files.some((f) => f.rel === path)).map((w) => w.agent)))]);
+    s.hub.call<ActivityEntry[]>('activity').then(pick).catch(() => {});
+    const off = s.hub.on('activity', pick);
+    return () => { if (typeof off === 'function') off(); };
+  }, [s.hub, s.project, path]);
+
   // Blame for this file, fetched when it opens, after it changes on disk, and when blame is switched on.
   React.useEffect(() => {
     const v = view.current; const project = s.project; if (!v) return;
@@ -138,5 +153,15 @@ export function CodeEditor({ path, value, onChange, onSave, readOnly, line }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path, blameOn, s.project, diskChanged]);
 
-  return <div ref={host} className="h-full min-h-0 overflow-hidden" />;
+  return (
+    <div className="relative h-full min-h-0 overflow-hidden">
+      <div ref={host} className="h-full min-h-0" />
+      {editing.length > 0 && (
+        <div role="status" className="pointer-events-none absolute top-2 right-4 z-10 flex items-center gap-1.5 rounded-full border bg-popover/95 px-2.5 py-1 text-xs text-popover-foreground shadow-sm">
+          <span className="size-2 animate-pulse rounded-full" style={{ backgroundColor: s.agentOf(editing[0]).color }} />
+          {editing.map((id) => s.agentOf(id).name).join(', ')} {editing.length === 1 ? 'is' : 'are'} editing this file
+        </div>
+      )}
+    </div>
+  );
 }
