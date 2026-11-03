@@ -25,7 +25,7 @@ export function SeparateCopy() {
   const s = useStore(); const t = s.thread; const copy = t?.worktree;
   const project = s.st?.projects.find((p) => p.path === s.project);
   const [status, setStatus] = React.useState<WorktreeStatus | null>(null);
-  const [busy, setBusy] = React.useState<'create' | 'merge' | 'discard' | 'setup' | null>(null);
+  const [busy, setBusy] = React.useState<'create' | 'merge' | 'discard' | 'setup' | 'resolve' | null>(null);
   const [confirm, setConfirm] = React.useState<'merge' | 'discard' | 'setup' | null>(null);
   const [open, setOpen] = React.useState(false);
   const [problem, setProblem] = React.useState<string | null>(null);
@@ -76,6 +76,21 @@ export function SeparateCopy() {
       const r = await p as { state: string };
       if (r.state === 'failed') toast.error('The setup script failed', { description: 'Its output is in the branch popover.' });
     } catch (e) { toast.error(message(e)); } finally { setBusy(null); load(); }
+  };
+  // Conflicts with the project's branch are resolved in the copy by the selected agent; your folder isn't touched.
+  const resolver = s.agentOf(s.agentId ?? '').name;
+  const resolve = async () => {
+    if (!t || !s.agentId) return;
+    setBusy('resolve'); setProblem(null);
+    try {
+      const r = await s.hub.call<{ resolved: boolean; files: string[]; remaining?: string[] }>('resolveCopyConflicts', t.id, s.agentId);
+      if (r.resolved) toast.success(r.files.length ? `${resolver} resolved ${plural(r.files.length, 'conflict')}` : `${into} merged into the copy without conflicts`, { description: 'Merge when you are ready.' });
+      else toast.error(`Still conflicting: ${r.remaining?.join(', ')}`, { description: 'Ask again, or undo the merge in the branch popover.' });
+    } catch (e) { toast.error(message(e)); } finally { setBusy(null); load(); }
+  };
+  const abortMerge = async () => {
+    if (!t) return;
+    try { await s.hub.call('abortCopyMerge', t.id); toast.success('The copy is back as it was'); } catch (e) { toast.error(message(e)); } finally { load(); }
   };
   const discard = async () => {
     if (!t) return;
@@ -141,6 +156,22 @@ export function SeparateCopy() {
                 {files.map((f) => <li key={f.path} className="flex items-center gap-2 rounded-md px-1 py-0.5"><ChangeCode code={changeCode(f.code)} /><span className="truncate font-mono text-[12px]">{f.path}</span></li>)}
               </ul>
             ) : status && !status.missing && <p className="text-xs text-muted-foreground">No changes yet compared with {into}.</p>}
+            {status?.merging ? (
+              <Alert>
+                <AlertTitle>Taking in {into}</AlertTitle>
+                <AlertDescription>{status.unresolved?.length ? `Still conflicting: ${status.unresolved.join(', ')}.` : 'No conflicts left.'} Ask an agent again, or undo the merge to put the copy back as it was.</AlertDescription>
+                <div className="mt-2 flex gap-2">
+                  <Button size="xs" disabled={!!busy || s.running} onClick={resolve}>{busy === 'resolve' && <Spinner />} Ask {resolver} again</Button>
+                  <Button size="xs" variant="ghost" disabled={!!busy || s.running} onClick={abortMerge}>Undo the merge</Button>
+                </div>
+              </Alert>
+            ) : status?.conflicts?.length ? (
+              <Alert>
+                <AlertTitle>Conflicts with {into}</AlertTitle>
+                <AlertDescription>{status.conflicts.join(', ')} also changed on {into} since this copy started. {resolver} can take in {into} and resolve them here, in the copy; your folder isn&apos;t touched.</AlertDescription>
+                <Button size="xs" className="mt-2 w-fit" disabled={!!busy || s.running || !s.agentId} onClick={resolve}>{busy === 'resolve' && <Spinner />} Resolve with {resolver}</Button>
+              </Alert>
+            ) : null}
             {problem && (
               <Alert variant="destructive">
                 <AlertTitle>Not merged</AlertTitle>
@@ -150,7 +181,7 @@ export function SeparateCopy() {
             )}
             <div className="flex justify-end gap-2">
               <Button variant="outline" size="sm" disabled={!!busy || s.running} onClick={() => setConfirm('discard')}><Trash2 /> Discard</Button>
-              <Button size="sm" disabled={!!busy || s.running || status?.missing || !files.length} onClick={() => setConfirm('merge')}>{busy === 'merge' ? <Spinner /> : <GitMerge />} Merge into {into}</Button>
+              <Button size="sm" disabled={!!busy || s.running || status?.missing || status?.merging || !files.length} onClick={() => setConfirm('merge')}>{busy === 'merge' ? <Spinner /> : <GitMerge />} Merge into {into}</Button>
             </div>
           </PopoverContent>
         </Popover>

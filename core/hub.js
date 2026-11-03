@@ -859,6 +859,17 @@ class Hub extends EventEmitter {
       } finally { this.workspaceReservations.delete(`merge:${t.id}`); }
     });
   }
+  // The copy conflicts with the project's branch: that branch is merged into the copy, and agentId resolves the
+  // conflict markers there. The merge is concluded only once no markers remain; your folder never sees any.
+  async resolveCopyConflicts(threadId, agentId) {
+    const { into, conflicts } = await this.changeCopy(threadId, {}, (t, root) => worktrees.mergeIntoCopy(root, t.worktree, { message: t.title }));
+    if (!conflicts.length) return { resolved: true, files: [] };
+    await this.send({ threadId, agentId, mode: 'edit', team: { recipe: 'resolve', role: 'resolver' }, displayText: `Resolve the merge conflicts with ${into}`,
+      text: `The latest ${into} was merged into this branch, and these files conflict: ${conflicts.join(', ')}. Each has conflict markers (<<<<<<<, =======, >>>>>>>). Resolve every conflict so the result keeps what both sides meant, remove all the markers, and run the project's tests or checks if it has any. Do not commit and do not run git merge, git commit or git reset; Tributary finishes the merge.` });
+    const { remaining } = await this.changeCopy(threadId, {}, (t) => worktrees.finishCopyMerge(t.worktree, conflicts));
+    return remaining.length ? { resolved: false, files: conflicts, remaining } : { resolved: true, files: conflicts };
+  }
+  abortCopyMerge(threadId) { return this.changeCopy(threadId, {}, (t) => worktrees.abortCopyMerge(t.worktree)); }
   // Remove the copy and its branch; the conversation works in the project folder again.
   async discardWorktree(threadId) {
     this.setupRuns?.get(threadId)?.abort();

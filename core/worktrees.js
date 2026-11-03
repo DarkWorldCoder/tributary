@@ -5,6 +5,7 @@
 // Every function takes an optional { host } (core/host.js), like the other git helpers.
 const { localHost } = require('./host');
 const { unignoredCopies } = require('./workspace-setup');
+const { snapshotTree } = require('./checkpoint');
 
 const gitRaw = async (host, cwd, args, { env } = {}) => {
   const r = await host.exec('git', args, { cwd, env, timeout: 120000, maxBuffer: 64 * 1024 * 1024 });
@@ -33,6 +34,10 @@ async function commitWork(host, dir, message, copied) {
   if ((await gitRaw(host, dir, ['diff', '--cached', '--quiet'])).code) await git(host, dir, ['commit', '--no-verify', '-q', '-m', message], { env: await identity(host, dir) });
 }
 const DEFAULT_MESSAGE = 'Work from a Tributary conversation';
+// A merge into the copy that stopped on conflicts, and the files still unmerged.
+const merging = async (host, dir) => !(await gitRaw(host, dir, ['rev-parse', '-q', '--verify', 'MERGE_HEAD'])).code;
+const unmerged = async (host, dir) => [...new Set(paths(await git(host, dir, ['diff', '--name-only', '--diff-filter=U', '-z'])))];
+const MARKER = /^(<{7}|>{7})( |$)/m;
 const currentBranch = async (host, cwd) => (await gitRaw(host, cwd, ['symbolic-ref', '--quiet', '--short', 'HEAD'])).stdout.trim() || 'HEAD';
 
 /** Add a worktree at `dir` on a new `branch` from the repository's current commit. -> { path, branch, base, from } */
@@ -64,7 +69,52 @@ async function worktreeStatus(root, { path: dir, branch }, { host = localHost } 
   const p = paths(changed); const files = [];
   for (let i = 0; i + 1 < p.length; i += 2) files.push({ path: p[i + 1], code: p[i] });
   for (const f of paths(untracked)) files.push({ path: f, code: 'A' });
-  return { branch, path: dir, into, ahead, behind, uncommitted: paths(status).length, files: files.sort((a, b) => a.path.localeCompare(b.path)) };
+  const mid = await merging(host, dir);
+  return { branch, path: dir, into, ahead, behind, uncommitted: paths(status).length, files: files.sort((a, b) => a.path.localeCompare(b.path)),
+    merging: mid, unresolved: mid ? await unmerged(host, dir) : [], conflicts: mid || !behind ? [] : await copyConflicts(host, root, dir) };
+}
+
+// Files that would conflict if the copy, with its uncommitted work, were merged now. A trial merge of a throwaway
+// commit of the copy's files; nothing in either folder changes.
+async function copyConflicts(host, root, dir) {
+  const tree = await snapshotTree(dir, { external: false, host });
+  const head = (await git(host, dir, ['rev-parse', 'HEAD'])).trim();
+  const trial = (await git(host, dir, ['commit-tree', tree, '-p', head, '-m', 'Tributary: trial merge'], { env: await identity(host, dir) })).trim();
+  const m = await gitRaw(host, root, ['merge-tree', '--write-tree', '--name-only', '--no-messages', (await git(host, root, ['rev-parse', 'HEAD'])).trim(), trial]);
+  return m.code === 1 ? [...new Set(m.stdout.trim().split('\n').slice(1).filter(Boolean))] : [];
+}
+
+/**
+ * Merge the project's current branch into the copy, so conflicts are resolved in the copy and never in your folder.
+ * The copy's work is committed first. -> { into, conflicts } (conflicts [] when it merged cleanly)
+ */
+async function mergeIntoCopy(root, { path: dir, branch, copied }, { message = DEFAULT_MESSAGE, host = localHost } = {}) {
+  const into = await currentBranch(host, root);
+  if (await merging(host, dir)) return { into, conflicts: await unmerged(host, dir) };
+  await commitWork(host, dir, message, copied);
+  const ours = (await git(host, root, ['rev-parse', 'HEAD'])).trim();
+  const r = await gitRaw(host, dir, ['merge', '--no-ff', '--no-edit', '--no-verify', '-m', `Merge ${into} into ${branch}`, ours], { env: await identity(host, dir) });
+  if (!r.code) return { into, conflicts: [] };
+  const conflicts = await unmerged(host, dir);
+  if (!conflicts.length) throw new Error(`Could not merge ${into} into the copy: ${(r.stderr || r.stdout).trim()}`);
+  return { into, conflicts };
+}
+
+/** Conclude the merge in the copy once no conflict markers remain in `files`. -> { remaining } (files still marked) */
+async function finishCopyMerge({ path: dir, copied }, files, { host = localHost } = {}) {
+  if (!(await merging(host, dir))) return { remaining: [] };
+  const remaining = [];
+  for (const f of files) { const text = await host.readFile(host.path.join(dir, f)).catch(() => null); if (text != null && MARKER.test(String(text))) remaining.push(f); }
+  if (remaining.length) return { remaining };
+  const skip = host.remote ? [] : await unignoredCopies(dir, copied);
+  await git(host, dir, ['add', '-A', '--', '.', ...skip.map((rel) => `:(exclude,literal)${rel}`)]);
+  await git(host, dir, ['commit', '--no-edit', '--no-verify', '-q'], { env: await identity(host, dir) });
+  return { remaining: [] };
+}
+
+/** Undo a merge into the copy that has not been concluded. */
+async function abortCopyMerge({ path: dir }, { host = localHost } = {}) {
+  if (await merging(host, dir)) await git(host, dir, ['merge', '--abort']);
 }
 
 const conflictError = (message, conflicts) => Object.assign(new Error(message), { conflicts });
@@ -78,6 +128,7 @@ const conflictError = (message, conflicts) => Object.assign(new Error(message), 
  */
 async function mergeWorktree(root, { path: dir, branch, copied }, { message = DEFAULT_MESSAGE, host = localHost, scan } = {}) {
   if (!(await host.exists(dir))) throw new Error(`The separate copy at ${dir} is gone. Discard it to work in the project folder again.`);
+  if (await merging(host, dir)) throw new Error('The copy is in the middle of taking in the project\'s changes. Finish or undo that merge first.');
   await commitWork(host, dir, message, copied);
   const into = await currentBranch(host, root);
   const ours = (await git(host, root, ['rev-parse', 'HEAD'])).trim();
@@ -114,4 +165,4 @@ async function removeWorktree(root, { path: dir, branch, copied }, { keepBranch 
   if (!keepBranch) await gitRaw(host, root, ['branch', '-D', branch]);
 }
 
-module.exports = { createWorktree, worktreeStatus, mergeWorktree, removeWorktree };
+module.exports = { createWorktree, worktreeStatus, mergeWorktree, removeWorktree, mergeIntoCopy, finishCopyMerge, abortCopyMerge };
