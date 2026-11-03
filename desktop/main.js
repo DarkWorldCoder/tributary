@@ -254,11 +254,12 @@ app.whenReady().then(async () => {
         }
         await new Promise((r) => setTimeout(r, 800));
       }
-      // TRIBUTARY_SMOKE_SEND='[{"agent":"id","text":"go"}]' starts a turn in each of the first threads, from here
+      // TRIBUTARY_SMOKE_SEND='[{"agent":"id","text":"go"}]' (or {"team": {...}}) starts a turn or team run in each of the first threads, from here
       // rather than through the composer, so a check can watch agents work without typing into the app.
       for (const [i, r] of JSON.parse(process.env.TRIBUTARY_SMOKE_SEND || '[]').entries()) {
         const t = hub.store.data.threads[i];
-        if (t && r.agent) hub.send({ threadId: t.id, agentId: r.agent, text: r.text || 'go', mode: 'edit' }).catch((e) => console.log(`SMOKE send failed: ${e.message}`));
+        if (t && r.team) hub.runTeam(t.id, r.team).catch((e) => console.log(`SMOKE team failed: ${e.message}`));
+        else if (t && r.agent) hub.send({ threadId: t.id, agentId: r.agent, text: r.text || 'go', mode: 'edit' }).catch((e) => console.log(`SMOKE send failed: ${e.message}`));
       }
       // TRIBUTARY_SMOKE_CLICKS="Settings|Agents|Browse agents|3000" clicks those buttons (label or text) before the
       // screenshot; a number waits that many milliseconds, "type:text" types and "key:control+f" presses keys.
