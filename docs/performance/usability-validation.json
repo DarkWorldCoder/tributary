@@ -38,5 +38,15 @@
     "No real model turn",
     "No running VS Code webview",
     "No native Windows or macOS window test"
-  ]
+  ],
+  "fullMergedTestSuite": {
+    "tests": 189,
+    "passed": 189,
+    "failed": 0
+  },
+  "roomAccessibility": {
+    "violations": 0,
+    "manualReviewItems": 2
+  },
+  "mergedClaudeCommit": "df9040cfc81ed64806c64883901c0430a5cf5fdd"
 }

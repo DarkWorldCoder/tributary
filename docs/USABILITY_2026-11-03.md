@@ -39,10 +39,13 @@ This is peer discovery and invitations around one authoritative room service. It
 
 ## Validation
 
-- Full baseline-plus-new suite: 185 passing tests. After the final attachment transport checks, 32 focused tests passed, including all 8 new usability tests (187 distinct tests across the runs).
+Merged the remaining Claude commit `df9040c`: completed turns now record an end checkpoint, so later manual edits are excluded from agent attribution and turn diffs. All local Claude branch tips are included in main.
+
+- Full merged suite: **189 passing tests**, including all 8 new usability tests and Claude’s new attribution/undo checks.
 - TypeScript and production renderer build pass; VS Code packaging/bridge tests pass. The formatter worker is one standalone asset and loads on demand.
 - Installed Codex parser accepts the revised resume arguments in help-only checks; no model turn was sent. Installed Antigravity listed models and the picker displayed them.
 - Native Electron fixture: formatting/undo/no auto-save, actual image pixels, clipboard image paste, zoom viewer, project rename and folders, expanded-workspace return, diff scrolling/wrapping, short menu text and agent setup actions.
+- Native room accessibility scan: zero violations, with two items flagged for manual review.
 - Settings alignment and chat overflow checked at 320, 390, 768, 900, 1280 and 1920 px. All used disposable projects/profiles, not the user's active chats.
 - LAN script launched against temporary data; multicast discovery found its private-network address and the pinned HTTPS room page returned HTTP 200. Separate invited clients shared room state over TLS. A mismatched pin was rejected before any request/access key reached the server.
 
