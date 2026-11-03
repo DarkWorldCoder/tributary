@@ -100,6 +100,7 @@ const API = {
   deleteThread: (id) => hub.deleteThread(id),
   markThreadSeen: (id) => hub.markThreadSeen(id),
   activity: () => hub.activity(),
+  lineAuthors: (p, rel) => hub.lineAuthors(p, rel),
   // A conversation's separate working copy (its own git worktree and branch)
   createWorktree: (id) => hub.createWorktree(id),
   worktreeStatus: (id) => hub.worktreeStatus(id),

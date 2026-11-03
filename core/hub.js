@@ -26,6 +26,7 @@ const registry = require('./registry');
 const { threadStatus } = require('./status');
 const { activityOf, watchActivity } = require('./activity');
 const { judgeRace } = require('./manager');
+const { lineAuthors } = require('./attribution');
 const worktrees = require('./worktrees');
 
 const uid = () => crypto.randomUUID();
@@ -207,6 +208,8 @@ class Hub extends EventEmitter {
   }
   // Every agent at work right now: conversations, team steps and race candidates (core/activity.js).
   activity() { return activityOf(this); }
+  // Which agent's turn last changed each line of a file (core/attribution.js), for agent blame in the editor.
+  async lineAuthors(dir, rel) { if (!this.project(dir)) throw new Error('Unknown project'); return lineAuthors(this, dir, rel); }
   thread(id) { return this.store.data.threads.find((t) => t.id === id) || null; }
   createThread(projectPath, title) {
     if (!this.project(projectPath)) this.addProject(projectPath);
