@@ -58,8 +58,15 @@ export interface HubEvents {
   collaboration: import('../../core/collaboration/client.mjs').RoomState;
   state: undefined; threads: string; message: { threadId: string; message: Message }; 'message-patch': { threadId: string; id: string; patch: import('./lib/message-patch.mjs').MessagePatch };
   running: { threadId: string; running: boolean }; insert: string; 'focus-project': string;
-  notification: AppNotification; 'term-data': { id: string; data: string }; 'term-exit': { id: string; code: number }; 'open-thread': string;
+  activity: ActivityEntry[]; notification: AppNotification; 'term-data': { id: string; data: string }; 'term-exit': { id: string; code: number }; 'open-thread': string;
 }
+// The live view (core/activity.js): every busy thread and the agents working in it.
+export interface ActivityWorker {
+  key: string; agent: string; role: string | null; messageId?: string; startedAt?: number; taskId?: string;
+  state: 'working' | 'testing' | 'merging' | 'waiting' | 'done' | 'failed' | 'skipped'; doing: string;
+  files: { rel: string; change?: string }[]; tests?: string; branch?: string; tools?: number;
+}
+export interface ActivityEntry { threadId: string; title: string; project: string; startedAt?: number; kind: 'turn' | 'team' | 'race' | 'manager'; recipe?: string; recipeName?: string; messageId?: string; phase?: string; workers: ActivityWorker[] }
 export interface HubBridge {
   platform: 'desktop' | 'vscode' | 'mock';
   call<T = unknown>(method: string, ...args: unknown[]): Promise<T>;

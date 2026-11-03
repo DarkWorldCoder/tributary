@@ -24,6 +24,7 @@ const documents = require('./documents');
 const folderFiles = require('./files');
 const registry = require('./registry');
 const { threadStatus } = require('./status');
+const { activityOf, watchActivity } = require('./activity');
 
 const uid = () => crypto.randomUUID();
 const PLAN_PREFIX = 'Plan only. Do not modify files or run commands that change anything. Investigate as needed, then reply with a concise numbered plan: the steps, the files you would change, and any risks or open questions.';
@@ -48,6 +49,7 @@ class Hub extends EventEmitter {
     this.running = new Map(); // threadId -> AbortController
     this.workspaceReservations = new Map();
     this.teams = new Map();   // threadId -> { abort, recipe, steps }
+    watchActivity(this); // 'activity' events for the live view
   }
 
   async init() {
@@ -199,6 +201,8 @@ class Hub extends EventEmitter {
     if (!t || threadStatus(t, { running: this.running.has(id) }) !== 'review') return;
     t.seenAt = now(); this.store.save(); this.emit('threads', t.project);
   }
+  // Every agent at work right now: conversations, team steps and race candidates (core/activity.js).
+  activity() { return activityOf(this); }
   thread(id) { return this.store.data.threads.find((t) => t.id === id) || null; }
   createThread(projectPath, title) {
     if (!this.project(projectPath)) this.addProject(projectPath);

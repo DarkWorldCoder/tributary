@@ -54,6 +54,7 @@ function wireEvents() {
   });
   hub.on('message', (d) => { const t = pending.get(d.message.id); if (t) { clearTimeout(t); pending.delete(d.message.id); } patcher.full(d.message); send('message', d); });
   for (const n of ['state', 'threads', 'running', 'notification', 'collaboration']) hub.on(n, (d) => send(n, d));
+  hub.on('activity', (d) => send('activity', d)); // the live view
   // System notification when something finishes while the window is in the background.
   hub.on('notification', (n) => {
     if (SMOKE || !Notification.isSupported() || (win && !win.isDestroyed() && win.isFocused())) return;
@@ -98,6 +99,7 @@ const API = {
   renameThread: (id, t) => hub.renameThread(id, t),
   deleteThread: (id) => hub.deleteThread(id),
   markThreadSeen: (id) => hub.markThreadSeen(id),
+  activity: () => hub.activity(),
   removeProject: (p) => hub.removeProject(p),
   send: (o) => hub.send(o).then((m) => ({ id: m.id, ok: m.ok })),
   stop: (id) => hub.stop(id),

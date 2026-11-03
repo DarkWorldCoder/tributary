@@ -58,6 +58,7 @@ const API = {
   renameThread: (id, t) => hub.renameThread(id, t),
   deleteThread: (id) => hub.deleteThread(id),
   markThreadSeen: (id) => hub.markThreadSeen(id),
+  activity: () => hub.activity(),
   removeProject: () => false,
   async pickProject() { const r = await vscode.window.showOpenDialog({ canSelectFolders: true, canSelectFiles: false, openLabel: 'Open folder in Tributary' }); if (!r?.[0]) return null; hub.addProject(r[0].fsPath); return r[0].fsPath; },
   send: (o) => hub.send(o).then((m) => ({ id: m.id, ok: m.ok })),
@@ -180,6 +181,7 @@ async function activate(context) {
   });
   hub.on('message', (d) => { const t = pending.get(d.message.id); if (t) { clearTimeout(t); pending.delete(d.message.id); } patcher.full(d.message); post('message', d); });
   for (const n of ['state', 'threads', 'running', 'notification', 'collaboration']) hub.on(n, (d) => post(n, d));
+  hub.on('activity', (d) => post('activity', d)); // the live view
 
   const status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
   status.command = 'tributary.focus';
