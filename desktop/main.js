@@ -111,6 +111,7 @@ const API = {
   reviewChanges: (id, agentId) => hub.reviewChanges(id, agentId),
   resolveCopyConflicts: (id, agentId) => hub.resolveCopyConflicts(id, agentId),
   abortCopyMerge: (id) => hub.abortCopyMerge(id),
+  runVerify: (id, messageId) => hub.runVerify(id, messageId),
   runSetup: (id) => hub.runSetup(id),
   trustScript: (p, hash) => hub.trustScript(knownProject(p), hash),
   removeProject: (p) => hub.removeProject(p),

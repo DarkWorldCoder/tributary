@@ -264,7 +264,7 @@ class Hub extends EventEmitter {
     for (const scope of this.alwaysAllowed.keys()) if (scope.startsWith(`${id}\0`)) this.alwaysAllowed.delete(scope);
     this.store.data.threads = this.store.data.threads.filter((x) => x.id !== id);
     this.store.save(); this.emit('threads', t.project);
-    this.setupRuns?.get(id)?.abort();
+    this.setupRuns?.get(id)?.abort(); this.verifyRuns?.get(id)?.abort();
     // Its separate copy goes with it. Its work is committed to its branch first, and the branch stays.
     if (t.worktree) return gitInfo(t.project).then((g) => this.removeCopy(g ? g.root : t.project, t.worktree, { keepBranch: true, message: t.title })).catch(() => {});
   }
@@ -392,6 +392,7 @@ class Hub extends EventEmitter {
     ac.signal.throwIfAborted();
     if (t.messages.length === 0 && t.title === 'New thread') t.title = text.split('\n')[0].slice(0, 60) || 'New thread';
     t.messages.push(userMsg, msg); t.updatedAt = now(); t.lastAgent = agentId;
+    this.verifyRuns?.get(threadId)?.abort(); // the last turn's checks no longer describe the files
     this.store.save();
     this.emit('threads', t.project);
     this.emit('message', { threadId, message: userMsg });
@@ -439,6 +440,7 @@ class Hub extends EventEmitter {
       this.emit('message', { threadId, message: msg });
       this.emit('threads', t.project);
       if (!team) this.notify({ kind: msg.ok ? 'done' : 'failed', threadId, title: `${agent.name} ${msg.ok ? 'finished' : 'stopped with an error'}`, body: t.title });
+      if (git && mode !== 'read' && !team && msg.ok !== false && msg.files.some((f) => !f.external)) this.runVerify(threadId, msg.id, { root: git.root }).catch(() => {});
     }
     return msg;
   }
@@ -475,6 +477,7 @@ class Hub extends EventEmitter {
   }
 
   stop(threadId) {
+    this.verifyRuns?.get(threadId)?.abort();
     const team = this.teams.get(threadId); if (team) team.abort.abort();
     const ac = this.running.get(threadId); if (ac) ac.abort();
   }
@@ -771,6 +774,24 @@ class Hub extends EventEmitter {
     const t = dir && this.store.data.threads.find((x) => x.worktree && (dir === x.worktree.path || dir.startsWith(x.worktree.path + path.sep)));
     return t ? this.workspaceEnv(t) : {};
   }
+  // Checks after a turn: the folder's verify script (.tributary/settings.json), once trusted, runs in the background
+  // after an edit turn that changed files. The next turn, Stop, or merging or discarding the copy cancels it.
+  async runVerify(threadId, messageId, { root } = {}) {
+    const t = this.thread(threadId); const m = t?.messages.find((x) => x.id === messageId && x.role === 'assistant');
+    if (!m) throw new Error('Turn not found');
+    if (!root) root = (await gitInfo(m.workdir || t.project))?.root;
+    const command = root && projectScripts(root).verify; if (!command) return null;
+    const hash = scriptHash(command);
+    const set = (v) => { m.verify = v; this.store.save(false, t.id); this.emit('message', { threadId, message: m }); this.emit('threads', t.project); return v; };
+    if (!(this.project(t.project)?.trustedScripts || []).includes(hash)) return set({ state: 'untrusted', command, hash });
+    const runs = this.verifyRuns || (this.verifyRuns = new Map());
+    runs.get(threadId)?.abort();
+    const ac = new AbortController(); runs.set(threadId, ac);
+    set({ state: 'running', command, hash });
+    const r = await runScript(command, { cwd: root, env: { ...this.workspaceEnv(t), CI: '1' }, signal: ac.signal });
+    if (runs.get(threadId) === ac) runs.delete(threadId);
+    return set({ state: r.aborted ? 'stopped' : r.passed ? 'passed' : 'failed', command, hash, output: r.output, ms: r.ms });
+  }
   // The project's setup script (.tributary/settings.json) runs in a new copy once you trust its exact text; it runs
   // in the background, so turns can start meanwhile, and stops when the copy is discarded.
   trustScript(dir, hash) {
@@ -849,6 +870,7 @@ class Hub extends EventEmitter {
   // Into the project's current branch. Refused, with the files named, when it would conflict.
   // allowSecrets: merge even though the changes hold what looks like a secret.
   async mergeWorktree(threadId, { allowSecrets = false } = {}) {
+    this.verifyRuns?.get(threadId)?.abort();
     return this.changeCopy(threadId, {}, async (t, root) => {
       this.reserve(`merge:${t.id}`, [root], true); // nobody else is writing in the project folder
       try {
@@ -872,7 +894,7 @@ class Hub extends EventEmitter {
   abortCopyMerge(threadId) { return this.changeCopy(threadId, {}, (t) => worktrees.abortCopyMerge(t.worktree)); }
   // Remove the copy and its branch; the conversation works in the project folder again.
   async discardWorktree(threadId) {
-    this.setupRuns?.get(threadId)?.abort();
+    this.setupRuns?.get(threadId)?.abort(); this.verifyRuns?.get(threadId)?.abort();
     return this.changeCopy(threadId, {}, async (t, root) => {
       await this.removeCopy(root, t.worktree);
       delete t.worktree; t.agentSessions = {};

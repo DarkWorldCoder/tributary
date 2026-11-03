@@ -98,7 +98,7 @@ test('VS Code extension: activates, serves the UI with the bridge, and answers h
 test('the desktop app allows the same registry, thread status, separate copy and permission calls as the extension', () => {
   const block = (file) => { const src = fs.readFileSync(path.join(__dirname, '..', file), 'utf8'); return src.slice(src.indexOf('const API = {'), src.indexOf('\n};', src.indexOf('const API = {'))); };
   for (const file of ['desktop/main.js', 'vscode/extension.js']) {
-    for (const m of ['registry', 'installRegistryAgent', 'removeRegistryAgent', 'markThreadSeen', 'activity', 'judgeRace', 'lineAuthors', 'revertTurnHunk', 'createWorktree', 'worktreeStatus', 'mergeWorktree', 'discardWorktree', 'runSetup', 'trustScript', 'conversationDiff', 'reviewChanges', 'resolveCopyConflicts', 'abortCopyMerge', 'permissions', 'answerPermission']) assert.match(block(file), new RegExp(`\\b${m}: \\(`), `${file} exposes ${m}`);
+    for (const m of ['registry', 'installRegistryAgent', 'removeRegistryAgent', 'markThreadSeen', 'activity', 'judgeRace', 'lineAuthors', 'revertTurnHunk', 'createWorktree', 'worktreeStatus', 'mergeWorktree', 'discardWorktree', 'runSetup', 'trustScript', 'conversationDiff', 'reviewChanges', 'resolveCopyConflicts', 'abortCopyMerge', 'runVerify', 'permissions', 'answerPermission']) assert.match(block(file), new RegExp(`\\b${m}: \\(`), `${file} exposes ${m}`);
     // Files in a conversation's separate copy open like files in the project.
     assert.match(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'), /const knownProject = \(p\) => \{ if \(!hub\.isWorkspace\(p\)\)/, `${file} accepts separate copies`);
   }

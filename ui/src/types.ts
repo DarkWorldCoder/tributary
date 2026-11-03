@@ -60,6 +60,8 @@ export interface AgentMessage {
   durationMs?: number; costUsd?: number; usage?: Record<string, number>; ts?: number;
   kind?: 'chat' | 'plan' | 'implement' | 'race'; planFrom?: string; checkpoint?: string;
   team?: { recipe: string; role: string }; race?: RaceInfo; permissions?: PermissionRequest[];
+  /** The project's checks after this turn (.tributary/settings.json scripts.verify). */
+  verify?: { state: 'untrusted' | 'running' | 'passed' | 'failed' | 'stopped'; command: string; hash: string; output?: string; ms?: number };
 }
 export type Message = UserMessage | AgentMessage;
 /** A conversation's separate working copy: its own git worktree (path) and branch, made from the project's last commit on `from`. */

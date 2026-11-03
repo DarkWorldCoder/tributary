@@ -213,6 +213,29 @@ function RestoreCheckpoint({ m }: { m: AgentMessage }) {
   );
 }
 
+// The project's checks after this turn: running, passed, or failed with its output and a Fix that hands the output
+// to the same agent. A script you have not trusted yet waits for your OK.
+function Checks({ m }: { m: AgentMessage }) {
+  const s = useStore(); const v = m.verify; const t = s.thread;
+  if (!v || !t) return null;
+  const run = async (trust?: string) => {
+    try { if (trust) await s.hub.call('trustScript', t.project, trust); await s.hub.call('runVerify', t.id, m.id); }
+    catch (e) { toast.error((e as Error).message.replace(/^Error invoking remote method '[^']*': (Error: )?/, '')); }
+  };
+  const fix = () => s.send(`The checks failed after your changes (\`${v.command}\`). Find and fix the cause, then run them again.\n\n\`\`\`\n${(v.output || '').slice(-3000)}\n\`\`\``, { agentId: m.agent });
+  if (v.state === 'running') return <p className="flex items-center gap-1.5 text-xs text-muted-foreground"><Spinner className="size-3" /> Running checks: <code className="truncate">{v.command}</code></p>;
+  if (v.state === 'passed') return <p className="flex items-center gap-1.5 text-xs text-success" title={v.command}><CircleCheck className="size-3.5" /> Checks passed{v.ms ? ` in ${duration(v.ms)}` : ''}</p>;
+  if (v.state === 'untrusted') return <p className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground"><ShieldQuestion className="size-3.5" /> Run this project's checks? <code className="truncate">{v.command}</code><Button size="xs" variant="outline" onClick={() => run(v.hash)}>Trust and run</Button></p>;
+  if (v.state === 'stopped') return <p className="flex items-center gap-1.5 text-xs text-muted-foreground">Checks stopped <Button size="xs" variant="ghost" onClick={() => run()}>Run again</Button></p>;
+  return (
+    <details className="rounded-md border border-destructive/30 bg-destructive/5 px-2.5 py-1.5 text-xs">
+      <summary className="flex cursor-pointer list-none items-center gap-1.5 text-destructive"><CircleX className="size-3.5" /> Checks failed: <code className="min-w-0 flex-1 truncate">{v.command}</code>
+        <Button size="xs" variant="outline" onClick={(e) => { e.preventDefault(); fix(); }}>Fix</Button><Button size="xs" variant="ghost" onClick={(e) => { e.preventDefault(); run(); }}>Run again</Button></summary>
+      <pre className="mt-1.5 max-h-48 overflow-auto whitespace-pre-wrap font-mono text-[11px] text-foreground">{(v.output || '').slice(-3000)}</pre>
+    </details>
+  );
+}
+
 function RunPlan({ m }: { m: AgentMessage }) {
   const s = useStore();
   if (m.kind !== 'plan' || !m.ok || !m.text) return null;
@@ -393,6 +416,7 @@ function AgentTurn({ m, agent, prompt }: { m: AgentMessage; agent: Agent; prompt
         {m.memoryContext && <details className="text-xs text-muted-foreground"><summary className="cursor-pointer">Project memory included · {m.memoryContext.characters.toLocaleString()} characters</summary><ul className="mt-2 space-y-1">{m.memoryContext.sources.map((source) => <li key={`${source.source}:${source.line}`}>{source.source}:{source.line}</li>)}</ul></details>}
         {m.error && <AgentError text={m.error} agent={m.agent} />}
         <FilesChanged m={m} />
+        {!live && <Checks m={m} />}
         <RunPlan m={m} />
         {!live && (
           <MessageFooter className="flex items-center gap-0.5 text-xs text-muted-foreground">
