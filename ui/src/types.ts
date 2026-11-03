@@ -33,11 +33,17 @@ export interface RaceCandidate {
   branch?: string; commit?: string;
 }
 export interface RaceInfo { task: string; testCommand: string; agents: string[]; candidates: RaceCandidate[]; applied: string | null; base?: string }
-export interface AppNotification { id: string; ts: number; read: boolean; kind: 'done' | 'failed' | 'attention' | 'info'; threadId?: string; title: string; body?: string }
+export interface AppNotification { id: string; ts: number; read: boolean; kind: 'done' | 'failed' | 'attention' | 'info' | 'permission'; threadId?: string; title: string; body?: string }
 export interface FileContent { rel: string; size: number; binary: boolean; truncated: boolean; content: string; mtime: number; base64?: string }
 export interface MemoryInfo { enabled: boolean; memory: string | null; worklog: string[] }
 export interface ThreadChange { rel: string; turns: { messageId: string; agent: string; ts?: number; change?: string; team?: string }[] }
-export type ThreadStatus = 'working' | 'review' | 'failed' | 'done';
+export type ThreadStatus = 'working' | 'permission' | 'review' | 'failed' | 'done';
+export interface PermissionOption { optionId: string; name: string; kind: 'allow_once' | 'allow_always' | 'reject_once' | 'reject_always' | string }
+/** A tool call the agent asked to make. Pending until the person answers, the turn is stopped, or it ends. */
+export interface PermissionRequest {
+  id: string; threadId: string; messageId: string; agent: string; toolCallId?: string; title: string; kind: string;
+  command?: string; path?: string; options: PermissionOption[]; status: 'pending' | 'allowed' | 'always' | 'rejected' | 'cancelled'; ts: number;
+}
 export interface ThreadSummary { id: string; title: string; updatedAt: number; lastAgent: string | null; count?: number; running?: boolean; agents: string[]; status?: ThreadStatus | null }
 export interface Tool { id?: string; name: string; input?: Record<string, unknown> & { command?: unknown }; status: 'running' | 'done' | 'error'; output?: string; files?: string[] }
 export interface FileChange { path: string; rel: string; external?: boolean; change?: string; viaGit?: boolean }
@@ -48,7 +54,7 @@ export interface AgentMessage {
   mode: Mode; gateway?: string | null; handoff?: 'new' | 'resume' | 'join' | 'catch-up'; resumed?: boolean;
   durationMs?: number; costUsd?: number; usage?: Record<string, number>; ts?: number;
   kind?: 'chat' | 'plan' | 'implement' | 'race'; planFrom?: string; checkpoint?: string;
-  team?: { recipe: string; role: string }; race?: RaceInfo;
+  team?: { recipe: string; role: string }; race?: RaceInfo; permissions?: PermissionRequest[];
 }
 export type Message = UserMessage | AgentMessage;
 export interface Thread { id: string; project: string; title: string; messages: Message[]; agentSessions: Record<string, string>; lastAgent?: string | null; updatedAt?: number; task?: { templateId: string; material?: string }; documents?: SavedDocument[] }

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Check, ChevronRight, CircleAlert, Folder, FolderPlus, Home, MoreHorizontal, Search, Settings, SquarePen, Trash2, Users } from 'lucide-react';
+import { Check, ChevronRight, CircleAlert, ShieldQuestion, Folder, FolderPlus, Home, MoreHorizontal, Search, Settings, SquarePen, Trash2, Users } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Kbd } from '@/components/ui/kbd';
@@ -19,9 +19,10 @@ function ThreadDots({ t }: { t: ThreadSummary }) {
   return <span className="flex -space-x-1">{ids.map((id) => <AgentAvatar key={id} agent={s.agentOf(id)} size="xs" className="ring-2 ring-sidebar" />)}</span>;
 }
 
-// Working, needs review (finished with changes you have not opened), failed, done.
+// Working, waiting for permission, needs review (finished with changes you have not opened), failed, done.
 function StatusBadge({ status }: { status?: ThreadStatus | null }) {
   if (status === 'working') return <Spinner className="size-3.5 shrink-0 text-brand" aria-label="Working" />;
+  if (status === 'permission') return <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-brand/15 px-1.5 text-[10px] leading-4 font-medium text-brand" title="Waiting for you to allow or deny a tool"><ShieldQuestion className="size-3" aria-hidden />Approve</span>;
   if (status === 'review') return <span className="shrink-0 rounded-full bg-warning/15 px-1.5 text-[10px] leading-4 font-medium text-warning" title="Finished with file changes you have not opened">Review</span>;
   if (status === 'failed') return <span role="img" aria-label="Failed" title="Failed" className="shrink-0 text-destructive"><CircleAlert className="size-3.5" aria-hidden /></span>;
   if (status === 'done') return <span role="img" aria-label="Done" title="Done" className="shrink-0 text-muted-foreground"><Check className="size-3.5" aria-hidden /></span>;
@@ -36,7 +37,7 @@ function ThreadRow({ t }: { t: ThreadSummary }) {
     <SidebarMenuSubItem>
       <SidebarMenuSubButton isActive={active} onClick={() => { s.openThread(t.id); if (isMobile) setOpenMobile(false); }} className="h-8 gap-2 pr-1.5" title={t.title}>
         <span className="min-w-0 flex-1 truncate">{t.title}</span>
-        {status === 'working' ? <StatusBadge status={status} /> : <><StatusBadge status={status} /><ThreadDots t={t} /><span className="w-7 text-right text-[11px] tabular-nums text-muted-foreground">{ago(t.updatedAt)}</span></>}
+        {status === 'working' || status === 'permission' ? <StatusBadge status={status} /> : <><StatusBadge status={status} /><ThreadDots t={t} /><span className="w-7 text-right text-[11px] tabular-nums text-muted-foreground">{ago(t.updatedAt)}</span></>}
       </SidebarMenuSubButton>
     </SidebarMenuSubItem>
   );
