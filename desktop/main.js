@@ -225,6 +225,9 @@ app.whenReady().then(async () => {
   const initialized = hub.init();
   initialized.catch((e) => { console.error('Agent discovery failed:', e.message); });
   if (SMOKE) {
+    // Renderer errors in the report, so a blank or broken screen explains itself.
+    win.webContents.on('console-message', (e) => { if (e.level === 'error') console.log(`SMOKE renderer error: ${String(e.message).slice(0, 400)}`); });
+    win.webContents.on('render-process-gone', (_e, d) => console.log(`SMOKE renderer gone: ${d.reason}`));
     win.webContents.once('did-finish-load', async () => {
       const loadedMs = Math.round(process.uptime() * 1000); // process start to page loaded
       await initialized;
@@ -255,11 +258,12 @@ app.whenReady().then(async () => {
         }
         await new Promise((r) => setTimeout(r, 800));
       }
-      // TRIBUTARY_SMOKE_SEND='[{"agent":"id","text":"go"}]' (or {"team": {...}}) starts a turn or team run in each of the first threads, from here
+      // TRIBUTARY_SMOKE_SEND='[{"agent":"id","text":"go"}]' (or {"team": {...}}, {"race": {...}}) starts a turn, team or race in each of the first threads, from here
       // rather than through the composer, so a check can watch agents work without typing into the app.
       for (const [i, r] of JSON.parse(process.env.TRIBUTARY_SMOKE_SEND || '[]').entries()) {
         const t = hub.store.data.threads[i];
-        if (t && r.team) hub.runTeam(t.id, r.team).catch((e) => console.log(`SMOKE team failed: ${e.message}`));
+        if (t && r.race) hub.runRace(t.id, r.race).catch((e) => console.log(`SMOKE race failed: ${e.message}`));
+        else if (t && r.team) hub.runTeam(t.id, r.team).catch((e) => console.log(`SMOKE team failed: ${e.message}`));
         else if (t && r.agent) hub.send({ threadId: t.id, agentId: r.agent, text: r.text || 'go', mode: 'edit' }).catch((e) => console.log(`SMOKE send failed: ${e.message}`));
       }
       // TRIBUTARY_SMOKE_CLICKS="Settings|Agents|Browse agents|3000" clicks those buttons (label or text) before the
@@ -278,7 +282,8 @@ app.whenReady().then(async () => {
         }
         await win.webContents.executeJavaScript(`(() => {
           const want = ${JSON.stringify(label)}.toLowerCase();
-          const name = (b) => (b.getAttribute('aria-label') || b.textContent || '').trim().toLowerCase();
+          // The accessible name: aria-label, or the text without decorative (aria-hidden) parts such as avatars.
+          const name = (b) => { if (b.getAttribute('aria-label')) return b.getAttribute('aria-label').trim().toLowerCase(); const c = b.cloneNode(true); c.querySelectorAll('[aria-hidden="true"]').forEach((x) => x.remove()); return (c.textContent || '').trim().toLowerCase(); };
           // Look in the topmost open dialog first: clicking behind it would close it.
           const pick = (root) => { const all = [...root.querySelectorAll('button, a, [role="button"], [role="menuitem"], [role="tab"], [role="radio"], [role="option"]')]; return all.find((b) => name(b) === want) || all.find((b) => name(b).startsWith(want)); };
           const top = [...document.querySelectorAll('[role="dialog"]')].pop();
