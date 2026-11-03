@@ -13,7 +13,7 @@ const memory = require('./memory');
 const memoryState = require('./memory-state');
 const { listSkills, shareSkill } = require('./skills');
 const { listUiSkills, readUiSkill } = require('./ui-skills');
-const { listMcp, addMcp, removeMcp, MCP_AGENTS, validServer, turnVar } = require('./mcp');
+const { listMcp, addMcp, removeMcp, MCP_AGENTS, validServer, turnVar, restoreGeminiPlaceholders } = require('./mcp');
 const os = require('os');
 const { RECIPES, runTeam, validateTeam } = require('./teams');
 const { race, applyDiff } = require('./race');
@@ -436,6 +436,10 @@ class Hub extends EventEmitter {
       delegation?.close();
       // An agent that ended its turn (or crashed) while asking no longer needs an answer.
       for (const [id, p] of this.pendingPermissions) if (p.messageId === msg.id) p.settle('cancelled', null);
+      // Gemini can save MCP secrets over their placeholders (core/mcp.js restoreGeminiPlaceholders); before the end checkpoint.
+      if (agentId === 'gemini' && !t.host) for (const file of new Set([path.join(this.home, '.gemini', 'settings.json'), path.join(dir, '.gemini', 'settings.json')])) {
+        try { if (restoreGeminiPlaceholders(file, this.store.data.mcpSecrets, mcpEnv)) msg.notices.push(`Gemini had saved MCP secrets in ${file} as plain text; Tributary put the placeholders back.`); } catch (e) { msg.notices.push(e.message); }
+      }
       // Where the turn ended: blame and the Changes tab stop here, so later edits aren't credited to this agent.
       if (git && msg.checkpoint) try { msg.after = await createCheckpoint(git.root, `${msg.id} end`); msg.afterTs = now(); } catch (e) { msg.notices.push(`No end checkpoint: ${e.message.split('\n')[0]}`); }
       // Catch every file the turn changed, including shell edits that emit no file event.
