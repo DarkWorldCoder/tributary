@@ -255,12 +255,16 @@ app.whenReady().then(async () => {
         await win.webContents.executeJavaScript(`(() => {
           const want = ${JSON.stringify(label)}.toLowerCase();
           const name = (b) => (b.getAttribute('aria-label') || b.textContent || '').trim().toLowerCase();
-          const all = [...document.querySelectorAll('button, a, [role="button"]')];
+          const all = [...document.querySelectorAll('button, a, [role="button"], [role="menuitem"], [role="tab"], [role="radio"], [role="option"]')];
           const el = all.find((b) => name(b) === want) || all.find((b) => name(b).startsWith(want));
           if (!el) throw new Error('smoke: no button ' + want);
+          // Menus open on pointerdown, so send the whole sequence a mouse would.
+          const at = { bubbles: true, cancelable: true, button: 0, pointerType: 'mouse', isPrimary: true };
+          el.dispatchEvent(new PointerEvent('pointerdown', at)); el.dispatchEvent(new MouseEvent('mousedown', at));
+          el.dispatchEvent(new PointerEvent('pointerup', at)); el.dispatchEvent(new MouseEvent('mouseup', at));
           el.click();
           return name(el);
-        })()`).then((hit) => console.log(`SMOKE clicked ${JSON.stringify(hit)}`));
+        })()`).then((hit) => console.log(`SMOKE clicked ${JSON.stringify(hit)}`), () => console.log(`SMOKE no button ${JSON.stringify(label)}`));
         await new Promise((r) => setTimeout(r, 1500));
       }
       const report = await win.webContents.executeJavaScript(`({ platform: window.hub && window.hub.platform, title: document.title,
