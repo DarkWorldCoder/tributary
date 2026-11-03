@@ -145,4 +145,15 @@ test('answers name a choice or one of the agent\'s own options', async () => {
   assert.throws(() => hub.answerPermission(req.id, 'sometimes'), /Choose/);
   hub.answerPermission(req.id, req.options[0].optionId);
   assert.match((await sent).text, /ran:make=once$/);
+
+  // The agent's own reject option is a denial, not an approval, and nothing is remembered.
+  const denied = nextRequest(hub);
+  const again = hub.send({ threadId: thread.id, agentId: 'acp', text: 'RUN make;make', mode: 'edit' });
+  const first = await denied;
+  const second = nextRequest(hub);
+  assert.strictEqual(hub.answerPermission(first.id, first.options.find((o) => o.kind === 'reject_once').optionId).status, 'rejected');
+  hub.answerPermission((await second).id, 'reject');
+  const msg = await again;
+  assert.match(msg.text, /ran:make=no,make=no$/);
+  assert.deepStrictEqual(msg.permissions.map((p) => p.status), ['rejected', 'rejected']);
 });

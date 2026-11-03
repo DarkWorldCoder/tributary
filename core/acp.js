@@ -265,4 +265,4 @@ function runAcp({ command, args, cwd, env, prompt, mode, resumeId, onEvent, sign
 // Agents run in their own process group, so stop them when Tributary exits.
 process.once('exit', () => acpPool.closeAll());
 
-module.exports = { runAcp, inside, acpPool, projectMcpServers, pickOption };
+module.exports = { runAcp, inside, acpPool, projectMcpServers };

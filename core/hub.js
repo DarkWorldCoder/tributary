@@ -435,8 +435,8 @@ class Hub extends EventEmitter {
     if (!p) throw new Error('That request is no longer waiting for an answer.');
     const option = p.request.options.find((o) => o.optionId === choice);
     if (!option && !['once', 'always', 'reject'].includes(choice)) throw new Error('Choose once, always or reject.');
-    const kind = option ? option.kind : choice;
-    p.settle(/always/.test(kind) ? 'always' : /allow|once/.test(kind) ? 'allowed' : 'rejected', choice);
+    const kind = option ? option.kind : { once: 'allow_once', always: 'allow_always', reject: 'reject_once' }[choice];
+    p.settle(/^reject/.test(kind) ? 'rejected' : kind === 'allow_always' ? 'always' : 'allowed', choice);
     return p.request;
   }
 
