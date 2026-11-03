@@ -68,7 +68,7 @@ function wireEvents() {
 
 const terminals = new TerminalManager();
 let editors = [];
-const knownProject = (p) => { if (!hub.project(p)) throw new Error('Unknown project'); return p; };
+const knownProject = (p) => { if (!hub.isWorkspace(p)) throw new Error('Unknown project'); return p; };
 
 const API = {
   collaborationState: () => hub.collaborationState(),
@@ -101,6 +101,11 @@ const API = {
   markThreadSeen: (id) => hub.markThreadSeen(id),
   activity: () => hub.activity(),
   lineAuthors: (p, rel) => hub.lineAuthors(p, rel),
+  // A conversation's separate working copy (its own git worktree and branch)
+  createWorktree: (id) => hub.createWorktree(id),
+  worktreeStatus: (id) => hub.worktreeStatus(id),
+  mergeWorktree: (id) => hub.mergeWorktree(id),
+  discardWorktree: (id) => hub.discardWorktree(id),
   removeProject: (p) => hub.removeProject(p),
   send: (o) => hub.send(o).then((m) => ({ id: m.id, ok: m.ok })),
   stop: (id) => hub.stop(id),
@@ -116,8 +121,7 @@ const API = {
     return hub.addProject(r.filePaths[0]);
   },
   openFile(p, rel) {
-    if (!hub.project(p)) throw new Error('Unknown project');
-    const abs = path.resolve(p, rel);
+    const abs = path.resolve(knownProject(p), rel);
     if (!inside(p, abs)) throw new Error('Path outside project');
     return shell.openPath(abs);
   },

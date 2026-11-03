@@ -150,3 +150,36 @@ test('threads from the old separate CLI folder are imported into the shared hist
   assert.strictEqual(desktop.thread('old-cli-thread').messages[0].text, 'old request', 'the desktop app sees it too');
   desktop.store.close();
 });
+
+test('ask --separate works in its own git worktree; merge brings it back, reports conflicts, and discard removes it', () => {
+  const { run, proj } = setup();
+  const git = (...args) => execFileSync('git', args, { cwd: proj, encoding: 'utf8' }).trim();
+  const a = run(['ask', '--separate', '-a', 'alpha', 'WRITE:notes.txt=hello']);
+  assert.strictEqual(a.status, 0, a.stderr);
+  assert.match(a.stdout, /tributary\/thread-[0-9a-f]{8}/);
+  assert.ok(!fs.existsSync(path.join(proj, 'notes.txt')), 'the project folder is untouched');
+  // A plain ask continues that thread in its copy; another --separate starts a second thread with its own copy.
+  assert.strictEqual(run(['ask', '-a', 'alpha', 'WRITE:clash.txt=one']).status, 0);
+  const b = run(['ask', '--separate', '-a', 'beta', 'WRITE:clash.txt=two']);
+  assert.strictEqual(b.status, 0, b.stderr);
+  const [second, first] = JSON.parse(run(['threads', '--json']).stdout);
+  assert.match(first.branch, /^tributary\/thread-/); assert.match(second.branch, /^tributary\/thread-/);
+  assert.notStrictEqual(first.branch, second.branch);
+  assert.match(run(['threads']).stdout, new RegExp(first.branch));
+  assert.ok(!fs.existsSync(path.join(proj, 'clash.txt')));
+
+  const m = run(['merge', '-t', first.id]);
+  assert.strictEqual(m.status, 0, m.stderr);
+  assert.match(m.stdout, new RegExp(`Merged ${first.branch} into \\w+: clash\\.txt, notes\\.txt`));
+  assert.strictEqual(fs.readFileSync(path.join(proj, 'notes.txt'), 'utf8'), 'hello by alpha\n');
+  assert.strictEqual(git('status', '--porcelain'), '');
+  // Without -t, merge picks the latest thread that has a copy: the second one, which conflicts.
+  const c = run(['merge']);
+  assert.strictEqual(c.status, 1);
+  assert.match(c.stderr, /conflict[\s\S]*clash\.txt[\s\S]*kept on branch/i);
+  assert.strictEqual(fs.readFileSync(path.join(proj, 'clash.txt'), 'utf8'), 'one by alpha\n');
+  const d = run(['discard', '-t', second.id]);
+  assert.strictEqual(d.status, 0, d.stderr);
+  assert.strictEqual(git('branch', '--list', second.branch), '');
+  assert.match(run(['merge', '-t', second.id]).stderr, /not working in a separate copy/);
+});
