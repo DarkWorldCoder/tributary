@@ -27,7 +27,9 @@
     "dist:mac": "npm run build:ui:clean && electron-builder --mac",
     "dist:win": "npm run build:ui:clean && electron-builder --win",
     "dist:verify": "node scripts/verify-distribution.cjs",
-    "bench:memory": "node scripts/benchmark-memory.cjs"
+    "bench:memory": "node scripts/benchmark-memory.cjs",
+    "bench:stream": "node scripts/performance/stream-store.cjs",
+    "bench:bundles": "node scripts/performance/bundles.mjs"
   },
   "devDependencies": {
     "electron": "44.7.2",

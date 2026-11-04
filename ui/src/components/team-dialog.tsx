@@ -37,6 +37,7 @@ export function TeamDialog() {
   const [kind, setKind] = React.useState<Kind>('manager');
   const [parallelLimit, setParallelLimit] = React.useState('auto');
   const [task, setTask] = React.useState('');
+  const draftSource = React.useRef<string | null>(null);
   const [picked, setPicked] = React.useState<string[]>([]);
   const [roles, setRoles] = React.useState<Record<string, string>>({});
   const [checksOpen, setChecksOpen] = React.useState(false);
@@ -52,7 +53,13 @@ export function TeamDialog() {
   const ready = s.ready;
   React.useEffect(() => {
     if (!s.teamOpen) return;
-    setError(''); setTask(s.draft.replace(/^\/team(?:\s+|$)/, '').trim()); setPicked(ready.filter((a) => kind !== 'manager' || !a.connectionId).slice(0, 3).map((a) => a.id)); setChecksOpen(!!testCommand.trim());
+    setError('');
+    const source = s.draft.replace(/^\/team(?:\s+|$)/, '').trim();
+    // Reopening the same chat draft must not discard an unsent team task.
+    // A changed chat draft still seeds a new task through the normal chat entry point.
+    if (draftSource.current === source) return;
+    draftSource.current = source;
+    setTask(source); setPicked(ready.filter((a) => kind !== 'manager' || !a.connectionId).slice(0, 3).map((a) => a.id)); setChecksOpen(!!testCommand.trim());
     const r = (i: number) => ready[Math.min(i, ready.length - 1)]?.id ?? '';
     setRoles({ planner: r(0), builder: ready.find((a) => a.id === r(1) && !a.connectionId)?.id || ready.find((a) => !a.connectionId)?.id || '', reviewer: r(2), synthesizer: r(0) });
     // Capture defaults when opening; background discovery must not reset an edited team form.

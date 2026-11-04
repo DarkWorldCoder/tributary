@@ -170,20 +170,20 @@ class SqliteStore {
   }
 
   // Every row of the in-memory data, keyed like the snapshot. With `only`, messages are read for those threads alone.
-  collect(only = null) {
+  collect(only = null, messageIds = null) {
     const out = new Map(); const d = this.data;
-    const list = (coll, items, idOf, valueOf, order) => {
+    const list = (coll, items, idOf, valueOf, order, selected) => {
       let max = -1;
       for (const it of items) { const p = this.snap.get(keyOf(coll, idOf(it)))?.pos; if (p != null && p > max) max = p; }
       for (const it of items) {
-        const id = idOf(it); if (id == null) continue;
+        const id = idOf(it); if (id == null || selected && !selected.has(String(id))) continue;
         const k = keyOf(coll, id);
         out.set(k, { coll, id: String(id), pos: order ? order(it) : (this.snap.get(k)?.pos ?? ++max), json: valueOf(it) });
       }
     };
     for (const coll of Object.keys(LISTS)) list(coll, d[coll] || [], (x) => x[LISTS[coll]], JSON.stringify, ORDER[coll]);
     list('threads', d.threads || [], (t) => t.id, metaJson, ORDER.threads);
-    for (const t of d.threads || []) if ((!only || only.has(t.id)) && this.isLoaded(t)) list(`m:${t.id}`, t.messages || [], (m) => m.id, JSON.stringify);
+    for (const t of d.threads || []) if ((!only || only.has(t.id)) && this.isLoaded(t)) list(`m:${t.id}`, t.messages || [], (m) => m.id, JSON.stringify, undefined, messageIds?.get(t.id));
     for (const [k, v] of Object.entries(d.settings || {})) out.set(keyOf('settings', k), { coll: 'settings', id: k, pos: 0, json: JSON.stringify(v ?? null) });
     for (const [k, v] of Object.entries(d)) if (!KNOWN.has(k) && v !== undefined) out.set(keyOf('data', k), { coll: 'data', id: k, pos: 0, json: JSON.stringify(v) });
     return out;
@@ -191,10 +191,17 @@ class SqliteStore {
 
   // Write the rows that changed since they were last read or written, in one transaction.
   // `only` (a Set of thread ids) skips the messages of every other live thread, which is what keeps streaming cheap.
-  flush(only = null) {
-    const rows = this.collect(only);
+  flush(only = null, messageIds = null) {
+    const rows = this.collect(only, messageIds);
     const live = only && new Set((this.data.threads || []).map((t) => t.id));
-    const skipped = (k) => { if (!only || !k.startsWith('m:')) return false; const tid = k.slice(2, k.indexOf(SEP)); return live.has(tid) && !only.has(tid); };
+    const skipped = (k) => {
+      if (!only || !k.startsWith('m:')) return false;
+      const split = k.indexOf(SEP); const tid = k.slice(2, split);
+      if (!live.has(tid)) return false; // deleting a thread still removes all of its message rows
+      if (!only.has(tid)) return true;
+      const selected = messageIds?.get(tid);
+      return selected ? !selected.has(k.slice(split + 1)) : false;
+    };
     const writes = []; const gone = [];
     for (const [k, r] of rows) { const prev = this.snap.get(k); if (!prev || prev.pos !== r.pos || prev.h !== (r.h = digest(r.json))) writes.push([k, r]); }
     for (const [k, prev] of this.snap) if (!rows.has(k) && !prev.virtual && !skipped(k)) gone.push([k, prev]);
@@ -211,10 +218,18 @@ class SqliteStore {
     for (const [k] of gone) this.snap.delete(k);
   }
 
-  // threadId says only that thread's messages changed (a streaming turn); without it everything is checked.
-  save(now = false, threadId) {
+  // Optional messageId narrows a streaming update to that row. Unspecified edits retain the
+  // full-thread/full-store checks, including deletions. Mixed batches always keep the wider scope.
+  save(now = false, threadId, messageId) {
     if (this.closed) return; // quitting: turns still winding down have nothing left to write to
-    if (threadId == null) this.dirtyAll = true; else if (!this.dirtyAll) (this.dirty ||= new Set()).add(threadId);
+    if (threadId == null) this.dirtyAll = true;
+    else if (!this.dirtyAll) {
+      (this.dirty ||= new Set()).add(threadId);
+      const ids = this.dirtyMessageIds ||= new Map();
+      if (messageId == null) ids.set(threadId, null); // an unspecified edit may affect any row
+      else if (!ids.has(threadId)) ids.set(threadId, new Set([String(messageId)]));
+      else ids.get(threadId)?.add(String(messageId));
+    }
     if (now) { if (this.timer) { clearTimeout(this.timer); this.timer = null; } this.flushPending(); return; }
     if (!this.timer) {
       this.timer = setTimeout(() => {
@@ -225,8 +240,9 @@ class SqliteStore {
   }
   flushPending() {
     const only = this.dirtyAll || !this.dirty ? null : this.dirty;
-    this.dirtyAll = false; this.dirty = null;
-    try { this.flush(only); } catch (e) { this.dirtyAll = true; throw e; }
+    const messageIds = only ? this.dirtyMessageIds : null;
+    this.dirtyAll = false; this.dirty = null; this.dirtyMessageIds = null;
+    try { this.flush(only, messageIds); } catch (e) { this.dirtyAll = true; throw e; }
   }
 
   // Apply rows other processes wrote since the last look. Rows changed here and not yet saved win.

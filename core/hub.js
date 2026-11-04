@@ -486,29 +486,30 @@ class Hub extends EventEmitter {
       if (e.kind === 'permission') { this.secretGuard.redactEvent(e.request); if (this.approvals) e.answer = this.askPermission(t, msg, agent, e.request, ac.signal, e); return; }
       this.apply(t, msg, e);
       this.emit('event', { threadId, messageId: msg.id, event: e, message: msg });
-      this.store.save(false, t.id); // only this thread changed: don't re-serialize all history
+      this.store.save(false, t.id, msg.id); // do not serialize unchanged messages while tokens stream
     };
-    let delegation;
+    let delegation; let result;
     try {
       if (mode !== 'read' && !team && !t.task && !t.delegation && proj.trusted !== false && git && this.store.data.settings.agentDelegation !== false) {
         try { delegation = await require('./delegation').openDelegation(this, t, msg, { mode, signal: ac.signal }); }
         catch { msg.notices.push('Background worker commands unavailable for this turn.'); }
       }
-      const r = await runTurn({ agent, cwd: dir, prompt: delegation && agent.protocol !== 'local-agent' ? `${delegation.prompt}\n\n${p.prompt}` : p.prompt, env: { ...shared.env, ...mcpEnv, ...this.workspaceEnv(t), ...delegation?.env }, images, mode, research: !!researchOnly, resumeId: p.resumeId, gateway, model, fallbackPrompt: p.resumeId && (agent.protocol === 'acp' || agent.controlProtocol === 'gemini-acp') ? plan({ thread: { ...prior, agentSessions: {} }, agentId, text: request, names: this.names(), git }).prompt : undefined, trusted: proj.trusted !== false, extraDirs: proj.folders || [], onEvent, signal: ac.signal, delegate: delegation?.call, continuation });
+      const r = result = await runTurn({ agent, cwd: dir, prompt: delegation && agent.protocol !== 'local-agent' ? `${delegation.prompt}\n\n${p.prompt}` : p.prompt, env: { ...shared.env, ...mcpEnv, ...this.workspaceEnv(t), ...delegation?.env }, images, mode, research: !!researchOnly, resumeId: p.resumeId, gateway, model, fallbackPrompt: p.resumeId && (agent.protocol === 'acp' || agent.controlProtocol === 'gemini-acp') ? plan({ thread: { ...prior, agentSessions: {} }, agentId, text: request, names: this.names(), git }).prompt : undefined, trusted: proj.trusted !== false, extraDirs: proj.folders || [], onEvent, signal: ac.signal, delegate: delegation?.call, continuation });
       if (r.sessionId) t.agentSessions = { ...t.agentSessions, [sessKey]: r.sessionId };
       msg.ok = r.ok;
+    } catch (e) {
+      onEvent({ kind: 'error', message: e.message }); onEvent({ kind: 'done', ok: false }); msg.ok = false;
+    } finally {
+      // Both returned failures and thrown transport errors can interrupt a turn.
       const recovery = require('./local-resume');
-      if (!r.ok && !ac.signal.aborted && recovery.networkFailure(msg.error)) {
+      if (msg.ok === false && !ac.signal.aborted && recovery.networkFailure(msg.error)) {
         msg.networkInterrupted = true;
         if (agent.protocol === 'local-agent') {
-          if (r.continuation) try { msg.localResume = true; recovery.save(this.dataDir, threadId, { messageId: msg.id, agentId, gatewayId: gateway.id, baseUrl: gateway.baseUrl, model: model || gateway.model || '', cwd: dir, mode, continuation: r.continuation }); }
+          if (result?.continuation) try { msg.localResume = true; recovery.save(this.dataDir, threadId, { messageId: msg.id, agentId, gatewayId: gateway.id, baseUrl: gateway.baseUrl, model: model || gateway.model || '', cwd: dir, mode, continuation: result.continuation }); }
           catch { msg.networkInterrupted = false; msg.notices.push('Could not save a bounded resume checkpoint. Inspect existing files before sending a follow-up.'); }
           else msg.networkInterrupted = false;
         }
       } else if (agent.protocol === 'local-agent') recovery.remove(this.dataDir, threadId);
-    } catch (e) {
-      onEvent({ kind: 'error', message: e.message }); onEvent({ kind: 'done', ok: false }); msg.ok = false;
-    } finally {
       delegation?.close();
       // An agent that ended its turn (or crashed) while asking no longer needs an answer.
       for (const [id, p] of this.pendingPermissions) if (p.messageId === msg.id) p.settle('cancelled', null);
@@ -618,7 +619,7 @@ class Hub extends EventEmitter {
     });
   }
   changedPermission(t, msg, req) {
-    this.store.save(false, t.id);
+    this.store.save(false, t.id, msg.id);
     this.emit('message', { threadId: t.id, message: msg });
     this.emit('threads', t.project); // working <-> needs permission
     this.emit('permission', { threadId: t.id, request: req });

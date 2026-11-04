@@ -213,3 +213,44 @@ test('messages load when a conversation is first used; the thread list does not 
   db.close();
   for (const h of [writer, hub, fresh]) h.store.close();
 });
+
+test('a streamed message update does not serialize any unchanged message in its own conversation', () => {
+  const dataDir = tmp(); const hub = open(dataDir); const thread = hub.createThread(tmp(), 'Large active chat');
+  let reads = 0;
+  for (let i = 0; i < 200; i++) thread.messages.push({ id: `old-${i}`, role: 'user', text: 'reference '.repeat(1000), toJSON() { reads++; return { id: this.id, role: this.role, text: this.text }; } });
+  const active = reply('first token'); thread.messages.push(active); hub.store.save(true);
+  const before = reads;
+  for (let i = 0; i < 10; i++) { active.text += ` token ${i}`; hub.store.save(true, thread.id, active.id); }
+  assert.equal(reads, before, 'unchanged rows must not be serialized or hashed for each token update');
+  const fresh = open(dataDir);
+  assert.equal(fresh.thread(thread.id).messages.length, 201); assert.equal(fresh.thread(thread.id).messages.at(-1).text, active.text);
+  hub.store.close(); fresh.store.close();
+});
+
+test('message-level batches preserve appends, explicit removals and unrelated cross-process changes', () => {
+  const dataDir = tmp(); const hub = open(dataDir); const thread = hub.createThread(tmp());
+  const a = reply('a'); const b = reply('b'); thread.messages.push(a, b); hub.store.save(true);
+  const other = open(dataDir); const external = reply('external'); other.thread(thread.id).messages.push(external); other.store.save(true);
+  a.text = 'updated a'; const c = reply('c'); const d = reply('d'); thread.messages.push(c, d);
+  hub.store.save(false, thread.id, a.id); hub.store.save(false, thread.id, c.id); hub.store.save(true, thread.id, d.id);
+  const fresh = open(dataDir); const messages = fresh.thread(thread.id).messages;
+  assert.deepEqual(messages.map((m) => m.text).sort(), ['updated a', 'b', 'c', 'd', 'external'].sort());
+  thread.messages.splice(thread.messages.indexOf(b), 1); hub.store.save(true, thread.id, b.id);
+  const last = open(dataDir); assert.ok(!last.thread(thread.id).messages.some((m) => m.id === b.id));
+  assert.ok(last.thread(thread.id).messages.some((m) => m.id === external.id));
+  for (const h of [hub, other, fresh, last]) h.store.close();
+});
+
+test('a wider save promotes a pending message batch and a failed transaction retries the complete dirty state', () => {
+  const dataDir = tmp(); const hub = open(dataDir); const thread = hub.createThread(tmp());
+  const a = reply('a'); const b = reply('b'); thread.messages.push(a, b); hub.store.save(true);
+  a.text = 'first'; b.text = 'second'; hub.store.save(false, thread.id, a.id); hub.store.save(false, thread.id); hub.store.save(true, thread.id, a.id);
+  const fresh = open(dataDir); assert.deepEqual(fresh.thread(thread.id).messages.map((m) => m.text), ['first', 'second']);
+  const original = hub.store.tx; let fail = true; hub.store.tx = function (fn) { if (fail) { fail = false; throw new Error('temporary write failure'); } return original.call(this, fn); };
+  a.text = 'retried'; assert.throws(() => hub.store.save(true, thread.id, a.id), /temporary write/); assert.equal(hub.store.dirtyAll, true);
+  b.text = 'also retried'; hub.store.save(true, thread.id, b.id);
+  const last = open(dataDir); assert.deepEqual(last.thread(thread.id).messages.map((m) => m.text), ['retried', 'also retried']);
+  hub.deleteThread(thread.id); hub.store.save(true, thread.id, a.id);
+  assert.equal(hub.store.q.messageCount.get(`m:${thread.id}`).count, 0, 'deleting a thread removes every message even in a narrow batch');
+  for (const h of [hub, fresh, last]) h.store.close();
+});

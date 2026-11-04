@@ -1,0 +1,120 @@
+{
+  "fixture": "ASCII histories, 40 persisted token batches after 8 warmups; before=thread-wide v0.1.3 API, after=changed-message API; instrumentation counts serialized message JSON in both paths",
+  "runtime": {
+    "node": "v24.21.0",
+    "platform": "linux",
+    "arch": "x64",
+    "cpu": "12th Gen Intel(R) Core(TM) i5-1235U",
+    "logicalCpus": 12,
+    "memoryGB": 15.306
+  },
+  "sourceSha256": "8f04c8668b05c8606497118cd3dc2ea2187f40205da3430ac60087444e32074b",
+  "cases": [
+    {
+      "messages": 500,
+      "previous": {
+        "mode": "thread",
+        "messages": 500,
+        "samples": 40,
+        "medianMs": 3.564,
+        "sampleP95Ms": 4.126,
+        "serializedMessageRows": 20000,
+        "serializedMessageJsonBytes": 53657305,
+        "gcEvents": 13,
+        "observedGcDurationMs": 6.001,
+        "beforeHeapMB": 6.192,
+        "afterHeapMB": 9.699,
+        "rssMB": 80.203,
+        "parity": true
+      },
+      "optimized": {
+        "mode": "message",
+        "messages": 500,
+        "samples": 40,
+        "medianMs": 0.287,
+        "sampleP95Ms": 0.727,
+        "serializedMessageRows": 40,
+        "serializedMessageJsonBytes": 29185,
+        "gcEvents": 3,
+        "observedGcDurationMs": 0.639,
+        "beforeHeapMB": 6.192,
+        "afterHeapMB": 7.577,
+        "rssMB": 70.668,
+        "parity": true
+      },
+      "medianSpeedup": 12.418,
+      "serializedBytesReductionPercent": 99.946
+    },
+    {
+      "messages": 2500,
+      "previous": {
+        "mode": "thread",
+        "messages": 2500,
+        "samples": 40,
+        "medianMs": 31.09,
+        "sampleP95Ms": 69.481,
+        "serializedMessageRows": 100000,
+        "serializedMessageJsonBytes": 268677305,
+        "gcEvents": 18,
+        "observedGcDurationMs": 127.926,
+        "beforeHeapMB": 12.035,
+        "afterHeapMB": 19.394,
+        "rssMB": 304.242,
+        "parity": true
+      },
+      "optimized": {
+        "mode": "message",
+        "messages": 2500,
+        "samples": 40,
+        "medianMs": 1.582,
+        "sampleP95Ms": 2.385,
+        "serializedMessageRows": 40,
+        "serializedMessageJsonBytes": 29225,
+        "gcEvents": 3,
+        "observedGcDurationMs": 0.966,
+        "beforeHeapMB": 12.035,
+        "afterHeapMB": 18.727,
+        "rssMB": 104.313,
+        "parity": true
+      },
+      "medianSpeedup": 19.652,
+      "serializedBytesReductionPercent": 99.989
+    },
+    {
+      "messages": 10000,
+      "previous": {
+        "mode": "thread",
+        "messages": 10000,
+        "samples": 40,
+        "medianMs": 61.931,
+        "sampleP95Ms": 85.161,
+        "serializedMessageRows": 400000,
+        "serializedMessageJsonBytes": 1075077305,
+        "gcEvents": 56,
+        "observedGcDurationMs": 370.252,
+        "beforeHeapMB": 33.877,
+        "afterHeapMB": 143.157,
+        "rssMB": 412.137,
+        "parity": true
+      },
+      "optimized": {
+        "mode": "message",
+        "messages": 10000,
+        "samples": 40,
+        "medianMs": 5.287,
+        "sampleP95Ms": 8.463,
+        "serializedMessageRows": 40,
+        "serializedMessageJsonBytes": 29225,
+        "gcEvents": 4,
+        "observedGcDurationMs": 1.727,
+        "beforeHeapMB": 33.878,
+        "afterHeapMB": 48.841,
+        "rssMB": 182.063,
+        "parity": true
+      },
+      "medianSpeedup": 11.714,
+      "serializedBytesReductionPercent": 99.997
+    }
+  ],
+  "scope": "Backend synchronous save latency, serialized-message allocation proxy and naturally observed GC in isolated workers. Not total Electron RAM, cold startup, typing latency, model throughput or production p95. GC varies with heap policy. Production does not force GC."
+}

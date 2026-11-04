@@ -148,3 +148,54 @@ test('native coding agents resume their recorded session after a network interru
   assert.equal(interrupted.networkInterrupted, true);
   const result = await hub.resumeTurn(chat.id, interrupted.id); assert.equal(result.ok, true); assert.deepEqual(resumes, [null, 'native-session']);
 });
+
+test('disconnect detection covers DNS, offline, timeout and connection failures without treating ordinary errors as retryable', () => {
+  const { networkFailure } = require('../core/local-resume');
+  for (const message of ['getaddrinfo EAI_AGAIN api.example.test', 'getaddrinfo ENOTFOUND api.example.test', 'connect EHOSTUNREACH', 'connect ETIMEDOUT', 'Connection refused', 'Connection lost', 'You are offline', 'net::ERR_INTERNET_DISCONNECTED', 'net::ERR_NETWORK_CHANGED', 'net::ERR_CONNECTION_CLOSED', 'Request timeout', 'The assistant timed out', 'Assistant returned HTTP 503', 'The connection ended before the response finished.']) {
+    assert.equal(networkFailure(message), true, message);
+  }
+  for (const message of [null, '', 'Stopped by user', 'Permission denied', 'Assistant returned HTTP 401', 'Assistant returned HTTP 429', 'Invalid tool arguments.', 'The model returned an unsupported or duplicate tool call.']) {
+    assert.equal(networkFailure(message), false, String(message));
+  }
+});
+
+test('thrown connection failures expose resume and preserve the original task in the fallback context', async (t) => {
+  const root = mkdtemp('thrown-network-resume');
+  const hub = new Hub({ dataDir: path.join(root, 'profile'), home: root, secrets: new MemorySecrets() }); hub.addProject(root);
+  t.after(() => hub.store.close());
+  let attempts = 0;
+  hub.agents = [{ id: 'native', name: 'Native fixture', protocol: 'codex-exec', available: true, gateways: [], path: process.execPath, args: ({ prompt }) => {
+    if (++attempts === 1) throw new Error('getaddrinfo EAI_AGAIN api.example.test');
+    assert.match(prompt, /Investigate the build failure/); assert.match(prompt, /Do not repeat completed/);
+    return ['-e', `console.log(JSON.stringify({type:'turn.completed'}))`];
+  } }];
+  const chat = hub.createThread(root);
+  const interrupted = await hub.send({ threadId: chat.id, agentId: 'native', text: 'Investigate the build failure', mode: 'read' });
+  assert.equal(interrupted.ok, false); assert.equal(interrupted.networkInterrupted, true); assert.equal(hub.running.has(chat.id), false);
+  assert.equal((await hub.resumeTurn(chat.id, interrupted.id)).ok, true);
+  assert.equal(attempts, 2);
+});
+
+test('a second disconnect replaces the checkpoint and keeps completed local edits through another restart', async (t) => {
+  const { root, cwd, gateway, requests } = await fixture(t, (input, res, step) => {
+    if (step === 1) return json(res, 'Writing once.', [call('write_file', { path: 'repeat.txt', content: 'kept', expected_hash: 'new' })]);
+    if (step < 4) { res.writeHead(503); res.end('temporarily unavailable'); return; }
+    assert.ok(input.messages.some((message) => message.role === 'tool' && /written/.test(message.content)));
+    json(res, 'Finished from the saved tool result.');
+  });
+  const profile = path.join(root, 'profile'); const secrets = new MemorySecrets();
+  let hub = new Hub({ dataDir: profile, home: root, secrets }); hub.addProject(cwd); await hub.saveGateway(gateway);
+  t.after(() => hub.store.close());
+  const chat = hub.createThread(cwd);
+  const first = await hub.send({ threadId: chat.id, agentId: `direct:${gateway.id}`, text: 'Write repeat.txt', mode: 'full' });
+  const before = fs.statSync(path.join(cwd, 'repeat.txt')).mtimeMs;
+  const second = await hub.resumeTurn(chat.id, first.id);
+  assert.equal(second.networkInterrupted, true);
+  assert.equal(require('../core/local-resume').read(profile, chat.id).messageId, second.id);
+  await assert.rejects(async () => hub.resumeTurn(chat.id, first.id), /most recent/);
+  hub.store.close(); hub = new Hub({ dataDir: profile, home: root, secrets });
+  assert.equal((await hub.resumeTurn(chat.id, second.id)).ok, true);
+  assert.equal(requests.length, 4); assert.equal(fs.statSync(path.join(cwd, 'repeat.txt')).mtimeMs, before);
+  assert.equal(fs.readFileSync(path.join(cwd, 'repeat.txt'), 'utf8'), 'kept');
+  assert.equal(require('../core/local-resume').read(profile, chat.id), null);
+});

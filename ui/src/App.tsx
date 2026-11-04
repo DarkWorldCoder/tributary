@@ -14,18 +14,19 @@ import { LiveActivity } from '@/components/live-activity';
 import { Composer, HandoffHint } from '@/components/composer';
 import { Conversation } from '@/components/conversation';
 import { NoProject, Starters } from '@/components/empty-states';
-import { SettingsDialog } from '@/components/settings-dialog';
-import { TeamDialog } from '@/components/team-dialog';
 import { ThreadHeader } from '@/components/thread-header';
 import { Skeleton } from '@/components/ui/skeleton';
 import { WorkspaceLayout } from '@/components/workspace-layout';
 import { useStore } from '@/store';
 import { TaskHome } from '@/components/task-home';
-import { DocumentPanel } from '@/components/document-panel';
-import { CollaborationDialog } from '@/components/collaboration-dialog';
 import { ProjectContext } from '@/components/project-context';
 import { RecentWork } from '@/components/recent-work';
+import { DeferredSurface } from '@/components/deferred-surface';
 import { AppUpdateNotice } from '@/components/app-updates';
+const SettingsDialog = React.lazy(() => import('@/components/settings-dialog').then((module) => ({ default: module.SettingsDialog })));
+const TeamDialog = React.lazy(() => import('@/components/team-dialog').then((module) => ({ default: module.TeamDialog })));
+const CollaborationDialog = React.lazy(() => import('@/components/collaboration-dialog').then((module) => ({ default: module.CollaborationDialog })));
+const DocumentPanel = React.lazy(() => import('@/components/document-panel').then((module) => ({ default: module.DocumentPanel })));
 const WorkspacePanel = React.lazy(() => import('@/components/workspace-panel').then((m) => ({ default: m.WorkspacePanel })));
 
 
@@ -104,17 +105,17 @@ function WorkbenchApp() {
               chat={<>{studio && <ThreadHeader compact />}<section aria-label="Chat" className="flex min-h-0 flex-1 flex-col"><Main /></section></>}
               workspace={(workspaceOpened || s.panel.open) && <React.Suspense fallback={<p role="status" className="p-5 text-sm text-muted-foreground">Opening workspace…</p>}><WorkspacePanel /></React.Suspense>}
             />
-            <DocumentPanel />
+            <DeferredSurface active={!!s.document} name="Document"><DocumentPanel /></DeferredSurface>
             {conversationLayout && !workspaceVisible && !s.document && <ProjectContext />}
             </div>
             {s.project && (s.terminalOpen || terminalKept) && <TerminalHost hidden={!s.terminalOpen} close={() => s.setTerminalOpen(false)} />}
           </div>
         </SidebarInset>
       </SidebarProvider>
-      <SettingsDialog />
+      <DeferredSurface active={s.settings.open} name="Settings" close={() => s.setSettings({ ...s.settings, open: false })}><SettingsDialog /></DeferredSurface>
       <AppUpdateNotice />
-      <TeamDialog />
-      <CollaborationDialog />
+      <DeferredSurface active={s.teamOpen} name="Agent teams" close={() => s.setTeamOpen(false)}><TeamDialog /></DeferredSurface>
+      <DeferredSurface active={s.roomOpen} name="Project room" close={() => s.setRoomOpen(false)}><CollaborationDialog /></DeferredSurface>
       <CommandPalette />
       <RecentWork />
       <LiveActivity />

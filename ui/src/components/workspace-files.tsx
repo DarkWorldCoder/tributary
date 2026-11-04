@@ -28,7 +28,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/componen
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { CodeEditor, type EditorHistory } from '@/components/code-editor';
+import { DeferredCodeEditor as CodeEditor, type EditorHistory } from '@/components/deferred-code-editor';
 import { FileTypeIcon } from '@/components/file-type-icon';
 import { FolderTypeIcon } from '@/components/folder-type-icon';
 import { DirectoryTree } from '@/components/directory-tree';

@@ -103,7 +103,7 @@ async function runManager(hub, threadId, team, { step, signal } = {}) {
     const msg = { id: crypto.randomUUID(), role: 'assistant', agent: roles.planner, kind: 'manager', text: '', thinking: '', tools: [], files: [], plan: null, notices: [], error: null, ok: null,
       ts: Date.now(), mode, team: { recipe: 'manager', role: 'manager' }, manager: { task: team.task, phase: 'building', testCommand, maxParallel, tasks: items } };
     t.messages.push(msg); t.updatedAt = Date.now();
-    const update = () => { msg.text = summary(items, hub); hub.emit('event', { threadId, messageId: msg.id, event: { kind: 'manager' }, message: msg }); hub.store.save(false, threadId); };
+    const update = () => { msg.text = summary(items, hub); hub.emit('event', { threadId, messageId: msg.id, event: { kind: 'manager' }, message: msg }); hub.store.save(false, threadId, msg.id); };
     update(); hub.emit('message', { threadId, message: msg }); hub.emit('threads', t.project);
 
     const done = new Set(); const failed = new Set(); const mergedFiles = new Set(); const running = new Map(); const busyAgents = new Set();

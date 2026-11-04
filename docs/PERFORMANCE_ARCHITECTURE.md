@@ -1,5 +1,7 @@
 # Tributary: native bridge and startup performance
 
+Historical investigation from 2 November 2026. The observations and proposed implementation phases below describe that snapshot. Several have since been implemented. For current memory work and remaining requirements, see [Memory efficiency](MEMORY_EFFICIENCY.md) and [Memory optimization research](MEMORY_OPTIMIZATION_RESEARCH.md); do not interpret this older inventory as the current implementation status.
+
 Research and working-tree inspection: 2 November 2026.
 
 ## Decision

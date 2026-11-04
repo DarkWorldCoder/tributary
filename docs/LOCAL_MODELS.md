@@ -40,6 +40,8 @@ File writes update the real project and the editor's existing file watcher; chan
 
 A failed network request shows **Connection interrupted → Resume**. Reconnect or restart the local model server, then choose Resume. Completed file changes stay on disk.
 
+DNS failures, offline errors, timeouts and lost/refused connections use this same recovery path. If the connection fails again while resuming, use Resume on the latest interrupted reply. You can reopen Tributary before continuing; reconnecting does not run tasks automatically.
+
 For local coding agents, a private checkpoint retains completed tool calls and results; it survives reopening Tributary and does not automatically re-run those calls. Checkpoints are limited to 2 MB, replaced by the next interrupted turn, and removed after success or chat deletion. Changing the model, server or working folder invalidates the checkpoint. Provider credentials are excluded. A manually stopped turn is not treated as a network failure.
 
 Native coding agents continue their recorded provider session when supported; otherwise they receive the saved chat context and instructions to inspect current files. A command whose result was interrupted may still need inspection. Recovery is explicit; reconnecting alone does not start commands automatically.

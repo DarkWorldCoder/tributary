@@ -1,0 +1,62 @@
+{
+  "checkedOn": "2026-11-04",
+  "platform": "linux-x64",
+  "application": "Source-run Electron 44.7.2 with a production UI build",
+  "method": "Native desktop interaction through agent-browser/CDP on an Xvfb virtual display; disposable TRIBUTARY_DATA_DIR and project. No provider requests, real conversations or peer-hosting actions.",
+  "bundleSourceSha256": "1d9064883f8f8ae3c85e4909fb69b410e7c8e94374112a2e11b0a208a922691d",
+  "checks": [
+    {
+      "name": "Settings first open and close",
+      "result": "passed",
+      "observed": "Settings sections rendered after the first deferred load; Close settings removed the dialog."
+    },
+    {
+      "name": "Team task retained across close/reopen",
+      "result": "passed",
+      "observed": "Entered 'Preserve this unsent team task across closing and reopening.'; Cancel and reopen returned exactly that value. No team was started."
+    },
+    {
+      "name": "Changed chat draft seeds a new team task",
+      "result": "passed",
+      "observed": "Changed the chat draft to 'A fresh chat-seeded team task.'; the next team open used that exact new value."
+    },
+    {
+      "name": "First source editor load and draft lifetime",
+      "result": "passed",
+      "observed": "Opened hello.js from the explorer; the deferred editor became editable. Edited text survived Memory -> Files switching. Saved a valid replacement through Save file and read the real fixture file back from disk.",
+      "savedText": "export const hello = 'deferred editor verified';\n"
+    },
+    {
+      "name": "Saved document first open and unsaved-change guard",
+      "result": "passed",
+      "observed": "Save as document opened the lazy panel. An unsaved content edit triggered Discard unsaved changes on Close; Keep editing retained the content. Save changes reported Version 2 and then allowed closing."
+    },
+    {
+      "name": "Terminal shell survives hide/reopen",
+      "result": "passed",
+      "observed": "Set TRIBUTARY_MEMORY_VERIFY=retained-session in Shell 1. Hid and reopened Terminal. Printing the variable returned retained-session and only Shell 1 was present; the existing scrollback remained visible."
+    },
+    {
+      "name": "Project room first open",
+      "result": "passed",
+      "observed": "The deferred room displayed Host a room / Join a room setup and returned to the workspace. Hosting was not started."
+    },
+    {
+      "name": "Failed module can close and keeps the workbench",
+      "result": "passed",
+      "observed": "Blocked only settings-dialog-*.js in this test browser, reloaded and opened Settings. The feature error appeared while chat/terminal stayed rendered. Close removed the error and the chat draft remained unchanged."
+    },
+    {
+      "name": "Recovery after removing failed-module injection",
+      "result": "passed",
+      "observed": "Removed the test route and reloaded. Settings opened and closed normally. No alert or dialog remained; the chat draft was unchanged."
+    }
+  ],
+  "relatedChecks": {
+    "regressionTests": { "total": 388, "passed": 388, "failed": 0 },
+    "typescript": "passed",
+    "productionUiBuild": "passed",
+    "diffWhitespace": "passed"
+  },
+  "limits": "Interaction checks, not RAM/startup/interaction-latency benchmarks. No packaged installer, macOS, Windows, real model inference, long-session heap stabilization or active remote collaboration was tested here. Static module exclusion is asserted separately by the bundle benchmark."
+}
