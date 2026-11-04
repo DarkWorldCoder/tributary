@@ -14,6 +14,28 @@ const tmp = () => mkTmp('store');
 const open = (dataDir) => new Hub({ dataDir, secrets: new MemorySecrets(), home: dataDir });
 const reply = (text) => ({ id: `m-${Math.random().toString(36).slice(2)}`, role: 'assistant', agent: 'claude', text, tools: [], files: [], notices: [], ok: true, ts: Date.now() });
 
+test('sidebar status summaries retain fixed-size flags and preserve all badge states', () => {
+  const { statusSummary } = require('../core/store'); const { threadStatus } = require('../core/status');
+  const bulky = { ...reply('x'.repeat(500000)), thinking: 'y'.repeat(500000), tools: [{ output: 'z'.repeat(500000) }], files: [{ rel: 'a.js', diff: 'd'.repeat(500000) }] };
+  const variants = [bulky, { ...bulky, ok: false }, { ...bulky, ok: false, error: 'Stopped' }, { ...bulky, ok: false, notices: ['Stopped by user'] }, { ...bulky, verify: { state: 'failed' } }, { ...bulky, ok: null, permissions: [{ status: 'pending' }] }, { ...bulky, files: [{ external: true }] }, { ...bulky, files: [], kind: 'race', race: { applied: null, candidates: [{ files: [{ rel: 'b.js' }] }] } }];
+  for (const message of variants) {
+    const summary = statusSummary(message);
+    assert.ok(JSON.stringify(summary).length < 500);
+    for (const running of [true, false]) for (const seenAt of [0, Date.now() + 100000]) assert.equal(threadStatus({ seenAt, messages: [summary] }, { running }), threadStatus({ seenAt, messages: [message] }, { running }));
+  }
+});
+
+test('listing long conversations keeps bodies on disk and only bounded status flags in the sidebar cache', () => {
+  const dataDir = tmp(); const proj = tmp(); const writer = open(dataDir);
+  for (let i = 0; i < 10; i++) { const thread = writer.createThread(proj, `Large ${i}`); thread.messages.push({ ...reply('long reply '.repeat(20000)), tools: [{ output: 'tool log '.repeat(20000) }] }); }
+  writer.store.save(true);
+  const hub = open(dataDir); hub.threads(proj);
+  assert.equal(hub.store.data.threads.filter((thread) => hub.store.isLoaded(thread)).length, 0);
+  assert.ok(Buffer.byteLength(JSON.stringify([...hub.store.summaries])) < 5000, 'sidebar must not retain megabytes of replies and tool logs');
+  assert.equal(hub.thread(hub.store.data.threads[0].id).messages[0].text.length, 'long reply '.length * 20000, 'full reply remains available when opened');
+  writer.store.close(); hub.store.close();
+});
+
 test('the first start moves hub.json into the database once and keeps the old file as a backup', () => {
   const dataDir = tmp(); const proj = tmp();
   const legacy = {

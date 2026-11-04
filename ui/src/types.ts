@@ -7,7 +7,7 @@ export interface ModelCatalog { supportsSelection: boolean; source: string; note
 export interface Agent {
   id: string; name: string; vendor?: string; color: string; glyph?: string; docs?: string; login?: string;
   available: boolean; headless: boolean; protocol: string; verified?: boolean;
-  capabilities?: { tools: boolean; plans: boolean; approvals: boolean; questions: boolean; resume: boolean };
+  capabilities?: { web?: boolean; tools: boolean; plans: boolean; approvals: boolean; questions: boolean; resume: boolean };
   version?: string | null; path?: string | null; gateways?: Protocol[]; note?: string; custom?: boolean; connectionId?: string; registry?: string;
 }
 export interface RegistryAgent {
@@ -15,7 +15,7 @@ export interface RegistryAgent {
   install: { kind: 'npx' | 'uvx' | 'binary' | 'unknown'; runnable: boolean; command?: string; args?: string[] };
 }
 export interface Project { path: string; name: string; trusted?: boolean; folders?: string[]; kind?: 'personal' }
-export interface Gateway { id: string; name: string; protocol: Protocol; baseUrl: string; model: string; wireApi?: 'chat' | 'responses'; hasKey?: boolean; apiKey?: string; clearKey?: boolean; direct?: boolean; maxOutputTokens?: number }
+export interface Gateway { id: string; name: string; protocol: Protocol; baseUrl: string; model: string; wireApi?: 'chat' | 'responses'; hasKey?: boolean; apiKey?: string; clearKey?: boolean; direct?: boolean; localRuntime?: 'unsloth' | 'ollama' | 'lmstudio' | null; historyBudget?: number; localAgent?: boolean; maxOutputTokens?: number }
 export interface TaskTemplate { id: string; title: string; group: string; description: string; needsMaterial?: boolean }
 export interface TaskInput { templateId: string; goal: string; audience?: string; material?: string }
 export interface DocumentVersion { title: string; content: string; revision: number; updatedAt: number }
@@ -66,7 +66,7 @@ export type ReplyTrace =
   | { kind: 'permission'; textOffset: number; requestId: string };
 export type ReplyActivity = Exclude<ReplyTrace, { kind: 'permission' }>;
 export interface AgentMessage {
-  trace?: ReplyTrace[]; thinkingLength?: number;
+  trace?: ReplyTrace[]; thinkingLength?: number; networkInterrupted?: boolean;
   delegations?: { id: string; agentId: string; title: string; state: string; branch?: string; model?: string; error?: string; files?: string[]; fileCount?: number }[];
   memoryContext?: { characters: number; budget: number; sources: { source: string; line: number }[] };
   id: string; role: 'assistant'; model?: string | null; gatewayId?: string | null; agent: string; text: string; thinking?: string; tools: Tool[]; files: FileChange[];

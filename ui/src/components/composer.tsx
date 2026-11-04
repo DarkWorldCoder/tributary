@@ -124,7 +124,7 @@ function ModePicker({ readOnly = false }: { readOnly?: boolean }) {
 export function Composer({ autoFocus, className }: { autoFocus?: boolean; className?: string }) {
   const { preferences: shortcutPreferences, platform: keyboardPlatform } = useShortcutPreferences();
   const s = useStore();
-  const everyday = !!s.thread?.task || !!s.agent.connectionId || s.st?.projects.find((p) => p.path === s.project)?.kind === 'personal';
+  const everyday = !!s.thread?.task || !!s.agent.connectionId && s.agent.protocol !== 'local-agent' || s.st?.projects.find((p) => p.path === s.project)?.kind === 'personal';
   const ref = React.useRef<HTMLTextAreaElement>(null);
   const [attachments, setAttachments] = React.useState<Attachment[]>([]);
   const [uploading, setUploading] = React.useState(false);
@@ -162,7 +162,7 @@ export function Composer({ autoFocus, className }: { autoFocus?: boolean; classN
   };
   const [planOn, setPlanOn] = React.useState(false);
   const [researchOn, setResearchOn] = React.useState(false);
-  const researchAvailable = s.agent.protocol !== 'direct-chat' && s.agent.capabilities?.tools !== false;
+  const researchAvailable = s.agent.protocol !== 'direct-chat' && s.agent.capabilities?.tools !== false && s.agent.capabilities?.web !== false;
   const taskMode: TaskMode = researchOn ? 'research' : planOn ? 'plan' : 'ask';
   const selectTaskMode = (mode: TaskMode) => { setPlanOn(mode === 'plan'); setResearchOn(mode === 'research'); };
   React.useEffect(() => { if (!researchAvailable) setResearchOn(false); }, [researchAvailable]);

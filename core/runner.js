@@ -29,6 +29,7 @@ const remoteCommand = (agent) => agent.remoteCommand || (agent.custom ? agent.co
  * Resolves { ok, sessionId, text }.
  */
 async function runTurn(opts) {
+  if (opts.agent.protocol === 'local-agent') return require('./local-agent').runLocalAgent(opts);
   if (opts.agent.protocol === 'direct-chat') return require('./direct').runDirectTurn(opts);
   const { agent, cwd, prompt, mode = 'edit', resumeId, gateway, trusted = true, onEvent, signal } = opts;
   const host = opts.host && opts.host.remote ? opts.host : null;

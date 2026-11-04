@@ -9,6 +9,8 @@ Tributary preview for macOS, Windows and Linux.
 
 ### Included
 
+New in 0.1.3: guided local-model setup for Unsloth, Ollama and LM Studio; model discovery, API-key setup and local chat or coding agents with file tools, command approvals and background workers; resume controls after network interruptions; a compact Notes/Context/Activity memory panel; compact history/project-memory budgets; and smaller sidebar status caches that keep full replies on disk until opened. Model downloads, loading and GPU memory remain managed by the local model app.
+
 Local coding agents and background teams, LAN project rooms, a multi-folder workspace, live file edits, Git comparisons, project-aware formatting, terminal, debugger, preview browser and QA tools.
 
 New in 0.1.2: Help → Check for updates, in-app installer downloads with SHA-256 verification and cancellation, optional automatic checks, and private GitHub access stored using OS credential protection. Save your edits, open the installer, then reopen Tributary. AppImage users replace the verified download manually. Upgrading from 0.1.1 requires this one manual installation first.

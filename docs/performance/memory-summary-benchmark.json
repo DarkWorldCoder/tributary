@@ -1,0 +1,22 @@
+{
+  "fixture": "32 saved conversations with large replies, tool logs and diffs; no model loaded",
+  "node": "v24.21.0",
+  "platform": "linux",
+  "arch": "x64",
+  "previous": {
+    "retainedSummaryBytes": 19973731,
+    "heapDeltaMB": 19.49,
+    "rssMB": 73.97,
+    "durationMs": 54.6,
+    "loadedConversations": 0
+  },
+  "optimized": {
+    "retainedSummaryBytes": 4717,
+    "heapDeltaMB": 0.11,
+    "rssMB": 52.98,
+    "durationMs": 108.86,
+    "loadedConversations": 0
+  },
+  "summaryCacheReductionPercent": 99.98,
+  "scope": "Sidebar summary cache only. This does not measure total app RAM, model weights, or GPU VRAM."
+}

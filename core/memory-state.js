@@ -87,7 +87,9 @@ function retrieve(project, query, budget = settings(project).budget, matchesOnly
     if (/^#+ /.test(line)) { section = line.replace(/^#+ /, ''); continue; }
     if (!line.trim()) continue;
     const terms = new Set(line.toLowerCase().match(/[\p{L}\p{N}_-]{3,}/gu) || []);
-    const score = [...words].filter((word) => terms.has(word)).length;
+    // Walk the short memory line once; do not allocate the whole query's word list
+    // for every line when a long request searches project memory.
+    let score = 0; for (const term of terms) if (words.has(term)) score++;
     if (matchesOnly && words.size && !score) continue;
     candidates.push({ source: '.tributary/memory.md', line: index + 1, text: line.slice(0, 1500), score: score * 10 + (/decisions|run|test|gotchas/i.test(section) ? 1 : 0) });
   }

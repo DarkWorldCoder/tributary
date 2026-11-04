@@ -55,7 +55,7 @@ export function DesktopTitlebar() {
     if (document.activeElement?.closest('.cm-editor')) window.dispatchEvent(new CustomEvent('tributary:editor-command', { detail: action }));
     else void s.hub.call('editAction', action);
   };
-  return <div className="desktop-titlebar flex h-8 shrink-0 select-none items-center gap-0.5 border-b bg-sidebar px-1 text-xs" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
+  return <div role="banner" aria-label="Application title bar" className="desktop-titlebar flex h-8 shrink-0 select-none items-center gap-0.5 border-b bg-sidebar px-1 text-xs" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}>
     <div className="flex items-center gap-0.5" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
       <button className="titlebar-button" aria-label="Previous chat" disabled={position.current < 1} onClick={() => void navigate(-1)}><ArrowLeft /></button>
       <button className="titlebar-button" aria-label="Next chat" disabled={position.current >= history.current.length - 1} onClick={() => void navigate(1)}><ArrowRight /></button>

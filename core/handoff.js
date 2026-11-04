@@ -60,7 +60,7 @@ function gitBlock(git) {
  * plan({ thread, agentId, text, names, git }) -> { prompt, resumeId, handoff: bool, kind }
  * thread.messages excludes the new user message.
  */
-function plan({ thread, agentId, text, names = {}, git }) {
+function plan({ thread, agentId, text, names = {}, git, budget = BUDGET }) {
   const msgs = thread.messages || [];
   const sessionId = (thread.agentSessions || {})[agentId] || null;
   let last = -1;
@@ -71,11 +71,11 @@ function plan({ thread, agentId, text, names = {}, git }) {
     const since = msgs.slice(last + 1);
     const othersSpoke = since.some((m) => m.role === 'assistant' && m.agent !== agentId);
     if (!othersSpoke) return { prompt: text, resumeId: sessionId, handoff: false, kind: 'resume' };
-    const prompt = `${header}\nSince your last reply, this happened:\n\n${digest(since, names)}${gitBlock(git)}\n\n## Current request\n${text}`;
+    const prompt = `${header}\nSince your last reply, this happened:\n\n${digest(since, names, budget)}${gitBlock(git)}\n\n## Current request\n${text}`;
     return { prompt, resumeId: sessionId, handoff: true, kind: 'catch-up' };
   }
   if (!msgs.length) return { prompt: text, resumeId: null, handoff: false, kind: 'new' };
-  const prompt = `${header}\nHere is the conversation so far:\n\n${digest(msgs, names)}${gitBlock(git)}\n\n## Current request\n${text}`;
+  const prompt = `${header}\nHere is the conversation so far:\n\n${digest(msgs, names, budget)}${gitBlock(git)}\n\n## Current request\n${text}`;
   return { prompt, resumeId: null, handoff: true, kind: 'join' };
 }
 

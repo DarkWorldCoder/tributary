@@ -44,7 +44,7 @@ function runTests(cwd, command, timeoutMs = 10 * 60 * 1000, { host = localHost, 
  * With a remote host, root and project are paths on that host and everything runs there.
  * Returns { id, base, candidates: [{ agent, ok, text, files, diff, stat, tests, testOutput, durationMs, error }] }.
  */
-async function race(hub, { root, project, prompts, agents, mode = 'edit', testCommand, extraDirs = [], trusted = true, signal, onUpdate, host = localHost }) {
+async function race(hub, { root, project, prompts, agents, mode = 'edit', testCommand, extraDirs = [], trusted = true, signal, onUpdate, onPermission, host = localHost }) {
   const id = crypto.randomBytes(5).toString('hex');
   const p = host.path;
   const base = await createCheckpoint(root, `race-${id}`, { external: false, host });
@@ -55,13 +55,16 @@ async function race(hub, { root, project, prompts, agents, mode = 'edit', testCo
 
   await Promise.all(agents.map(async (agent, i) => {
     const c = candidates[i]; const started = Date.now();
-    const wt = p.join(dir, agent.id);
-    c.branch = `tributary/race-${id}/${agent.id}`;
+    const safeId = agent.id.replace(/[^\w.-]/g, '-');
+    const wt = p.join(dir, safeId);
+    c.branch = `tributary/race-${id}/${safeId}`;
     try {
       // Each candidate gets its own branch, kept after the race so you can continue from it.
       await git(host, root, ['worktree', 'add', '-b', c.branch, wt, base]);
       const cwd = p.join(wt, relProject);
-      const r = await runTurn({ agent, cwd, prompt: prompts[agent.id], mode, trusted, extraDirs, signal, host, onEvent: (e) => {
+      const gateway = agent.connectionId ? await hub.resolveGateway(agent.connectionId) : undefined;
+      const r = await runTurn({ agent, gateway, cwd, prompt: prompts[agent.id], mode, trusted, extraDirs, signal, host, onEvent: (e) => {
+        if (e.kind === 'permission') { if (onPermission) e.answer = onPermission(agent, e); return; }
         if (e.kind === 'text') c.text += e.text;
         else if (e.kind === 'tool') { c.activity = `${e.name} ${e.input && (e.input.command || e.input.file_path || e.input.path) || ''}`.trim().slice(0, 160); update(c); }
         else if (e.kind === 'error') c.error = c.error ? `${c.error}\n${e.message}` : e.message;

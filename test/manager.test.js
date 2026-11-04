@@ -36,7 +36,16 @@ const worker = (id, log) => agent(id, `let s = ''; process.stdin.on('data', (d) 
   if (part === 'b') fs.writeFileSync('b.txt', 'b\\n');
   if (part === 'c') fs.appendFileSync('a.txt', 'c\\n');
   if (part === 'd') fs.writeFileSync('bad.txt', 'oops\\n');
-  setTimeout(() => { fs.appendFileSync(${JSON.stringify(log)}, 'end ' + part + ' ' + Date.now() + '\\n'); ${reply('built it')} }, part === 'a' || part === 'b' ? 600 : 50);
+  const finish = () => { fs.appendFileSync(${JSON.stringify(log)}, 'end ' + part + ' ' + Date.now() + '\\n'); ${reply('built it')} };
+  // Prove overlap with a barrier instead of assuming another process starts within 600 ms.
+  const deadline = Date.now() + 15000;
+  const ready = () => {
+    const started = fs.readFileSync(${JSON.stringify(log)}, 'utf8');
+    if (part !== 'a' && part !== 'b' || started.includes('start a ') && started.includes('start b ')) { setTimeout(finish, 20); return; }
+    if (Date.now() > deadline) { console.error('Independent workers did not start concurrently'); process.exitCode = 1; return; }
+    setTimeout(ready, 20);
+  };
+  ready();
 });`);
 const until = async (fn, ms = 20000) => { const t0 = Date.now(); while (!fn()) { if (Date.now() - t0 > ms) throw new Error('timed out'); await new Promise((r) => setTimeout(r, 25)); } };
 

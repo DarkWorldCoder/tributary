@@ -5,6 +5,6 @@ Return the report in chat: a concise summary, findings, trade-offs and sources. 
 function validateResearch(agent, input) {
   if (!input.research) return;
   if (input.plan || input.planFrom) throw new Error('Choose Plan or Deep research for this message.');
-  if (agent.protocol === 'direct-chat' || agent.capabilities?.tools === false) throw new Error('Deep research needs a coding agent with web tools. Choose one from the agent menu.');
+  if (agent.protocol === 'direct-chat' || agent.capabilities?.tools === false || agent.capabilities?.web === false) throw new Error('Deep research needs a coding agent with web tools. Choose one from the agent menu.');
 }
 module.exports = { RESEARCH_PREFIX, validateResearch };

@@ -9,7 +9,7 @@ function validateModel(value) {
   if (typeof value !== 'string' || value.length > 200 || !/^[a-zA-Z0-9][a-zA-Z0-9_./:@\[\]+-]*$/.test(value)) throw new Error('Use a model ID of up to 200 characters, without spaces or control characters.');
   return value;
 }
-const selectable = (agent) => !agent.custom && ['claude', 'codex', 'gemini', 'antigravity', 'aider'].includes(agent.id) || agent.protocol === 'direct-chat';
+const selectable = (agent) => !agent.custom && ['claude', 'codex', 'gemini', 'antigravity', 'aider'].includes(agent.id) || ['direct-chat', 'local-agent'].includes(agent.protocol);
 function normalize(rows) {
   const unique = new Map();
   for (const row of rows) {

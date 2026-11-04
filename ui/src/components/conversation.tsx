@@ -343,7 +343,7 @@ function CopyReply({ text }: { text: string }) {
 
 function Retry({ m, prompt }: { m: AgentMessage; prompt?: UserMessage }) {
   const s = useStore();
-  if (m.ok !== false || !prompt || m.kind === 'race') return null;
+  if (m.ok !== false || !prompt || m.kind === 'race' || m.networkInterrupted) return null;
   return (
     <Tooltip><TooltipTrigger asChild>
       <Button variant="ghost" size="icon-xs" aria-label="Try again" disabled={s.running}
@@ -489,6 +489,7 @@ function AgentTurn({ m, agent, prompt }: { m: AgentMessage; agent: Agent; prompt
         {(m.notices || []).map((n, i) => <p key={i} className="flex items-center gap-1.5 text-sm text-warning"><Info className="size-3.5" /> {n}</p>)}
         {m.memoryContext && <details className="text-xs text-muted-foreground"><summary className="cursor-pointer">Project memory included · {m.memoryContext.characters.toLocaleString()} characters</summary><ul className="mt-2 space-y-1">{m.memoryContext.sources.map((source) => <li key={`${source.source}:${source.line}`}>{source.source}:{source.line}</li>)}</ul></details>}
         {m.error && <AgentError text={m.error} agent={m.agent} />}
+        {m.networkInterrupted && m.ok === false && <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-brand/30 bg-muted/30 p-3"><div className="min-w-0"><p className="text-sm font-medium">Connection interrupted</p><p className="mt-1 text-xs text-muted-foreground">Your changes are kept. Reconnect, then continue from completed work.</p></div><Button size="sm" variant="outline" disabled={s.running || s.thread?.messages.filter((message) => message.role === 'assistant').at(-1)?.id !== m.id} onClick={() => s.hub.call('resumeTurn', s.thread!.id, m.id).catch((e: Error) => toast.error(e.message))}><Play />Resume</Button></div>}
         <FilesChanged m={m} />
         {!live && <Checks m={m} />}
         <DelegatedWorkers m={m} />

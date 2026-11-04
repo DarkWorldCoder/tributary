@@ -230,6 +230,10 @@ Leave out `TRIBUTARY_SMOKE_CLICKS` to capture the request while it is still wait
 
 ### Distribution builds
 
+Local model setup: **Settings → Connections → Set up local models** supports
+Unsloth, Ollama and LM Studio. See [local models](docs/LOCAL_MODELS.md) and
+[memory efficiency and benchmark](docs/MEMORY_EFFICIENCY.md).
+
 [Download preview releases](https://github.com/DarkWorldCoder/tributary/releases).
 The repository is private, so downloads currently require repository access.
 

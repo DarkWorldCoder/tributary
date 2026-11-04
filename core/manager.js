@@ -133,6 +133,7 @@ async function runManager(hub, threadId, team, { step, signal } = {}) {
         const agent = hub.agent(task.agent);
         const r = await race(hub, { root: git.root, project: dir, prompts: { [agent.id]: workerPrompt(task, items, team.task, feedback) }, agents: [agent], mode, testCommand,
           extraDirs: proj.folders || [], trusted: proj.trusted !== false, signal: stop,
+          onPermission: (agent, event) => hub.approvals ? (hub.secretGuard.redactEvent(event.request), hub.askPermission(t, msg, agent, event.request, stop, event)) : Promise.resolve('reject'),
           onUpdate: (c) => { task.state = c.status === 'running' ? 'working' : c.tests === 'running' ? 'testing' : task.state; task.activity = c.activity || ''; task.tests = c.tests; update(); } });
         const c = r.candidates[0];
         Object.assign(task, { result: String(c.text || '').slice(0, 4000), branch: c.branch || '', files: c.files || [], tests: c.tests, diff: c.diff || '', activity: '' });

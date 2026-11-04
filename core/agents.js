@@ -160,7 +160,7 @@ function describe(a) {
   const { args, textArgs, ...rest } = a;
   const acp = a.protocol === 'acp' || a.controlProtocol === 'gemini-acp';
   const native = ['claude-stdio', 'codex-app-server'].includes(a.controlProtocol);
-  return JSON.parse(JSON.stringify({ ...rest, capabilities: { tools: acp || native || ['claude-stream', 'codex-exec', 'gemini-stream', 'agy-stream'].includes(a.protocol), plans: acp || native || ['claude-stream', 'codex-exec'].includes(a.protocol), approvals: acp || native, questions: native, resume: acp || ['claude-stream', 'codex-exec', 'gemini-stream', 'agy-stream'].includes(a.protocol) } }));
+  return JSON.parse(JSON.stringify({ ...rest, capabilities: { tools: acp || native || ['claude-stream', 'codex-exec', 'gemini-stream', 'agy-stream'].includes(a.protocol), plans: acp || native || ['claude-stream', 'codex-exec'].includes(a.protocol), approvals: acp || native, questions: native, resume: acp || ['claude-stream', 'codex-exec', 'gemini-stream', 'agy-stream'].includes(a.protocol), ...a.capabilities } }));
 }
 
 module.exports = { BUILTIN, MODES, detectAgents, probeVersions: probeAgentVersions, describe, which, pathDirs };

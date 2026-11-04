@@ -17,7 +17,7 @@ const snapshot = (hub, t) => {
 async function openDelegation(hub, parent, message, { mode, signal } = {}) {
   if (mode === 'read' || parent.task || parent.delegation || hub.project(parent.project)?.trusted === false) throw new Error('Delegation requires a trusted coding chat with Edit files enabled.');
   const token = crypto.randomBytes(32).toString('hex');
-  const agents = hub.agents.filter((a) => a.available && a.headless !== false && a.protocol !== 'direct-chat');
+  const agents = hub.allAgents().filter((a) => a.available && a.headless !== false && a.protocol !== 'direct-chat');
   const workerLimit = () => [1, 2, 4].includes(hub.store.data.settings.delegationConcurrency) ? hub.store.data.settings.delegationConcurrency : 2;
   let closed = false;
   const publish = (child) => {
@@ -31,7 +31,7 @@ async function openDelegation(hub, parent, message, { mode, signal } = {}) {
   const call = async (action, input = {}) => {
     if (closed || signal?.aborted) throw new Error('The parent turn has ended.');
     if (action === 'agents') return agents.map((a) => ({ id: a.id, name: a.name, gateways: a.gateways || [] }));
-    if (action === 'sources') return hub.store.data.gateways.filter((g) => !g.direct).map(({ id, name, protocol, model }) => ({ id, name, protocol, model }));
+    if (action === 'sources') return hub.store.data.gateways.filter((g) => !g.direct || g.localAgent).map(({ id, name, protocol, model }) => ({ id, name, protocol, model }));
     if (action === 'list') return children(hub, parent).slice(-20).map((t) => snapshot(hub, t));
     if (action === 'status') return snapshot(hub, owned(input.id));
     if (action === 'stop') { const t = owned(input.id); t.delegation.cancelled = true; hub.stop(t.id); hub.store.save(true); return { id: t.id, stopped: true }; }
@@ -42,8 +42,9 @@ async function openDelegation(hub, parent, message, { mode, signal } = {}) {
     if (!selected) throw new Error('Choose an available coding agent from agents.');
     const defaultSource = hub.store.data.settings.delegationSource || 'inherit';
     const chosenSource = input.gatewayId || defaultSource;
-    const gatewayId = chosenSource === 'inherit' ? message.gatewayId || null : chosenSource === 'native' ? null : chosenSource;
-    const source = gatewayId ? hub.store.data.gateways.find((g) => g.id === gatewayId && !g.direct) : null;
+    const gatewayId = selected.connectionId || (chosenSource === 'inherit' ? message.gatewayId || null : chosenSource === 'native' ? null : chosenSource);
+    if (selected.connectionId && input.gatewayId && !['inherit', selected.connectionId].includes(input.gatewayId)) throw new Error('This local worker uses its attached connection.');
+    const source = gatewayId ? hub.store.data.gateways.find((g) => g.id === gatewayId && (!g.direct || selected.connectionId === g.id && g.localAgent)) : null;
     if (gatewayId && (!source || !(selected.gateways || []).includes(source.protocol))) throw new Error('This worker cannot use the selected model source. Choose a compatible coding agent or configured source.');
     const models = require('./models');
     const model = models.validateModel(input.model || (models.selectable(selected) && gatewayId === (message.gatewayId || null) && (gatewayId || selected.id === message.agent) ? message.model : null));

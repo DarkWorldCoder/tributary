@@ -7,6 +7,21 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
+// A sidebar badge needs status flags, never reply text, tool output, images or diffs.
+// Keep a fixed-size projection even when the last message contains megabytes of output.
+function statusSummary(message) {
+  if (!message) return null;
+  const race = message.kind === 'race' && message.race;
+  return { role: message.role, ok: message.ok, ts: message.ts, durationMs: message.durationMs,
+    error: message.error === 'Stopped' ? 'Stopped' : null,
+    notices: (message.notices || []).includes('Stopped by user') ? ['Stopped by user'] : [],
+    verify: message.verify?.state === 'failed' ? { state: 'failed' } : null,
+    permissions: (message.permissions || []).some((request) => request.status === 'pending') ? [{ status: 'pending' }] : [],
+    files: (message.files || []).some((file) => !file.external) ? [{}] : [],
+    ...(race ? { kind: 'race', race: { applied: !!race.applied, candidates: (race.candidates || []).some((candidate) => candidate.files?.length) ? [{ files: [{}] }] : [] } } : {}),
+  };
+}
+
 let sqlite = null;
 try { sqlite = require('node:sqlite'); } catch { /* Node without SQLite: JSON fallback */ }
 
@@ -30,7 +45,7 @@ class Store {
   sync() { return null; }
   watch() {}
   isLoaded() { return true; }
-  summary(t) { const m = t.messages || []; for (let i = m.length - 1; i >= 0; i--) if (m[i].role === 'assistant') return { count: m.length, last: m[i] }; return { count: m.length, last: null }; }
+  summary(t) { const m = t.messages || []; for (let i = m.length - 1; i >= 0; i--) if (m[i].role === 'assistant') return { count: m.length, last: statusSummary(m[i]) }; return { count: m.length, last: null }; }
   close() { if (this.timer) this.save(true); }
 }
 
@@ -69,7 +84,8 @@ class SqliteStore {
       since: this.db.prepare('SELECT coll, id, pos, rev, data FROM records WHERE rev > ? ORDER BY rev'),
       all: this.db.prepare("SELECT coll, id, pos, data FROM records WHERE data IS NOT NULL AND substr(coll, 1, 2) != 'm:' ORDER BY pos, rev"),
       messages: this.db.prepare('SELECT id, pos, data FROM records WHERE coll = ? AND data IS NOT NULL ORDER BY pos, rev'),
-      newestIds: this.db.prepare('SELECT id FROM records WHERE coll = ? AND data IS NOT NULL ORDER BY pos DESC, rev DESC'),
+      messageCount: this.db.prepare('SELECT COUNT(*) count FROM records WHERE coll = ? AND data IS NOT NULL'),
+      newestMessages: this.db.prepare('SELECT data FROM records WHERE coll = ? AND data IS NOT NULL ORDER BY pos DESC, rev DESC'),
       row: this.db.prepare('SELECT data FROM records WHERE coll = ? AND id = ?'),
       dropMessages: this.db.prepare('UPDATE records SET data = NULL, rev = ? WHERE coll = ? AND data IS NOT NULL'),
       rev: this.db.prepare('SELECT rev FROM clock WHERE id = 1'),
@@ -141,13 +157,13 @@ class SqliteStore {
   }
   // What the thread list shows (message count, last reply) without loading the messages.
   summary(t) {
-    if (this.isLoaded(t)) return { count: t.messages.length, last: lastReply(t.messages) };
+    if (this.isLoaded(t)) return { count: t.messages.length, last: statusSummary(lastReply(t.messages)) };
     let s = this.summaries.get(t.id);
     if (!s) {
       // Newest first, reading one message at a time: the last reply is almost always the newest or the one before.
-      const coll = `m:${t.id}`; const ids = this.q.newestIds.all(coll); let last = null;
-      for (const { id } of ids) { const m = JSON.parse(this.q.row.get(coll, id).data); if (m.role === 'assistant') { last = m; break; } }
-      s = { count: ids.length, last };
+      const coll = `m:${t.id}`; let last = null;
+      for (const row of this.q.newestMessages.iterate(coll)) { const message = JSON.parse(row.data); if (message.role === 'assistant') { last = statusSummary(message); break; } }
+      s = { count: this.q.messageCount.get(coll).count, last };
       this.summaries.set(t.id, s);
     }
     return s;
@@ -300,4 +316,4 @@ function openStore(dir, defaults) { return sqlite ? new SqliteStore(dir, default
 // In-memory secret store (used in tests). Desktop and VS Code supply encrypted ones.
 class MemorySecrets { constructor() { this.m = new Map(); } async get(k) { return this.m.get(k); } async set(k, v) { this.m.set(k, v); } async delete(k) { this.m.delete(k); } }
 
-module.exports = { Store, SqliteStore, openStore, MemorySecrets };
+module.exports = { Store, SqliteStore, openStore, MemorySecrets, statusSummary };
