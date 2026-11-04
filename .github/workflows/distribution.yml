@@ -41,6 +41,10 @@ jobs:
       - run: npm ci --prefix ui
       - run: npx --prefix ui tsc --noEmit -p ui/tsconfig.json
       - run: npm run build:ui:clean
+      - name: Set Git identity for disposable test repositories
+        run: |
+          git config --global user.name "Tributary CI"
+          git config --global user.email "tributary-ci@users.noreply.github.com"
       - run: npm test
 
   build:
