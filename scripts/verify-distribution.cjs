@@ -41,8 +41,11 @@ const code = String.raw`
       const result = await runtime('./core/project-format').formatProjectSource(dir, 'sample.js', 'const sample={ok:true};', true);
       assert.ok(result.includes('const sample ='));
     } finally { fs.rmSync(dir, { recursive: true, force: true }); }
-    console.log('Packaged runtime, SQLite, native terminal and formatter verified for ' + process.platform + '/' + process.arch);
-  })().catch((error) => { console.error(error); process.exitCode = 1; });
+    // ConPTY keeps a native helper thread alive after its shell exits on Windows.
+    // This is a bounded test process: exit only after every assertion and cleanup
+    // has completed, and flush the success marker before closing the process.
+    process.stdout.write('Packaged runtime, SQLite, native terminal and formatter verified for ' + process.platform + '/' + process.arch + '\n', () => process.exit(0));
+  })().catch((error) => { process.stderr.write(String(error.stack || error) + '\n', () => process.exit(1)); });
 `;
 const result = spawnSync(binary, ['-e', code, archive, arch], { env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }, encoding: 'utf8', timeout: 45000, windowsHide: true });
 if (result.stdout) process.stdout.write(result.stdout);
