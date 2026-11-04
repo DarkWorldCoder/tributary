@@ -40,8 +40,8 @@ jobs:
       - run: npm ci
       - run: npm ci --prefix ui
       - run: npx --prefix ui tsc --noEmit -p ui/tsconfig.json
-      - run: npm test
       - run: npm run build:ui:clean
+      - run: npm test
 
   build:
     needs: validate
