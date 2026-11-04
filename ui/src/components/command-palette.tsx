@@ -1,5 +1,5 @@
 import { ShortcutLabel } from '@/components/shortcut-settings';
-import { BookOpen, Bug, Maximize, Scan, FileImage, FolderPlus, Globe, Keyboard, GitCompareArrows, ListTodo, MessageSquare, Plug, Settings, Sparkles, SquarePen, SquareTerminal, SunMoon, Users } from 'lucide-react';
+import { BookOpen, Bug, Download, Maximize, Scan, FileImage, FolderPlus, Globe, Keyboard, GitCompareArrows, ListTodo, MessageSquare, Plug, Settings, Sparkles, SquarePen, SquareTerminal, SunMoon, Users } from 'lucide-react';
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator, CommandShortcut } from '@/components/ui/command';
 import { AgentAvatar } from '@/components/agent-avatar';
 import { ago } from '@/lib/format';
@@ -40,6 +40,7 @@ export function CommandPalette() {
           <CommandItem onSelect={run(() => s.openSettings('gateways'))}><ListTodo /> Model gateways</CommandItem>
           {s.hub.platform !== 'vscode' && <CommandItem onSelect={run(() => s.setTheme(s.theme === 'dark' ? 'light' : 'dark'))}><SunMoon /> Toggle light and dark</CommandItem>}
           <CommandItem onSelect={run(() => s.openSettings('agents'))}><Settings /> Settings<CommandShortcut><ShortcutLabel action="settings" /></CommandShortcut></CommandItem>
+          {s.hub.platform === 'desktop' && <CommandItem keywords={['update', 'download', 'version', 'upgrade', 'release']} onSelect={run(() => s.openSettings('about'))}><Download /> Check for app updates</CommandItem>}
         </CommandGroup>
         <CommandSeparator />
         <CommandGroup heading="Switch agent">

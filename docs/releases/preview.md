@@ -11,6 +11,10 @@ Tributary preview for macOS, Windows and Linux.
 
 Local coding agents and background teams, LAN project rooms, a multi-folder workspace, live file edits, Git comparisons, project-aware formatting, terminal, debugger, preview browser and QA tools.
 
+New in 0.1.2: Help → Check for updates, in-app installer downloads with SHA-256 verification and cancellation, optional automatic checks, and private GitHub access stored using OS credential protection. Save your edits, open the installer, then reopen Tributary. AppImage users replace the verified download manually. Upgrading from 0.1.1 requires this one manual installation first.
+
+Also includes an Ocean blue workbench palette (Appearance → Workbench colors), automatic device detection for keyboard shortcuts, and uninstall instructions for every download format.
+
 ### Preview limitations
 
 These builds are not developer-signed or notarized. macOS builds use ad-hoc signatures; macOS Gatekeeper and Windows SmartScreen may warn or block installation. Apple Developer notarization and Windows code-signing certificates are required before a signed public release.
@@ -20,3 +24,7 @@ Git is required for repository features. Install/sign in to the coding agents yo
 Each architecture's packaged runtime, SQLite, native terminal and bundled formatter are checked on its build runner. Installer GUI and physical-device testing are separate from these automated checks.
 
 This repository is private; GitHub downloads require repository access.
+
+### Uninstall
+
+Windows: Settings → Apps → Tributary → Uninstall. macOS: move Tributary.app from Applications to the Trash. Linux `.deb`: `sudo apt remove tributary`. For portable archives/AppImages, delete the extracted app or AppImage. Project folders are kept. [Full uninstall instructions and optional app-data cleanup](https://github.com/DarkWorldCoder/tributary/blob/main/docs/UNINSTALL.md).

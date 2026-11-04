@@ -65,6 +65,7 @@ function useStoreValue() {
   const selectedModel = agentId ? modelFor(agentId, gatewayId) : '';
   const setSelectedModel = (model: string) => { if (agentId) setModels({ ...models, [modelKey(agentId, gatewayId)]: model }); };
   const [theme, setTheme] = useStored<Theme>('theme', 'system');
+  const [workbenchPalette, setWorkbenchPalette] = useStored<'ocean' | 'graphite'>('workbenchPalette', 'ocean');
   const [interfaceFont, setInterfaceFont] = useStored<InterfaceFont>('interfaceFont', 'geist');
   const [readingSize, setReadingSize] = useStored<number>('readingSize', 15);
   const [codingReadingSize, setCodingReadingSize] = useStored<number>('codingReadingSize', 13);
@@ -190,6 +191,7 @@ function useStoreValue() {
   }, [loadThreads, newThread, refreshGit, refreshState, openThread, markSeen]);
 
   // Theme
+  React.useEffect(() => { document.documentElement.dataset.workbenchPalette = workbenchPalette === 'graphite' ? 'graphite' : 'ocean'; }, [workbenchPalette]);
   React.useEffect(() => { document.documentElement.dataset.uiDensity = uiDensity === 'comfortable' ? 'comfortable' : 'compact'; }, [uiDensity]);
   React.useEffect(() => {
     const fonts = { geist: "'Geist Variable', ui-sans-serif, system-ui, sans-serif", plex: "'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif", system: 'ui-sans-serif, system-ui, sans-serif' };
@@ -287,7 +289,7 @@ function useStoreValue() {
     home, goHome: () => { setHome(true); pauseFollowing(); }, startTask, document: activeDocument, setDocument, makeDocument,
     shortcutsOpen, setShortcutsOpen, panel, setPanel, openPanel, fileToOpen, openFile, editFile: (rel: string, line?: number, column?: number, project?: string) => openFile(rel, line, 'pinned', column, true, project), checksIntent, openChecks, debugOpen, setDebugOpen, debugLaunch, openDebugger: (rel?: string) => { if (rel) setDebugLaunch({ project: workdir, rel }); setDebugOpen(true); }, terminalOpen, teamOpen, setTeamOpen, roomOpen, setRoomOpen, recentOpen, setRecentOpen,
     selectedModel, setSelectedModel, modelFor,
-    interfaceFont, setInterfaceFont, readingSize, setReadingSize, codingReadingSize, setCodingReadingSize,
+    interfaceFont, setInterfaceFont, readingSize, setReadingSize, codingReadingSize, setCodingReadingSize, workbenchPalette, setWorkbenchPalette,
     uiDensity, setUiDensity, compactFolders, setCompactFolders, stickyFolders, setStickyFolders,
     following, toggleFollowing, pauseFollowing,
     workspaceExpanded, setWorkspaceExpanded, workspaceLayout, setWorkspaceLayout, workspaceViewSaved,

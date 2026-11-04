@@ -339,7 +339,7 @@ export function XtermView({
     });
     themeWatch.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ["class", "style", "data-extension-theme"],
+      attributeFilter: ["class", "style", "data-extension-theme", "data-workbench-palette"],
     });
     const onCommand = (event: Event) => {
       const detail = (event as CustomEvent<{ id: string; action: string }>)

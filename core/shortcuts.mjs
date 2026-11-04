@@ -22,7 +22,16 @@ export const SHORTCUTS = [
 ];
 
 export const SHORTCUT_STORAGE = 'tributary.shortcuts.v1';
-export function keyboardPlatform(platform = '') { return /Mac|iPhone|iPad/i.test(platform) ? 'mac' : 'pc'; }
+export function keyboardPlatform(platform = '') { return /darwin|Mac|iPhone|iPad/i.test(platform) ? 'mac' : 'pc'; }
+export function keyboardDevice(platform = '') {
+  if (/iPad/i.test(platform)) return 'iPad';
+  if (/iPhone/i.test(platform)) return 'iPhone';
+  if (/Android/i.test(platform)) return 'Android';
+  if (/darwin|Mac/i.test(platform)) return 'Mac';
+  if (/Win/i.test(platform)) return 'Windows';
+  if (/Linux/i.test(platform)) return 'Linux';
+  return 'This device';
+}
 export function validBinding(keys) {
   if (!Array.isArray(keys) || keys.length < 2 || keys.length > 4 || new Set(keys).size !== keys.length) return false;
   const key = keys.at(-1);
@@ -53,7 +62,8 @@ export function readShortcutPreferences(storage = globalThis.localStorage) {
         if (Array.isArray(keys) && (!keys.length || validBinding(keys))) profiles[platform][item.id] = keys;
       }
     }
-    return { platform: ['auto', 'mac', 'pc'].includes(value.platform) ? value.platform : 'auto', send: value.send === 'mod-enter' ? 'mod-enter' : 'enter', profiles };
+    // Migrate old manual OS choices back to detection; keep both sets of custom bindings.
+    return { platform: 'auto', send: value.send === 'mod-enter' ? 'mod-enter' : 'enter', profiles };
   } catch { return { platform: 'auto', send: 'enter', profiles: { mac: {}, pc: {} } }; }
 }
 export function bindingFromEvent(event, platform) {

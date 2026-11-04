@@ -28,6 +28,8 @@ import { setupCommand } from '@/lib/agent-setup.mjs';
 import { ShortcutSettings } from '@/components/shortcut-settings';
 import { Connections } from '@/components/connections';
 import { TeamSecrets } from '@/components/team-secrets';
+import { AppUpdatesCard } from '@/components/app-updates';
+import { version as appVersion } from '../../../package.json';
 
 const NAV: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
   { id: 'connections', label: 'Connections', icon: <Plug /> },
@@ -401,6 +403,11 @@ function AppearanceTab() {
   const opts: { id: Theme; label: string; icon: React.ReactNode }[] = [{ id: 'system', label: 'Match system', icon: <Monitor /> }, { id: 'light', label: 'Light', icon: <Sun /> }, { id: 'dark', label: 'Dark', icon: <Moon /> }];
   return (
     <Section title="Appearance" description="Choose how Tributary looks.">
+      <div className="space-y-2"><h3 className="text-sm font-medium">Workbench colors</h3><ToggleGroup type="single" variant="outline" spacing={2} value={s.workbenchPalette} onValueChange={(value) => { if (!value) return; s.setWorkbenchPalette(value as 'ocean' | 'graphite'); if (s.st?.settings.extensionTheme) void s.hub.call('setSettings', { extensionTheme: '' }).catch((error: Error) => toast.error(error.message)); }} aria-label="Workbench colors" className="grid w-full max-w-md grid-cols-2">
+        {([{ id: 'ocean', label: 'Ocean blue', background: '#061e2b', sidebar: '#051a26', keyword: '#c792ea', string: '#ecc48d', accent: '#61b8ff' }, { id: 'graphite', label: 'Graphite', background: '#181818', sidebar: '#202020', keyword: '#c69bea', string: '#aad995', accent: '#ab9bec' }] as const).map((palette) => <ToggleGroupItem key={palette.id} value={palette.id} className="h-auto flex-col items-stretch gap-2 overflow-hidden rounded-lg p-2 data-[state=on]:border-brand data-[state=on]:ring-1 data-[state=on]:ring-brand">
+          <span aria-hidden="true" className="flex h-20 overflow-hidden rounded text-left font-mono text-[11px] leading-5" style={{ background: palette.background }}><span className="w-8 shrink-0 border-r p-2" style={{ background: palette.sidebar, borderColor: `${palette.accent}33` }}><span className="block h-1 w-3 rounded" style={{ background: palette.accent }} /><span className="mt-2 block h-1 w-3 rounded bg-white/20" /><span className="mt-2 block h-1 w-3 rounded bg-white/20" /></span><span className="min-w-0 truncate px-3 py-2"><span style={{ color: palette.keyword }}>const</span><span className="text-slate-200"> project = </span><span style={{ color: palette.string }}>"Tributary"</span><br /><span className="text-emerald-300">+ Added lines</span><br /><span className="text-rose-300">− Removed lines</span></span></span><span className="py-1 text-xs">{palette.label}</span>
+        </ToggleGroupItem>)}
+      </ToggleGroup><p className="text-xs text-muted-foreground">Editor, sidebar, chat and terminal. Imported themes stay available in Extensions.</p></div>
       <FieldGroup className="max-w-md">
         <Field><FieldLabel htmlFor="ui-density">Interface spacing</FieldLabel><NativeSelect id="ui-density" value={s.uiDensity} onChange={(event) => s.setUiDensity(event.target.value as 'compact' | 'comfortable')}><NativeSelectOption value="compact">Compact</NativeSelectOption><NativeSelectOption value="comfortable">Comfortable</NativeSelectOption></NativeSelect></Field>
         <Field><FieldLabel htmlFor="interface-font">Interface font</FieldLabel>
@@ -428,7 +435,8 @@ function AboutTab() {
   const s = useStore();
   return (
     <Section title="About Tributary">
-      <div className="flex items-center gap-4"><img src="./logo.svg" alt="" className="size-14 rounded-2xl" /><div><div className="text-lg font-semibold">Tributary 0.1.0</div><div className="text-sm text-muted-foreground">Every coding agent, one stream of work.</div></div></div>
+      <div className="flex items-center gap-4"><img src="./logo.svg" alt="" className="size-14 rounded-2xl" /><div><div className="text-lg font-semibold">Tributary {appVersion}</div><div className="text-sm text-muted-foreground">Every coding agent, one stream of work.</div></div></div>
+      <AppUpdatesCard />
       <p className="max-w-prose text-sm text-muted-foreground">Local agents, shared context, and restorable Git checkpoints.</p>
       <p className="text-sm text-muted-foreground">Custom agents: <span className="font-mono text-xs break-all">{s.st?.customAgentsFile}</span></p>
     </Section>
@@ -439,7 +447,7 @@ export function SettingsDialog() {
   const s = useStore(); const [query, setQuery] = React.useState('');
   const returnFocus = React.useRef<HTMLElement | null>(null);
   React.useEffect(() => { if (s.settings.open) setQuery(''); }, [s.settings.open]);
-  const keywords: Record<string, string> = { connections: 'assistant provider local model account', agents: 'coding install custom', gateways: 'model endpoint api', mcp: 'tools servers', skills: 'instructions extensions ui layout writing components usability design accessibility', secrets: 'env environment sops age keys share teammates members', 'language-tools': 'lsp language servers formatting lint diagnostics completion go rust typescript python', extensions: 'vsix themes icons extension install language servers formatters', appearance: 'font typography reading size theme dark light system density compact comfortable spacing', shortcuts: 'keyboard keys hotkeys mac windows linux send enter customize', about: 'version information' };
+  const keywords: Record<string, string> = { connections: 'assistant provider local model account', agents: 'coding install custom', gateways: 'model endpoint api', mcp: 'tools servers', skills: 'instructions extensions ui layout writing components usability design accessibility', secrets: 'env environment sops age keys share teammates members', 'language-tools': 'lsp language servers formatting lint diagnostics completion go rust typescript python', extensions: 'vsix themes icons extension install language servers formatters', appearance: 'font typography reading size theme dark light system density compact comfortable spacing', shortcuts: 'keyboard keys hotkeys mac windows linux send enter customize', about: 'version information update download upgrade release' };
   const matches = NAV.filter((n) => `${n.label} ${keywords[n.id] || ''}`.toLowerCase().includes(query.trim().toLowerCase()));
   const tab = query.trim() ? (matches.find((n) => n.id === s.settings.tab)?.id || matches[0]?.id) : s.settings.tab;
   return (

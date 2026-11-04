@@ -5,6 +5,7 @@ type KeyEvent = Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'shiftKey' |
 export const SHORTCUTS: Shortcut[];
 export const SHORTCUT_STORAGE: string;
 export function keyboardPlatform(platform?: string): 'mac' | 'pc';
+export function keyboardDevice(platform?: string): string;
 export function validBinding(keys: unknown): boolean;
 export function shortcutBindings(overrides?: Partial<Record<ShortcutAction, string[]>>): Shortcut[];
 export function bindingConflict(id: ShortcutAction, keys: string[], overrides?: Partial<Record<ShortcutAction, string[]>>): Shortcut | null;

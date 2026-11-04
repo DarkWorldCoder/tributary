@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { keyboardPlatform, readShortcutPreferences, SHORTCUT_STORAGE, type ShortcutPreferences } from '../../../core/shortcuts.mjs';
+import { keyboardDevice, keyboardPlatform, readShortcutPreferences, SHORTCUT_STORAGE, type ShortcutPreferences } from '../../../core/shortcuts.mjs';
 const eventName = 'tributary:shortcuts';
 let raw: string | null | undefined; let cached = readShortcutPreferences();
 function snapshot() {
@@ -14,9 +14,11 @@ function subscribe(fn: () => void) {
 }
 export function useShortcutPreferences() {
   const preferences = React.useSyncExternalStore(subscribe, snapshot);
-  const platform = preferences.platform === 'auto' ? keyboardPlatform(navigator.platform + ' ' + navigator.userAgent) : preferences.platform;
+  // The installed app's OS wins over browser hints and any old saved manual selection.
+  const os = window.hub?.os || (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform || navigator.platform + ' ' + navigator.userAgent;
+  const platform = keyboardPlatform(os); const device = keyboardDevice(os);
   const update = (next: ShortcutPreferences) => {
-    localStorage.setItem(SHORTCUT_STORAGE, JSON.stringify(next)); window.dispatchEvent(new Event(eventName));
+    localStorage.setItem(SHORTCUT_STORAGE, JSON.stringify({ ...next, platform: 'auto' })); window.dispatchEvent(new Event(eventName));
   };
-  return { preferences, platform, overrides: preferences.profiles[platform], update };
+  return { preferences, platform, device, overrides: preferences.profiles[platform], update };
 }

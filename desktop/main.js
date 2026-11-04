@@ -1,6 +1,6 @@
 'use strict';
 // Tributary desktop app (Electron main process).
-const { app, BrowserWindow, ipcMain, dialog, shell, safeStorage, Menu, nativeImage, Notification } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, safeStorage, Menu, nativeImage, Notification, net } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const { Hub } = require('../core');
@@ -22,6 +22,7 @@ const { DesktopSecrets, storageKind } = require('./secrets');
 
 let win = null;
 let hub = null;
+let updates = null;
 let lanHost = null;
 const getLanHost = () => lanHost ||= require('../server/lan-host').createLanHost({ dir: path.join(app.getPath('userData'), 'project-room') });
 
@@ -71,6 +72,13 @@ let editors = [];
 const knownProject = (p) => { if (!hub.isWorkspace(p)) throw new Error('Unknown project'); return p; };
 
 const API = {
+  updateState: () => updates.state(),
+  checkForUpdates: () => updates.check(),
+  downloadUpdate: () => updates.download(),
+  cancelUpdate: () => updates.cancel(),
+  installUpdate: () => updates.install(),
+  configureUpdates: (input) => updates.configure(input),
+  openUpdateDownloads: () => updates.openReleases(),
   windowState: () => ({ maximized: win.isMaximized(), fullscreen: win.isFullScreen(), platform: process.platform }),
   windowAction(action) {
     if (action === 'minimize') win.minimize();
@@ -351,9 +359,17 @@ function createWindow() {
 }
 
 app.whenReady().then(async () => {
-  Menu.setApplicationMenu(process.platform === 'darwin' ? Menu.buildFromTemplate([{ role: 'appMenu' }, { role: 'editMenu' }, { role: 'viewMenu' }, { role: 'windowMenu' }]) : null);
+  Menu.setApplicationMenu(process.platform === 'darwin' ? Menu.buildFromTemplate([{ role: 'appMenu', submenu: [{ role: 'about' }, { label: 'Check for Updates…', click: () => send('show-updates') }, { type: 'separator' }, { role: 'services' }, { type: 'separator' }, { role: 'hide' }, { role: 'hideOthers' }, { role: 'unhide' }, { type: 'separator' }, { role: 'quit' }] }, { role: 'editMenu' }, { role: 'viewMenu' }, { role: 'windowMenu' }]) : null);
   const dataDir = app.getPath('userData');
   hub = new Hub({ dataDir, secrets: new DesktopSecrets(path.join(dataDir, 'secrets.json'), safeStorage), approvals: true });
+  updates = new (require('./updates').AppUpdates)({ app, secrets: hub.secrets, fetch: net.fetch.bind(net), shell,
+    beforeInstall: () => {
+      if (hub.running.size || [...hub.projectChecks.jobs.values()].some((job) => job.child) || [...(hub.debugger?.sessions?.values() || [])].some((session) => ['starting', 'running', 'paused'].includes(session.status)) || [...previewServers.jobs.values()].some((job) => job.child)) throw new Error('Stop agents, checks, debugging and preview servers before opening the installer.');
+      if (lanHost?.state().running) throw new Error('Stop hosting the project room before opening the installer.');
+    },
+  });
+  updates.on('state', (state) => send('app-update', state));
+  await updates.init();
   keepAwake(require('electron').powerSaveBlocker, hub); // while agents run
   hub.probeDelayMs = 1500; // agent version probes wait until the window has painted
   // Projects passed on the command line: `tributary /path/to/project`
@@ -470,5 +486,5 @@ app.on('before-quit', (event) => {
   event.preventDefault();
   lanHost.stop().catch((e) => console.error(`Could not stop hosting: ${e.message}`)).finally(() => { stoppedHostingForQuit = true; app.quit(); });
 });
-app.on('will-quit', () => { hub?._qaResults?.stopAll(); hub?._languageTools?.stopAll(); hub?.debugger?.stopAll(); hub?.projectChecks.stopAll(); try { hub?.store.close(); } catch (e) { console.error(`Could not save on quit: ${e.message}`); } });
+app.on('will-quit', () => { updates?.dispose(); hub?._qaResults?.stopAll(); hub?._languageTools?.stopAll(); hub?.debugger?.stopAll(); hub?.projectChecks.stopAll(); try { hub?.store.close(); } catch (e) { console.error(`Could not save on quit: ${e.message}`); } });
 app.on('window-all-closed', () => { if (hub) { hub._qaResults?.stopAll(); hub._languageTools?.stopAll(); hub.debugger?.stopAll(); hub.projectChecks.stopAll(); for (const id of hub.running.keys()) hub.stop(id); hub.collaborationClient?.disconnect(); hub.fileWatches.close(); } previewServers.stopAll(); terminals.killAll(); if (process.platform !== 'darwin' || SMOKE) app.quit(); });

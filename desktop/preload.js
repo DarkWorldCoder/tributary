@@ -5,6 +5,7 @@ const listeners = {};
 ipcRenderer.on('hub-event', (_e, name, data) => { for (const f of listeners[name] || []) f(data); });
 contextBridge.exposeInMainWorld('hub', {
   platform: 'desktop',
+  os: process.platform,
   call: (method, ...args) => ipcRenderer.invoke('hub', method, args),
   on: (name, fn) => { (listeners[name] = listeners[name] || []).push(fn); return () => { listeners[name] = (listeners[name] || []).filter((f) => f !== fn); }; },
 });

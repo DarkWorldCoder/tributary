@@ -25,6 +25,7 @@ import { DocumentPanel } from '@/components/document-panel';
 import { CollaborationDialog } from '@/components/collaboration-dialog';
 import { ProjectContext } from '@/components/project-context';
 import { RecentWork } from '@/components/recent-work';
+import { AppUpdateNotice } from '@/components/app-updates';
 const WorkspacePanel = React.lazy(() => import('@/components/workspace-panel').then((m) => ({ default: m.WorkspacePanel })));
 
 
@@ -111,6 +112,7 @@ function WorkbenchApp() {
         </SidebarInset>
       </SidebarProvider>
       <SettingsDialog />
+      <AppUpdateNotice />
       <TeamDialog />
       <CollaborationDialog />
       <CommandPalette />

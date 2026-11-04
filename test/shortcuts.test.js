@@ -23,8 +23,10 @@ test('keyboard commands match Ctrl and Command, keep legacy aliases, and reject 
 });
 
 test('custom shortcuts use the selected platform, detect conflicts and support unassignment', async () => {
-  const { keyboardPlatform, validBinding, bindingFromEvent, bindingConflict, shortcutAction, readShortcutPreferences } = await import('../core/shortcuts.mjs');
+  const { keyboardDevice, keyboardPlatform, validBinding, bindingFromEvent, bindingConflict, shortcutAction, readShortcutPreferences } = await import('../core/shortcuts.mjs');
   assert.equal(keyboardPlatform('MacIntel'), 'mac'); assert.equal(keyboardPlatform('Win32'), 'pc'); assert.equal(keyboardPlatform('Linux x86_64'), 'pc');
+  assert.equal(keyboardPlatform('darwin'), 'mac'); assert.equal(keyboardPlatform('win32'), 'pc'); assert.equal(keyboardPlatform('iPad'), 'mac');
+  assert.equal(keyboardDevice('darwin'), 'Mac'); assert.equal(keyboardDevice('win32'), 'Windows'); assert.equal(keyboardDevice('linux'), 'Linux'); assert.equal(keyboardDevice('Linux Android'), 'Android');
   const event = { key: 'k', code: 'KeyK', ctrlKey: true, metaKey: false, altKey: false, shiftKey: false };
   assert.equal(shortcutAction(event, { platform: 'mac' }), null);
   assert.equal(shortcutAction(event, { platform: 'pc' }), 'search');
@@ -40,6 +42,7 @@ test('custom shortcuts use the selected platform, detect conflicts and support u
   assert.equal(validBinding(['Mod', '<script>']), false);
   const saved = readShortcutPreferences({ getItem: () => JSON.stringify({ platform: 'mac', send: 'mod-enter', profiles: { mac: overrides, pc: { search: ['text'] } } }) });
   assert.deepEqual(saved.profiles.mac, overrides); assert.deepEqual(saved.profiles.pc, {}); assert.equal(saved.send, 'mod-enter');
+  assert.equal(saved.platform, 'auto', 'old Mac overrides cannot force Command shortcuts on a Windows or Linux device');
   assert.equal(readShortcutPreferences({ getItem: () => '{broken' }).platform, 'auto');
 });
 

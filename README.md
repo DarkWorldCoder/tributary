@@ -233,6 +233,14 @@ Leave out `TRIBUTARY_SMOKE_CLICKS` to capture the request while it is still wait
 [Download preview releases](https://github.com/DarkWorldCoder/tributary/releases).
 The repository is private, so downloads currently require repository access.
 
+[Uninstall instructions for Windows, macOS and Linux](docs/UNINSTALL.md).
+
+From 0.1.2, use **Help → Check for updates** or **Settings → About** to check,
+download and verify an installer inside the app. Automatic checks are optional;
+installation stays under your control. See [in-app updates](docs/APP_UPDATES.md)
+for private GitHub access and platform details. Install 0.1.2 manually once if
+you are on 0.1.1.
+
 The Distribution workflow builds macOS (Intel and Apple Silicon), Windows
 (x64 and ARM64), and Linux (x64 and ARM64), then verifies the packaged runtime
 and publishes downloads with SHA-256 checksums. Release tags must match the

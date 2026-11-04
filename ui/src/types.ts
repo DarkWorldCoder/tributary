@@ -93,6 +93,8 @@ export interface Thread { id: string; project: string; title: string; messages: 
 export interface GitInfo { root: string; branch: string; changed: { code: string; path: string; from?: string; added?: number; removed?: number; binary?: boolean }[]; stat?: string }
 
 export interface HubEvents {
+  'app-update': import('./lib/update-types').AppUpdateState;
+  'show-updates': undefined;
   'preview-server': { project: string; status: 'idle' | 'starting' | 'running' | 'stopping' | 'stopped' | 'failed'; command: string; url: string; output: string; error: string; code: number | null };
   'language-diagnostics': { project: string; rel: string; text: string; version: number; diagnostics: ProjectDiagnostic[] };
   debugger: import('./lib/debug-types').DebugState;
@@ -112,6 +114,7 @@ export interface ActivityWorker {
 export interface ActivityEntry { parentThreadId?: string; threadId: string; title: string; project: string; workdir?: string; startedAt?: number; kind: 'turn' | 'team' | 'race' | 'manager'; recipe?: string; recipeName?: string; messageId?: string; phase?: string; workers: ActivityWorker[] }
 export interface HubBridge {
   platform: 'desktop' | 'vscode' | 'mock';
+  os?: string;
   call<T = unknown>(method: string, ...args: unknown[]): Promise<T>;
   on<K extends keyof HubEvents>(name: K, fn: (data: HubEvents[K]) => void): void | (() => void);
 }

@@ -63,6 +63,7 @@ const highlight = HighlightStyle.define([
   { tag: [t.typeName, t.className, t.namespace], color: 'var(--syn-type)' },
   { tag: [t.propertyName, t.attributeName], color: 'var(--syn-property)' },
   { tag: [t.tagName, t.heading], color: 'var(--syn-tag)', fontWeight: '600' },
+  { tag: [t.operator, t.punctuation], color: 'var(--syn-operator, var(--foreground))' },
   { tag: [t.definition(t.variableName)], color: 'var(--foreground)' },
   { tag: t.link, color: 'var(--brand)', textDecoration: 'underline' },
 ]);

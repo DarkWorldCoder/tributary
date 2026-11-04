@@ -641,3 +641,63 @@
 @media (hover: hover) and (pointer: fine) {
   .project-sidebar [data-slot="sidebar-menu-button"]:hover .sidebar-shortcut-hint { visibility: visible; }
 }
+
+/* Built-in Ocean palette. Imported packs and the VS Code host keep their own colors. */
+:root[data-workbench-palette="ocean"]:not(.vscode):not([data-extension-theme]) {
+  --brand: #176cb3;
+  --brand-2: #137a8c;
+  --ring: #176cb3;
+  --primary: #176cb3;
+  --primary-foreground: #ffffff;
+  --sidebar-primary: #176cb3;
+}
+:root.dark[data-workbench-palette="ocean"]:not(.vscode):not([data-extension-theme]),
+:root.dark[data-workbench-palette="ocean"]:not(.vscode):not([data-extension-theme]) .app-frame,
+:root.dark[data-workbench-palette="ocean"]:not(.vscode):not([data-extension-theme]) .workspace-surface {
+  --background: #061e2b;
+  --foreground: #d6e5ef;
+  --card: #082332;
+  --card-foreground: #d6e5ef;
+  --popover: #102e40;
+  --popover-foreground: #e2edf5;
+  --sidebar: #051a26;
+  --sidebar-foreground: #c6dbea;
+  --sidebar-border: #244454;
+  --sidebar-accent: #15394d;
+  --sidebar-accent-foreground: #edf6fc;
+  --sidebar-primary: #61b8ff;
+  --sidebar-primary-foreground: #041b28;
+  --sidebar-ring: #61b8ff;
+  --muted: #102e40;
+  --muted-foreground: #9eb8c9;
+  --secondary: #143548;
+  --secondary-foreground: #d6e5ef;
+  --accent: #173d54;
+  --accent-foreground: #edf6fc;
+  --border: #244454;
+  --input: #36596e;
+  --brand: #61b8ff;
+  --brand-2: #7fdbca;
+  --ring: #61b8ff;
+  --primary: #61b8ff;
+  --primary-foreground: #041b28;
+  --success: #7bdbaa;
+  --warning: #ffcb6b;
+  --destructive: #ff8e9b;
+  --syn-keyword: #c792ea;
+  --syn-string: #ecc48d;
+  --syn-number: #f78c6c;
+  --syn-comment: #8ba8ba;
+  --syn-function: #82aaff;
+  --syn-type: #7fdbca;
+  --syn-property: #b4d8fd;
+  --syn-tag: #ffcb6b;
+  --syn-operator: #89ddff;
+}
+:root.dark[data-workbench-palette="ocean"]:not(.vscode):not([data-extension-theme]) .workspace-surface {
+  --background: #041b28;
+  --card: #051e2b;
+}
+:root.dark[data-workbench-palette="ocean"]:not(.vscode):not([data-extension-theme]) .cm-activeLine {
+  box-shadow: inset 2px 0 #61b8ff;
+}
