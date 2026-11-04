@@ -39,9 +39,9 @@ export function followedFile(thread, root) {
   for (let i = tools.length - 1; i >= 0; i--) {
     const tool = tools[i]; if (/directory|list|glob|search/i.test(tool.name)) continue;
     const input = tool.input || {};
-    const candidate = /read|edit|write|patch|file|view/i.test(tool.name) ? input.file_path ?? input.filePath ?? input.path : null;
+    const candidate = /read|edit|write|patch|file|view/i.test(tool.name) ? input.file_path ?? input.filePath ?? input.filepath ?? input.abs_path ?? input.path : null;
     const rel = clean(candidate) || (tool.files || []).map(clean).find(Boolean);
-    if (rel) return { rel, key: `${message.id}:${tool.id || i}:${rel}` };
+    if (rel) return { rel, key: `${message.id}:${tool.id || i}:${tool.status || ''}:${rel}` };
   }
   const file = [...(message.files || [])].reverse().find((f) => !f.external && clean(f.rel));
   return file ? { rel: clean(file.rel), key: `${message.id}:file:${file.rel}` } : null;

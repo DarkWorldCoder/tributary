@@ -1,3 +1,4 @@
+import { LineChangeCount } from '@/components/line-change-count';
 import { AgentError } from '@/components/agent-error';
 import { ChatAttachments } from '@/components/chat-attachments';
 import * as React from 'react';
@@ -22,11 +23,13 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Trace, TraceCollapsible, TraceCollapsibleContent, TraceCollapsibleTrigger, TraceDescription, TraceIcon, TraceLine, TraceTitle } from '@/components/ui/trace';
 import { AgentAvatar } from '@/components/agent-avatar';
 import { HighlightedCode, Markdown } from '@/components/markdown';
-import { activitySummary, changeCode, duration, toolTarget, toolVerb } from '@/lib/format';
+import { changeCode, duration, toolTarget, toolVerb } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/store';
 import { FileTypeIcon } from '@/components/file-type-icon';
-import type { Agent, AgentMessage, Message as Msg, PermissionRequest, RaceCandidate, Tool, UserMessage } from '@/types';
+import { replySegments, thinkingExcerpt } from '@/lib/reply-segments.mjs';
+import { toolFileReferences } from '@/lib/tool-file-references.mjs';
+import type { Agent, AgentMessage, Message as Msg, PermissionRequest, RaceCandidate, ReplyActivity, Tool, UserMessage } from '@/types';
 
 const MODE_LABEL = { read: 'Read-only', edit: 'Edit files', full: 'Full auto' } as const;
 const HANDOFF = { join: 'Joined with a summary of this thread', 'catch-up': 'Caught up on the other agents' } as Record<string, string>;
@@ -37,69 +40,90 @@ function toolIcon(t: Tool) {
   return v === 'Ran' ? <SquareTerminal /> : v === 'Edited' ? <FileCode2 /> : v === 'Read' ? <FileText /> : v === 'Searched' ? <Search /> : v === 'Browsed' ? <Globe /> : <Wrench />;
 }
 
+function toolProgress(t: Tool) {
+  return ({ Ran: 'Running command', Read: 'Reading files', Edited: 'Editing files', Searched: 'Searching', Browsed: 'Browsing sources', 'Updated plan': 'Updating plan', 'Added task': 'Creating task', 'Updated task': 'Updating task', 'Agent task': 'Delegating task' } as Record<string, string>)[toolVerb(t)] || 'Using tools';
+}
+
 function Step({ t }: { t: Tool }) {
   const s = useStore();
+  const files = toolFileReferences(t, s.workdir);
+  const target = toolTarget(t, s.workdir);
+  const fileLink = (file: (typeof files)[number], compact = false) => <button key={file.rel} type="button" aria-label={`Open ${file.rel} in code editor`} title={file.rel} onClick={() => s.editFile(file.rel, file.line, file.column)} className="inline-flex min-w-0 max-w-full max-sm:min-h-11 items-center gap-1 rounded text-left text-[12.5px] text-muted-foreground hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-ring"><FileTypeIcon path={file.rel} /><span className="truncate">{compact && files.filter((item) => item.rel.split('/').pop() === file.rel.split('/').pop()).length === 1 ? file.rel.split('/').pop() : file.rel}{file.line ? `:${file.line}` : ''}</span></button>;
+  const direct = files.length === 1 && toolVerb(t) !== 'Ran';
+  const command = toolVerb(t) === 'Ran' ? target : '';
+  const details = !!t.output || !!command;
   const line = (
     <TraceLine status={t.status === 'running' ? 'running' : t.status === 'error' ? 'error' : undefined}>
       <TraceIcon>{t.status === 'running' ? <Spinner /> : toolIcon(t)}</TraceIcon>
-      <TraceTitle>{toolVerb(t)}</TraceTitle>
-      <TraceDescription className="font-mono text-[12.5px]">{toolTarget(t, s.workdir)}</TraceDescription>
+      <TraceTitle>{t.status === 'running' ? toolProgress(t) : toolVerb(t)}</TraceTitle>
+      <TraceDescription className="min-w-0 shrink! truncate font-mono text-[12.5px]" title={target}>{direct ? fileLink(files[0]) : target}</TraceDescription>
     </TraceLine>
   );
-  if (!t.output) return <div>{line}</div>;
   return (
     <TraceCollapsible>
-      <TraceCollapsibleTrigger>{line}</TraceCollapsibleTrigger>
-      <TraceCollapsibleContent>
-        <div className="py-1.5 pl-6"><HighlightedCode code={t.output} language={/^(shell|bash|run_shell_command)$/i.test(t.name) ? 'ansi' : 'text'} wrap /></div>
-      </TraceCollapsibleContent>
+      <div className="flex min-w-0 items-center gap-1">{line}{details && <TraceCollapsibleTrigger className="shrink-0" aria-label={`Show details: ${toolVerb(t)} ${target}`} />}</div>
+      {!direct && files.length > 0 && <div className="flex min-w-0 flex-wrap gap-x-3 gap-y-1 pl-6">{files.map((file) => fileLink(file, true))}</div>}
+      {details && <TraceCollapsibleContent>
+        <div className="min-w-0 space-y-2 py-1">{command && <HighlightedCode code={command} language="bash" wrap />}{t.output && <HighlightedCode code={t.output} language={command ? 'ansi' : 'text'} wrap />}</div>
+      </TraceCollapsibleContent>}
     </TraceCollapsible>
   );
 }
 
-function Activity({ m }: { m: AgentMessage }) {
-  const live = m.ok == null;
+function Activity({ m, entries, live = false }: { m: AgentMessage; entries: ReplyActivity[]; live?: boolean }) {
+  const s = useStore();
   const [open, setOpen] = React.useState<boolean | null>(null);
-  const isOpen = open ?? live;
-  const steps = m.tools || [];
-  if (!steps.length && !m.thinking && !m.plan) {
-    return live && !m.text ? <Trace><TraceLine status="running"><TraceIcon><Spinner /></TraceIcon><TraceTitle>Starting</TraceTitle></TraceLine></Trace> : null;
-  }
-  const lastRun = [...steps].reverse().find((t) => t.status === 'running');
-  const waiting = live && (m.permissions || []).some((p) => p.status === 'pending');
-  return (
-    <Trace>
-      <TraceCollapsible open={isOpen} onOpenChange={setOpen}>
-        <TraceCollapsibleTrigger>
-          <TraceLine status={live ? 'running' : undefined}>
-            <TraceIcon>{live ? <Spinner /> : <ListChecks />}</TraceIcon>
-            <TraceTitle>{waiting ? 'Waiting for your answer' : live ? 'Working' : activitySummary(m) || 'Activity'}</TraceTitle>
-            {live && lastRun && <TraceDescription className="font-mono text-[12.5px]">{toolTarget(lastRun, null)}</TraceDescription>}
-          </TraceLine>
-        </TraceCollapsibleTrigger>
-        <TraceCollapsibleContent>
-          <div className="ml-2 flex flex-col gap-1.5 border-l py-1.5 pl-4">
-            {m.thinking && (
-              <TraceCollapsible>
-                <TraceCollapsibleTrigger><TraceLine><TraceIcon><Brain /></TraceIcon><TraceTitle>Thinking</TraceTitle></TraceLine></TraceCollapsibleTrigger>
-                <TraceCollapsibleContent><p className="max-h-60 overflow-auto py-1 pl-6 text-sm whitespace-pre-wrap text-muted-foreground">{m.thinking.slice(-4000)}</p></TraceCollapsibleContent>
-              </TraceCollapsible>
-            )}
-            {m.plan && (
-              <ul className="flex flex-col gap-1 py-0.5 text-sm" aria-label="Agent plan">
-                {m.plan.map((p, i) => (
-                  <li key={i} className={cn('flex items-start gap-2', p.done && 'text-muted-foreground line-through')}>
-                    <Checkbox checked={!!p.done} disabled aria-hidden tabIndex={-1} className="mt-0.5 disabled:cursor-default disabled:opacity-100" /><span className="sr-only">{p.done ? 'Done: ' : 'To do: '}</span>{p.text}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {steps.map((t, i) => <Step key={t.id ?? i} t={t} />)}
-          </div>
-        </TraceCollapsibleContent>
-      </TraceCollapsible>
-    </Trace>
-  );
+  const steps = entries.flatMap((entry) => entry.kind === 'tool' && m.tools[entry.toolIndex] ? [m.tools[entry.toolIndex]] : []);
+  const lastRun = [...steps].reverse().find((tool) => tool.status === 'running');
+  const waiting = live && (m.permissions || []).some((request) => request.status === 'pending');
+  const last = entries.at(-1);
+  const summaries: string[] = [];
+  for (const [verb, label] of [['Read', 'Read files'], ['Searched', 'Searched files'], ['Edited', 'Edited files'], ['Browsed', 'Browsed sources']] as const) if (steps.some((tool) => toolVerb(tool) === verb)) summaries.push(label);
+  const commands = steps.filter((tool) => toolVerb(tool) === 'Ran').length;
+  if (commands) summaries.push(`Ran ${commands} command${commands === 1 ? '' : 's'}`);
+  const completed = summaries.join(' · ') || (steps.length ? `${steps.length} tool ${steps.length === 1 ? 'call' : 'calls'}` : entries.some((entry) => entry.kind === 'plan') ? 'Updated plan' : 'Thought');
+  const label = waiting ? 'Waiting for your answer' : live ? lastRun ? toolProgress(lastRun) : last?.kind === 'thinking' ? 'Thinking' : last?.kind === 'plan' ? 'Planning' : 'Processing' : completed;
+  return <Trace className="reply-activity" aria-label="Reply activity">
+    <TraceCollapsible open={open ?? live} onOpenChange={setOpen}>
+      <TraceCollapsibleTrigger>
+        <TraceLine status={live ? 'running' : undefined}>
+          <TraceIcon>{live ? <Spinner /> : steps.length ? <ListChecks /> : <Brain />}</TraceIcon>
+          <TraceTitle>{label}</TraceTitle>
+          {live && lastRun && <TraceDescription className="min-w-0 shrink! truncate font-mono text-[12.5px]">{toolTarget(lastRun, s.workdir)}</TraceDescription>}
+        </TraceLine>
+      </TraceCollapsibleTrigger>
+      <TraceCollapsibleContent>
+        <div className="flex min-w-0 flex-col gap-2">
+          {entries.map((entry, index) => {
+            if (entry.kind === 'tool') return m.tools[entry.toolIndex] ? <Step key={`tool:${entry.toolIndex}`} t={m.tools[entry.toolIndex]} /> : null;
+            if (entry.kind === 'thinking') {
+              const text = thinkingExcerpt(m, entry);
+              return text ? <TraceCollapsible key={`thinking:${index}`}>
+                <TraceCollapsibleTrigger><TraceLine><TraceIcon><Brain /></TraceIcon><TraceTitle>{live && last === entry ? 'Thinking' : 'Thought'}</TraceTitle></TraceLine></TraceCollapsibleTrigger>
+                <TraceCollapsibleContent><p className="max-h-60 overflow-auto text-[13px] leading-relaxed whitespace-pre-wrap text-muted-foreground">{text}</p></TraceCollapsibleContent>
+              </TraceCollapsible> : <TraceLine key={`thinking:${index}`}><TraceIcon><Brain /></TraceIcon><TraceTitle>Thought</TraceTitle></TraceLine>;
+            }
+            return <ul key={`plan:${index}`} className="flex flex-col gap-1 py-0.5 text-[13px]" aria-label="Agent plan">{entry.items.map((item, i) => <li key={i} className={cn('flex items-start gap-2', item.done && 'text-muted-foreground line-through')}><Checkbox checked={!!item.done} disabled aria-hidden tabIndex={-1} className="mt-0.5 disabled:cursor-default disabled:opacity-100" /><span className="sr-only">{item.done ? 'Done: ' : 'To do: '}</span>{item.text}</li>)}</ul>;
+          })}
+        </div>
+      </TraceCollapsibleContent>
+    </TraceCollapsible>
+  </Trace>;
+}
+
+function LegacyActivity({ m }: { m: AgentMessage }) {
+  const entries: ReplyActivity[] = [];
+  if (m.thinking) entries.push({ kind: 'thinking', textOffset: 0, start: 0, end: m.thinking.length });
+  if (m.plan) entries.push({ kind: 'plan', textOffset: 0, items: m.plan });
+  entries.push(...(m.tools || []).map((_, toolIndex) => ({ kind: 'tool' as const, textOffset: 0, toolIndex })));
+  return entries.length ? <Activity m={m} entries={entries} /> : null;
+}
+
+function LiveProgress({ m }: { m: AgentMessage }) {
+  const waiting = (m.permissions || []).some((request) => request.status === 'pending');
+  const running = [...(m.tools || [])].reverse().find((tool) => tool.status === 'running');
+  const label = waiting ? 'Waiting for your answer' : running ? toolProgress(running) : m.text ? 'Writing response' : 'Processing request';
+  return <div role="status" aria-live="polite" className="flex min-w-0 items-center gap-2 py-1 text-[13px] text-muted-foreground"><Spinner className="size-3.5 shrink-0" /><span>{label}</span></div>;
 }
 
 const ASKS: Record<string, string> = { execute: 'run a command', edit: 'edit a file', delete: 'delete a file', move: 'move a file', read: 'read a file', search: 'search', fetch: 'fetch from the web', permissions: 'request additional access' };
@@ -150,20 +174,34 @@ function AgentQuestionCard({ r, agent }: { r: PermissionRequest; agent: Agent })
   </section>;
 }
 
-function PermissionRequests({ m, agent }: { m: AgentMessage; agent: Agent }) {
+function ReplyContent({ m, agent }: { m: AgentMessage; agent: Agent }) {
   const s = useStore();
-  const pending = m.ok == null && s.running ? (m.permissions || []).filter((p) => p.status === 'pending') : [];
-  return pending.map((r) => r.questions ? <AgentQuestionCard key={r.id} r={r} agent={agent} /> : <PermissionCard key={r.id} r={r} agent={agent} />);
+  const live = m.ok == null;
+  const parts = replySegments(m.text || '', m.permissions, m.trace);
+  return <div className="reply-timeline flex min-w-0 flex-col gap-3">
+    {!m.trace && <LegacyActivity m={m} />}
+    {parts.map((part, index) => {
+      if (part.kind === 'activity') return <Activity key={part.id} m={m} entries={part.entries} live={live && index === parts.length - 1} />;
+      if (part.kind === 'text') return <Markdown key={`text:${index}`} text={part.text} />;
+      const r = part.request;
+      if (r.status === 'pending' && live && s.running) return r.questions ? <AgentQuestionCard key={r.id} r={r} agent={agent} /> : <PermissionCard key={r.id} r={r} agent={agent} />;
+      const label = r.status === 'allowed' ? 'Allowed once' : r.status === 'always' ? 'Always allowed' : r.status === 'rejected' ? 'Denied' : 'Cancelled';
+      return <details key={r.id} className="min-w-0 text-xs text-muted-foreground"><summary className="cursor-pointer rounded py-1 focus-visible:outline-2 focus-visible:outline-ring"><span className="inline-flex max-w-full items-center gap-1.5 align-middle"><ShieldQuestion className="size-3.5 shrink-0" /><span className="truncate">{label} · {r.title}</span></span></summary><pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded bg-muted p-2 font-mono">{r.command || r.path || r.detail || r.title}</pre></details>;
+    })}
+    {live && parts.at(-1)?.kind !== 'activity' && <LiveProgress m={m} />}
+  </div>;
 }
 
 function FilesChanged({ m }: { m: AgentMessage }) {
   const s = useStore(); const files = (m.files || []).filter((f) => !f.external);
   if (!files.length) return null;
+  const counted = files.every((file) => file.binary || file.added != null && file.removed != null);
+  const total = counted ? files.reduce((counts, file) => ({ added: counts.added + (file.added || 0), removed: counts.removed + (file.removed || 0) }), { added: 0, removed: 0 }) : {};
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
       <div className="flex items-center gap-2 border-b px-3 py-2 text-sm">
         <FileCode2 className="size-4 text-muted-foreground" />
-        <span className="font-medium">{files.length} file{files.length > 1 ? 's' : ''} changed</span>
+        <span className="font-medium">{files.length} file{files.length > 1 ? 's' : ''} changed</span><LineChangeCount {...total} />
         <Button size="xs" variant="outline" className="ml-auto" onClick={() => s.openReview(files[0].rel)}>Review</Button>
       </div>
       <ul>
@@ -173,9 +211,9 @@ function FilesChanged({ m }: { m: AgentMessage }) {
               <button className="flex min-w-0 flex-1 items-center gap-2.5 px-3 py-1.5 text-left text-sm" onClick={() => s.openReview(f.rel)} title="Show the diff">
                 <FileTypeIcon path={f.rel} />
                 <ChangeCode code={changeCode(f.change)} />
-                <span className="truncate font-mono text-[12.5px]">{f.rel}</span>
+                <span className="min-w-0 flex-1 truncate font-mono text-[12.5px]">{f.rel}</span><LineChangeCount {...f} />
               </button>
-              <button className="mr-2 rounded p-1 text-muted-foreground opacity-0 group-hover/row:opacity-100 hover:bg-background hover:text-foreground focus-visible:opacity-100" onClick={() => s.openFile(f.rel)} aria-label={`Edit ${f.rel}`}><FileCode2 className="size-3.5" /></button>
+              <button className="mr-2 rounded p-1 text-muted-foreground opacity-0 group-hover/row:opacity-100 hover:bg-background hover:text-foreground focus-visible:opacity-100" onClick={() => s.editFile(f.rel)} aria-label={`Edit ${f.rel}`}><FileCode2 className="size-3.5" /></button>
             </div>
           </li>
         ))}
@@ -188,10 +226,18 @@ function FilesChanged({ m }: { m: AgentMessage }) {
 function DelegatedWorkers({ m }: { m: AgentMessage }) {
   const s = useStore(); if (!m.delegations?.length) return null;
   return <section aria-label="Delegated workers" className="overflow-hidden rounded-xl border bg-card">
-    <div className="border-b px-3 py-2 text-xs font-medium">Background agents</div>
-    {m.delegations.map((worker) => <button key={worker.id} className="flex w-full min-w-0 items-center gap-2 px-3 py-2 text-left text-xs hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-ring" onClick={() => s.openThread(worker.id)} aria-label={`Open worker chat: ${worker.title}`}>
-      <AgentAvatar agent={s.agentOf(worker.agentId)} size="xs" /><span className="min-w-0 flex-1 truncate">{worker.title}</span><span className="shrink-0 text-muted-foreground">{worker.state === 'running' || worker.state === 'starting' ? <Spinner className="size-3.5" aria-label={worker.state} /> : worker.state === 'done' ? 'Ready to review' : worker.state}</span>
-    </button>)}
+    <div className="flex items-center gap-2 border-b px-3 py-2 text-xs font-medium"><span className="flex-1">Background agents</span><span className="tabular-nums text-muted-foreground">{m.delegations.length}</span></div>
+    {m.delegations.map((worker) => {
+      const busy = worker.state === 'running' || worker.state === 'starting';
+      return <div key={worker.id} className="border-b px-3 py-2.5 last:border-0">
+        <div className="flex min-w-0 items-center gap-2 text-xs"><AgentAvatar agent={s.agentOf(worker.agentId)} size="xs" /><span className="min-w-0 flex-1 truncate font-medium">{s.agentOf(worker.agentId).name}</span><span className={cn('flex shrink-0 items-center gap-1.5', worker.state === 'failed' ? 'text-destructive' : 'text-muted-foreground')}>{busy && <Spinner className="size-3" />}{worker.state === 'done' ? 'Ready to review' : worker.state === 'starting' ? 'Starting' : worker.state === 'running' ? 'Working' : worker.state}</span></div>
+        <p className="mt-1.5 break-words text-[13px] leading-5">{worker.title}</p>
+        {(worker.branch || worker.model) && <p className="mt-1 truncate text-[11px] text-muted-foreground" title={[worker.branch, worker.model].filter(Boolean).join(' · ')}>{[worker.branch, worker.model].filter(Boolean).join(' · ')}</p>}
+        {worker.error && <p className="mt-1 line-clamp-2 break-words text-xs leading-5 text-destructive">{worker.error}</p>}
+        {!!worker.files?.length && <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground"><FileCode2 className="size-3.5" /><span>{worker.fileCount ?? worker.files.length} {(worker.fileCount ?? worker.files.length) === 1 ? 'file' : 'files'} in this worker</span></div>}
+        <div className="mt-2 flex flex-wrap items-center gap-1"><Button size="xs" variant="outline" onClick={() => s.openThread(worker.id)} aria-label={`Open worker chat: ${worker.title}`}>Open chat</Button>{!!worker.files?.length && <Button size="xs" variant="ghost" onClick={async () => { await s.openThread(worker.id); await s.openReview(null); }}>Review changes</Button>}{busy && <Button size="xs" variant="ghost" className="ml-auto text-muted-foreground" onClick={() => s.hub.call('stop', worker.id).catch((e: Error) => toast.error(e.message))}>Stop worker</Button>}</div>
+      </div>;
+    })}
   </section>;
 }
 
@@ -211,7 +257,7 @@ function AskAnother({ m, prompt }: { m: AgentMessage; prompt?: UserMessage }) {
       <DropdownMenuContent align="start" className="w-56">
         <DropdownMenuLabel>Send the same request to…</DropdownMenuLabel>
         {others.map((a) => (
-          <DropdownMenuItem key={a.id} disabled={s.running} onClick={() => { s.setAgentId(a.id); s.hub.call('send', { threadId: s.thread!.id, agentId: a.id, text: prompt.text, mode: m.mode, gatewayId: null, model: s.modelFor(a.id) || null }).catch((e: Error) => toast.error(e.message)); }}>
+          <DropdownMenuItem key={a.id} disabled={s.running} onClick={() => { s.setAgentId(a.id); s.hub.call('send', { threadId: s.thread!.id, agentId: a.id, text: prompt.text, mode: m.mode, research: m.kind === 'research', plan: m.kind === 'plan', gatewayId: null, model: s.modelFor(a.id) || null }).catch((e: Error) => toast.error(e.message)); }}>
             <AgentAvatar agent={a} size="xs" /> {a.name}
           </DropdownMenuItem>
         ))}
@@ -301,7 +347,7 @@ function Retry({ m, prompt }: { m: AgentMessage; prompt?: UserMessage }) {
   return (
     <Tooltip><TooltipTrigger asChild>
       <Button variant="ghost" size="icon-xs" aria-label="Try again" disabled={s.running}
-        onClick={() => s.hub.call('send', { threadId: s.thread!.id, agentId: m.agent, text: prompt.text, mode: m.mode, gatewayId: m.gatewayId || null, model: m.model || null, plan: m.kind === 'plan' }).catch((e: Error) => toast.error(e.message))}><RotateCcw /></Button>
+        onClick={() => s.hub.call('send', { threadId: s.thread!.id, agentId: m.agent, text: prompt.text, mode: m.mode, research: m.kind === 'research', plan: m.kind === 'plan', gatewayId: m.gatewayId || null, model: m.model || null }).catch((e: Error) => toast.error(e.message))}><RotateCcw /></Button>
     </TooltipTrigger><TooltipContent>Try again</TooltipContent></Tooltip>
   );
 }
@@ -435,13 +481,11 @@ function AgentTurn({ m, agent, prompt }: { m: AgentMessage; agent: Agent; prompt
           <span className="font-semibold">{agent.name}</span>
           {m.model && <span className="max-w-48 truncate text-xs text-muted-foreground" title={`Requested model: ${m.model}`}>{m.model}</span>}
           {m.team && <Badge variant="secondary" className="capitalize">{m.team.role === 'member' ? 'Answering' : m.team.role}</Badge>}
-          {m.kind === 'plan' ? <Badge variant="secondary">Plan</Badge> : <Badge variant="outline" className="font-normal text-muted-foreground">{MODE_LABEL[m.mode] ?? m.mode}</Badge>}
+          {m.kind === 'plan' || m.kind === 'research' ? <Badge variant="secondary">{m.kind === 'research' ? 'Deep research' : 'Plan'}</Badge> : <Badge variant="outline" className="font-normal text-muted-foreground">{MODE_LABEL[m.mode] ?? m.mode}</Badge>}
           {m.gateway && <Badge variant="outline" className="border-brand/30 font-normal text-brand">via {m.gateway}</Badge>}
           {m.handoff && HANDOFF[m.handoff] && <span className="text-xs text-muted-foreground">{HANDOFF[m.handoff]}</span>}
         </MessageHeader>
-        <Activity m={m} />
-        <PermissionRequests m={m} agent={agent} />
-        {m.text && <div className={cn(live && 'after:ml-1 after:inline-block after:size-2 after:animate-pulse after:rounded-full after:bg-foreground/70')}><Markdown text={m.text} /></div>}
+        <ReplyContent m={m} agent={agent} />
         {(m.notices || []).map((n, i) => <p key={i} className="flex items-center gap-1.5 text-sm text-warning"><Info className="size-3.5" /> {n}</p>)}
         {m.memoryContext && <details className="text-xs text-muted-foreground"><summary className="cursor-pointer">Project memory included · {m.memoryContext.characters.toLocaleString()} characters</summary><ul className="mt-2 space-y-1">{m.memoryContext.sources.map((source) => <li key={`${source.source}:${source.line}`}>{source.source}:{source.line}</li>)}</ul></details>}
         {m.error && <AgentError text={m.error} agent={m.agent} />}
@@ -481,7 +525,7 @@ function UserTurn({ m, agent, showTarget }: { m: UserMessage; agent: Agent; show
     <div className="flex flex-col items-end gap-1">
       {showTarget && <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
         {m.kind === 'race' ? <>Race between {m.target.split(',').map((id) => <AgentAvatarName key={id} id={id} />)}</>
-          : <>{m.team ? `${m.team.role === 'member' ? 'Question' : `To the ${m.team.role}`},` : m.kind === 'plan' ? 'Plan request for' : m.kind === 'implement' ? 'Run plan with' : 'To'} <AgentAvatar agent={agent} size="xs" /> {agent.name}</>}
+          : <>{m.team ? `${m.team.role === 'member' ? 'Question' : `To the ${m.team.role}`},` : m.kind === 'research' ? 'Research request for' : m.kind === 'plan' ? 'Plan request for' : m.kind === 'implement' ? 'Run plan with' : 'To'} <AgentAvatar agent={agent} size="xs" /> {agent.name}</>}
       </span>}
       {!!m.attachments?.length && <ChatAttachments files={m.attachments} />}
       <Bubble align="end" variant="secondary" className={cn('max-w-[85%]', s.codeLayout && 'max-w-[95%] rounded-xl bg-muted/70')}>

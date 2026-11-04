@@ -47,6 +47,11 @@ const API = {
   createDocument: (t, m) => hub.createDocument(t, m),
   document: (t, d) => hub.document(t, d),
   saveDocument: (t, d, patch) => hub.saveDocument(t, d, patch),
+  async exportQaBug(p, id, test, input) {
+    const content = hub.qaBugReport(p, id, test, input);
+    const uri = await vscode.window.showSaveDialog({ defaultUri: vscode.Uri.file(path.join(p, 'bug-report.md')), filters: { Markdown: ['md'] } });
+    if (!uri) return null; fs.writeFileSync(uri.fsPath, content, { mode: 0o600 }); return uri.fsPath;
+  },
   async exportDocument(t, d, format = 'md') {
     if (!['md', 'txt'].includes(format)) throw new Error('Choose Markdown or plain text.');
     const doc = hub.document(t, d);
@@ -89,18 +94,50 @@ const API = {
   addTeamMember: (p, member) => hub.teamSecrets.addMember(knownProject(p), member),
   removeTeamMember: (p, recipient) => hub.teamSecrets.removeMember(knownProject(p), recipient),
   listFiles: (p) => hub.listFiles(p),
+  qaRuns: (p) => hub.qaRuns(p),
+  qaRun: (p, id) => hub.qaRun(p, id),
+  importQaReport: (p, input) => hub.importQaReport(p, input),
+  removeQaRun: (p, id) => hub.removeQaRun(p, id),
+  qaImage: (p, id, artifact) => hub.qaImage(p, id, artifact),
+  qaCapabilities: (p) => hub.qaCapabilities(p),
+  openQaTrace: (p, id, artifact) => hub.openQaTrace(p, id, artifact),
+  qaBugReport: (p, id, test, input) => hub.qaBugReport(p, id, test, input),
   projectCheckTools: (p) => hub.projectCheckTools(p),
   projectCheckState: (p) => hub.projectCheckState(p),
   runProjectCheck: (p, id) => hub.runProjectCheck(p, id),
+  languageToolCatalog: () => hub.languageToolCatalog(),
+  configureLanguageTools: (input) => hub.configureLanguageTools(input),
+  languageDocument: (p, rel, text) => hub.languageDocument(p, rel, text),
+  languageComplete: (p, rel, text, position) => hub.languageComplete(p, rel, text, position),
+  languageFormat: (p, rel, text, options) => hub.languageFormat(p, rel, text, options),
+  languageLocations: (p, rel, text, position, kind) => hub.languageLocations(p, rel, text, position, kind),
+  languageClose: (p, rel) => hub.languageClose(p, rel),
+  formatSource: (p, rel, text, automatic) => hub.formatSource(p, rel, text, automatic),
+  previewFormat: (p, exclude) => hub.previewFormat(p, exclude),
+  formatDiff: (p, token, rel) => hub.formatDiff(p, token, rel),
+  applyFormat: (p, token, selected, exclude, undo) => hub.applyFormat(p, token, selected, exclude, undo),
+  debugState: (p) => hub.debugState(p),
+  debugStart: (p, input) => hub.debugStart(p, input),
+  debugAttach: (p, port) => hub.debugAttach(p, port),
+  debugStop: (p) => hub.debugStop(p),
+  debugAction: (p, action) => hub.debugAction(p, action),
+  debugBreakpoint: (p, rel, line, enabled) => hub.debugBreakpoint(p, rel, line, enabled),
+  debugFrame: (p, id) => hub.debugFrame(p, id),
+  debugProperties: (p, id) => hub.debugProperties(p, id),
+  debugEvaluate: (p, expression) => hub.debugEvaluate(p, expression),
   stopProjectCheck: (p) => hub.stopProjectCheck(p),
   addAttachments: (files) => hub.addAttachments(files),
   readAttachment: (id) => hub.readAttachment(id),
   readFile: (p, rel) => hub.readFile(p, rel),
   readDirectory: (p, rel, options) => hub.readDirectory(p, rel, options),
   writeFile: (p, rel, c, m) => hub.writeFile(p, rel, c, m),
+  draft: (key) => hub.draft(key), saveDraft: (key, data) => hub.saveDraft(key, data), compareDraft: (p, rel, text) => hub.compareDraft(p, rel, text),
   commit: (p, msg, opts) => hub.commit(p, msg, { allowSecrets: !!opts?.allowSecrets }),
   setProjectFolders: (p, f) => hub.setProjectFolders(p, f),
   renameProject: (p, name) => hub.renameProject(p, name),
+  async openWorkspace() { const result = await vscode.window.showOpenDialog({ canSelectMany: false, canSelectFiles: true, canSelectFolders: false, filters: { Workspace: ['code-workspace'] } }); return result?.[0] ? hub.importWorkspace(result[0].fsPath) : null; },
+  async saveWorkspace(p) { const project = hub.project(p); if (!project) throw new Error('Unknown project'); const file = await vscode.window.showSaveDialog({ defaultUri: vscode.Uri.file(path.join(project.path, project.name.replace(/[^a-z0-9_-]/gi, '-') + '.code-workspace')), filters: { Workspace: ['code-workspace'] } }); return file ? hub.exportWorkspace(p, file.fsPath.endsWith('.code-workspace') ? file.fsPath : file.fsPath + '.code-workspace') : null; },
+  async pickFolders() { const r = await vscode.window.showOpenDialog({ canSelectFolders: true, canSelectFiles: false, canSelectMany: true, openLabel: 'Add folders' }); return (r || []).map((entry) => entry.fsPath); },
   async pickFolder() { const r = await vscode.window.showOpenDialog({ canSelectFolders: true, canSelectFiles: false, openLabel: 'Add folder' }); return r && r[0] ? r[0].fsPath : null; },
   restoreCheckpoint: (t, m) => hub.restoreCheckpoint(t, m),
   turnDiff: (t, m, rel) => hub.turnDiff(t, m, rel),
@@ -219,7 +256,7 @@ async function activate(context) {
     }, 80));
   });
   hub.on('message', (d) => { const t = pending.get(d.message.id); if (t) { clearTimeout(t); pending.delete(d.message.id); } patcher.full(d.message); post('message', d); });
-  for (const n of ['state', 'threads', 'running', 'notification', 'collaboration', 'files-changed']) hub.on(n, (d) => post(n, d));
+  for (const n of ['state', 'threads', 'running', 'notification', 'collaboration', 'language-diagnostics', 'files-changed', 'debugger']) hub.on(n, (d) => post(n, d));
   hub.on('activity', (d) => post('activity', d)); // the live view
 
   const status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
@@ -273,10 +310,10 @@ async function activate(context) {
       const pick = await vscode.window.showQuickPick(g.changed.map((c) => ({ label: c.path, description: c.code })), { placeHolder: 'Pick a changed file to see its diff' });
       if (pick) await API.openDiff(p, path.relative(p, path.join(g.root, pick.label)));
     }),
-    { dispose: () => { hub.projectChecks.stopAll(); for (const id of hub.running.keys()) hub.stop(id); } },
+    { dispose: () => { hub._qaResults?.stopAll(); hub._languageTools?.stopAll(); hub.debugger?.stopAll(); hub.projectChecks.stopAll(); for (const id of hub.running.keys()) hub.stop(id); } },
   );
 }
 
-function deactivate() { if (hub) { hub.projectChecks.stopAll(); for (const id of hub.running.keys()) hub.stop(id); hub.collaborationClient?.disconnect(); hub.fileWatches.close(); try { hub.store.close(); } catch {} } }
+function deactivate() { if (hub) { hub._qaResults?.stopAll(); hub._languageTools?.stopAll(); hub.debugger?.stopAll(); hub.projectChecks.stopAll(); for (const id of hub.running.keys()) hub.stop(id); hub.collaborationClient?.disconnect(); hub.fileWatches.close(); try { hub.store.close(); } catch {} } }
 
 module.exports = { activate, deactivate };

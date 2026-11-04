@@ -1,7 +1,9 @@
+import { LineChangeCount } from '@/components/line-change-count';
+import { ShortcutLabel } from '@/components/shortcut-settings';
 import { WorkbenchLayoutMenu } from '@/components/workbench-layout-menu';
 import * as React from 'react';
 import {
-  BookOpen, Code2, File, GitCompareArrows, Globe, RotateCw, X, Maximize2, Minimize2,
+  BookOpen, Code2, File, GitCompareArrows, Globe, RotateCw, X, Maximize2, Minimize2, FlaskConical,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +12,7 @@ import { useSidebar } from '@/components/ui/sidebar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { AgentAvatar } from '@/components/agent-avatar';
+import { QaWorkspace } from '@/components/qa-workspace';
 import { ProjectPreview } from '@/components/project-preview';
 import { FilesTab } from '@/components/workspace-files';
 import { MemoryPanel } from '@/components/memory-panel';
@@ -20,6 +23,7 @@ import { toast } from 'sonner';
 import { ReviewTab } from '@/components/review-panel';
 import { ago } from '@/lib/format';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useFullscreen } from '@/hooks/use-fullscreen';
 import { cn } from '@/lib/utils';
 import { useStore, type PanelTab } from '@/store';
 import type { ThreadChange } from '@/types';
@@ -29,6 +33,7 @@ const TABS: { id: PanelTab; label: string; icon: React.ReactNode }[] = [
   { id: 'review', label: 'Changes', icon: <GitCompareArrows /> },
   { id: 'memory', label: 'Memory', icon: <BookOpen /> },
   { id: 'preview', label: 'Preview', icon: <Globe /> },
+  { id: 'tests', label: 'Tests', icon: <FlaskConical /> },
 ];
 
 // ---------- Changes: every file the thread touched, and what each turn did to it
@@ -84,7 +89,7 @@ function ChangesTab() {
               {f.turns.map((t, i) => (
                 <button key={`${t.messageId}-${i}`} onClick={() => setSel({ rel: f.rel, messageId: t.messageId })}
                   className={cn('inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[11.5px] hover:bg-muted', sel?.messageId === t.messageId && sel.rel === f.rel && 'border-brand bg-brand/10')}>
-                  <AgentAvatar agent={s.agentOf(t.agent)} size="xs" />{s.agentOf(t.agent).name}{t.team ? ` as ${t.team}` : ''}{t.ts ? <span className="text-muted-foreground">{ago(t.ts)}</span> : null}
+                  <AgentAvatar agent={s.agentOf(t.agent)} size="xs" />{s.agentOf(t.agent).name}{t.team ? ` as ${t.team}` : ''}{t.ts ? <span className="text-muted-foreground">{ago(t.ts)}</span> : null}<LineChangeCount {...t} />
                 </button>
               ))}
             </div>
@@ -119,6 +124,28 @@ const MemoryTab = MemoryPanel;
 
 export function WorkspacePanel() {
   const s = useStore();
+  const fullscreen = useFullscreen();
+  const surface = React.useRef<HTMLElement>(null);
+  React.useEffect(() => {
+    if (!s.workspaceExpanded || !s.panel.open || s.home || s.document || !surface.current) return;
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const siblings: { element: HTMLElement; inert: boolean }[] = [];
+    // Covered chrome stays mounted, preserving drafts, terminals and browser pages.
+    let child: HTMLElement = surface.current;
+    while (child.parentElement) {
+      const parent = child.parentElement;
+      for (const element of parent.children) if (element !== child && element instanceof HTMLElement && !element.classList.contains('activity-rail') && element.dataset.slot !== 'project-navigation') {
+        siblings.push({ element, inert: element.inert }); element.inert = true;
+      }
+      if (parent.classList.contains('app-frame')) break;
+      child = parent;
+    }
+    if (!surface.current.contains(previous)) surface.current.querySelector<HTMLElement>('[aria-label="Restore layout"]')?.focus({ preventScroll: true });
+    return () => {
+      for (const { element, inert } of siblings) element.inert = inert;
+      if (previous?.isConnected) previous.focus({ preventScroll: true });
+    };
+  }, [s.workspaceExpanded, s.panel.open, s.home, s.document]);
   const mobile = useIsMobile();
   const Heading = mobile || s.workspaceExpanded ? 'h1' : 'h2';
   const { setOpen: setSidebarOpen } = useSidebar();
@@ -132,6 +159,10 @@ export function WorkspacePanel() {
     return () => constrained.removeEventListener('change', collapse);
   }, [s.panel.open]);
   const [fileProjects, setFileProjects] = React.useState<string[]>([]);
+  const [testsOpened, setTestsOpened] = React.useState(s.panel.tab === 'tests');
+  React.useEffect(() => { if (s.panel.tab === 'tests') setTestsOpened(true); }, [s.panel.tab]);
+  const [previewOpened, setPreviewOpened] = React.useState(s.panel.tab === 'preview');
+  React.useEffect(() => { if (s.panel.tab === 'preview') setPreviewOpened(true); }, [s.panel.tab]);
   const [memoryOpened, setMemoryOpened] = React.useState(s.panel.tab === 'memory');
   React.useEffect(() => { if (s.panel.tab === 'memory') setMemoryOpened(true); }, [s.panel.tab]);
   const currentFilesProject = s.panel.tab === 'files' ? s.workdir : null;
@@ -140,20 +171,21 @@ export function WorkspacePanel() {
   const changed = s.git?.changed.length ?? 0;
   const selectedTab = s.panel.tab === 'changes' ? 'review' : s.panel.tab;
   return (
-    <aside aria-label="Workspace" className="workspace-surface flex h-full min-w-0 flex-col bg-card max-md:pt-[env(safe-area-inset-top)] max-md:pb-[env(safe-area-inset-bottom)] max-sm:[&_button[data-slot=button]]:min-h-11 max-sm:[&_input]:min-h-11 max-sm:[&_button[data-size^=icon]]:min-w-11">
+    <aside ref={surface} aria-label="Workspace" data-focused={s.workspaceExpanded || undefined} className={cn('workspace-surface flex h-full min-w-0 flex-col bg-card max-md:pt-[env(safe-area-inset-top)] max-md:pb-[env(safe-area-inset-bottom)] max-sm:[&_button[data-slot=button]]:min-h-11 max-sm:[&_input]:min-h-11 max-sm:[&_button[data-size^=icon]]:min-w-11', s.workspaceExpanded && 'fixed inset-0 z-40')}>
       <Tabs value={selectedTab} onValueChange={(value) => s.setPanel({ open: true, tab: value as PanelTab })} className="flex h-full min-h-0 flex-col gap-0">
         <header className="workbench-toolbar @container border-b bg-background/60 pr-2">
           <Heading className="sr-only">Workspace</Heading>
           <div className="h-full min-w-0 flex-1 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <TabsList aria-label="Workspace tools" variant="line" className="workspace-tool-list justify-start gap-0 rounded-none p-0">
-              {TABS.map((tab) => <TabsTrigger key={tab.id} value={tab.id} aria-label={tab.id === 'review' ? `Changes, ${changed} changed ${changed === 1 ? 'file' : 'files'}` : tab.label} className="h-8 flex-none gap-1.5 rounded-none border-0 px-2.5 text-[13px] font-normal group-data-[variant=line]/tabs-list:data-active:bg-muted/50 dark:group-data-[variant=line]/tabs-list:data-active:bg-muted/50 group-data-horizontal/tabs:after:bottom-0 after:h-px focus-visible:ring-inset max-sm:h-11 @max-[480px]:px-2 @max-[480px]:[&_svg]:hidden @max-[360px]:gap-1 @max-[360px]:px-1.5 [&_svg]:size-4">
+              {TABS.map((tab) => <Tooltip key={tab.id}><TooltipTrigger asChild><TabsTrigger value={tab.id} aria-label={tab.id === 'review' ? `Changes, ${changed} changed ${changed === 1 ? 'file' : 'files'}` : tab.label} className="h-8 flex-none gap-1.5 rounded-none border-0 px-2.5 text-[13px] font-normal group-data-[variant=line]/tabs-list:data-active:bg-muted/50 dark:group-data-[variant=line]/tabs-list:data-active:bg-muted/50 group-data-horizontal/tabs:after:bottom-0 after:h-px focus-visible:ring-inset max-sm:h-11 @max-[480px]:px-2 @max-[480px]:[&_svg]:hidden @max-[360px]:gap-1 @max-[360px]:px-1.5 [&_svg]:size-4">
                 {tab.icon}<span>{tab.label}</span>{tab.id === 'review' && changed > 0 && <span aria-hidden="true" className="rounded bg-muted px-1 text-[11px] tabular-nums">{changed > 99 ? '99+' : changed}</span>}
-              </TabsTrigger>)}
+              </TabsTrigger></TooltipTrigger><TooltipContent>{tab.label} {tab.id !== 'tests' && <ShortcutLabel action={tab.id === 'review' ? 'changes' : tab.id} />}</TooltipContent></Tooltip>)}
             </TabsList>
           </div>
           <WorkbenchLayoutMenu />
-          {s.workspaceExpanded ? <Button variant="ghost" size="xs" className="hidden shrink-0 gap-1.5 md:inline-flex" onClick={() => s.setWorkspaceExpanded(false)} aria-label="Restore split view"><Minimize2 className="size-4" />Show chat</Button> : <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" className="workbench-action shrink-0 max-md:hidden [&_svg]:size-4" onClick={() => s.setWorkspaceExpanded(!s.workspaceExpanded)} aria-label={s.workspaceExpanded ? 'Restore split view' : 'Expand workspace'}>{s.workspaceExpanded ? <Minimize2 /> : <Maximize2 />}</Button></TooltipTrigger><TooltipContent>{s.workspaceExpanded ? 'Restore split view' : 'Expand workspace'}</TooltipContent></Tooltip>}
-          <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" className="workbench-action shrink-0 [&_svg]:size-4" onClick={() => s.setPanel({ ...s.panel, open: false })} aria-label="Close workspace"><X /></Button></TooltipTrigger><TooltipContent>Close workspace</TooltipContent></Tooltip>
+          {fullscreen.active && s.workspaceExpanded && <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className="workbench-action shrink-0" aria-label="Exit full screen" onClick={() => void fullscreen.toggle()}><Minimize2 /></Button></TooltipTrigger><TooltipContent>Exit full screen <ShortcutLabel action="fullscreen" /></TooltipContent></Tooltip>}
+          <Tooltip><TooltipTrigger asChild><Button variant="ghost" size={s.workspaceExpanded ? 'xs' : 'icon-sm'} className={cn('shrink-0 gap-1.5 max-sm:min-w-11 [&_svg]:size-4', !s.workspaceExpanded && 'workbench-action')} onClick={() => s.setWorkspaceExpanded(!s.workspaceExpanded)} aria-label={s.workspaceExpanded ? 'Restore layout' : 'Focus workspace'} aria-pressed={s.workspaceExpanded}>{s.workspaceExpanded ? <><Minimize2 /><span className="max-sm:hidden">Restore layout</span></> : <Maximize2 />}</Button></TooltipTrigger><TooltipContent>{s.workspaceExpanded ? 'Restore layout · Esc' : 'Focus workspace'} <ShortcutLabel action="zoom-workspace" /></TooltipContent></Tooltip>
+          <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" className="workbench-action shrink-0 [&_svg]:size-4" onClick={() => s.setPanel({ ...s.panel, open: false })} aria-label="Close workspace"><X /></Button></TooltipTrigger><TooltipContent>Close workspace <ShortcutLabel action="workspace" /></TooltipContent></Tooltip>
         </header>
         <div className="min-h-0 flex-1">
           <TabsContent value="review" className="flex h-full min-h-0 flex-col"><div role="group" aria-label="Changes to show" className="flex min-h-8 shrink-0 items-center gap-1 border-b px-2 py-1"><Button size="xs" variant={s.panel.tab === 'review' ? 'secondary' : 'ghost'} aria-pressed={s.panel.tab === 'review'} onClick={() => s.openPanel('review')}>Working tree</Button><Button size="xs" variant={s.panel.tab === 'changes' ? 'secondary' : 'ghost'} aria-pressed={s.panel.tab === 'changes'} onClick={() => s.openPanel('changes')}>Conversation activity</Button></div><div className="min-h-0 flex-1">{s.panel.tab === 'changes' ? <ChangesTab /> : <ReviewTab />}</div></TabsContent>
@@ -161,7 +193,8 @@ export function WorkspacePanel() {
             {projects.map((project) => <div key={project} className={s.workdir === project ? 'h-full min-h-0' : 'hidden'}><FilesTab project={project} visible={!s.home && s.workdir === project && s.panel.open && s.panel.tab === 'files' && !s.document} /></div>)}
           </TabsContent>
           <TabsContent value="memory" forceMount className={s.panel.tab === 'memory' ? 'h-full min-h-0' : 'hidden'}>{memoryOpened && s.project && <MemoryTab key={s.project} />}</TabsContent>
-          <TabsContent value="preview" className="h-full min-h-0"><ProjectPreview key={s.workdir} /></TabsContent>
+          <TabsContent value="tests" forceMount className={s.panel.tab === 'tests' ? 'h-full min-h-0' : 'hidden'}>{testsOpened && s.workdir && <QaWorkspace key={s.workdir} project={s.workdir} />}</TabsContent>
+          <TabsContent value="preview" forceMount className={s.panel.tab === 'preview' ? 'h-full min-h-0' : 'hidden'}>{previewOpened && <ProjectPreview key={s.workdir} visible={s.panel.open && s.panel.tab === 'preview'} />}</TabsContent>
         </div>
       </Tabs>
     </aside>

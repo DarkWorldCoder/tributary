@@ -7,6 +7,7 @@ const { Hub } = require('../core');
 const { createPatcher } = require('../core/message-patch');
 const { inside } = require('../core/acp');
 const { TerminalManager } = require('../core/terminal');
+const { PreviewServers } = require('../core/preview-server');
 const { detectEditors, openInEditor } = require('../core/editors');
 
 app.setName('Tributary');
@@ -42,7 +43,7 @@ function wireEvents() {
     }, 80));
   });
   hub.on('message', (d) => { const t = pending.get(d.message.id); if (t) { clearTimeout(t); pending.delete(d.message.id); } patcher.full(d.message); send('message', d); });
-  for (const n of ['state', 'threads', 'running', 'notification', 'collaboration', 'files-changed']) hub.on(n, (d) => send(n, d));
+  for (const n of ['state', 'threads', 'running', 'notification', 'collaboration', 'language-diagnostics', 'files-changed', 'debugger']) hub.on(n, (d) => send(n, d));
   hub.on('activity', (d) => send('activity', d)); // the live view
   // System notification when something finishes while the window is in the background.
   hub.on('notification', (n) => {
@@ -57,14 +58,31 @@ function wireEvents() {
 }
 
 const terminals = new TerminalManager();
+const previewServers = new PreviewServers();
+previewServers.on('state', (state) => send('preview-server', state));
+let stoppingPreviews = false;
+app.on('before-quit', (event) => {
+  if (!stoppingPreviews && [...previewServers.jobs.values()].some((job) => job.child)) {
+    event.preventDefault(); stoppingPreviews = true;
+    void previewServers.stopAll().finally(() => app.quit());
+  }
+});
 let editors = [];
 const knownProject = (p) => { if (!hub.isWorkspace(p)) throw new Error('Unknown project'); return p; };
 
 const API = {
-  windowState: () => ({ maximized: win.isMaximized(), platform: process.platform }),
+  windowState: () => ({ maximized: win.isMaximized(), fullscreen: win.isFullScreen(), platform: process.platform }),
   windowAction(action) {
     if (action === 'minimize') win.minimize();
     else if (action === 'maximize') win.isMaximized() ? win.unmaximize() : win.maximize();
+    else if (action === 'fullscreen') {
+      const current = win; const target = !current.isFullScreen();
+      return new Promise((resolve) => {
+        const event = target ? 'enter-full-screen' : 'leave-full-screen';
+        const finish = () => { clearTimeout(timer); current.removeListener(event, finish); current.removeListener('closed', finish); resolve({ fullscreen: !current.isDestroyed() && current.isFullScreen() }); };
+        const timer = setTimeout(finish, 1500); current.once(event, finish); current.once('closed', finish); current.setFullScreen(target);
+      });
+    }
     else if (action === 'close') win.close();
     else throw new Error('Unknown window action');
   },
@@ -90,6 +108,10 @@ const API = {
   collaborationWatch: (id) => hub.collaborationWatch(id),
   collaborationCommand: (action, input, commandId) => hub.collaborationCommand(action, input, commandId),
   state: () => ({ ...hub.state(), credentialStorage: storageKind(safeStorage) }),
+  extensionPacks: () => hub.listExtensionPacks(),
+  extensionAppearance: (theme, icons) => hub.extensionAppearance(theme, icons),
+  removeExtensionPack: (id) => hub.removeExtensionPack(id),
+  async importExtensionPack() { const result = await dialog.showOpenDialog(win, { title: 'Import theme or file-icon pack', filters: [{ name: 'VS Code extension', extensions: ['vsix'] }], properties: ['openFile'] }); if (result.canceled || !result.filePaths[0]) return null; return hub.importExtensionPack(result.filePaths[0]); },
   createTask: (input) => hub.createTask(input),
   personalWorkspace: () => hub.personalWorkspace(),
   testConnection: (id) => hub.testConnection(id),
@@ -97,6 +119,12 @@ const API = {
   createDocument: (t, m) => hub.createDocument(t, m),
   document: (t, d) => hub.document(t, d),
   saveDocument: (t, d, patch) => hub.saveDocument(t, d, patch),
+  async exportQaBug(p, id, test, input) {
+    const content = hub.qaBugReport(p, id, test, input);
+    const result = await dialog.showSaveDialog(win, { title: 'Save bug report', defaultPath: 'bug-report.md', filters: [{ name: 'Markdown', extensions: ['md'] }] });
+    if (result.canceled || !result.filePath) return null;
+    fs.writeFileSync(result.filePath, content, { mode: 0o600 }); return result.filePath;
+  },
   async exportDocument(t, d, format = 'md') {
     if (!['md', 'txt'].includes(format)) throw new Error('Choose Markdown or plain text.');
     const doc = hub.document(t, d);
@@ -167,18 +195,64 @@ const API = {
   openExternal(url) { if (/^https?:\/\//.test(url)) return shell.openExternal(url); return null; },
   // Projects and files
   listFiles: (p) => hub.listFiles(p),
+  qaRuns: (p) => hub.qaRuns(p),
+  qaRun: (p, id) => hub.qaRun(p, id),
+  importQaReport: (p, input) => hub.importQaReport(p, input),
+  removeQaRun: (p, id) => hub.removeQaRun(p, id),
+  qaImage: (p, id, artifact) => hub.qaImage(p, id, artifact),
+  qaCapabilities: (p) => hub.qaCapabilities(p),
+  openQaTrace: (p, id, artifact) => hub.openQaTrace(p, id, artifact),
+  qaBugReport: (p, id, test, input) => hub.qaBugReport(p, id, test, input),
   projectCheckTools: (p) => hub.projectCheckTools(p),
   projectCheckState: (p) => hub.projectCheckState(p),
   runProjectCheck: (p, id) => hub.runProjectCheck(p, id),
+  languageToolCatalog: () => hub.languageToolCatalog(),
+  configureLanguageTools: (input) => hub.configureLanguageTools(input),
+  languageDocument: (p, rel, text) => hub.languageDocument(p, rel, text),
+  languageComplete: (p, rel, text, position) => hub.languageComplete(p, rel, text, position),
+  languageFormat: (p, rel, text, options) => hub.languageFormat(p, rel, text, options),
+  languageLocations: (p, rel, text, position, kind) => hub.languageLocations(p, rel, text, position, kind),
+  languageClose: (p, rel) => hub.languageClose(p, rel),
+  formatSource: (p, rel, text, automatic) => hub.formatSource(p, rel, text, automatic),
+  previewFormat: (p, exclude) => hub.previewFormat(p, exclude),
+  formatDiff: (p, token, rel) => hub.formatDiff(p, token, rel),
+  applyFormat: (p, token, selected, exclude, undo) => hub.applyFormat(p, token, selected, exclude, undo),
+  debugState: (p) => hub.debugState(p),
+  debugStart: (p, input) => hub.debugStart(p, input),
+  debugAttach: (p, port) => hub.debugAttach(p, port),
+  debugStop: (p) => hub.debugStop(p),
+  debugAction: (p, action) => hub.debugAction(p, action),
+  debugBreakpoint: (p, rel, line, enabled) => hub.debugBreakpoint(p, rel, line, enabled),
+  debugFrame: (p, id) => hub.debugFrame(p, id),
+  debugProperties: (p, id) => hub.debugProperties(p, id),
+  debugEvaluate: (p, expression) => hub.debugEvaluate(p, expression),
   stopProjectCheck: (p) => hub.stopProjectCheck(p),
   addAttachments: (files) => hub.addAttachments(files),
   readAttachment: (id) => hub.readAttachment(id),
   readFile: (p, rel) => hub.readFile(p, rel),
   readDirectory: (p, rel, options) => hub.readDirectory(p, rel, options),
   writeFile: (p, rel, content, mtime) => hub.writeFile(p, rel, content, mtime),
+  // Unsaved text kept across a crash or restart
+  draft: (key) => hub.draft(key),
+  saveDraft: (key, data) => hub.saveDraft(key, data),
+  compareDraft: (p, rel, text) => hub.compareDraft(p, rel, text),
   commit: (p, msg, opts) => hub.commit(p, msg, { allowSecrets: !!opts?.allowSecrets }),
   setProjectFolders: (p, folders) => hub.setProjectFolders(p, folders),
   renameProject: (p, name) => hub.renameProject(p, name),
+  async openWorkspace() {
+    const result = await dialog.showOpenDialog(win, { title: 'Open workspace', properties: ['openFile'], filters: [{ name: 'VS Code workspace', extensions: ['code-workspace'] }] });
+    return result.canceled || !result.filePaths[0] ? null : hub.importWorkspace(result.filePaths[0]);
+  },
+  async saveWorkspace(p) {
+    const project = hub.project(p); if (!project) throw new Error('Unknown project');
+    const result = await dialog.showSaveDialog(win, { title: 'Save workspace as', defaultPath: path.join(project.path, project.name.replace(/[^a-z0-9_-]/gi, '-') + '.code-workspace'), filters: [{ name: 'VS Code workspace', extensions: ['code-workspace'] }] });
+    if (result.canceled || !result.filePath) return null;
+    return hub.exportWorkspace(p, result.filePath.endsWith('.code-workspace') ? result.filePath : result.filePath + '.code-workspace');
+  },
+  async pickFolders() {
+    const r = await dialog.showOpenDialog(win, { title: 'Add folders to this workspace', properties: ['openDirectory', 'multiSelections'] });
+    return r.canceled ? [] : r.filePaths;
+  },
   async pickFolder() {
     const r = await dialog.showOpenDialog(win, { title: 'Add a folder to this project', properties: ['openDirectory'] });
     return r.canceled ? null : r.filePaths[0] || null;
@@ -227,6 +301,10 @@ const API = {
   installRegistryAgent: (id) => hub.installRegistryAgent(id),
   removeRegistryAgent: (id) => hub.removeRegistryAgent(id),
   // Editors and terminals
+  previewServerState: (p) => previewServers.state(knownProject(p)),
+  async startPreviewServer(p) { const root = knownProject(p); return previewServers.launch(root, { ...await hub.teamEnvFor(root), ...hub.workspaceEnvFor(root) }); },
+  stopPreviewServer: (p) => previewServers.stop(knownProject(p)),
+  async restartPreviewServer(p) { const root = knownProject(p); return previewServers.restart(root, { ...await hub.teamEnvFor(root), ...hub.workspaceEnvFor(root) }); },
   editors: () => (editors = detectEditors()).map(({ id, name }) => ({ id, name })),
   openInEditor(editorId, p, rel, line) {
     const e = (editors.length ? editors : (editors = detectEditors())).find((x) => x.id === editorId); if (!e) throw new Error('Editor not found');
@@ -264,7 +342,7 @@ function createWindow() {
     backgroundColor: '#1c1b1a', autoHideMenuBar: true, frame: process.platform === 'darwin',
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, sandbox: true, nodeIntegration: false, spellcheck: true },
   });
-  for (const event of ['maximize', 'unmaximize']) win.on(event, () => send('window-state', { maximized: win.isMaximized(), platform: process.platform }));
+  for (const event of ['maximize', 'unmaximize', 'enter-full-screen', 'leave-full-screen']) win.on(event, () => send('window-state', { maximized: win.isMaximized(), fullscreen: win.isFullScreen(), platform: process.platform }));
   win.webContents.setWindowOpenHandler(({ url }) => { if (/^https?:\/\//.test(url)) shell.openExternal(url); return { action: 'deny' }; });
   win.webContents.on('will-navigate', (ev) => ev.preventDefault());
   // Smoke runs stay hidden so they never take keyboard focus from whatever you are typing in.
@@ -392,5 +470,5 @@ app.on('before-quit', (event) => {
   event.preventDefault();
   lanHost.stop().catch((e) => console.error(`Could not stop hosting: ${e.message}`)).finally(() => { stoppedHostingForQuit = true; app.quit(); });
 });
-app.on('will-quit', () => { hub?.projectChecks.stopAll(); try { hub?.store.close(); } catch (e) { console.error(`Could not save on quit: ${e.message}`); } });
-app.on('window-all-closed', () => { if (hub) { hub.projectChecks.stopAll(); for (const id of hub.running.keys()) hub.stop(id); hub.collaborationClient?.disconnect(); hub.fileWatches.close(); } terminals.killAll(); if (process.platform !== 'darwin' || SMOKE) app.quit(); });
+app.on('will-quit', () => { hub?._qaResults?.stopAll(); hub?._languageTools?.stopAll(); hub?.debugger?.stopAll(); hub?.projectChecks.stopAll(); try { hub?.store.close(); } catch (e) { console.error(`Could not save on quit: ${e.message}`); } });
+app.on('window-all-closed', () => { if (hub) { hub._qaResults?.stopAll(); hub._languageTools?.stopAll(); hub.debugger?.stopAll(); hub.projectChecks.stopAll(); for (const id of hub.running.keys()) hub.stop(id); hub.collaborationClient?.disconnect(); hub.fileWatches.close(); } previewServers.stopAll(); terminals.killAll(); if (process.platform !== 'darwin' || SMOKE) app.quit(); });

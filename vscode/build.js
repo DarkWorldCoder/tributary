@@ -29,6 +29,8 @@ function copyDependency(name, from, modules) {
   for (const dependency of Object.keys(pkg.dependencies || {})) copyDependency(dependency, source, path.join(target, 'node_modules'));
 }
 copyDependency('age-encryption', root, path.join(dist, 'node_modules'));
+copyDependency('jsonc-parser', root, path.join(dist, 'node_modules'));
+copyDependency('prettier', root, path.join(dist, 'node_modules'));
 console.log(`Built ${path.relative(root, dist)}`);
 
 if (process.argv.includes('--install')) {

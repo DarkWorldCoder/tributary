@@ -63,3 +63,24 @@ test('Claude background task runs retain distinct IDs and report their real life
  assert.notEqual(event('task_started', { run_id: 'two', description: 'Review again' })[0].id, first.id);
  assert.deepEqual(event('task_started', { ambient: true }), []);
 });
+
+test('Claude text updates keep paragraph boundaries without splitting streamed words or duplicating snapshots', () => {
+ const p = createParser('claude-stream'); const events = [];
+ const emit = (event) => events.push(...p.line(JSON.stringify(event)));
+ const stream = (event) => emit({ type: 'stream_event', event });
+ stream({ type: 'message_start', message: { id: 'first' } });
+ stream({ type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } });
+ for (const text of ['I will check the ', 'draft', 's today.']) stream({ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text } });
+ emit({ type: 'assistant', message: { id: 'first', content: [{ type: 'text', text: 'I will check the drafts today.' }] } });
+ emit({ type: 'assistant', message: { id: 'tool', content: [{ type: 'tool_use', id: 'read', name: 'Read', input: { file_path: 'a.ts' } }] } });
+ stream({ type: 'message_start', message: { id: 'second' } });
+ stream({ type: 'content_block_start', index: 0, content_block: { type: 'text', text: 'Next, ' } });
+ stream({ type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'read the code.' } });
+ stream({ type: 'content_block_start', index: 1, content_block: { type: 'text', text: '' } });
+ stream({ type: 'content_block_delta', index: 1, delta: { type: 'text_delta', text: '```js\n' } });
+ stream({ type: 'content_block_delta', index: 1, delta: { type: 'text_delta', text: 'const value = 1;\n```' } });
+ emit({ type: 'assistant', message: { id: 'second', content: [{ type: 'text', text: 'Next, read the code.' }] } });
+ const final = { type: 'assistant', message: { id: 'last', content: [{ type: 'text', text: 'Checks passed.\n\n' }, { type: 'text', text: 'Ready to review.' }] } };
+ emit(final); emit(final);
+ assert.equal(events.filter((e) => e.kind === 'text').map((e) => e.text).join(''), 'I will check the drafts today.\n\nNext, read the code.\n\n```js\nconst value = 1;\n```\n\nChecks passed.\n\nReady to review.');
+});

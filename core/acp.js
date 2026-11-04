@@ -21,6 +21,7 @@ const path = require('path');
 const { start, lines } = require('./proc');
 const { clip, EDIT_TOOLS } = require('./parsers');
 const { localHost } = require('./host');
+const { normalizeAcpTool } = require('./acp-tools');
 
 // pathMod: path.posix for a folder on an SSH host.
 const inside = (root, p, pathMod = path) => { const r = pathMod.relative(root, pathMod.resolve(root, p)); return r === '' || (!r.startsWith('..') && !pathMod.isAbsolute(r)); };
@@ -226,18 +227,17 @@ function runAcp({ command, args, cwd, env, prompt, fallbackPrompt, images = [], 
       },
       update(u) {
         if ((u.sessionUpdate === 'tool_call' || u.sessionUpdate === 'tool_call_update') && u.toolCallId) {
-          calls.set(u.toolCallId, { ...calls.get(u.toolCallId), ...defined({ toolCallId: u.toolCallId, title: u.title, kind: u.kind, rawInput: u.rawInput, locations: u.locations, content: u.content }) });
+          calls.set(u.toolCallId, normalizeAcpTool(calls.get(u.toolCallId), defined(u)).call);
         }
         switch (u.sessionUpdate) {
           case 'agent_message_chunk': if (u.content && u.content.type === 'text') onEvent({ kind: 'text', text: u.content.text }); break;
           case 'agent_thought_chunk': if (u.content && u.content.type === 'text') onEvent({ kind: 'thinking', text: u.content.text }); break;
           case 'tool_call': case 'tool_call_update': {
-            const status = u.status === 'completed' ? 'done' : u.status === 'failed' ? 'error' : 'running';
-            const output = Array.isArray(u.content) ? u.content.map((c) => (c.content && c.content.text) || (c.type === 'diff' ? `diff ${c.path}` : '')).filter(Boolean).join('\n') : undefined;
-            const known = calls.get(u.toolCallId) || {}; // updates often leave out the title
-            onEvent({ kind: 'tool', id: u.toolCallId, name: known.title || known.kind || u.title || u.kind || 'tool', input: u.rawInput, status, output: output ? clip(output) : undefined });
-            for (const c of u.content || []) if (c.type === 'diff' && c.path) onEvent({ kind: 'file', path: c.path, change: 'edit' });
-            for (const l of u.locations || []) if (u.kind === 'edit' && l.path) onEvent({ kind: 'file', path: l.path, change: 'edit' });
+            const known = normalizeAcpTool(calls.get(u.toolCallId), u);
+            const status = known.call.status === 'completed' ? 'done' : known.call.status === 'failed' ? 'error' : 'running';
+            const output = !known.argumentsContent && Array.isArray(u.content) ? u.content.map((c) => (c.content && c.content.text) || (c.type === 'diff' ? `diff ${c.path}` : '')).filter(Boolean).join('\n') : undefined;
+            onEvent({ kind: 'tool', id: u.toolCallId, name: known.name, title: known.call.title, input: known.input, files: known.files.length ? known.files : undefined, status, output: output ? clip(output) : undefined });
+            if (status === 'done' && known.call.kind === 'edit') for (const file of known.files) onEvent({ kind: 'file', path: file, change: 'edit' });
             break;
           }
           case 'plan': onEvent({ kind: 'plan', items: (u.entries || []).map((e) => ({ text: e.content, done: e.status === 'completed' })) }); break;

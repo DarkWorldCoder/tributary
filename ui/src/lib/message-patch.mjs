@@ -8,10 +8,11 @@ export function applyPatch(message, patch) {
     if (p.from > current.length) return null;
     out[k] = current.slice(0, p.from) + p.add;
   }
-  if (patch.tools) {
-    const tools = (out.tools || []).slice(0, patch.tools.length);
-    for (const [i, t] of Object.entries(patch.tools.set)) tools[Number(i)] = t;
-    out.tools = tools;
+  for (const key of ['tools', 'trace']) {
+    if (!patch[key]) continue;
+    const items = (out[key] || []).slice(0, patch[key].length);
+    for (const [i, value] of Object.entries(patch[key].set)) items[Number(i)] = value;
+    out[key] = items;
   }
   if (patch.set) Object.assign(out, patch.set);
   for (const k of patch.unset || []) delete out[k];

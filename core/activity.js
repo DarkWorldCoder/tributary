@@ -6,19 +6,20 @@ const { RECIPES } = require('./teams');
 const label = (tool) => {
   if (!tool) return '';
   const input = tool.input || {};
-  const target = input.command || input.file_path || input.path || input.pattern || input.url || '';
+  const target = input.command || input.cmd || input.file_path || input.filePath || input.filepath || input.path || input.pattern || input.url || '';
   return `${tool.name || 'tool'} ${Array.isArray(target) ? target.join(' ') : target}`.trim().slice(0, 200);
 };
-const files = (list) => (list || []).filter((f) => !f.external).map((f) => (typeof f === 'string' ? { rel: f } : { rel: f.rel, change: f.change }));
+const files = (list) => (list || []).filter((f) => !f.external).map((f) => (typeof f === 'string' ? { rel: f } : { rel: f.rel, change: f.change, ...(f.added != null ? { added: f.added, removed: f.removed } : {}), ...(f.binary ? { binary: true } : {}) }));
 
 // A worker for one agent turn (a plain turn or one team step).
 function turnWorker(m, role) {
   const running = m.ok == null;
+  const attention = running && (m.permissions || []).some((request) => request.status === 'pending');
   const tool = [...(m.tools || [])].reverse().find((x) => x.status === 'running') || (m.tools || []).at(-1);
   return {
     key: m.id, agent: m.agent, role: role || m.team?.role || null, messageId: m.id, startedAt: m.ts,
-    state: running ? 'working' : m.ok ? 'done' : 'failed',
-    doing: running ? (label(tool) || (m.text ? 'Writing a reply' : 'Thinking')) : '',
+    state: running ? attention ? 'waiting' : 'working' : m.ok ? 'done' : 'failed', attention,
+    doing: attention ? 'Waiting for approval' : running ? (label(tool) || (m.text ? 'Writing a reply' : 'Thinking')) : '',
     files: files(m.files), tools: (m.tools || []).length,
   };
 }
@@ -35,23 +36,23 @@ function activityOf(hub) {
     const t = hub.thread(threadId); if (!t) continue;
     const m = [...t.messages].reverse().find((x) => x.role === 'assistant');
     const team = hub.teams.get(threadId);
-    const entry = { threadId, title: t.title, project: t.project, workdir: m?.workdir || t.worktree?.cwd || t.project, startedAt: m?.ts, kind: 'turn', workers: [] };
+    const entry = { threadId, title: t.title, project: t.project, workdir: m?.workdir || t.worktree?.cwd || t.project, startedAt: m?.ts, kind: 'turn', workers: [], ...(t.delegation ? { parentThreadId: t.delegation.parentThreadId } : {}) };
     if (m?.kind === 'race' && m.race) {
       Object.assign(entry, { kind: 'race', messageId: m.id });
       entry.workers = m.race.candidates.map((c) => ({ key: `${m.id}:${c.agent}`, agent: c.agent, role: 'candidate', messageId: m.id, state: candidateState(c),
-        doing: c.status === 'running' ? c.activity || 'Starting' : c.tests === 'running' ? 'Running the tests' : '', tests: c.tests, files: files(c.files), branch: c.branch }));
+        doing: c.status === 'running' ? c.activity || 'Preparing worker' : c.tests === 'running' ? 'Running the tests' : '', tests: c.tests, files: files(c.files), branch: c.branch }));
     } else if (m?.kind === 'manager' && m.manager) {
       Object.assign(entry, { kind: 'manager', messageId: m.id, phase: m.manager.phase });
-      entry.workers = (m.manager.tasks || []).map((task) => ({ key: `${m.id}:${task.id}`, agent: task.agent, role: task.title, messageId: m.id, state: task.state,
-        doing: task.state === 'working' ? task.activity || 'Starting' : task.state === 'testing' ? 'Running the tests' : task.state === 'merging' ? 'Merging' : task.note || '',
+      entry.workers = (m.manager.tasks || []).map((task) => ({ key: `${m.id}:${task.id}`, agent: task.agent, role: 'worker', task: task.title, note: task.note || '', dependsOn: (task.dependsOn || []).map((id) => { const dependency = m.manager.tasks.find((item) => item.id === id); return { id, title: dependency?.title || id, state: dependency?.state || 'waiting' }; }), messageId: m.id, state: task.state,
+        doing: task.state === 'working' ? task.activity || 'Preparing worker' : task.state === 'testing' ? 'Running the tests' : task.state === 'merging' ? 'Merging' : task.note || '',
         tests: task.tests, files: files(task.files), branch: task.branch, taskId: task.id }));
     } else if (team) {
       // Every step so far, the running one with its live tool and files.
       Object.assign(entry, { kind: 'team', recipe: team.recipe, recipeName: (RECIPES[team.recipe] || {}).name || 'Team' });
       entry.workers = team.steps.map((s, i) => {
         const sm = s.messageId ? t.messages.find((x) => x.id === s.messageId) : (s.state === 'running' && m && m.ok == null && m.team?.role === s.role ? m : null);
-        return sm ? { ...turnWorker(sm, s.role), key: `${threadId}:${i}`, state: s.state === 'running' ? 'working' : s.state }
-          : { key: `${threadId}:${i}`, agent: s.agentId, role: s.role, state: s.state === 'running' ? 'working' : s.state, doing: s.state === 'running' ? 'Starting' : '', files: [] };
+        return sm ? { ...turnWorker(sm, s.role), key: `${threadId}:${i}`, state: s.state === 'running' ? turnWorker(sm, s.role).state : s.state }
+          : { key: `${threadId}:${i}`, agent: s.agentId, role: s.role, state: s.state === 'running' ? 'working' : s.state, doing: s.state === 'running' ? 'Preparing step' : '', files: [] };
       });
     } else if (m && m.ok == null) {
       entry.workers = [turnWorker(m)];

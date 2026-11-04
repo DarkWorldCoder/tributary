@@ -14,6 +14,13 @@ rl.on('line', (l) => {
   else if (m.method === 'session/prompt') {
     const sid = m.params.sessionId; const text = m.params.prompt[0].text;
     if (text === 'CRASH') process.exit(9);
+    if (text === 'TOOL_PATTERNS') {
+      const up = (update) => send({ method: 'session/update', params: { sessionId: sid, update } });
+      up({ sessionUpdate: 'tool_call', toolCallId: 'command', name: 'shell', kind: 'execute', title: 'printf hello; $(do-not-execute)', status: 'pending', rawInput: { command: 'printf hello; $(do-not-execute)' }, locations: [{ path: process.cwd() }] });
+      up({ sessionUpdate: 'tool_call_update', toolCallId: 'command', status: 'completed', content: [{ type: 'content', content: { type: 'text', text: 'hello' } }] });
+      up({ sessionUpdate: 'tool_call', toolCallId: 'file', name: 'edit', kind: 'edit', status: 'in_progress', rawInput: { filePath: process.cwd() + '/src/app.ts' }, locations: [{ path: process.cwd() + '/src/app.ts' }] });
+      up({ sessionUpdate: 'tool_call_update', toolCallId: 'file', status: 'completed' });
+    }
     const count = (sessions.get(sid) || 0) + 1; sessions.set(sid, count);
     send({ method: 'session/update', params: { sessionId: sid, update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: `${text}#${count}@${process.pid}` } } } });
     send({ id: m.id, result: { stopReason: 'end_turn' } });

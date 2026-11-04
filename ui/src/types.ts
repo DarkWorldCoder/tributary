@@ -2,7 +2,7 @@ export type Mode = 'read' | 'edit' | 'full';
 export interface UiSkill { id: string; title: string; description: string; instructions?: string }
 export type Protocol = 'anthropic' | 'openai' | 'gemini' | 'ollama' | 'lmstudio';
 
-export interface ModelCatalog { supportsSelection: boolean; source: string; note: string; updatedAt: number; error?: string; models: { id: string; name: string; hidden?: boolean }[] }
+export interface ModelCatalog { supportsSelection: boolean; source: string; note: string; updatedAt: number; error?: string; models: { id: string; name: string; hidden?: boolean; resolvedModel?: string }[] }
 
 export interface Agent {
   id: string; name: string; vendor?: string; color: string; glyph?: string; docs?: string; login?: string;
@@ -44,7 +44,7 @@ export interface ProjectCheckResult { toolId: string; label: string; command: st
 export interface ProjectCheckState { running: boolean; toolId: string | null; result: ProjectCheckResult | null }
 export interface ProjectCheckCatalog extends ProjectCheckState { tools: { id: string; label: string; command: string; available: boolean }[] }
 export interface MemoryInfo { enabled: boolean; memory: string | null; worklog: string[]; revision?: string; bytes?: number; context?: { includeInPrompts: boolean; budget: number } }
-export interface ThreadChange { rel: string; turns: { messageId: string; agent: string; ts?: number; change?: string; team?: string }[] }
+export interface ThreadChange { rel: string; turns: { messageId: string; agent: string; ts?: number; change?: string; team?: string; added?: number; removed?: number; binary?: boolean }[] }
 export type ThreadStatus = 'working' | 'permission' | 'review' | 'failed' | 'done';
 export interface PermissionOption { optionId: string; name: string; kind: 'allow_once' | 'allow_always' | 'reject_once' | 'reject_always' | string }
 /** A tool call the agent asked to make. Pending until the person answers, the turn is stopped, or it ends. */
@@ -52,21 +52,28 @@ export interface PermissionRequest {
   questions?: { question: string; multiSelect: boolean; options: { label: string; description: string }[] }[];
   answers?: Record<string, string>;
   id: string; threadId: string; messageId: string; agent: string; toolCallId?: string; title: string; kind: string;
-  command?: string; path?: string; detail?: string; options: PermissionOption[]; status: 'pending' | 'allowed' | 'always' | 'rejected' | 'cancelled'; ts: number;
+  textOffset?: number; command?: string; path?: string; detail?: string; options: PermissionOption[]; status: 'pending' | 'allowed' | 'always' | 'rejected' | 'cancelled'; ts: number;
 }
 export interface ThreadSummary { id: string; title: string; updatedAt: number; lastAgent: string | null; count?: number; running?: boolean; agents: string[]; status?: ThreadStatus | null; branch?: string }
-export interface Tool { id?: string; name: string; input?: Record<string, unknown> & { command?: unknown }; status: 'running' | 'done' | 'error'; output?: string; files?: string[] }
-export interface FileChange { path: string; rel: string; external?: boolean; change?: string; viaGit?: boolean }
+export interface Tool { id?: string; name: string; title?: string; input?: Record<string, unknown> & { command?: unknown }; status: 'running' | 'done' | 'error'; output?: string; files?: string[] }
+export interface FileChange { path: string; rel: string; external?: boolean; change?: string; viaGit?: boolean; added?: number; removed?: number; binary?: boolean }
 export interface Attachment { id: string; name: string; mime: string; size: number }
-export interface UserMessage { attachments?: Attachment[]; id: string; role: 'user'; text: string; target: string; ts?: number; kind?: 'chat' | 'plan' | 'implement' | 'race'; team?: { recipe: string; role: string } }
+export interface UserMessage { attachments?: Attachment[]; id: string; role: 'user'; text: string; target: string; ts?: number; kind?: 'chat' | 'plan' | 'research' | 'implement' | 'race'; team?: { recipe: string; role: string } }
+export type ReplyTrace =
+  | { kind: 'thinking'; textOffset: number; start: number; end: number }
+  | { kind: 'tool'; textOffset: number; toolIndex: number }
+  | { kind: 'plan'; textOffset: number; items: { text: string; done: boolean }[] }
+  | { kind: 'permission'; textOffset: number; requestId: string };
+export type ReplyActivity = Exclude<ReplyTrace, { kind: 'permission' }>;
 export interface AgentMessage {
-  delegations?: { id: string; agentId: string; title: string; state: string }[];
+  trace?: ReplyTrace[]; thinkingLength?: number;
+  delegations?: { id: string; agentId: string; title: string; state: string; branch?: string; model?: string; error?: string; files?: string[]; fileCount?: number }[];
   memoryContext?: { characters: number; budget: number; sources: { source: string; line: number }[] };
   id: string; role: 'assistant'; model?: string | null; gatewayId?: string | null; agent: string; text: string; thinking?: string; tools: Tool[]; files: FileChange[];
   plan?: { text: string; done: boolean }[] | null; notices: string[]; error?: string | null; ok: boolean | null;
   mode: Mode; gateway?: string | null; handoff?: 'new' | 'resume' | 'join' | 'catch-up'; resumed?: boolean;
   durationMs?: number; costUsd?: number; usage?: Record<string, number>; ts?: number;
-  kind?: 'chat' | 'plan' | 'implement' | 'race'; planFrom?: string; checkpoint?: string;
+  kind?: 'chat' | 'plan' | 'research' | 'implement' | 'race'; planFrom?: string; checkpoint?: string;
   team?: { recipe: string; role: string }; race?: RaceInfo; permissions?: PermissionRequest[];
   /** The project's checks after this turn (.tributary/settings.json scripts.verify). */
   verify?: { state: 'untrusted' | 'running' | 'passed' | 'failed' | 'stopped'; command: string; hash: string; output?: string; ms?: number };
@@ -83,10 +90,13 @@ export interface WorktreeStatus { branch: string; path: string; cwd: string; int
 export interface CopySetup { state: 'untrusted' | 'pending' | 'running' | 'done' | 'failed' | 'stopped'; command: string; hash: string; output?: string; ms?: number }
 export interface MergeResult { into: string; branch: string; commit: string; files: string[] }
 export interface Thread { id: string; project: string; title: string; messages: Message[]; agentSessions: Record<string, string>; lastAgent?: string | null; updatedAt?: number; task?: { templateId: string; material?: string }; documents?: SavedDocument[]; worktree?: Worktree; delegation?: { parentThreadId: string; parentMessageId: string; agentId: string; state: string } }
-export interface GitInfo { root: string; branch: string; changed: { code: string; path: string; from?: string }[]; stat?: string }
+export interface GitInfo { root: string; branch: string; changed: { code: string; path: string; from?: string; added?: number; removed?: number; binary?: boolean }[]; stat?: string }
 
 export interface HubEvents {
-  'window-state': { maximized: boolean; platform: string };
+  'preview-server': { project: string; status: 'idle' | 'starting' | 'running' | 'stopping' | 'stopped' | 'failed'; command: string; url: string; output: string; error: string; code: number | null };
+  'language-diagnostics': { project: string; rel: string; text: string; version: number; diagnostics: ProjectDiagnostic[] };
+  debugger: import('./lib/debug-types').DebugState;
+  'window-state': { maximized: boolean; fullscreen?: boolean; platform: string };
   'files-changed': { watchId: string; project: string; paths: string[]; error?: string };
   collaboration: import('../../core/collaboration/client.mjs').RoomState;
   state: undefined; threads: string; message: { threadId: string; message: Message }; 'message-patch': { threadId: string; id: string; patch: import('./lib/message-patch.mjs').MessagePatch };
@@ -96,10 +106,10 @@ export interface HubEvents {
 // The live view (core/activity.js): every busy thread and the agents working in it.
 export interface ActivityWorker {
   key: string; agent: string; role: string | null; messageId?: string; startedAt?: number; taskId?: string;
-  state: 'working' | 'testing' | 'merging' | 'waiting' | 'done' | 'failed' | 'skipped'; doing: string;
-  files: { rel: string; change?: string }[]; tests?: string; branch?: string; tools?: number;
+  state: 'working' | 'testing' | 'merging' | 'waiting' | 'done' | 'failed' | 'skipped' | 'stopped'; doing: string; attention?: boolean; task?: string; note?: string; dependsOn?: { id: string; title: string; state: string }[];
+  files: { rel: string; change?: string; added?: number; removed?: number; binary?: boolean }[]; tests?: string; branch?: string; tools?: number;
 }
-export interface ActivityEntry { threadId: string; title: string; project: string; workdir?: string; startedAt?: number; kind: 'turn' | 'team' | 'race' | 'manager'; recipe?: string; recipeName?: string; messageId?: string; phase?: string; workers: ActivityWorker[] }
+export interface ActivityEntry { parentThreadId?: string; threadId: string; title: string; project: string; workdir?: string; startedAt?: number; kind: 'turn' | 'team' | 'race' | 'manager'; recipe?: string; recipeName?: string; messageId?: string; phase?: string; workers: ActivityWorker[] }
 export interface HubBridge {
   platform: 'desktop' | 'vscode' | 'mock';
   call<T = unknown>(method: string, ...args: unknown[]): Promise<T>;

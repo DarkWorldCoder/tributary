@@ -1,3 +1,4 @@
+import { LineChangeCount } from '@/components/line-change-count';
 import * as React from 'react';
 import { toast } from 'sonner';
 import { Copy, ExternalLink, FileCode2, GitCommitHorizontal, RefreshCw } from 'lucide-react';
@@ -63,7 +64,7 @@ export function ReviewTab() {
           {shown.map((c) => (
             <li key={c.path}>
               <button onClick={() => pick(c.path)} aria-current={c.path === rel ? 'page' : undefined} className={cn('workbench-list-row flex h-6 w-full items-center gap-2 px-3 text-left text-[13px] hover:bg-muted/60 max-sm:h-11', c.path === rel && 'bg-accent')}>
-                <FileTypeIcon path={c.path} /><ChangeCode code={changeCode(c.code)} /><span className="min-w-0 flex-1 truncate font-mono text-[12.5px]" title={c.from ? `${c.from} → ${c.path}` : c.path}>{c.path}</span><span className="text-xs text-muted-foreground">{label(c.code)}</span>
+                <FileTypeIcon path={c.path} /><ChangeCode code={changeCode(c.code)} /><span className="min-w-0 flex-1 truncate font-mono text-[12.5px]" title={c.from ? `${c.from} → ${c.path}` : c.path}>{c.path}</span><LineChangeCount {...c} /><span className="hidden text-xs text-muted-foreground sm:inline">{label(c.code)}</span>
               </button>
             </li>
           ))}

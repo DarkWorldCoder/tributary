@@ -100,3 +100,15 @@ test('selected models reach direct provider request bodies instead of the saved 
   const result = await hub.send({ threadId: thread.id, agentId: `direct:${id}`, model: 'selected-model', text: 'fixture' });
   assert.equal(body.model, 'selected-model'); assert.equal(result.model, 'selected-model'); assert.equal(result.ok, true);
 });
+
+test('Claude catalog uses native model display names without sending a model turn', async (t) => {
+  const root = temp(t); const file = path.join(root, 'fake-claude');
+  fs.writeFileSync(file, `#!${process.execPath}\nconst readline=require('node:readline');readline.createInterface({input:process.stdin}).on('line',line=>{const m=JSON.parse(line);if(m.type!=='control_request'||m.request.subtype!=='initialize')process.exit(2);console.log(JSON.stringify({type:'control_response',response:{subtype:'success',request_id:m.request_id,response:{models:[{value:'opus',displayName:'Opus fixture version',resolvedModel:'claude-opus-fixture'},{value:'sonnet',displayName:'Sonnet fixture version',resolvedModel:'claude-sonnet-fixture'}]}}}));});`);
+  fs.chmodSync(file, 0o700);
+  const result = await catalog({ id: 'claude', path: file }, null, { timeoutMs: 3000 });
+  assert.equal(result.source, 'claude');
+  assert.deepEqual(result.models.map((m) => [m.id, m.name, m.resolvedModel]), [['opus', 'Opus fixture version', 'claude-opus-fixture'], ['sonnet', 'Sonnet fixture version', 'claude-sonnet-fixture']]);
+  fs.writeFileSync(file, `#!${process.execPath}\nprocess.exit(1)`);
+  const fallback = await catalog({ id: 'claude', path: file }, null, { timeoutMs: 1000 });
+  assert.equal(fallback.source, 'aliases'); assert.ok(fallback.models.some((m) => m.id === 'opus'));
+});

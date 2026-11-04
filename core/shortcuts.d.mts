@@ -1,4 +1,4 @@
-export type ShortcutAction = 'new' | 'search' | 'attention' | 'focus' | 'sidebar' | 'workspace' | 'files' | 'changes' | 'memory' | 'preview' | 'terminal' | 'recent' | 'team' | 'room' | 'activity' | 'settings' | 'help';
+export type ShortcutAction = 'new' | 'search' | 'attention' | 'focus' | 'sidebar' | 'workspace' | 'zoom-workspace' | 'fullscreen' | 'files' | 'changes' | 'memory' | 'preview' | 'terminal' | 'debug' | 'recent' | 'team' | 'room' | 'activity' | 'settings' | 'help';
 export type Shortcut = { id: ShortcutAction; label: string; group: string; keys: string[]; aliases?: string[][] };
 export type ShortcutPreferences = { platform: 'auto' | 'mac' | 'pc'; send: 'enter' | 'mod-enter'; profiles: Record<'mac' | 'pc', Partial<Record<ShortcutAction, string[]>>> };
 type KeyEvent = Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'metaKey' | 'shiftKey' | 'altKey' | 'isComposing' | 'repeat'> & Partial<Pick<KeyboardEvent, 'code' | 'getModifierState'>>;

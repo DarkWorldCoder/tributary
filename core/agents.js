@@ -71,7 +71,7 @@ const BUILTIN = [
   { id: 'opencode', docs: 'https://opencode.ai', login: 'opencode auth login', glyph: 'Oc', name: 'OpenCode', vendor: 'SST', bins: ['opencode'], protocol: 'acp', acpArgs: ['acp'], gateways: ['openai', 'anthropic', 'ollama'], color: '#f5a623' },
   { id: 'goose', docs: 'https://goose-docs.ai', login: 'goose configure', glyph: 'Go', name: 'Goose', vendor: 'Block', bins: ['goose'], protocol: 'acp', acpArgs: ['acp'], gateways: ['openai', 'anthropic', 'ollama'], color: '#3a3a3a' },
   { id: 'qwen', docs: 'https://github.com/QwenLM/qwen-code', login: 'qwen', glyph: 'Qw', name: 'Qwen Code', vendor: 'Alibaba', bins: ['qwen'], protocol: 'acp', acpArgs: ['--acp'], gateways: ['openai'], color: '#615ced' },
-  { id: 'kimi', glyph: 'Ki', name: 'Kimi CLI', vendor: 'Moonshot', bins: ['kimi'], protocol: 'acp', acpArgs: ['acp'], gateways: ['openai'], color: '#111111' },
+  { id: 'kimi', docs: 'https://github.com/MoonshotAI/kimi-cli', login: 'kimi login', glyph: 'Ki', name: 'Kimi CLI', vendor: 'Moonshot', bins: ['kimi'], protocol: 'acp', acpArgs: ['acp'], gateways: ['openai'], color: '#111111' },
   { id: 'gemini-acp', glyph: 'Ge', name: 'Gemini CLI (ACP)', vendor: 'Google', bins: ['gemini'], protocol: 'acp', acpArgs: ['--acp'], gateways: ['gemini'], color: '#4285f4', hidden: true },
   // DeepSeek has no official agent CLI. These are the main community ones; they run as plain
   // terminal agents until their headless flags are configured in agents.json.

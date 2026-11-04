@@ -16,7 +16,7 @@ function add(dataDir, files) {
     if (typeof file.name !== 'string' || typeof file.base64 !== 'string' || file.base64.length > Math.ceil(MAX_FILE / 3) * 4 || !/^[A-Za-z0-9+/]*={0,2}$/.test(file.base64)) throw new Error('Invalid attachment or file exceeds 16 MB.');
     const bytes = Buffer.from(file.base64, 'base64'); total += bytes.length;
     if (!bytes.length || bytes.length > MAX_FILE || total > MAX_TOTAL) throw new Error('Files must be under 16 MB each and 32 MB total.');
-    const mime = imageMime(bytes) || (/\.(txt|md|markdown|json|jsonc|csv|tsv|log|ya?ml|[cm]?[jt]sx?|py|rs|go|html?|css|xml|toml|sql|sh)$/i.test(file.name) && !bytes.includes(0) ? 'text/plain' : 'application/octet-stream');
+    const mime = imageMime(bytes) || ((/^(?:Makefile|GNUmakefile|Dockerfile|README|LICENSE|\.gitignore|\.editorconfig)$/i.test(path.basename(file.name)) || /\.(txt|md|markdown|json|jsonc|csv|tsv|log|ya?ml|[cm]?[jt]sx?|py|rs|go|html?|css|xml|toml|sql|sh|c|h|cc|cpp|cxx|hpp|cs|java|kt|kts|swift|rb|php|zig|ex|exs|erl|hrl|hs|lua|r|R|scala|sc|dart|pl|pm|ps1|bat|cmd|vue|svelte|scss|less|ini|conf|cfg|properties|graphql|gql|proto|tf|hcl)$/i.test(file.name)) && !bytes.includes(0) ? 'text/plain' : 'application/octet-stream');
     return { bytes, name: path.basename(file.name.replaceAll('\\', '/')).replace(/[\x00-\x1f\x7f]/g, '').slice(0, 180) || 'Attachment', mime };
   });
   const dir = directory(dataDir);

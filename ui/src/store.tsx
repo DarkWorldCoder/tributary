@@ -5,9 +5,10 @@ import { applyPatch } from '@/lib/message-patch.mjs';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useWorkspaceView } from '@/hooks/use-workspace-view';
 import { followedFile } from '@/lib/workbench-navigation.mjs';
+import { draftWriter } from '@/lib/drafts.mjs';
 import type { Agent, AgentMessage, GitInfo, HubBridge, HubState, Message, Mode, Thread, ThreadSummary, TaskInput, SavedDocument } from './types';
 
-export type PanelTab = 'review' | 'changes' | 'files' | 'memory' | 'preview';
+export type PanelTab = 'review' | 'changes' | 'files' | 'memory' | 'preview' | 'tests';
 
 export const hub: HubBridge = window.hub ?? createMockHub();
 
@@ -22,6 +23,16 @@ const setDraft = (next: string | ((current: string) => string)) => {
 };
 const subscribeDraft = (fn: () => void) => { draftSubscribers.add(fn); return () => { draftSubscribers.delete(fn); }; };
 export function useDraft() { return React.useSyncExternalStore(subscribeDraft, getDraft); }
+// It also survives a crash or restart (core/drafts.js), once the saved one has been read back.
+const composerDraft = draftWriter(hub, 'composer');
+let composerRestored = false;
+subscribeDraft(() => { if (composerRestored) composerDraft.set(draftValue || null); });
+function restoreComposerDraft() {
+  hub.call<string | null>('draft', 'composer')
+    .then((saved) => { if (typeof saved === 'string' && saved && !draftValue) setDraft(saved); })
+    .catch(() => { /* nothing saved, or an older host */ })
+    .finally(() => { composerRestored = true; if (draftValue) composerDraft.set(draftValue); });
+}
 
 const ls = {
   get<T>(k: string, d: T): T { try { const v = localStorage.getItem(`tributary.${k}`); return v == null ? d : (JSON.parse(v) as T); } catch { return d; } },
@@ -30,7 +41,7 @@ const ls = {
 
 export type Theme = 'system' | 'light' | 'dark';
 export type InterfaceFont = 'geist' | 'plex' | 'system';
-export type SettingsTab = 'connections' | 'agents' | 'gateways' | 'mcp' | 'skills' | 'secrets' | 'appearance' | 'shortcuts' | 'about';
+export type SettingsTab = 'connections' | 'agents' | 'gateways' | 'mcp' | 'skills' | 'secrets' | 'appearance' | 'extensions' | 'language-tools' | 'shortcuts' | 'about';
 
 function useStored<T>(key: string, initial: T) {
   const [v, setV] = React.useState<T>(() => ls.get(key, initial));
@@ -68,17 +79,19 @@ function useStoreValue() {
   const setWorkspaceLayout = React.useCallback((layout: 'editor' | 'chat') => updateView({ layout }), [updateView]);
   const setWorkspaceExpanded = React.useCallback((expanded: boolean) => updateView({ expanded }), [updateView]);
   const [review, setReview] = React.useState<{ open: boolean; rel: string | null; diff: string }>({ open: false, rel: null, diff: '' });
-  const [fileToOpen, setFileToOpen] = React.useState<{ rel: string; line?: number; column?: number; following?: boolean; intent: 'preview' | 'pinned'; project: string | null; n: number } | null>(null);
+  const [fileToOpen, setFileToOpen] = React.useState<{ rel: string; line?: number; column?: number; editor?: boolean; following?: boolean; intent: 'preview' | 'pinned'; project: string | null; n: number } | null>(null);
   const [followThread, setFollowThread] = React.useState<string | null>(null);
   const pauseFollowing = React.useCallback(() => setFollowThread(null), []);
   const [checksIntent, setChecksIntent] = React.useState<{ project: string; n: number } | null>(null);
+  const [debugOpen, setDebugOpen] = React.useState(false);
+  const [debugLaunch, setDebugLaunch] = React.useState<{ project: string | null; rel: string } | null>(null);
   const [terminalOpen, setTerminalOpenRaw] = useStored<boolean>('terminal', false);
   const [terminalPositionRaw, setTerminalPosition] = useStored<'left' | 'right' | 'top' | 'bottom'>('terminalPosition', 'bottom');
   const terminalPosition = ['left', 'right', 'top', 'bottom'].includes(terminalPositionRaw) ? terminalPositionRaw : 'bottom';
   const mobile = useIsMobile();
   const terminalDock = mobile ? 'bottom' : terminalPosition;
   const [teamOpen, setTeamOpen] = React.useState(false);
-  const [queue, setQueue] = React.useState<Record<string, { id: string; text: string; attachments?: string[]; plan?: boolean; mode?: Mode; agentId: string; model?: string; gatewayId?: string | null }[]>>({});
+  const [queue, setQueue] = React.useState<Record<string, { id: string; text: string; attachments?: string[]; plan?: boolean; research?: boolean; mode?: Mode; agentId: string; model?: string; gatewayId?: string | null }[]>>({});
   const [settings, setSettings] = React.useState<{ open: boolean; tab: SettingsTab }>({ open: false, tab: 'agents' });
   const [palette, setPalette] = React.useState(false);
   const [recentOpen, setRecentOpen] = React.useState(false);
@@ -120,6 +133,7 @@ function useStoreValue() {
 
   // First load
   React.useEffect(() => {
+    if (!composerRestored) restoreComposerDraft();
     (async () => {
       const s = await refreshState();
       await Promise.all(s.projects.map((p) => loadThreads(p.path)));
@@ -195,7 +209,7 @@ function useStoreValue() {
     apply(); mq.addEventListener('change', apply); return () => mq.removeEventListener('change', apply);
   }, [theme]);
 
-  const send = React.useCallback(async (text: string, opts: { plan?: boolean; mode?: Mode; agentId?: string; attachments?: string[] } = {}) => {
+  const send = React.useCallback(async (text: string, opts: { plan?: boolean; research?: boolean; mode?: Mode; agentId?: string; attachments?: string[] } = {}) => {
     const who = opts.agentId ?? agentId;
     if (!text.trim() || !who || !projectRef.current) return false;
     const source = who.startsWith('direct:') ? null : gatewayId || null;
@@ -204,14 +218,14 @@ function useStoreValue() {
     // While an agent is working in this thread, hold the message and send it when the turn ends.
     if (t && st?.running.includes(t.id)) {
       const id = t.id;
-      setQueue((q) => ({ ...q, [id]: [...(q[id] || []), { id: crypto.randomUUID(), text: text.trim(), attachments: opts.attachments, plan: opts.plan, mode: opts.mode ?? mode, agentId: who, model, gatewayId: source }] }));
+      setQueue((q) => ({ ...q, [id]: [...(q[id] || []), { id: crypto.randomUUID(), text: text.trim(), attachments: opts.attachments, plan: opts.plan, research: opts.research, mode: opts.mode ?? mode, agentId: who, model, gatewayId: source }] }));
       return true;
     }
     if (!t) {
       t = await hub.call<Thread>('createThread', projectRef.current);
       setThread(t); setThreadIdRaw(t.id);
     }
-    hub.call('send', { threadId: t.id, agentId: who, text: text.trim(), attachments: opts.attachments, mode: opts.mode ?? mode, gatewayId: source, model: model || null, plan: !!opts.plan })
+    hub.call('send', { threadId: t.id, agentId: who, text: text.trim(), attachments: opts.attachments, mode: opts.mode ?? mode, gatewayId: source, model: model || null, plan: !!opts.plan, research: !!opts.research })
       .catch((e: Error) => { toast.error(e.message || String(e)); setDraft(text); if (opts.attachments?.length) window.dispatchEvent(new CustomEvent('tributary:restore-attachments', { detail: { project: t!.project, threadId: t!.id, ids: opts.attachments } })); });
     return true;
   }, [agentId, mode, gatewayId, models, setThreadIdRaw, st]);
@@ -222,7 +236,7 @@ function useStoreValue() {
     const q = queue[t.id]; if (!q || !q.length) return;
     const [next, ...rest] = q;
     setQueue((all) => ({ ...all, [t.id]: rest }));
-    hub.call('send', { threadId: t.id, agentId: next.agentId, text: next.text, attachments: next.attachments, mode: next.mode ?? mode, gatewayId: next.gatewayId ?? null, model: next.model || null, plan: !!next.plan })
+    hub.call('send', { threadId: t.id, agentId: next.agentId, text: next.text, attachments: next.attachments, mode: next.mode ?? mode, gatewayId: next.gatewayId ?? null, model: next.model || null, plan: !!next.plan, research: !!next.research })
       .catch((e: Error) => toast.error(e.message || String(e)));
   }, [st, thread, queue, mode, gatewayId]);
 
@@ -230,14 +244,14 @@ function useStoreValue() {
   const openPanel = React.useCallback((tab: PanelTab) => { setPanel({ open: true, tab }); }, [setPanel]);
   const fileIntentId = React.useRef(0);
   const openChecks = React.useCallback(() => { const project = workdirRef.current; if (!project) return; setChecksIntent({ project, n: ++fileIntentId.current }); setPanel({ open: true, tab: 'files' }); }, [setPanel]);
-  const openFile = React.useCallback((rel: string, line?: number, intent: 'preview' | 'pinned' = 'preview', column?: number) => { pauseFollowing(); setFileToOpen({ rel, line, column, intent, project: workdirRef.current, n: ++fileIntentId.current }); setPanel({ open: true, tab: 'files' }); }, [setPanel, pauseFollowing]);
+  const openFile = React.useCallback((rel: string, line?: number, intent: 'preview' | 'pinned' = 'preview', column?: number, editor = false, project = workdirRef.current) => { pauseFollowing(); setFileToOpen({ rel, line, column, editor, intent, project, n: ++fileIntentId.current }); setPanel({ open: true, tab: 'files' }); }, [setPanel, pauseFollowing]);
   const following = !!thread && followThread === thread.id;
   const followed = React.useRef('');
   const followTarget = following ? followedFile(thread, workdir) : null;
   React.useEffect(() => {
     if (!following || !followTarget || !panel.open || panel.tab !== 'files') return;
     const key = `${thread?.id}:${followTarget.key}`; if (followed.current === key) return; followed.current = key;
-    setFileToOpen({ rel: followTarget.rel, following: true, intent: 'preview', project: workdirRef.current, n: ++fileIntentId.current });
+    setFileToOpen({ rel: followTarget.rel, following: true, editor: true, intent: 'preview', project: workdirRef.current, n: ++fileIntentId.current });
   }, [following, followTarget?.key, panel.open, panel.tab, thread?.id]);
   const toggleFollowing = () => { if (following) pauseFollowing(); else if (thread) { followed.current = ''; openPanel('files'); setFollowThread(thread.id); } };
 
@@ -271,7 +285,7 @@ function useStoreValue() {
     hub, loaded, st, threadsBy, project, workdir, thread, git, agentId, agent, mode, gatewayId, theme, review, settings, palette, ready, running,
     get draft() { return getDraft(); },
     home, goHome: () => { setHome(true); pauseFollowing(); }, startTask, document: activeDocument, setDocument, makeDocument,
-    shortcutsOpen, setShortcutsOpen, panel, setPanel, openPanel, fileToOpen, openFile, checksIntent, openChecks, terminalOpen, teamOpen, setTeamOpen, roomOpen, setRoomOpen, recentOpen, setRecentOpen,
+    shortcutsOpen, setShortcutsOpen, panel, setPanel, openPanel, fileToOpen, openFile, editFile: (rel: string, line?: number, column?: number, project?: string) => openFile(rel, line, 'pinned', column, true, project), checksIntent, openChecks, debugOpen, setDebugOpen, debugLaunch, openDebugger: (rel?: string) => { if (rel) setDebugLaunch({ project: workdir, rel }); setDebugOpen(true); }, terminalOpen, teamOpen, setTeamOpen, roomOpen, setRoomOpen, recentOpen, setRecentOpen,
     selectedModel, setSelectedModel, modelFor,
     interfaceFont, setInterfaceFont, readingSize, setReadingSize, codingReadingSize, setCodingReadingSize,
     uiDensity, setUiDensity, compactFolders, setCompactFolders, stickyFolders, setStickyFolders,

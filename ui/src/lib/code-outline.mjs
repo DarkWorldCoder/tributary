@@ -1,3 +1,5 @@
+import { sourceGrammar } from './source-grammar.mjs';
+import { sourceLanguage } from './source-language.mjs';
 const LIMIT = 512 * 1024;
 export function outlineSupported(path) { return /\.(?:[cm]?[jt]sx?|pyi?|rs|go|mdx?|markdown|jsonc?|css|scss|less|html?)$/i.test(path); }
 const definitions = {
@@ -7,13 +9,8 @@ const definitions = {
 };
 export async function outlineCode(path, text) {
   if (text.length > LIMIT) return [];
-  const ext = path.split('.').pop().toLowerCase(); let language;
-  if (/^[cm]?[jt]sx?$/.test(ext)) language = (await import('@codemirror/lang-javascript')).javascript({ typescript: /[cm]?tsx?$/.test(ext), jsx: ext.endsWith('x') }).language;
-  else if (/^pyi?$/.test(ext)) language = (await import('@codemirror/lang-python')).pythonLanguage;
-  else if (ext === 'rs') language = (await import('@codemirror/lang-rust')).rustLanguage;
-  else if (ext === 'go') language = (await import('@codemirror/lang-go')).goLanguage;
-  else if (/^(md|mdx|markdown)$/.test(ext)) language = (await import('@codemirror/lang-markdown')).markdownLanguage;
-  else return null;
+  if (!['javascript', 'jsx', 'typescript', 'tsx', 'python', 'rust', 'go', 'markdown'].includes(sourceLanguage(path, text).id)) return null;
+  const support = await sourceGrammar(path, text); const language = support?.language || support; if (!language) return null;
   const lines = [0]; for (let i = 0; i < text.length; i++) if (text[i] === '\n') lines.push(i + 1);
   const position = (offset) => { let low = 0, high = lines.length; while (low + 1 < high) { const mid = (low + high) >> 1; if (lines[mid] <= offset) low = mid; else high = mid; } return { line: low + 1, column: offset - lines[low] + 1 }; };
   const items = [];

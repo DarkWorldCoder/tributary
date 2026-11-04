@@ -1,3 +1,5 @@
+import { LanguageToolsPanel } from '@/components/language-tools';
+import { ExtensionPacksPanel } from '@/components/extension-packs';
 import * as React from 'react';
 import { toast } from 'sonner';
 import { BookOpen, Keyboard, Cpu, Download, ExternalLink, FilePlus2, Info, KeyRound, LayoutGrid, Monitor, Moon, Palette, Pencil, Plug, Plus, RefreshCw, Share2, X, Sparkles, Sun, Trash2, Waypoints } from 'lucide-react';
@@ -34,6 +36,8 @@ const NAV: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
   { id: 'mcp', label: 'MCP servers', icon: <Plug /> },
   { id: 'skills', label: 'Skills', icon: <Sparkles /> },
   { id: 'secrets', label: 'Team secrets', icon: <KeyRound /> },
+  { id: 'language-tools', label: 'Language tools', icon: <Cpu /> },
+  { id: 'extensions', label: 'Extensions', icon: <LayoutGrid /> },
   { id: 'appearance', label: 'Appearance', icon: <Palette /> },
   { id: 'shortcuts', label: 'Keyboard shortcuts', icon: <Keyboard /> },
   { id: 'about', label: 'About', icon: <Info /> },
@@ -435,7 +439,7 @@ export function SettingsDialog() {
   const s = useStore(); const [query, setQuery] = React.useState('');
   const returnFocus = React.useRef<HTMLElement | null>(null);
   React.useEffect(() => { if (s.settings.open) setQuery(''); }, [s.settings.open]);
-  const keywords: Record<string, string> = { connections: 'assistant provider local model account', agents: 'coding install custom', gateways: 'model endpoint api', mcp: 'tools servers', skills: 'instructions extensions ui layout writing components usability design accessibility', secrets: 'env environment sops age keys share teammates members', appearance: 'font typography reading size theme dark light system density compact comfortable spacing', shortcuts: 'keyboard keys hotkeys mac windows linux send enter customize', about: 'version information' };
+  const keywords: Record<string, string> = { connections: 'assistant provider local model account', agents: 'coding install custom', gateways: 'model endpoint api', mcp: 'tools servers', skills: 'instructions extensions ui layout writing components usability design accessibility', secrets: 'env environment sops age keys share teammates members', 'language-tools': 'lsp language servers formatting lint diagnostics completion go rust typescript python', extensions: 'vsix themes icons extension install language servers formatters', appearance: 'font typography reading size theme dark light system density compact comfortable spacing', shortcuts: 'keyboard keys hotkeys mac windows linux send enter customize', about: 'version information' };
   const matches = NAV.filter((n) => `${n.label} ${keywords[n.id] || ''}`.toLowerCase().includes(query.trim().toLowerCase()));
   const tab = query.trim() ? (matches.find((n) => n.id === s.settings.tab)?.id || matches[0]?.id) : s.settings.tab;
   return (
@@ -461,6 +465,8 @@ export function SettingsDialog() {
           {tab === 'mcp' && <McpTab />}
           {tab === 'skills' && <SkillsTab />}
           {tab === 'secrets' && <TeamSecrets />}
+          {tab === 'language-tools' && <LanguageToolsPanel />}
+          {tab === 'extensions' && <ExtensionPacksPanel />}
           {tab === 'appearance' && <AppearanceTab />}
           {tab === 'shortcuts' && <ShortcutSettings />}
           {tab === 'about' && <AboutTab />}

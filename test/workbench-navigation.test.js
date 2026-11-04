@@ -40,3 +40,33 @@ test('Markdown outlines exclude headings inside fenced code blocks', async () =>
   const items = await outlineCode('README.md', '# Real\n\n```js\n# not-heading\n```\n\n## Child\n');
   assert.deepEqual(items.map((item) => [item.name, item.line]), [['Real', 1], ['Child', 7]]);
 });
+
+
+test('explorer changes stay in the open folder and keep unsaved drafts separate from Git', async () => {
+  const { explorerDecorations } = await import('../ui/src/lib/explorer-decorations.mjs');
+  const git = { root: '/repo', changed: [{ path: 'web/src/main.ts', code: ' M' }, { path: 'web/src/new.ts', code: '??' }, { path: 'server/main.ts', code: ' M' }, { path: '../private.ts', code: ' M' }] };
+  const result = explorerDecorations('/repo/web', git, ['src/main.ts', 'local-only.ts']);
+  assert.equal(result.files.get('src/main.ts').label, 'Modified'); assert.equal(result.files.get('src/main.ts').dirty, true);
+  assert.equal(result.files.get('src/new.ts').code, 'A'); assert.equal(result.files.get('local-only.ts').code, undefined);
+  assert.equal(result.files.has('server/main.ts'), false); assert.equal(result.files.has('../private.ts'), false); assert.ok(result.folders.has('src'));
+  assert.equal(explorerDecorations('/unrelated', git).files.size, 0);
+  assert.equal(explorerDecorations('C:\\Repo\\web', { root: 'c:/repo', changed: [{ path: 'web/src/main.ts', code: 'A ' }] }).files.get('src/main.ts').code, 'A');
+});
+
+test('workspace change lists scope repository paths, retain counts, and classify conflicts and renames', async () => {
+  const { workspaceChanges } = await import('../ui/src/lib/workspace-changes.mjs');
+  const git = { root: '/repo', branch: 'main', changed: [
+    { path: 'web/a.ts', code: 'M', added: 4, removed: 2 },
+    { path: 'web/deleted.ts', code: 'D' }, { path: 'web/new.ts', code: '??' },
+    { path: 'web/renamed.ts', from: 'web/old.ts', code: 'R' },
+    { path: 'web/conflict.ts', code: 'UU' }, { path: 'web/both.ts', code: 'AA' },
+    { path: 'web-sibling/no.ts', code: 'M' }, { path: 'api/no.ts', code: 'M' },
+    { path: '../escape.ts', code: 'M' }, { path: '/private.ts', code: 'M' }, { path: 'C:/private.ts', code: 'M' },
+  ] };
+  const list = workspaceChanges('/repo/web', git);
+  assert.deepEqual(list.map((file) => [file.rel, file.status]), [['a.ts', 'M'], ['both.ts', 'U'], ['conflict.ts', 'U'], ['deleted.ts', 'D'], ['new.ts', 'A'], ['renamed.ts', 'R']]);
+  assert.equal(list[0].added, 4); assert.equal(list[0].removed, 2);
+  assert.equal(list.at(-1).from, 'web/old.ts'); assert.equal(list.find((file) => file.rel === 'new.ts').added, undefined);
+  assert.deepEqual(workspaceChanges('/other', git), []); assert.deepEqual(workspaceChanges('/repo', null), []);
+  assert.equal(workspaceChanges('C:\\Repo\\Web', { root: 'c:/repo', changed: [{ path: 'web/a.ts', code: 'M' }] })[0].rel, 'a.ts');
+});

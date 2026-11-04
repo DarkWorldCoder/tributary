@@ -3,6 +3,7 @@
 // position stay put), and a way to hand a selection to an agent.
 import { RangeSet, StateEffect, StateField, Transaction, type EditorState, type Extension } from '@codemirror/state';
 import { Decoration, EditorView, GutterMarker, gutter, keymap, showTooltip, type DecorationSet, type Tooltip } from '@codemirror/view';
+import { isolateHistory } from '@codemirror/commands';
 import { changedLines, minimalChange } from '@/lib/text-change.mjs';
 
 export interface BlameTurn { agent: string; threadId: string; title: string; messageId: string; ts?: number; request?: string }
@@ -16,8 +17,7 @@ const theme = EditorView.baseTheme({
   '.cm-agent-blame-gutter .cm-gutterElement': { padding: '0 1px 0 3px' },
   '.cm-agent-blame': { width: '3px', height: '100%', borderRadius: '2px', cursor: 'pointer', opacity: '0.8' },
   '.cm-agent-blame:hover': { opacity: '1', width: '5px' },
-  '.cm-agent-flash': { animation: 'cm-agent-flash 2.6s ease-out' },
-  '@keyframes cm-agent-flash': { from: { backgroundColor: 'color-mix(in oklch, var(--agent-flash) 30%, transparent)' }, to: { backgroundColor: 'transparent' } },
+  '.cm-agent-flash': { backgroundColor: 'color-mix(in oklch, var(--agent-flash) 12%, transparent)' },
   '.cm-tooltip.cm-tooltip-ask, .cm-tooltip:has(> .cm-ask-agent)': { border: 'none', background: 'transparent' },
   '.cm-ask-agent': {
     font: '500 12px/1 var(--app-font, ui-sans-serif)', padding: '5px 9px', borderRadius: '8px', cursor: 'pointer',
@@ -115,10 +115,10 @@ export const agentFlash: Extension = [flashField, theme];
  * is replaced, outside the undo history unless `undoable`, and those lines are highlighted for a moment. Returns false
  * if unchanged.
  */
-export function applyRemoteText(view: EditorView, text: string, color = 'var(--brand)', undoable = false) {
+export function applyRemoteText(view: EditorView, text: string, color = 'var(--success)', undoable = false) {
   const change = minimalChange(view.state.doc.toString(), text);
   if (!change) return false;
-  view.dispatch({ changes: change, annotations: [Transaction.remote.of(true), Transaction.addToHistory.of(undoable)], effects: flash.of({ ...changedLines(text, change), color }) });
+  view.dispatch({ changes: change, annotations: [Transaction.remote.of(true), Transaction.addToHistory.of(undoable), ...(undoable ? [isolateHistory.of('full')] : [])], effects: flash.of({ ...changedLines(text, change), color }) });
   clearTimeout(flashTimers.get(view));
   flashTimers.set(view, window.setTimeout(() => { if (view.dom.isConnected) view.dispatch({ effects: flash.of(null) }); }, 2600));
   return true;

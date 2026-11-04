@@ -92,10 +92,12 @@ export function createMockHub(): HubBridge {
     readFile: (_p: string, rel: string) => ({ rel, size: 420, binary: false, truncated: false, mtime: 1, content: rel.endsWith('.md')
       ? '# Shop\n\nA small store API.\n\n- Run `npm run dev`\n- Tests: `npm test`\n' : `import express from "express";\nimport { rateLimit } from "../middleware/rateLimit";\nimport { login } from "./handlers";\n\nconst app = express();\n\n// Five tries per minute per IP\napp.post("/login", rateLimit({ max: 5, windowMs: 60_000 }), login);\n\nexport default app;\n` }),
     writeFile: () => ({ mtime: 2 }),
+    draft: () => null, saveDraft: () => null,
+    compareDraft: (_p: string, rel: string) => `--- ${rel} (on disk)\n+++ ${rel} (unsaved)\n@@ -1,3 +1,3 @@\n import express from "express";\n-import { rateLimit } from "../middleware/rateLimit";\n+import { rateLimit, slowDown } from "../middleware/rateLimit";\n import { login } from "./handlers";`,
     memory: () => ({ enabled: true, memory: '# Project memory\n\n## Decisions\n- Use pnpm, not npm\n- Rate limits live in src/middleware\n\n## How to run and test\n- pnpm dev, pnpm test\n', worklog: ['- 2026-11-02 16:20 Claude Code: "Add rate limiting". Changed `src/routes/auth.ts`, `src/middleware/rateLimit.ts`', '- 2026-11-02 16:31 Codex: "Write tests". Changed `test/rateLimit.test.ts`'] }),
     enableMemory: () => ['.tributary/memory.md'], saveMemory: () => true, remember: () => 'ok',
     editors: () => [{ id: 'vscode', name: 'VS Code' }, { id: 'cursor', name: 'Cursor' }], openInEditor: () => true,
-    setProjectFolders: (path: string, folders: string[]) => { const project = st.projects.find((entry) => entry.path === path); if (project) project.folders = folders; emit('state'); return folders; }, pickFolder: () => null,
+    setProjectFolders: (path: string, folders: string[]) => { const project = st.projects.find((entry) => entry.path === path); if (project) project.folders = folders; emit('state'); return folders; }, pickFolder: () => null, pickFolders: () => [],
     renameProject: (path: string, name: string) => { const project = st.projects.find((entry) => entry.path === path); if (!project) throw new Error('Unknown project'); project.name = name.trim(); emit('state'); return project.name; },
     runTeam: () => ({}), applyRace: () => ({ applied: 'claude' }),
     createWorktree: (id: string) => {

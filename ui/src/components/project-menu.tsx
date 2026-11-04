@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Check, Copy, FolderInput, FolderPlus, FolderTree, Pencil, X } from 'lucide-react';
+import { Check, Copy, FolderInput, FolderPlus, FolderTree, Pencil, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -34,15 +34,15 @@ export function ProjectMenu({ children, projectPath, before, after, side = 'bott
   const saveFolders = async (root: string, next: string[]) => {
     await s.hub.call('setProjectFolders', root, next); await s.refreshState();
   };
-  const appendFolder = async (root: string, value: string) => {
+  const appendFolder = async (root: string, value: string | string[]) => {
     const state = await s.hub.call<HubState>('state');
     const current = state.projects.find((entry) => entry.path === root);
     if (!current) throw new Error('This project is no longer available.');
-    await saveFolders(root, [...(current.folders ?? []), value]);
+    await saveFolders(root, [...(current.folders ?? []), ...(Array.isArray(value) ? value : [value])]);
   };
   const pickFolder = async (root: string) => {
     setBusy(true); setError('');
-    try { const value = await s.hub.call<string | null>('pickFolder'); if (value) { await appendFolder(root, value); toast.success('Folder added'); } }
+    try { const values = await s.hub.call<string[]>('pickFolders'); if (values.length) { await appendFolder(root, values); toast.success(`${values.length} folder${values.length === 1 ? '' : 's'} added`); } }
     catch (e) { setError((e as Error).message); toast.error('Could not add folder'); }
     finally { setBusy(false); }
   };
@@ -54,8 +54,10 @@ export function ProjectMenu({ children, projectPath, before, after, side = 'bott
         <DropdownMenuLabel className="truncate" title={project.path}>{project.name}</DropdownMenuLabel>
         {before}
         <DropdownMenuItem onSelect={() => open('rename')}><Pencil />Rename project</DropdownMenuItem>
-        <DropdownMenuItem disabled={busy} onSelect={() => { open('folders'); if (native) void pickFolder(project.path); }}><FolderPlus />Add folder…</DropdownMenuItem>
+        <DropdownMenuItem disabled={busy} onSelect={() => { open('folders'); if (native) void pickFolder(project.path); }}><FolderPlus />Add folders to workspace…</DropdownMenuItem>
         <DropdownMenuItem onSelect={() => open('folders')}><FolderTree />Manage folders</DropdownMenuItem>
+        {native && <DropdownMenuItem onSelect={() => { void s.hub.call('saveWorkspace', project.path).then((file) => { if (file) toast.success('Workspace saved'); }, (error) => toast.error(error.message)); }}><Save />Save workspace as…</DropdownMenuItem>}
+        {native && <DropdownMenuItem onSelect={() => { void s.hub.call<string | null>('openWorkspace').then(async (root) => { if (root) { await s.refreshState(); s.newThread(root); } }, (error) => toast.error(error.message)); }}><FolderInput />Open workspace…</DropdownMenuItem>}
         <DropdownMenuItem onSelect={() => void navigator.clipboard.writeText(project.path).then(() => toast.success('Project path copied'), () => toast.error('Could not copy project path'))}><Copy />Copy project path</DropdownMenuItem>
         {(s.st?.projects.length ?? 0) > 1 && <><DropdownMenuSeparator /><DropdownMenuSub><DropdownMenuSubTrigger><FolderInput />Switch project</DropdownMenuSubTrigger><DropdownMenuSubContent className="max-h-72 max-w-72 overflow-auto">{s.st?.projects.map((entry) => <DropdownMenuItem key={entry.path} title={entry.path} onSelect={() => s.newThread(entry.path)}><Check className={entry.path === s.project ? '' : 'invisible'} /><span className="truncate">{entry.name}</span></DropdownMenuItem>)}</DropdownMenuSubContent></DropdownMenuSub></>}
         {after}
@@ -63,7 +65,7 @@ export function ProjectMenu({ children, projectPath, before, after, side = 'bott
     </DropdownMenu>
     <Dialog open={!!dialog} onOpenChange={(value) => { if (!value) { setDialog(null); setError(''); } }}>
       <DialogContent className="max-sm:[&_button]:min-h-11 max-sm:[&_input]:min-h-11" onCloseAutoFocus={(event) => { if (trigger.current?.isConnected) { event.preventDefault(); trigger.current.focus({ preventScroll: true }); } }}>
-        <DialogHeader><DialogTitle>{contents === 'rename' ? 'Rename project' : 'Project folders'}</DialogTitle><DialogDescription className="sr-only">{contents === 'rename' ? 'Change the display name. The project folder stays in place.' : 'Folders available to agents in this project.'}</DialogDescription></DialogHeader>
+        <DialogHeader><DialogTitle>{contents === 'rename' ? 'Rename project' : 'Workspace folders'}</DialogTitle><DialogDescription className="sr-only">{contents === 'rename' ? 'Change the display name. The project folder stays in place.' : 'Folders you can browse and edit together. Available to agents in this workspace.'}</DialogDescription></DialogHeader>
         {contents === 'rename' ? <form className="space-y-4" onSubmit={async (event) => {
           event.preventDefault(); if (!target || busy) return; setBusy(true); setError('');
           try { await s.hub.call('renameProject', target, name); await s.refreshState(); setDialog(null); toast.success('Project renamed'); }
@@ -72,7 +74,7 @@ export function ProjectMenu({ children, projectPath, before, after, side = 'bott
           : <div className="space-y-4"><ul className="max-h-64 space-y-1 overflow-auto text-xs"><li className="flex items-center gap-2 rounded-md bg-muted/40 px-2 py-2"><FolderTree className="size-4 shrink-0" /><span className="min-w-0 flex-1 truncate" title={target ?? ''}>{target}</span><span className="text-muted-foreground">Main</span></li>{folders.map((value) => <li key={value} className="flex items-center gap-2 px-2"><FolderTree className="size-4 shrink-0 text-muted-foreground" /><span className="min-w-0 flex-1 truncate" title={value}>{value}</span><Button size="icon-sm" variant="ghost" disabled={busy} aria-label={`Remove folder ${value}`} onClick={async () => { if (!target) return; setBusy(true); setError(''); try { await saveFolders(target, folders.filter((item) => item !== value)); } catch (e) { setError((e as Error).message); } finally { setBusy(false); } }}><X /></Button></li>)}</ul>
             {pathEntry && <form className="flex items-end gap-2" onSubmit={async (event) => { event.preventDefault(); if (!target || busy || !folder.trim()) return; setBusy(true); setError(''); try { await appendFolder(target, folder.trim()); setFolder(''); } catch (e) { setError((e as Error).message); } finally { setBusy(false); } }}><label className="flex min-w-0 flex-1 flex-col gap-2 text-xs">Folder path<Input required value={folder} onChange={(event) => setFolder(event.target.value)} /></label><Button type="submit" variant="outline" disabled={busy || !folder.trim()}>Add</Button></form>}
             {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
-            <DialogFooter className="gap-2"><div className="mr-auto flex gap-2">{native && <Button variant="outline" disabled={busy || !target} onClick={() => target && void pickFolder(target)}><FolderPlus />Add folder</Button>}{!pathEntry && <Button variant="ghost" onClick={() => setPathEntry(true)}>Enter path</Button>}</div><Button onClick={() => setDialog(null)}>Done</Button></DialogFooter>
+            <DialogFooter className="gap-2"><div className="mr-auto flex gap-2">{native && <Button variant="outline" disabled={busy || !target} onClick={() => target && void pickFolder(target)}><FolderPlus />Add folders</Button>}{!pathEntry && <Button variant="ghost" onClick={() => setPathEntry(true)}>Enter path</Button>}</div><Button onClick={() => setDialog(null)}>Done</Button></DialogFooter>
           </div>}
       </DialogContent>
     </Dialog>

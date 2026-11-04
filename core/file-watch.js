@@ -18,7 +18,7 @@ class FileWatches {
     }
     const root = await projectPath(project, ''); if (!groups.has(root)) groups.set(root, []);
     const id = crypto.randomUUID(); const handles = []; let timer; let pollTimer; const pending = new Set(); let active = true;
-    const queue = (rel) => { pending.add(rel); clearTimeout(timer); timer = setTimeout(() => { if (!active) return; this.emit({ watchId: id, project, paths: [...pending] }); pending.clear(); }, 150); timer.unref?.(); };
+    const queue = (rel) => { pending.add(rel); if (timer) return; timer = setTimeout(() => { timer = null; if (!active) return; this.emit({ watchId: id, project, paths: [...pending] }); pending.clear(); }, 150); timer.unref?.(); };
     const close = () => { active = false; clearTimeout(timer); clearInterval(pollTimer); for (const handle of handles) handle.close(); };
     try {
       for (const [dir, rels] of groups) {

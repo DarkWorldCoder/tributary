@@ -1,3 +1,6 @@
+import { ExtensionAppearance } from '@/lib/extension-appearance';
+import { DebugWorkbenchProvider } from '@/components/debug-workbench';
+import { TerminalHost } from '@/components/terminal-host';
 import { DesktopTitlebar } from '@/components/desktop-titlebar';
 import * as React from 'react';
 import { SidebarInset, SidebarProvider, useSidebar } from '@/components/ui/sidebar';
@@ -23,7 +26,7 @@ import { CollaborationDialog } from '@/components/collaboration-dialog';
 import { ProjectContext } from '@/components/project-context';
 import { RecentWork } from '@/components/recent-work';
 const WorkspacePanel = React.lazy(() => import('@/components/workspace-panel').then((m) => ({ default: m.WorkspacePanel })));
-const TerminalPanel = React.lazy(() => import('@/components/terminal-panel').then((m) => ({ default: m.TerminalPanel })));
+
 
 function NewThread() {
   const s = useStore(); const project = s.st?.projects.find((p) => p.path === s.project);
@@ -54,11 +57,26 @@ function Main() {
 }
 
 function ProjectNavigation({ studio, fullscreen }: { studio: boolean; fullscreen: boolean }) {
-  const { open, isMobile } = useSidebar();
-  return <nav aria-label="Main navigation" inert={studio && !open && !isMobile} className={fullscreen ? "contents max-md:hidden" : "contents"}><AppSidebar /></nav>;
+  const s = useStore();
+  const { open, isMobile, setOpen } = useSidebar();
+  const navigation = React.useRef<HTMLElement>(null);
+  React.useEffect(() => {
+    if (!studio || !open || isMobile) return;
+    const dismiss = (event: PointerEvent) => {
+      const target = event.target;
+      if (event.button !== 0 || !(target instanceof Element) || navigation.current?.contains(target)) return;
+      // Keep the toggle and portalled sidebar menus/dialogs usable. Outside clicks
+      // still reach the editor, chat or terminal that the user clicked.
+      if (target.closest('[aria-label="Projects and chats"], [aria-label="Toggle project list"], [aria-label="Toggle project sidebar"], [data-slot="sidebar-trigger"], [data-radix-popper-content-wrapper], [role="dialog"], [role="alertdialog"]')) return;
+      setOpen(false);
+    };
+    document.addEventListener('pointerdown', dismiss, true);
+    return () => document.removeEventListener('pointerdown', dismiss, true);
+  }, [studio, open, isMobile, setOpen]);
+  return <nav ref={navigation} data-slot="project-navigation" aria-label="Main navigation" inert={fullscreen && s.workspaceExpanded || studio && !open && !isMobile} className={fullscreen ? "contents max-md:hidden" : "contents"}><AppSidebar /></nav>;
 }
 
-export default function App() {
+function WorkbenchApp() {
   const s = useStore();
   // Once opened, the terminal stays mounted (hidden when closed) so its shells and scrollback survive.
   const [terminalKept, setTerminalKept] = React.useState(false);
@@ -79,7 +97,7 @@ export default function App() {
         <KeyboardShortcuts />
         <SidebarInset className="min-h-0 overflow-hidden">
           {!studio && <div className={workspaceVisible ? "contents max-md:hidden" : "contents"}><ThreadHeader /></div>}
-          <div className={`flex min-h-0 min-w-0 flex-1 ${s.terminalDock === 'left' || s.terminalDock === 'right' ? 'flex-row' : 'flex-col'}`}>
+          <div className={`relative flex min-h-0 min-w-0 flex-1 ${s.terminalDock === 'left' || s.terminalDock === 'right' ? 'flex-row' : 'flex-col'}`}>
             <div className="flex min-h-0 min-w-0 flex-1">
             <WorkspaceLayout project={s.workdir} visible={workspaceVisible} expanded={s.workspaceExpanded} editorFirst={studio}
               chat={<>{studio && <ThreadHeader compact />}<section aria-label="Chat" className="flex min-h-0 flex-1 flex-col"><Main /></section></>}
@@ -88,7 +106,7 @@ export default function App() {
             <DocumentPanel />
             {conversationLayout && !workspaceVisible && !s.document && <ProjectContext />}
             </div>
-            {s.project && (s.terminalOpen || terminalKept) && <React.Suspense fallback={<p role="status" className="p-3 text-sm text-muted-foreground">Opening terminal…</p>}><TerminalPanel hidden={!s.terminalOpen} /></React.Suspense>}
+            {s.project && (s.terminalOpen || terminalKept) && <TerminalHost hidden={!s.terminalOpen} close={() => s.setTerminalOpen(false)} />}
           </div>
         </SidebarInset>
       </SidebarProvider>
@@ -102,3 +120,5 @@ export default function App() {
     </TooltipProvider>
   );
 }
+
+export default function App() { return <ExtensionAppearance><DebugWorkbenchProvider><WorkbenchApp /></DebugWorkbenchProvider></ExtensionAppearance>; }

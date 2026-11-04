@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { ArrowLeft, BookOpen, ChevronRight, FolderOpen, Keyboard, ListTodo, Plug, Plus, Search, Settings2, Sparkles, SquareTerminal, Users, Paperclip } from 'lucide-react';
+import { ArrowLeft, BookOpen, ChevronRight, FolderOpen, Globe, Keyboard, ListTodo, Plug, Plus, Search, Settings2, Sparkles, SquareTerminal, Users, Paperclip } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '@/components/ui/command';
 import { InputGroupButton } from '@/components/ui/input-group';
@@ -16,7 +16,7 @@ type Mcp = { name: string; agent: string; enabled: boolean };
 const TITLES: Record<Page, string> = { main: 'Tools and skills', files: 'Project files', skills: 'Skills', agents: 'Your agents', mcp: 'MCP tools' };
 
 /** Discover existing capabilities; choosing context only prepares the next message. */
-export function ComposerTools({ everyday, planOn, setPlanOn, focusMessage, onAttach }: { everyday: boolean; planOn: boolean; setPlanOn: (value: boolean) => void; focusMessage: () => void; onAttach?: () => void }) {
+export function ComposerTools({ everyday, planOn, setPlanOn, researchOn, setResearchOn, researchAvailable, focusMessage, onAttach }: { everyday: boolean; planOn: boolean; setPlanOn: (value: boolean) => void; researchOn: boolean; setResearchOn: (value: boolean) => void; researchAvailable: boolean; focusMessage: () => void; onAttach?: () => void }) {
   const s = useStore(); const [open, setOpen] = React.useState(false); const [page, setPage] = React.useState<Page>('main');
   const [query, setQuery] = React.useState(''); const [width, setWidth] = React.useState(360);
   const [busy, setBusy] = React.useState(false); const [error, setError] = React.useState(''); const [retry, setRetry] = React.useState(0);
@@ -93,7 +93,8 @@ export function ComposerTools({ everyday, planOn, setPlanOn, focusMessage, onAtt
               {row('files', 'Files and folders', <FolderOpen />, everyday ? 'Browse your project' : 'Reference project files', () => changePage('files'), { disabled: !s.project, next: true, keywords: 'reference context' })}
               {row('skills', 'Skills', <Sparkles />, 'Guidance for your next message', () => changePage('skills'), { next: true })}
               {!everyday && row('plan', 'Plan first', <ListTodo />, 'Review a plan before building', () => run(() => { setPlanOn(!planOn); focusMessage(); }), { checked: planOn })}
-              {!everyday && row('team', 'Work with a team', <Users />, 'Delegate coding tasks', () => run(() => s.setTeamOpen(true)))}
+              {!everyday && row('research', 'Deep research', <Globe />, researchAvailable ? 'Agent web tools and a cited report' : 'Choose an agent with web tools', () => run(() => { setResearchOn(!researchOn); focusMessage(); }), { checked: researchOn, disabled: !researchAvailable })}
+              {!everyday && row('team', 'Create agent team', <Users />, 'Delegate this task', () => run(() => s.setTeamOpen(true)), { disabled: !s.project, keywords: 'background workers parallel' })}
               {!everyday && row('delegation', 'Agent delegation', <Users />, s.st?.settings.agentDelegation === false ? 'Off' : `Up to ${Number(s.st?.settings.delegationConcurrency) || 2} background workers`, () => run(() => { void s.hub.call('setSettings', { agentDelegation: s.st?.settings.agentDelegation === false }).catch((error: Error) => setError(error.message)); }), { checked: s.st?.settings.agentDelegation !== false })}
               {row('agents', 'Your agents', <Users />, 'Switch or add an assistant', () => changePage('agents'), { next: true })}
               {row('connections', 'Apps and connections', <Plug />, 'Manage assistant connections', () => run(() => s.openSettings('connections')))}

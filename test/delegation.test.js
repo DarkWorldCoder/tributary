@@ -45,6 +45,7 @@ test('an ordinary chatting agent starts background chats through its scoped comm
     assert.equal(child.messages[0].text, child.title); assert.equal(child.delegation.state, 'done');
   }
   assert.deepEqual(result.delegations.map((child) => child.state), ['done', 'done']);
+  for (const child of result.delegations) { assert.ok(child.branch); assert.ok(child.files.includes('worker.json')); assert.ok(child.fileCount >= 1); assert.equal(child.error, ''); }
 });
 
 test('workers continue after their parent finishes, and the next parent turn can inspect them', async (t) => {

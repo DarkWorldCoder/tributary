@@ -7,7 +7,7 @@ function valid(value: Partial<WorkspaceView> | undefined, fallback: WorkspaceVie
   return { layout: value?.layout === 'chat' || value?.layout === 'editor' ? value.layout : fallback.layout,
     expanded: typeof value?.expanded === 'boolean' ? value.expanded : fallback.expanded,
     panel: { open: typeof value?.panel?.open === 'boolean' ? value.panel.open : fallback.panel.open,
-      tab: ['files', 'review', 'changes', 'memory', 'preview'].includes(value?.panel?.tab || '') ? value!.panel!.tab : fallback.panel.tab } };
+      tab: ['files', 'review', 'changes', 'memory', 'preview', 'tests'].includes(value?.panel?.tab || '') ? value!.panel!.tab : fallback.panel.tab } };
 }
 export function useWorkspaceView(project: string | null) {
   const fallback = React.useMemo<WorkspaceView>(() => {

@@ -13,16 +13,20 @@
     "start": "npm run build:ui && electron .",
     "dev": "electron .",
     "build:ui": "npm --prefix ui run build",
-    "test": "node --test test/workspace-setup.test.js test/secret-guard.test.js test/team-secrets.test.js test/desktop-secrets.test.js test/review-comments.test.js test/copy-conflicts.test.js test/verify.test.js test/attention.test.js test/core.test.js test/features.test.js test/workspace.test.js test/race.test.js test/acp-pool.test.js test/registry.test.js test/vscode.test.js test/everyday.test.js test/collaboration.test.js test/cli.test.js test/files.test.js test/remote.test.js test/status.test.js test/store.test.js test/ui-skills.test.js test/improvements.test.js test/shortcuts.test.js test/models.test.js test/workspace-tabs.test.js test/terminal-links.test.js test/file-kind.test.js test/image-preview.test.js test/markdown-blocks.test.js test/message-patch.test.js test/activity.test.js test/manager.test.js test/attribution.test.js test/revert-hunk.test.js test/text-change.test.js test/worktrees.test.js test/pull-request.test.js test/permissions.test.js test/usability.test.js test/lan-host.test.js test/delegation.test.js test/workbench-tools.test.js test/claude-control.test.js test/codex-server.test.js test/native-acp.test.js test/project-checks.test.js test/document-language.test.js test/workbench-navigation.test.js",
+    "test": "node --test test/workspace-setup.test.js test/secret-guard.test.js test/team-secrets.test.js test/desktop-secrets.test.js test/review-comments.test.js test/copy-conflicts.test.js test/verify.test.js test/attention.test.js test/core.test.js test/features.test.js test/workspace.test.js test/race.test.js test/acp-pool.test.js test/registry.test.js test/vscode.test.js test/everyday.test.js test/collaboration.test.js test/cli.test.js test/files.test.js test/remote.test.js test/status.test.js test/store.test.js test/ui-skills.test.js test/improvements.test.js test/shortcuts.test.js test/models.test.js test/workspace-tabs.test.js test/terminal-links.test.js test/file-kind.test.js test/image-preview.test.js test/markdown-blocks.test.js test/message-patch.test.js test/activity.test.js test/manager.test.js test/attribution.test.js test/revert-hunk.test.js test/text-change.test.js test/worktrees.test.js test/pull-request.test.js test/permissions.test.js test/usability.test.js test/lan-host.test.js test/delegation.test.js test/workbench-tools.test.js test/claude-control.test.js test/codex-server.test.js test/native-acp.test.js test/project-checks.test.js test/document-language.test.js test/workbench-navigation.test.js test/research-and-file-links.test.js test/drafts.test.js test/debugger.test.js test/source-language.test.js test/reply-timeline.test.js test/extension-packs.test.js test/language-tools.test.js test/preview-browser.test.js test/collaboration-view.test.js test/qa-results.test.js test/project-format.test.js test/distribution.test.js",
     "test:e2e": "node test/e2e/real-handoff.js claude codex",
     "ui:dev": "npm --prefix ui run dev",
     "vscode:build": "npm run build:ui && node vscode/build.js",
     "vscode:install": "npm run build:ui && node vscode/build.js --install",
     "pretest": "node vscode/build.js",
-    "dist": "npm run build:ui && electron-builder",
-    "dist:linux": "npm run build:ui && electron-builder --linux AppImage deb",
+    "dist": "npm run build:ui:clean && electron-builder",
+    "dist:linux": "npm run build:ui:clean && electron-builder --linux",
     "server": "node server/start.js",
-    "server:lan": "node server/lan.js"
+    "server:lan": "node server/lan.js",
+    "build:ui:clean": "npm --prefix ui run build -- --emptyOutDir",
+    "dist:mac": "npm run build:ui:clean && electron-builder --mac",
+    "dist:win": "npm run build:ui:clean && electron-builder --win",
+    "dist:verify": "node scripts/verify-distribution.cjs"
   },
   "devDependencies": {
     "electron": "44.7.2",
@@ -30,13 +34,16 @@
   },
   "dependencies": {
     "@lydell/node-pty": "1.1.0",
-    "age-encryption": "0.3.1"
+    "age-encryption": "0.3.1",
+    "jsonc-parser": "3.3.1",
+    "prettier": "3.9.10",
+    "yauzl": "3.4.0"
   },
   "author": {
     "name": "Tributary contributors",
     "email": "tributary@localhost"
   },
-  "homepage": "https://github.com/tributary/tributary",
+  "homepage": "https://github.com/DarkWorldCoder/tributary",
   "build": {
     "appId": "dev.tributary.app",
     "productName": "Tributary",
@@ -50,15 +57,24 @@
       "server/**",
       "ui/dist/**",
       "assets/**",
-      "package.json"
+      "package.json",
+      "LICENSE",
+      "README.md"
     ],
     "asarUnpack": [
-      "node_modules/@lydell/**"
+      "node_modules/@lydell/**",
+      "core/format-worker.cjs",
+      "core/format-source.js",
+      "core/proc.js",
+      "core/files.js",
+      "core/agents.js",
+      "node_modules/prettier/**"
     ],
     "linux": {
       "target": [
         "AppImage",
-        "deb"
+        "deb",
+        "tar.gz"
       ],
       "category": "Development",
       "icon": "assets/icon-512.png",
@@ -72,14 +88,19 @@
     },
     "mac": {
       "target": [
-        "dmg"
+        "dmg",
+        "zip"
       ],
       "category": "public.app-category.developer-tools",
-      "icon": "assets/icon-512.png"
+      "icon": "assets/icon-512.png",
+      "identity": "-",
+      "hardenedRuntime": false,
+      "notarize": false
     },
     "win": {
       "target": [
-        "nsis"
+        "nsis",
+        "zip"
       ],
       "icon": "assets/icon-512.png"
     },
@@ -87,7 +108,21 @@
       "depends": [
         "git"
       ]
-    }
+    },
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "npmRebuild": false,
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "publish": null
   },
-  "desktopName": "tributary.desktop"
+  "desktopName": "tributary.desktop",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DarkWorldCoder/tributary.git"
+  }
 }

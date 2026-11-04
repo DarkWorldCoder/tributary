@@ -5,6 +5,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { ProjectMenu } from '@/components/project-menu';
 import { ShortcutLabel } from '@/components/shortcut-settings';
 import { Kbd } from '@/components/ui/kbd';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupAction, SidebarGroupLabel, SidebarHeader,
   SidebarMenu, SidebarMenuAction, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem, SidebarRail, useSidebar,
@@ -58,13 +59,13 @@ export function AppSidebar() {
         <div className="flex items-center gap-2 px-1.5 pt-1 pb-1.5">
           <img src="./logo.svg" alt="" className="size-6 rounded-[7px]" />
           <span className="flex-1 text-[15px] font-semibold tracking-tight">Tributary</span>
-          <button className="flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-foreground max-sm:size-11" onClick={toggleSidebar} aria-label="Collapse project list" title="Collapse project list"><PanelLeftClose className="size-4" /></button>
+          <Tooltip><TooltipTrigger asChild><button className="flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-foreground max-sm:size-11" onClick={toggleSidebar} aria-label="Collapse project list"><PanelLeftClose className="size-4" /></button></TooltipTrigger><TooltipContent>Collapse project list <ShortcutLabel action="sidebar" /></TooltipContent></Tooltip>
         </div>
         <SidebarMenu aria-label="Chat actions">
-          <SidebarMenuItem><SidebarMenuButton aria-label="New chat" onClick={() => newThread()} disabled={!s.project} className="h-10 font-medium"><SquarePen /><span>New chat</span><span className="ml-auto opacity-0 group-hover/menu-item:opacity-100"><ShortcutLabel action="new" /></span></SidebarMenuButton></SidebarMenuItem>
-          <SidebarMenuItem><SidebarMenuButton aria-label="Search chats" onClick={() => { s.setPalette(true); if (isMobile) setOpenMobile(false); }} className="h-10"><Search /><span>Search chats</span></SidebarMenuButton></SidebarMenuItem>
+          <SidebarMenuItem><SidebarMenuButton aria-label="New chat" onClick={() => newThread()} disabled={!s.project} className="h-10 font-medium"><SquarePen /><span>New chat</span><span aria-hidden="true" className="sidebar-shortcut-hint ml-auto text-muted-foreground"><ShortcutLabel action="new" /></span></SidebarMenuButton></SidebarMenuItem>
+          <SidebarMenuItem><SidebarMenuButton aria-label="Search chats" onClick={() => { s.setPalette(true); if (isMobile) setOpenMobile(false); }} className="h-10"><Search /><span>Search chats</span><span aria-hidden="true" className="sidebar-shortcut-hint ml-auto text-muted-foreground"><ShortcutLabel action="search" /></span></SidebarMenuButton></SidebarMenuItem>
           <SidebarMenuItem><SidebarMenuButton aria-label="Start a task" onClick={() => { s.goHome(); if (isMobile) setOpenMobile(false); }} isActive={s.home || !s.project} className="h-10"><Home /><span>Start a task</span></SidebarMenuButton></SidebarMenuItem>
-          <SidebarMenuItem><SidebarMenuButton aria-label="Project room" onClick={() => { s.setRoomOpen(true); if (isMobile) setOpenMobile(false); }} isActive={s.roomOpen} className="h-10"><Users /><span>Project room</span></SidebarMenuButton></SidebarMenuItem>
+          <SidebarMenuItem><SidebarMenuButton aria-label="Project room" onClick={() => { s.setRoomOpen(true); if (isMobile) setOpenMobile(false); }} isActive={s.roomOpen} className="h-10"><Users /><span>Project room</span><span aria-hidden="true" className="sidebar-shortcut-hint ml-auto text-muted-foreground"><ShortcutLabel action="room" /></span></SidebarMenuButton></SidebarMenuItem>
         </SidebarMenu>
 
       </SidebarHeader>
@@ -115,9 +116,9 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t px-3 py-2">
         <SidebarMenu>
-          <SidebarMenuItem><SidebarMenuButton disabled={!s.project} onClick={() => { s.setTeamOpen(true); if (isMobile) setOpenMobile(false); }}><Workflow /><span>Agent teams</span></SidebarMenuButton></SidebarMenuItem>
-          <SidebarMenuItem><SidebarMenuButton onClick={() => { window.dispatchEvent(new Event('tributary:live')); if (isMobile) setOpenMobile(false); }}><Activity /><span>Live activity</span>{!!s.st?.running.length && <span className="ml-auto text-xs tabular-nums">{s.st.running.length}</span>}</SidebarMenuButton></SidebarMenuItem>
-          <SidebarMenuItem><SidebarMenuButton onClick={() => { s.setShortcutsOpen(true); if (isMobile) setOpenMobile(false); }}><Keyboard /><span>Keyboard shortcuts</span></SidebarMenuButton></SidebarMenuItem>
+          <SidebarMenuItem><SidebarMenuButton disabled={!s.project} onClick={() => { s.setTeamOpen(true); if (isMobile) setOpenMobile(false); }}><Workflow /><span>Agent teams</span><span aria-hidden="true" className="sidebar-shortcut-hint ml-auto text-muted-foreground"><ShortcutLabel action="team" /></span></SidebarMenuButton></SidebarMenuItem>
+          <SidebarMenuItem><SidebarMenuButton onClick={() => { window.dispatchEvent(new Event('tributary:live')); if (isMobile) setOpenMobile(false); }}><Activity /><span>Live activity</span><span aria-hidden="true" className="sidebar-shortcut-hint ml-auto text-muted-foreground"><ShortcutLabel action="activity" /></span>{!!s.st?.running.length && <span className="ml-auto text-xs tabular-nums">{s.st.running.length}</span>}</SidebarMenuButton></SidebarMenuItem>
+          <SidebarMenuItem><SidebarMenuButton onClick={() => { s.setShortcutsOpen(true); if (isMobile) setOpenMobile(false); }}><Keyboard /><span>Keyboard shortcuts</span><span aria-hidden="true" className="sidebar-shortcut-hint ml-auto text-muted-foreground"><ShortcutLabel action="help" /></span></SidebarMenuButton></SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={() => { s.openSettings('appearance'); if (isMobile) setOpenMobile(false); }} className="h-9">
               <Settings className="text-muted-foreground" /><span>Settings</span>

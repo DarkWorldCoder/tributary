@@ -70,3 +70,33 @@ test('idle agent processes are closed', async () => {
     assert.strictEqual(acpPool.size(), 0);
   } finally { acpPool.idleMs = 10 * 60 * 1000; }
 });
+
+
+test('structured tools keep command input and file locations across status-only updates', async () => {
+  const cwd = tmp(); const events = [];
+  const result = await runAcp({ command: process.execPath, args: [FAKE], cwd, env: { ...process.env, FAKE_LOG: path.join(cwd, 'log') }, prompt: 'TOOL_PATTERNS', mode: 'edit', onEvent: (event) => events.push(event) });
+  assert.ok(result.ok);
+  const command = events.findLast((event) => event.kind === 'tool' && event.id === 'command');
+  assert.strictEqual(command.name, 'Bash');
+  assert.strictEqual(command.input.command, 'printf hello; $(do-not-execute)');
+  assert.strictEqual(command.output, 'hello');
+  assert.strictEqual(command.files, undefined, 'a shell working directory is not a file edit');
+  const file = events.findLast((event) => event.kind === 'tool' && event.id === 'file');
+  assert.deepStrictEqual(file.files, [path.join(cwd, 'src/app.ts')]);
+  assert.ok(events.some((event) => event.kind === 'file' && event.path === path.join(cwd, 'src/app.ts')));
+});
+
+test('Kimi running JSON arguments are parsed as input and completion JSON stays output', () => {
+  const { normalizeAcpTool } = require('../core/acp-tools');
+  const content = (text) => [{ type: 'content', content: { type: 'text', text } }];
+  const initial = normalizeAcpTool({}, { title: 'Shell: printf hello', status: 'in_progress', content: content('{"command":') });
+  assert.strictEqual(initial.name, 'Bash'); assert.ok(initial.argumentsContent); assert.strictEqual(initial.input, undefined);
+  const running = normalizeAcpTool(initial.call, { content: content('{"command":"printf hello; $(never-run)"}'), status: 'in_progress' });
+  assert.strictEqual(running.input.command, 'printf hello; $(never-run)');
+  const done = normalizeAcpTool(running.call, { status: 'completed', content: content('{"result":"ok"}') });
+  assert.strictEqual(done.input.command, 'printf hello; $(never-run)'); assert.strictEqual(done.argumentsContent, false);
+  const structured = normalizeAcpTool({}, { name: 'task', kind: 'think', rawInput: { description: 'Review changes' } });
+  assert.strictEqual(structured.name, 'background_agent');
+  const unknown = normalizeAcpTool({}, { title: 'CustomTool', content: content('{"unexpected":true}'), status: 'in_progress' });
+  assert.strictEqual(unknown.input, undefined);
+});

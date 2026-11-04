@@ -1,9 +1,10 @@
 import { QueuedMessages } from '@/components/queued-messages';
 import { ChatReviewBar } from '@/components/chat-review-bar';
+import { TaskModePicker, type TaskMode } from '@/components/task-mode-picker';
 import { ShortcutLabel } from '@/components/shortcut-settings';
 import { useShortcutPreferences } from '@/hooks/use-shortcut-preferences';
 import * as React from 'react';
-import { ArrowUp, Check, ChevronDown, Clock, Cpu, Eye, ListTodo, PanelRight, PencilLine, Plug, Settings2, Sparkles, Square, X, Zap } from 'lucide-react';
+import { ArrowUp, Check, ChevronDown, Clock, Cpu, Eye, ListTodo, PanelRight, PencilLine, Plug, Settings2, Sparkles, Square, Users, X, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '@/components/ui/command';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -18,7 +19,7 @@ import { cn } from '@/lib/utils';
 import { useDraft, useStore } from '@/store';
 import { ChatAttachments } from '@/components/chat-attachments';
 import { toast } from 'sonner';
-import type { Attachment, Mode } from '@/types';
+import type { Attachment, FileContent, Mode } from '@/types';
 
 export const MODES: Record<Mode, { label: string; help: string; icon: React.ReactNode }> = {
   read: { label: 'Read-only', help: 'Answers and plans. Never changes files.', icon: <Eye /> },
@@ -29,6 +30,7 @@ export const MODES: Record<Mode, { label: string; help: string; icon: React.Reac
 const COMMANDS = [
   { name: 'team', hint: 'Delegate to background coding agents', insert: '/team ' },
   { name: 'plan', hint: 'Plan first, then approve to run', insert: '/plan ' },
+  { name: 'research', hint: 'Web research with a cited report, no file edits', insert: '/research ' },
   { name: 'review', hint: 'Review uncommitted changes, no edits', text: 'Review the uncommitted changes in this project (see `git diff` and new files). Point out bugs, risks and missing tests, most important first. Do not change any files.', mode: 'read' as Mode },
   { name: 'test', hint: 'Run the tests and fix failures', text: 'Run this project’s test suite. If anything fails, find the cause and fix it, then run the tests again.' },
   { name: 'commit', hint: 'Write a message and commit', text: 'Write a concise commit message for the uncommitted changes, then stage everything and commit.' },
@@ -98,12 +100,12 @@ function AgentPicker() {
   );
 }
 
-function ModePicker() {
-  const s = useStore(); const m = MODES[s.mode];
+function ModePicker({ readOnly = false }: { readOnly?: boolean }) {
+  const s = useStore(); const m = MODES[readOnly ? 'read' : s.mode];
   return (
     <DropdownMenu>
       <Tooltip><TooltipTrigger asChild><DropdownMenuTrigger asChild>
-        <InputGroupButton size="sm" className={cn("composer-selector rounded-full", s.codeLayout && "composer-selector-icon [&>span]:hidden [&>svg:last-child]:hidden")} title={m.label} aria-label={`Permissions: ${m.label}`}>{m.icon}<span className="composer-selector-label">{m.label}</span><ChevronDown className="composer-selector-chevron text-muted-foreground" /></InputGroupButton>
+        <InputGroupButton disabled={readOnly} size="sm" className={cn("composer-selector rounded-full", s.codeLayout && "composer-selector-icon [&>span]:hidden [&>svg:last-child]:hidden")} title={readOnly ? 'Plan and research are read-only' : m.label} aria-label={`Permissions: ${m.label}`}>{m.icon}<span className="composer-selector-label">{m.label}</span><ChevronDown className="composer-selector-chevron text-muted-foreground" /></InputGroupButton>
       </DropdownMenuTrigger></TooltipTrigger><TooltipContent>{m.label}</TooltipContent></Tooltip>
       <DropdownMenuContent align="start" side="top" className="w-72">
         <DropdownMenuLabel>What the agent may do</DropdownMenuLabel>
@@ -159,8 +161,14 @@ export function Composer({ autoFocus, className }: { autoFocus?: boolean; classN
     finally { uploadBusy.current = false; setUploading(false); }
   };
   const [planOn, setPlanOn] = React.useState(false);
+  const [researchOn, setResearchOn] = React.useState(false);
+  const researchAvailable = s.agent.protocol !== 'direct-chat' && s.agent.capabilities?.tools !== false;
+  const taskMode: TaskMode = researchOn ? 'research' : planOn ? 'plan' : 'ask';
+  const selectTaskMode = (mode: TaskMode) => { setPlanOn(mode === 'plan'); setResearchOn(mode === 'research'); };
+  React.useEffect(() => { if (!researchAvailable) setResearchOn(false); }, [researchAvailable]);
   const [files, setFiles] = React.useState<{ project: string; list: string[] } | null>(null);
   const [skills, setSkills] = React.useState<{ name: string; description: string }[] | null>(null);
+  const suggestionId = React.useId();
   const [sel, setSel] = React.useState(0);
   const [caret, setCaret] = React.useState(0);
   const text = useDraft();
@@ -170,7 +178,7 @@ export function Composer({ autoFocus, className }: { autoFocus?: boolean; classN
 
   // Mention / command detection at the caret.
   const before = text.slice(0, caret);
-  const at = everyday ? null : /(^|\s)@([^\s@]*)$/.exec(before);
+  const at = !s.workdir ? null : /(^|\s)@([^\s@]*)$/.exec(before);
   const slash = everyday ? null : /^\/([\w-]*)$/.exec(before);
   React.useEffect(() => {
     if (at && s.workdir && (!files || files.project !== s.workdir)) s.hub.call<string[]>('listFiles', s.workdir).then((list) => setFiles({ project: s.workdir!, list })).catch(() => setFiles({ project: s.workdir!, list: [] }));
@@ -183,13 +191,35 @@ export function Composer({ autoFocus, className }: { autoFocus?: boolean; classN
     requestAnimationFrame(() => { const el = ref.current; if (el) { const pos = start + insert.length; el.focus(); el.setSelectionRange(pos, pos); setCaret(pos); } });
   };
 
+  const projectAttachments = React.useRef(new Map<string, string>());
+  const attachProjectFile = async (rel: string) => {
+    const target = context; const root = s.workdir; if (!root || uploadBusy.current) return;
+    const previous = attachmentDrafts.current.get(target) || [];
+    const key = `${target}:${root}:${rel}`;
+    if (previous.some((file) => file.id === projectAttachments.current.get(key))) return;
+    if (previous.length >= 8) { toast.error('Attach up to 8 files.'); return; }
+    uploadBusy.current = true; setUploading(true);
+    try {
+      const file = await s.hub.call<FileContent>('readFile', root, rel);
+      if (file.truncated) throw new Error('File is too large to load. Attach a smaller file.');
+      if (file.binary && !file.base64) throw new Error('This binary file cannot be loaded as chat context.');
+      if (!file.size) throw new Error('This file is empty. Its path is included in your message.');
+      const base64 = file.base64 || await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onerror = () => reject(new Error('Could not load file.')); reader.onload = () => resolve(String(reader.result).split(',')[1] || ''); reader.readAsDataURL(new Blob([file.content])); });
+      const [added] = await s.hub.call<Attachment[]>('addAttachments', [{ name: rel, base64 }]);
+      const current = attachmentDrafts.current.get(target) || [];
+      attachmentDrafts.current.set(target, [...current, added]); projectAttachments.current.set(key, added.id);
+      if (contextRef.current === target) setAttachments([...current, added]);
+    } catch (error) { toast.error((error as Error).message); }
+    finally { uploadBusy.current = false; setUploading(false); }
+  };
+
   let suggestions: Suggest[] = [];
   if (at && files) {
     const q = at[2].toLowerCase();
     const scored = files.list.map((f) => { const l = f.toLowerCase(); const base = l.split('/').pop() || l; const score = !q ? 1 : base.startsWith(q) ? 3 : base.includes(q) ? 2 : l.includes(q) ? 1 : 0; return { f, score }; })
       .filter((x) => x.score > 0).sort((a, b) => b.score - a.score || a.f.length - b.f.length).slice(0, 8);
     const start = caret - at[2].length - 1;
-    suggestions = scored.map(({ f }) => ({ kind: 'file', key: f, label: f, apply: () => replaceToken(start, `@${f} `) }));
+    suggestions = scored.map(({ f }) => ({ kind: 'file', key: f, label: f, hint: 'Load file', apply: () => { replaceToken(start, `@${/\s/.test(f) ? JSON.stringify(f) : f} `); void attachProjectFile(f); } }));
   } else if (slash) {
     const q = slash[1].toLowerCase();
     suggestions = [
@@ -199,22 +229,24 @@ export function Composer({ autoFocus, className }: { autoFocus?: boolean; classN
         apply: () => replaceToken(0, `Use the ${k.name} skill. `) })),
     ];
   }
-  const showSuggest = suggestions.length > 0;
+  const showSuggest = caret >= 0 && suggestions.length > 0;
   React.useEffect(() => { setSel(0); }, [showSuggest, at?.[2], slash?.[1]]);
 
   const submit = async () => {
     const raw = text.trim(); if ((!raw && !attachments.length) || uploading || !s.ready.length) return;
-    let body = raw || 'Please inspect the attached files.'; let plan = !everyday && planOn; let mode: Mode | undefined = everyday ? 'read' : undefined;
+    let body = raw || 'Please inspect the attached files.'; let plan = !everyday && planOn; let research = !everyday && researchOn; let mode: Mode | undefined = everyday ? 'read' : undefined;
     const m = everyday ? null : /^\/([\w-]+)\s*([\s\S]*)$/.exec(raw);
     if (m) {
       const c = COMMANDS.find((x) => x.name === m[1]);
       if (c?.name === 'team') { s.setDraft(m[2].trim()); s.setTeamOpen(true); return; }
-      if (c?.name === 'plan') { plan = true; body = m[2].trim(); if (!body) return; }
+      if (c?.name === 'plan') { plan = true; research = false; body = m[2].trim(); if (!body) return; }
+      else if (c?.name === 'research') { research = true; plan = false; body = m[2].trim(); if (!body) return; }
       else if (c?.text) { body = m[2].trim() ? `${c.text}\n\n${m[2].trim()}` : c.text; mode = c.mode; }
     }
+    if (research && !researchAvailable) { toast.error('Choose a coding agent with web tools for Deep research.'); return; }
     s.setDraft('');
-    const ok = await s.send(body, { plan, mode, attachments: attachments.map((file) => file.id) });
-    if (!ok) s.setDraft(raw); else { changeAttachments([]); setPlanOn(false); }
+    const ok = await s.send(body, { plan, research, mode, attachments: attachments.map((file) => file.id) });
+    if (!ok) s.setDraft(raw); else { changeAttachments([]); selectTaskMode('ask'); }
   };
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -232,10 +264,11 @@ export function Composer({ autoFocus, className }: { autoFocus?: boolean; classN
   const workspaceToggle = (s.project && <Tooltip><TooltipTrigger asChild>
             <InputGroupButton size="icon-sm" variant="ghost" aria-label="Workspace" aria-pressed={s.panel.open} onClick={() => { s.setWorkspaceExpanded(false); s.setPanel({ ...s.panel, open: !s.panel.open }); }}><PanelRight /></InputGroupButton>
           </TooltipTrigger><TooltipContent>{s.panel.open ? 'Hide workspace' : 'Open workspace'} <ShortcutLabel action="workspace" /></TooltipContent></Tooltip>);
+  const teamToggle = !everyday && s.project && <Tooltip><TooltipTrigger asChild><InputGroupButton size="icon-sm" variant="ghost" aria-label="Create agent team" onClick={() => s.setTeamOpen(true)}><Users /></InputGroupButton></TooltipTrigger><TooltipContent>Create agent team <ShortcutLabel action="team" /></TooltipContent></Tooltip>;
   const agentControls = <><AgentPicker />
           <ModelPicker />
-          {!everyday && <><ModePicker />{planOn && <span className="px-2 text-xs text-muted-foreground">Plan first</span>}</>}</>;
-  const sendActions = (<div className="ml-auto flex items-center gap-1">
+          {!everyday && <><TaskModePicker value={taskMode} onChange={selectTaskMode} compact={s.codeLayout} researchAvailable={researchAvailable} /><ModePicker readOnly={planOn || researchOn} /></>}</>;
+  const sendActions = (<div className="ml-auto flex shrink-0 items-center gap-1">
             {s.running && <Button size="icon-sm" variant="secondary" className="rounded-full" onClick={s.stop} aria-label="Stop"><Square className="fill-current" /></Button>}
             {(!s.running || !!text.trim() || attachments.length > 0) && (
               <Tooltip><TooltipTrigger asChild>
@@ -251,13 +284,13 @@ export function Composer({ autoFocus, className }: { autoFocus?: boolean; classN
       <ChatReviewBar />
       <QueuedMessages />
       {showSuggest && (
-        <div role="listbox" aria-label={at ? 'Files' : 'Commands and skills'} className="absolute right-0 bottom-full left-0 z-20 mb-2 max-h-72 overflow-auto rounded-xl border bg-popover p-1 shadow-lg">
-          <div className="px-2 pt-1 pb-1.5 text-xs font-medium text-muted-foreground">{at ? 'Mention a file' : 'Commands and skills'}</div>
+        <div id={suggestionId} role="listbox" aria-label={at ? 'Files' : 'Commands and skills'} className="absolute right-0 bottom-full left-0 z-20 mb-2 max-h-72 overflow-auto rounded-xl border bg-popover p-1 shadow-lg">
+          <div className="px-2 pt-1 pb-1.5 text-xs font-medium text-muted-foreground">{at ? 'Add a project file' : 'Commands and skills'}</div>
           {suggestions.map((x, i) => (
-            <button key={x.key} role="option" aria-selected={i === sel} onMouseDown={(e) => { e.preventDefault(); x.apply(); }} onMouseEnter={() => setSel(i)}
-              className={cn('flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-sm', i === sel && 'bg-accent')}>
+            <button id={`${suggestionId}-${i}`} key={x.key} role="option" aria-selected={i === sel} onMouseDown={(e) => e.preventDefault()} onClick={x.apply} onMouseEnter={() => setSel(i)}
+              className={cn('flex w-full items-center gap-2.5 rounded-lg px-2 py-1.5 text-left text-sm max-sm:min-h-11', i === sel && 'bg-accent')}>
               {x.kind === 'file' ? <FileTypeIcon path={x.label} /> : x.kind === 'skill' ? <Sparkles className="size-4 shrink-0 text-muted-foreground" /> : <ListTodo className="size-4 shrink-0 text-muted-foreground" />}
-              <span className={cn('shrink-0', x.kind === 'file' && 'font-mono text-[12.5px]')}>{x.label}</span>
+              <span className={cn('min-w-0 truncate', x.kind === 'file' && 'font-mono text-[12.5px]')}>{x.label}</span>
               {x.hint && <span className="truncate text-xs text-muted-foreground">{x.hint}</span>}
             </button>
           ))}
@@ -265,7 +298,7 @@ export function Composer({ autoFocus, className }: { autoFocus?: boolean; classN
       )}
       {/* shadcn fades the group when any child is disabled; only fade it when the text box is. */}
       <InputGroup className={cn('composer-surface h-auto rounded-[22px] bg-card shadow-sm has-[[data-slot=input-group-control]:focus-visible]:ring-2 has-[[data-slot=input-group-control]:focus-visible]:ring-foreground/15 has-[[data-slot=input-group-control]:focus-visible]:border-foreground/40 transition-shadow has-disabled:bg-card has-disabled:opacity-100 has-[textarea:focus]:shadow-md dark:bg-card', disabled && 'opacity-60', (s.codeLayout || chatView) && 'rounded-xl shadow-none has-[textarea:focus]:shadow-none', chatView && 'chat-message-box')}>
-        {chatView && <InputGroupAddon align="inline-start" className="shrink-0 p-1"><ComposerTools everyday={everyday} planOn={planOn} setPlanOn={setPlanOn} focusMessage={() => ref.current?.focus()} onAttach={() => picker.current?.click()} /></InputGroupAddon>}
+        {chatView && <InputGroupAddon align="inline-start" className="shrink-0 p-1"><ComposerTools everyday={everyday} planOn={planOn} setPlanOn={(value) => selectTaskMode(value ? 'plan' : 'ask')} researchOn={researchOn} setResearchOn={(value) => selectTaskMode(value ? 'research' : 'ask')} researchAvailable={researchAvailable} focusMessage={() => ref.current?.focus()} onAttach={() => picker.current?.click()} /></InputGroupAddon>}
         <InputGroupTextarea
           ref={ref}
           value={text}
@@ -275,19 +308,21 @@ export function Composer({ autoFocus, className }: { autoFocus?: boolean; classN
           onKeyDown={onKeyDown}
           disabled={disabled}
           rows={1}
-          placeholder={disabled ? (s.st?.scanningAgents ? 'Finding assistants…' : 'Connect an assistant in Settings to begin.') : everyday ? 'Ask a follow-up or request a change…' : planOn ? `Describe the task. ${s.agent.name} will plan first…` : 'Ask anything…'}
+          placeholder={disabled ? (s.st?.scanningAgents ? 'Finding assistants…' : 'Connect an assistant in Settings to begin.') : everyday ? 'Ask a follow-up or request a change…' : researchOn ? 'What would you like to research?' : planOn ? `Describe the task. ${s.agent.name} will plan first…` : 'Ask anything…'}
           aria-label="Message"
+          aria-autocomplete="list" aria-controls={showSuggest ? suggestionId : undefined} aria-activedescendant={showSuggest ? `${suggestionId}-${sel}` : undefined}
           className={cn("max-h-64 min-h-14 px-4 pt-3.5 text-[0.9375rem]", s.codeLayout && "min-h-11 px-3 pt-3 text-sm", chatView && "min-h-11 px-2 py-3 text-[13px]")}
         />
         {!chatView && <InputGroupAddon align="block-end" className={cn("flex-wrap gap-1 pb-2", s.codeLayout && "composer-toolbar px-2 pt-0 pb-1.5")}>
-          <ComposerTools everyday={everyday} planOn={planOn} setPlanOn={setPlanOn} focusMessage={() => ref.current?.focus()} onAttach={() => picker.current?.click()} />
+          <ComposerTools everyday={everyday} planOn={planOn} setPlanOn={(value) => selectTaskMode(value ? 'plan' : 'ask')} researchOn={researchOn} setResearchOn={(value) => selectTaskMode(value ? 'research' : 'ask')} researchAvailable={researchAvailable} focusMessage={() => ref.current?.focus()} onAttach={() => picker.current?.click()} />
           {workspaceToggle}
+          {teamToggle}
           {agentControls}
           {sendActions}
         </InputGroupAddon>}
         {chatView && <InputGroupAddon align="inline-end" className="shrink-0 p-1">{sendActions}</InputGroupAddon>}
       </InputGroup>
-      {chatView && <div className="chat-composer-options mt-1 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">{workspaceToggle}<div className="ml-auto flex flex-wrap items-center justify-end gap-0.5">{agentControls}</div></div>}
+      {chatView && <div className="chat-composer-options mt-1 flex flex-wrap items-center gap-1 text-xs text-muted-foreground">{workspaceToggle}{teamToggle}<div className="ml-auto flex flex-wrap items-center justify-end gap-0.5">{agentControls}</div></div>}
     </div>
   );
 }

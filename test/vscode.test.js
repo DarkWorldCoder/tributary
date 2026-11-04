@@ -22,6 +22,14 @@ test('packaged shared core creates team keys outside the source checkout', () =>
       const publicKey = await team.createKey();
       assert.match(publicKey, /^age1[02-9ac-hj-np-z]{58}$/);
       assert.equal(await team.key(), publicKey);
+      const fs = require('node:fs'); const path = require('node:path');
+      const project = path.resolve('format-project'); fs.mkdirSync(project);
+      fs.writeFileSync(path.join(project, '.prettierrc.json'), JSON.stringify({ singleQuote: true, semi: false }));
+      fs.writeFileSync(path.join(project, 'main.js'), 'const value=1;');
+      const text = await require('./core/project-format').formatProjectSource(project, 'main.js', 'const value=2;', true);
+      assert.equal(text, 'const value = 2' + String.fromCharCode(10));
+      const workspace = require('./core/workspace-file'); const filename = path.resolve('saved.code-workspace');
+      assert.deepEqual(workspace.parseWorkspace(filename, workspace.serializeWorkspace(filename, [project])), [project]);
       console.log('ok');
     })().catch(() => process.exit(1));
   `], { cwd: isolated, encoding: 'utf8', env: { ...process.env, NODE_PATH: '' } });
@@ -119,7 +127,7 @@ test('VS Code extension: activates, serves the UI with the bridge, and answers h
 test('the desktop app allows the same registry, thread status, separate copy and permission calls as the extension', () => {
   const block = (file) => { const src = fs.readFileSync(path.join(__dirname, '..', file), 'utf8'); return src.slice(src.indexOf('const API = {'), src.indexOf('\n};', src.indexOf('const API = {'))); };
   for (const file of ['desktop/main.js', 'vscode/extension.js']) {
-    for (const m of ['registry', 'installRegistryAgent', 'removeRegistryAgent', 'markThreadSeen', 'activity', 'judgeRace', 'lineAuthors', 'revertTurnHunk', 'createWorktree', 'worktreeStatus', 'mergeWorktree', 'discardWorktree', 'runSetup', 'trustScript', 'conversationDiff', 'reviewChanges', 'resolveCopyConflicts', 'abortCopyMerge', 'runVerify', 'attention', 'permissions', 'answerPermission', 'createPullRequest', 'pushPullRequest', 'pullRequestStatus', 'fixFailingChecks']) assert.match(block(file), new RegExp(`\\b${m}: \\(`), `${file} exposes ${m}`);
+    for (const m of ['registry', 'installRegistryAgent', 'removeRegistryAgent', 'markThreadSeen', 'activity', 'judgeRace', 'lineAuthors', 'revertTurnHunk', 'createWorktree', 'worktreeStatus', 'mergeWorktree', 'discardWorktree', 'runSetup', 'trustScript', 'conversationDiff', 'reviewChanges', 'resolveCopyConflicts', 'abortCopyMerge', 'runVerify', 'attention', 'permissions', 'answerPermission', 'createPullRequest', 'pushPullRequest', 'pullRequestStatus', 'fixFailingChecks', 'draft', 'saveDraft', 'compareDraft']) assert.match(block(file), new RegExp(`\\b${m}: \\(`), `${file} exposes ${m}`);
     // Files in a conversation's separate copy open like files in the project.
     assert.match(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'), /const knownProject = \(p\) => \{ if \(!hub\.isWorkspace\(p\)\)/, `${file} accepts separate copies`);
   }

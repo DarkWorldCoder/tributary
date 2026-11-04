@@ -107,4 +107,10 @@ async function changedBetween(root, fromCommit, toCommit, { host = localHost } =
   return res;
 }
 
-module.exports = { snapshotTree, createCheckpoint, restoreCheckpoint, diffSince, diffBetween, changedBetween };
+async function changeStatsBetween(root, fromCommit, toCommit, { host = localHost } = {}) {
+  const to = toCommit ? `${toCommit}^{tree}` : await snapshotTree(root, { host });
+  const out = await git(host, root, ['diff', '--numstat', '-z', '--no-renames', `${fromCommit}^{tree}`, to], { env: await storeEnv(root, host) });
+  return require('./change-stats').parseNumstat(out);
+}
+
+module.exports = { changeStatsBetween, snapshotTree, createCheckpoint, restoreCheckpoint, diffSince, diffBetween, changedBetween };

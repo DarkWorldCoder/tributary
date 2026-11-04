@@ -227,3 +227,20 @@ Leave out `TRIBUTARY_SMOKE_CLICKS` to capture the request while it is still wait
 - [docs/COORDINATION_AND_MEMORY.md](docs/COORDINATION_AND_MEMORY.md): conflict-aware memory, team history, live file views and connector diagnostics.
 - [docs/FEATURE_STATUS.md](docs/FEATURE_STATUS.md): all 80 roadmap candidates, their implemented scope and remaining work.
 - [docs/TOOL_APPROVAL.md](docs/TOOL_APPROVAL.md): how tool approval works for ACP agents, and how Claude Code's stdio control protocol and `codex app-server` would plug into it.
+
+### Distribution builds
+
+[Download preview releases](https://github.com/DarkWorldCoder/tributary/releases).
+The repository is private, so downloads currently require repository access.
+
+The Distribution workflow builds macOS (Intel and Apple Silicon), Windows
+(x64 and ARM64), and Linux (x64 and ARM64), then verifies the packaged runtime
+and publishes downloads with SHA-256 checksums. Release tags must match the
+package version, for example `v0.1.0`. A release is published only after all six
+builds pass.
+
+Local packaging: `npm ci`, `npm ci --prefix ui`, then `npm run dist:mac`,
+`npm run dist:win`, or `npm run dist:linux` on the corresponding OS.
+See [preview release notes](docs/releases/preview.md) for formats, requirements
+and the current signing limitations. These are preview builds, not notarized
+or developer-signed production installers.

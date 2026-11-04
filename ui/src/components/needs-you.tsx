@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useStore } from '@/store';
+import { ShortcutLabel } from '@/components/shortcut-settings';
 
 // What needs you across every project (hub.attention): approvals, failures (a turn or its checks), and finished work
 // you have not looked at, most urgent first. The chip jumps to the next one, and so does Mod+Shift+J.
@@ -39,7 +40,7 @@ export function NeedsYou() {
       </Button>
     </TooltipTrigger><TooltipContent side="left" className="max-w-80">
       <ul className="space-y-0.5">{others.slice(0, 6).map((x) => <li key={x.threadId}>{x.title}: {VERB[x.status]}</li>)}</ul>
-      <p className="mt-1 opacity-70">Click, or press Ctrl+Shift+J, for the next one.</p>
+      <p className="mt-1 opacity-70">Next chat <ShortcutLabel action="attention" /></p>
     </TooltipContent></Tooltip>
   );
 }

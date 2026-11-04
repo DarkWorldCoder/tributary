@@ -11,27 +11,29 @@ import type { ModelCatalog } from '@/types';
 
 export function ModelPicker() {
   const s = useStore(); const [open, setOpen] = React.useState(false);
-  const [catalog, setCatalog] = React.useState<ModelCatalog | null>(null);
+  const [loadedCatalog, setCatalog] = React.useState<ModelCatalog | null>(null);
+  const [catalogKey, setCatalogKey] = React.useState('');
   const [busy, setBusy] = React.useState(false); const [custom, setCustom] = React.useState(''); const [error, setError] = React.useState('');
   const sequence = React.useRef(0); const cache = React.useRef(new Map<string, ModelCatalog>());
   const source = s.agent.connectionId || s.gatewayId || '';
   const gateway = s.st?.gateways.find((g) => g.id === source);
   const key = `${s.agentId}@${source}@${gateway?.baseUrl || ''}@${gateway?.model || ''}`;
+  const catalog = catalogKey === key ? loadedCatalog : null;
   const activeKey = React.useRef(key); activeKey.current = key;
   const load = React.useCallback(async () => {
     const request = ++sequence.current; setBusy(true); setError('');
     try {
       const result = await s.hub.call<ModelCatalog>('modelCatalog', s.agentId, source || null);
       if (request !== sequence.current || activeKey.current !== key) return;
-      setCatalog(result); if (!result.error) cache.current.set(key, result);
+      setCatalog(result); setCatalogKey(key); if (!result.error) cache.current.set(key, result);
     } catch { if (request === sequence.current) setError('Could not load models. Check your connection and try Refresh.'); }
     finally { if (request === sequence.current) setBusy(false); }
   }, [s.agentId, s.hub, source, key]);
   React.useEffect(() => {
-    setCatalog(null); setCustom(''); setError('');
-    if (open) { const saved = cache.current.get(key); if (saved && Date.now() - saved.updatedAt < 300000) { setCatalog(saved); setBusy(false); } else load(); }
+    setCustom(''); setError(''); if (!open) setBusy(false);
+    if (open || s.selectedModel) { const saved = cache.current.get(key); if (saved && Date.now() - saved.updatedAt < 300000) { setCatalog(saved); setCatalogKey(key); setBusy(false); } else load(); }
     return () => { sequence.current++; };
-  }, [open, key, load]);
+  }, [open, key, load, s.selectedModel]);
   const choose = (id: string) => { s.setSelectedModel(id); setOpen(false); };
   const selected = catalog?.models.find((m) => m.id === s.selectedModel);
   const name = s.selectedModel ? selected?.name || s.selectedModel : 'Automatic';
@@ -42,7 +44,7 @@ export function ModelPicker() {
       <Command className="min-h-0 flex-1"><CommandInput placeholder="Find a model…" /><CommandList className="max-h-64">
         <CommandEmpty>No matching models.</CommandEmpty>
         <CommandGroup heading="Default"><CommandItem value="Automatic default" onSelect={() => choose('')}><Cpu /><span className="flex-1">Automatic</span>{!s.selectedModel && <Check />}</CommandItem></CommandGroup>
-        {!!catalog?.models.length && <CommandGroup heading={catalog.source === 'aliases' ? 'Claude model aliases' : catalog.source === 'codex' ? 'Codex model catalog' : catalog.source === 'antigravity' ? 'Antigravity models' : 'Provider models'}>{catalog.models.map((model) => <CommandItem key={model.id} value={`${model.name} ${model.id}`} onSelect={() => choose(model.id)}><div className="min-w-0 flex-1"><p className="truncate">{model.name}</p>{model.id !== model.name && <p className="truncate text-xs text-muted-foreground">{model.id}</p>}{model.hidden && <span className="text-xs text-muted-foreground">Additional model</span>}</div>{s.selectedModel === model.id && <Check />}</CommandItem>)}</CommandGroup>}
+        {!!catalog?.models.length && <CommandGroup heading={catalog.source === 'aliases' ? 'Claude model aliases' : catalog.source === 'claude' ? 'Claude Code models' : catalog.source === 'codex' ? 'Codex model catalog' : catalog.source === 'antigravity' ? 'Antigravity models' : 'Provider models'}>{catalog.models.map((model) => <CommandItem key={model.id} value={`${model.name} ${model.id}`} onSelect={() => choose(model.id)}><div className="min-w-0 flex-1"><p className="truncate">{model.name}</p>{model.id !== model.name && <p className="truncate text-xs text-muted-foreground" title={model.resolvedModel || model.id}>{model.resolvedModel || model.id}</p>}{model.hidden && <span className="text-xs text-muted-foreground">Additional model</span>}</div>{s.selectedModel === model.id && <Check />}</CommandItem>)}</CommandGroup>}
         {s.selectedModel && !selected && <CommandGroup heading="Your selection"><CommandItem value={s.selectedModel} onSelect={() => choose(s.selectedModel)}><span className="min-w-0 flex-1 truncate">{s.selectedModel}</span><Check /></CommandItem></CommandGroup>}
       </CommandList></Command>
       <div className="shrink-0 border-t p-3">

@@ -1,13 +1,20 @@
+import type { ShortcutAction } from '../../../core/shortcuts.mjs';
+import { ShortcutLabel, ShortcutKeys } from '@/components/shortcut-settings';
+import { useShortcutPreferences } from '@/hooks/use-shortcut-preferences';
 import * as React from 'react';
-import { ArrowLeft, ArrowRight, Minus, PanelLeft, Square, Copy, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Maximize, Minimize, Minus, PanelLeft, Square, Copy, X } from 'lucide-react';
 import { Menubar } from 'radix-ui';
 import { useStore } from '@/store';
+import { useFullscreen } from '@/hooks/use-fullscreen';
 import { useSidebar } from '@/components/ui/sidebar';
 import { toast } from 'sonner';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 /** Desktop-only window chrome; native Mac menus and the VS Code host remain in control there. */
 export function DesktopTitlebar() {
+  const { platform } = useShortcutPreferences();
   const s = useStore(); const { toggleSidebar } = useSidebar();
+  const fullscreen = useFullscreen();
   const [maximized, setMaximized] = React.useState(false);
   const editTarget = React.useRef<HTMLElement | null>(null);
   const history = React.useRef<string[]>([]); const position = React.useRef(-1); const navigating = React.useRef(false);
@@ -36,7 +43,11 @@ export function DesktopTitlebar() {
     try { await s.openThread(id); position.current = next; refresh(); } catch { navigating.current = false; toast.error('Could not open chat'); }
   };
   const windowAction = (action: string) => void s.hub.call('windowAction', action).catch(() => toast.error('Window action unavailable'));
-  const item = (label: string, action: () => void, disabled = false) => <Menubar.Item key={label} disabled={disabled} onSelect={action} className="flex min-h-8 cursor-default items-center rounded px-2.5 text-[13px] outline-none data-highlighted:bg-accent data-disabled:opacity-40">{label}</Menubar.Item>;
+  const openWorkspace = () => { void s.hub.call<string | null>('openWorkspace').then(async (root) => { if (root) { await s.refreshState(); s.newThread(root); } }).catch((error) => toast.error(error.message)); };
+  const addFolders = () => { if (!s.project) return; const root = s.project; void s.hub.call<string[]>('pickFolders').then(async (folders) => { if (!folders.length) return; const state = await s.hub.call<import('@/types').HubState>('state'); const owner = state.projects.find((project) => project.path === root); if (!owner) return; await s.hub.call('setProjectFolders', root, [...(owner.folders || []), ...folders]); await s.refreshState(); }).catch((error) => toast.error(error.message)); };
+  const shortcutActions: Record<string, ShortcutAction> = { 'New chat': 'new', 'Open recent…': 'recent', Settings: 'settings', 'Project sidebar': 'sidebar', Workspace: 'workspace', Terminal: 'terminal', 'Project room': 'room', 'Agent teams': 'team', 'Live activity': 'activity', 'Keyboard shortcuts': 'help', Debugger: 'debug', 'Focus workspace': 'zoom-workspace', 'Restore layout': 'zoom-workspace', 'Full screen': 'fullscreen', 'Exit full screen': 'fullscreen' };
+  const editKeys: Record<string, string[]> = { Undo: ['Mod', 'Z'], Redo: platform === 'mac' ? ['Mod', 'Shift', 'Z'] : ['Mod', 'Y'], Cut: ['Mod', 'X'], Copy: ['Mod', 'C'], Paste: ['Mod', 'V'], 'Select all': ['Mod', 'A'] };
+  const item = (label: string, action: () => void, disabled = false) => <Menubar.Item key={label} disabled={disabled} onSelect={action} className="flex min-h-8 cursor-default items-center gap-6 rounded px-2.5 text-[13px] outline-none data-highlighted:bg-accent data-disabled:opacity-40"><span className="flex-1">{label}</span>{shortcutActions[label] ? <ShortcutLabel action={shortcutActions[label]} /> : editKeys[label] ? <ShortcutKeys keys={editKeys[label]} platform={platform} /> : null}</Menubar.Item>;
   const menu = (label: string, children: React.ReactNode) => <Menubar.Menu><Menubar.Trigger className="h-7 rounded px-2 text-xs text-muted-foreground outline-none hover:bg-muted data-[state=open]:bg-muted focus-visible:ring-1 focus-visible:ring-ring">{label}</Menubar.Trigger><Menubar.Portal><Menubar.Content align="start" sideOffset={4} className="z-50 min-w-48 rounded-lg border bg-popover p-1 text-popover-foreground shadow-lg">{children}</Menubar.Content></Menubar.Portal></Menubar.Menu>;
   const edit = (action: string) => {
     // Let application editors handle their own history; native text inputs keep the OS edit commands.
@@ -48,16 +59,17 @@ export function DesktopTitlebar() {
     <div className="flex items-center gap-0.5" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
       <button className="titlebar-button" aria-label="Previous chat" disabled={position.current < 1} onClick={() => void navigate(-1)}><ArrowLeft /></button>
       <button className="titlebar-button" aria-label="Next chat" disabled={position.current >= history.current.length - 1} onClick={() => void navigate(1)}><ArrowRight /></button>
-      <button className="titlebar-button" aria-label="Toggle project sidebar" onClick={toggleSidebar}><PanelLeft /></button>
+      <Tooltip><TooltipTrigger asChild><button className="titlebar-button" aria-label="Toggle project sidebar" onClick={toggleSidebar}><PanelLeft /></button></TooltipTrigger><TooltipContent>Project sidebar <ShortcutLabel action="sidebar" /></TooltipContent></Tooltip>
       <Menubar.Root className="flex items-center" aria-label="Application menu" onPointerDownCapture={() => { if (document.activeElement instanceof HTMLElement && document.activeElement.matches('input,textarea,[contenteditable=true]')) editTarget.current = document.activeElement; }} onFocusCapture={(event) => { if (event.relatedTarget instanceof HTMLElement && event.relatedTarget.matches('input,textarea,[contenteditable=true]')) editTarget.current = event.relatedTarget; }}>
-        {menu('File', <>{item('New chat', () => s.newThread(), !s.project)}{item('Open project…', () => { void s.hub.call<string | null>('pickProject').then(async (path) => { if (path) { await s.refreshState(); s.newThread(path); } }).catch((e) => toast.error(e.message)); })}{item('Open recent…', () => s.setRecentOpen(true))}{item('Settings', () => s.openSettings('connections'))}</>)}
+        {menu('File', <>{item('New chat', () => s.newThread(), !s.project)}{item('Open project…', () => { void s.hub.call<string | null>('pickProject').then(async (path) => { if (path) { await s.refreshState(); s.newThread(path); } }).catch((e) => toast.error(e.message)); })}{item('Open workspace…', openWorkspace)}{item('Add folders to workspace…', addFolders, !s.project)}{item('Save workspace as…', () => { if (s.project) void s.hub.call('saveWorkspace', s.project).catch((error) => toast.error(error.message)); }, !s.project)}{item('Open recent…', () => s.setRecentOpen(true))}{item('Settings', () => s.openSettings('connections'))}</>)}
         {menu('Edit', <>{['undo', 'redo', 'cut', 'copy', 'paste', 'selectAll'].map((action) => item(action === 'selectAll' ? 'Select all' : action[0].toUpperCase() + action.slice(1), () => edit(action)))}</>)}
-        {menu('View', <>{item('Project sidebar', toggleSidebar)}{item('Workspace', () => { s.setWorkspaceExpanded(false); s.openPanel('files'); }, !s.project)}{item('Terminal', () => s.setTerminalOpen(!s.terminalOpen), !s.project)}{item('Project room', () => s.setRoomOpen(true))}{item('Agent teams', () => s.setTeamOpen(true), !s.project)}{item('Live activity', () => window.dispatchEvent(new Event('tributary:live')))}{item('Keyboard shortcuts', () => s.setShortcutsOpen(true))}</>)}
+        {menu('View', <>{item('Project sidebar', toggleSidebar)}{item('Workspace', () => { s.setWorkspaceExpanded(false); s.openPanel('files'); }, !s.project)}{item(s.workspaceExpanded ? 'Restore layout' : 'Focus workspace', () => { s.setWorkspaceExpanded(!s.panel.open || !s.workspaceExpanded); s.openPanel(s.panel.tab); }, !s.project)}{item(fullscreen.active ? 'Exit full screen' : 'Full screen', () => void fullscreen.toggle())}{item('Test results', () => s.openPanel('tests'), !s.project)}{item('Debugger', () => s.setDebugOpen(!s.debugOpen), !s.project)}{item('Terminal', () => s.setTerminalOpen(!s.terminalOpen), !s.project)}{item('Project room', () => s.setRoomOpen(true))}{item('Agent teams', () => s.setTeamOpen(true), !s.project)}{item('Live activity', () => window.dispatchEvent(new Event('tributary:live')))}{item('Keyboard shortcuts', () => s.setShortcutsOpen(true))}</>)}
         {menu('Help', <>{item('About Tributary', () => s.openSettings('about'))}</>)}
       </Menubar.Root>
     </div>
     <span className="pointer-events-none min-w-0 flex-1 truncate px-3 text-center text-xs text-muted-foreground max-sm:hidden">{s.thread?.title || 'Tributary'}</span>
     <div className="ml-auto flex h-full items-center" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
+      <Tooltip><TooltipTrigger asChild><button className="titlebar-window-button" aria-label={fullscreen.active ? 'Exit full screen' : 'Full screen'} onClick={() => void fullscreen.toggle()}>{fullscreen.active ? <Minimize /> : <Maximize />}</button></TooltipTrigger><TooltipContent>{fullscreen.active ? 'Exit full screen' : 'Full screen'} <ShortcutLabel action="fullscreen" /></TooltipContent></Tooltip>
       <button className="titlebar-window-button" aria-label="Minimize window" onClick={() => windowAction('minimize')}><Minus /></button>
       <button className="titlebar-window-button" aria-label={maximized ? 'Restore window' : 'Maximize window'} onClick={() => windowAction('maximize')}>{maximized ? <Copy /> : <Square />}</button>
       <button className="titlebar-window-button hover:bg-destructive hover:text-destructive-foreground" aria-label="Close window" onClick={() => windowAction('close')}><X /></button>

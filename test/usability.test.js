@@ -87,3 +87,40 @@ test('direct vision sends actual image content and supplied text to the provider
   const result = await runDirectTurn({ gateway: { protocol: 'openai', baseUrl: 'http://localhost:1234/v1', model: 'vision-fixture' }, prompt: 'Inspect image', images: [{ mime: 'image/png', base64: 'aGVsbG8=' }], onEvent() {} });
   assert.ok(result.ok); assert.equal(body.messages[1].content[0].text, 'Inspect image'); assert.equal(body.messages[1].content[1].image_url.url, 'data:image/png;base64,aGVsbG8=');
 });
+
+test('editor spacing follows existing indentation across languages and protects Makefile tabs', async () => {
+  const { editorSpacing } = await import('../ui/src/lib/editor-spacing.mjs');
+  assert.deepEqual(editorSpacing('src/a.rs', 'fn main() {\n    let x = 1;\n        next();\n}\n'), { useTabs: false, tabSize: 4, indentUnit: '    ' });
+  assert.equal(editorSpacing('src/a.go', 'package main\nfunc main() {\n\tfmt.Println(1)\n}').tabSize, 8);
+  assert.equal(editorSpacing('Makefile', 'all:\n    echo hi').indentUnit, '\t');
+  for (const file of ['a.py', 'a.java', 'a.cpp', 'a.cs', 'a.swift', 'a.zig']) assert.equal(editorSpacing(file).tabSize, 4, file);
+  assert.equal(editorSpacing('unknown.language', '  first\n    second').tabSize, 2);
+  const { formatDocument } = await import('../ui/src/lib/format-document.mjs');
+  assert.match(await formatDocument('a.ts', 'function a(){\n    const x=1;\n    return x\n}'), /\n    const x = 1;/);
+  assert.match(await formatDocument('a.ts', 'function a(){\n\treturn 1\n}'), /\n\treturn 1;/);
+});
+
+test('native formatting returns an undoable draft without writing files or accepting arbitrary commands', async (t) => {
+  const { formatSource } = require('../core/format-source');
+  const root = tmp(); t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const source = path.join(root, 'main.go'); fs.writeFileSync(source, 'saved version');
+  const formatter = path.join(root, 'gofmt');
+  fs.writeFileSync(formatter, `#!${process.execPath}\nlet s='';process.stdin.on('data',x=>s+=x);process.stdin.on('end',()=>process.stdout.write(s.replace('x=1','x = 1')));`); fs.chmodSync(formatter, 0o700);
+  assert.equal(await formatSource(root, 'main.go', 'x=1', { env: { ...process.env, PATH: root } }), 'x = 1');
+  assert.equal(fs.readFileSync(source, 'utf8'), 'saved version');
+  await assert.rejects(formatSource(root, '../escape.go', 'x'), /outside/);
+  fs.writeFileSync(path.join(root, 'unknown.foo'), 'x');
+  await assert.rejects(formatSource(root, 'unknown.foo', 'x'), /No formatter/);
+  await assert.rejects(formatSource(root, 'main.go', 'x', { env: { ...process.env, PATH: '/missing' } }), /Install gofmt/);
+  fs.writeFileSync(formatter, `#!${process.execPath}\nprocess.stderr.write('invalid syntax');process.exit(2)`);
+  await assert.rejects(formatSource(root, 'main.go', 'broken', { env: { ...process.env, PATH: root } }), /invalid syntax/);
+  assert.equal(fs.readFileSync(source, 'utf8'), 'saved version');
+});
+
+test('source attachments support common language files while keeping binaries distinct', (t) => {
+  const root = tmp(); t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  for (const name of ['code.cpp', 'main.java', 'file.zig', 'style.scss', 'Makefile', '.editorconfig']) {
+    const [file] = files.add(root, [{ name, base64: Buffer.from('source reference').toString('base64') }]); assert.equal(file.mime, 'text/plain', name);
+  }
+  assert.equal(files.add(root, [{ name: 'binary.cpp', base64: Buffer.from([0, 1, 2]).toString('base64') }])[0].mime, 'application/octet-stream');
+});

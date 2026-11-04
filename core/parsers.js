@@ -30,6 +30,14 @@ function claudeStream() {
   const streamedMsgs = new Set();
   const toolNames = new Map();
   const blocks = new Map();
+  const textBlocks = new Set();
+  let messageNumber = 0; let textTail = '';
+  const textEvent = (text, key) => {
+    const first = !textBlocks.has(key); textBlocks.add(key);
+    const separator = first && textTail ? (textTail.endsWith('\n\n') || text.startsWith('\n\n') ? '' : textTail.endsWith('\n') || text.startsWith('\n') ? '\n' : '\n\n') : '';
+    textTail = (textTail + separator + text).slice(-2);
+    return { kind: 'text', text: separator + text };
+  };
   const taskCalls = new Map(); const tasks = new Map();
   const taskPlan = () => ({ kind: 'plan', items: [...tasks.values()].slice(0, 100).map((task) => ({ text: task.status === 'in_progress' && task.activeForm ? task.activeForm : task.subject, done: task.status === 'completed' })) });
   return (o) => {
@@ -48,13 +56,14 @@ function claudeStream() {
         break;
       case 'stream_event': {
         const e = o.event || {};
-        if (e.type === 'message_start' && e.message) { streamedMsgs.add(e.message.id); blocks.clear(); }
+        if (e.type === 'message_start' && e.message) { streamedMsgs.add(e.message.id); messageNumber++; blocks.clear(); }
+        if (e.type === 'content_block_start' && e.content_block?.type === 'text' && e.content_block.text) out.push(textEvent(e.content_block.text, `stream:${messageNumber}:${e.index ?? 0}`));
         if (e.type === 'content_block_start' && e.content_block?.type === 'tool_use') {
           const block = e.content_block; blocks.set(e.index, { id: block.id, name: block.name, input: block.input, json: '' }); toolNames.set(block.id, block.name);
           out.push({ kind: 'tool', id: block.id, name: block.name, input: block.input, status: 'running' });
         }
         if (e.type === 'content_block_delta' && e.delta) {
-          if (e.delta.type === 'text_delta' && e.delta.text) out.push({ kind: 'text', text: e.delta.text });
+          if (e.delta.type === 'text_delta' && e.delta.text) out.push(textEvent(e.delta.text, `stream:${messageNumber}:${e.index ?? 0}`));
           if (e.delta.type === 'thinking_delta' && e.delta.thinking) out.push({ kind: 'thinking', text: e.delta.thinking });
           if (e.delta.type === 'input_json_delta' && blocks.has(e.index)) {
             const block = blocks.get(e.index); block.json = (block.json + (e.delta.partial_json || '')).slice(0, 64000);
@@ -69,8 +78,10 @@ function claudeStream() {
       }
       case 'assistant': {
         const m = o.message || {};
-        for (const b of m.content || []) {
-          if (b.type === 'text' && !streamedMsgs.has(m.id) && b.text) out.push({ kind: 'text', text: b.text });
+        const snapshot = m.id || `anonymous:${++messageNumber}`;
+        for (const [index, b] of (m.content || []).entries()) {
+          const key = `snapshot:${snapshot}:${index}`;
+          if (b.type === 'text' && !streamedMsgs.has(m.id) && b.text && !textBlocks.has(key)) out.push(textEvent(b.text, key));
           if (b.type === 'tool_use') {
             toolNames.set(b.id, b.name);
             out.push({ kind: 'tool', id: b.id, name: b.name, input: b.input, status: 'running' });

@@ -1,10 +1,26 @@
+import { WorkspaceFolderRow } from '@/components/workspace-folder-row';
+import { useWorkspaceGit, WorkspaceChangeList, WorkspaceFileChange } from '@/components/workspace-changes';
+import { workspaceChanges } from '@/lib/workspace-changes.mjs';
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
+import { FormatProjectDialog } from '@/components/format-project-dialog';
+import { ExplorerOutline } from '@/components/explorer-outline';
+import { explorerDecorations } from '@/lib/explorer-decorations.mjs';
+import { configuredLanguage } from '@/lib/language-tools';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { LineChangeCount } from '@/components/line-change-count';
+import { sourceLanguage } from '@/lib/source-language.mjs';
+import { editorSpacing } from '@/lib/editor-spacing.mjs';
+import { DebugSidebar, DebugControls } from '@/components/debug-sidebar';
+import { ShortcutKeys } from '@/components/shortcut-settings';
+import { useShortcutPreferences } from '@/hooks/use-shortcut-preferences';
 import { DocumentOutline } from '@/components/document-outline';
 import * as React from 'react';
 import { toast } from 'sonner';
-import { Copy, CircleAlert, SquareTerminal, WandSparkles, Check, ChevronRight, Circle, Ellipsis, Eye, FolderOpen, Image as ImageIcon, PanelLeftClose, PanelLeftOpen, Pencil, Pin, RefreshCw, RotateCw, Save, Search, SquareArrowOutUpRight, WrapText, X } from 'lucide-react';
+import { GitCompareArrows, Bug, Copy, CircleAlert, SquareTerminal, WandSparkles, Check, ChevronRight, Circle, Ellipsis, Eye, FolderOpen, Image as ImageIcon, PanelLeftClose, PanelLeftOpen, Pencil, Pin, RefreshCw, RotateCw, Save, Search, Undo2, Redo2, SquareArrowOutUpRight, WrapText, X } from 'lucide-react';
 import type { PanelImperativeHandle } from 'react-resizable-panels';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Empty, EmptyContent, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
@@ -12,7 +28,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/componen
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { CodeEditor } from '@/components/code-editor';
+import { CodeEditor, type EditorHistory } from '@/components/code-editor';
 import { FileTypeIcon } from '@/components/file-type-icon';
 import { FolderTypeIcon } from '@/components/folder-type-icon';
 import { DirectoryTree } from '@/components/directory-tree';
@@ -21,13 +37,15 @@ import { ProjectMenu } from '@/components/project-menu';
 import { ImagePreview } from '@/components/image-preview';
 import { ProjectChecks } from '@/components/project-checks';
 import { FileSwitcher } from '@/components/file-switcher';
+import { FileDiff } from '@/components/file-diff';
+import { draftWriter, fileSession, savedFileSession } from '@/lib/drafts.mjs';
 import { folderChains } from '@/lib/workbench-navigation.mjs';
 import { imageMime, imageSource } from '@/lib/image-preview.mjs';
 import { projectProfile } from '@/lib/project-profile.mjs';
 import { rememberFile } from '@/lib/recent-work.mjs';
 import { closeFileTabs, fileTabLabel, openFileTab } from '@/lib/workspace-tabs.mjs';
 import { cn } from '@/lib/utils';
-import { formatParser } from '@/lib/format-document.mjs';
+import { formatParser, nativeFormatTool, formattingHint } from '@/lib/format-document.mjs';
 import { useRunInTerminal } from '@/hooks/use-run-in-terminal';
 import { useStore } from '@/store';
 import type { FileContent, ProjectCheckResult } from '@/types';
@@ -47,22 +65,23 @@ function buildTree(files: string[]): Node[] {
   const sort = (n: Node) => { n.children.sort((a, b) => Number(b.dir) - Number(a.dir) || a.name.localeCompare(b.name)); n.children.forEach(sort); };
   sort(root); return root.children;
 }
-function TreeNode({ n, depth, open, toggle, active, onOpen, loading }: { n: Node; depth: number; open: Set<string>; toggle: (p: string) => void; active: string | null; onOpen: (p: string, intent?: OpenIntent) => void; loading?: string | null }) {
+function TreeNode({ n, depth, open, toggle, active, onOpen, loading, decorations }: { decorations?: ReturnType<typeof explorerDecorations>; n: Node; depth: number; open: Set<string>; toggle: (p: string) => void; active: string | null; onOpen: (p: string, intent?: OpenIntent) => void; loading?: string | null }) {
   const isOpen = open.has(n.path);
   return (
     <>
       <button onClick={() => (n.dir ? toggle(n.path) : onOpen(n.path))} aria-expanded={n.dir ? isOpen : undefined} aria-current={!n.dir && active === n.path ? 'page' : undefined} aria-busy={!n.dir && loading === n.path} onDoubleClick={() => { if (!n.dir) onOpen(n.path, 'pinned'); }} title={n.path}
         className={cn('explorer-row flex w-full items-center gap-1.5 rounded-md h-8 min-h-8 max-sm:h-11 max-sm:min-h-11 pr-2 text-left text-[13px] hover:bg-muted/70', active === n.path && 'bg-accent text-accent-foreground')} style={{ paddingLeft: 6 + depth * 12 }}>
         {n.dir ? <ChevronRight className={cn('size-4 shrink-0 text-muted-foreground transition-transform', isOpen && 'rotate-90')} /> : <span className="w-4 shrink-0" />}
-        {n.dir ? <FolderTypeIcon path={n.path} open={isOpen} /> : <FileTypeIcon path={n.path} loading={loading === n.path} />}
-        <span className="truncate">{n.name}</span>
+        {n.dir ? <FolderTypeIcon path={n.path} open={isOpen} /> : <FileTypeIcon path={n.path}  />}
+        <span className="min-w-0 flex-1 truncate">{n.name}</span>{n.dir ? decorations?.folders.has(n.path) && <span className="size-1.5 shrink-0 rounded-full bg-warning" aria-label="Contains changed files" /> : <>{decorations?.files.get(n.path)?.dirty && <span aria-label="Unsaved" className="size-1.5 shrink-0 rounded-full bg-foreground" />}{decorations?.files.get(n.path)?.code && <span aria-label={decorations.files.get(n.path)?.label} className={cn('shrink-0 font-mono text-[11px]', decorations.files.get(n.path)?.code === 'A' ? 'text-success' : decorations.files.get(n.path)?.code === 'D' ? 'text-destructive' : 'text-warning')}>{decorations.files.get(n.path)?.code}</span>}</>}
       </button>
-      {n.dir && isOpen && n.children.map((c) => <TreeNode key={c.path} n={c} depth={depth + 1} open={open} toggle={toggle} active={active} onOpen={onOpen} loading={loading} />)}
+      {n.dir && isOpen && n.children.map((c) => <TreeNode key={c.path} n={c} depth={depth + 1} open={open} toggle={toggle} active={active} onOpen={onOpen} loading={loading} decorations={decorations} />)}
     </>
   );
 }
 type OpenIntent = 'preview' | 'pinned';
-type Doc = FileContent & { text: string; dirty: boolean; pinned: boolean; mode: 'edit' | 'preview'; diskChanged?: boolean; diskError?: boolean; wrap?: boolean };
+// recovered: unsaved text brought back from an earlier session (lib/drafts.mjs).
+type Doc = FileContent & { text: string; dirty: boolean; pinned: boolean; mode: 'edit' | 'preview'; diskChanged?: boolean; diskError?: boolean; wrap?: boolean; recovered?: boolean };
 const IMAGE = /\.(png|jpe?g|gif|webp|bmp|ico|avif)$/i;
 function FilePreview({ doc, project }: { doc: Doc; project: string }) {
   const html = React.useMemo(() => (/\.html?$/i.test(doc.rel) ? URL.createObjectURL(new Blob([doc.text], { type: 'text/html' })) : null), [doc.rel, doc.text]);
@@ -75,9 +94,40 @@ function FilePreview({ doc, project }: { doc: Doc; project: string }) {
 }
 const previewable = (rel: string) => IMAGE.test(rel) || /\.(svg|md|mdx|markdown|html?)$/i.test(rel);
 
+const EMPTY_BRANCHES = new Set<string>();
+const EMPTY_CHAINS = new Map<string, string[]>();
+const DebugConsole = React.lazy(() => import('@/components/debug-panel').then((module) => ({ default: module.DebugPanel })));
+
 // This component is kept mounted separately for every visited project in this session.
 export function FilesTab({ project, visible }: { project: string; visible: boolean }) {
   const s = useStore();
+  const currentOwner = s.st?.projects.find((item) => item.path === project) || (project === s.workdir ? s.st?.projects.find((item) => item.path === s.project) : undefined);
+  const lastOwner = React.useRef(currentOwner); if (currentOwner) lastOwner.current = currentOwner;
+  const owner = currentOwner || lastOwner.current;
+  const roots = [project, ...(owner?.folders || [])].filter((root, index, all) => all.indexOf(root) === index);
+  const [expandedRoots, setExpandedRoots] = React.useState(new Set([project]));
+  const [rootFolders, setRootFolders] = React.useState<Record<string, Set<string>>>({});
+  const toggleRoot = (folder: string) => setExpandedRoots((all) => { const next = new Set(all); if (next.has(folder)) next.delete(folder); else next.add(folder); return next; });
+  const toggleBranch = (folder: string, rel: string) => setRootFolders((all) => { const next = new Set(all[folder]); if (next.has(rel)) next.delete(rel); else next.add(rel); return { ...all, [folder]: next }; });
+  const [root, setRoot] = React.useState(project); const [kept, setKept] = React.useState([project]);
+  const [removedFolder, setRemovedFolder] = React.useState<{ folder: string; restore: () => Promise<void> } | null>(null);
+  const [undoingRemoval, setUndoingRemoval] = React.useState(false);
+  const folderRemoved = (folder: string, restore: () => Promise<void>) => setRemovedFolder({ folder, restore });
+  const folderSelectId = React.useId();
+  const selected = roots.includes(root) ? root : project;
+  const choose = (next: string) => { setRoot(next); setKept((all) => all.includes(next) ? all : [...all, next]); };
+  React.useEffect(() => { const target = s.fileToOpen?.project; if (target && roots.includes(target)) choose(target); }, [s.fileToOpen]);
+  return <div className="flex h-full min-h-0 flex-col">
+    {removedFolder && <div role="status" aria-label="Folder removed" className="flex shrink-0 flex-wrap items-center gap-2 border-b bg-muted/30 px-3 py-2 text-xs"><span className="min-w-0 flex-1 truncate" title={removedFolder.folder}>{removedFolder.folder.split(/[\\/]/).at(-1)} removed. Files and drafts kept.</span><Button size="xs" variant="outline" disabled={undoingRemoval} onClick={async () => { setUndoingRemoval(true); try { await removedFolder.restore(); setRemovedFolder(null); } catch (e) { toast.error((e as Error).message); } finally { setUndoingRemoval(false); } }}>Undo</Button><Button size="icon-xs" variant="ghost" aria-label="Dismiss folder removal" disabled={undoingRemoval} onClick={() => setRemovedFolder(null)}><X /></Button></div>}
+    {roots.length > 1 && <div className="flex min-h-8 shrink-0 items-center gap-2 border-b px-2 py-1"><label className="shrink-0 text-xs text-muted-foreground" htmlFor={folderSelectId}>Folder</label><NativeSelect id={folderSelectId} aria-label="Workspace folder" value={selected} className="min-w-0 flex-1" onChange={(event) => choose(event.target.value)}>{roots.map((folder) => <NativeSelectOption key={folder} value={folder}>{folder.split(/[\\/]/).filter(Boolean).at(-1)}{folder === project ? ' (main)' : ''}</NativeSelectOption>)}</NativeSelect><ProjectMenu projectPath={owner?.path || project}><Button size="xs" variant="ghost">Folders</Button></ProjectMenu></div>}
+    <div className="min-h-0 flex-1">{kept.map((folder) => <div key={folder} data-workspace-root={folder} className={folder === selected ? 'h-full min-h-0' : 'hidden'}><FolderFiles project={folder} visible={visible && folder === selected} owner={owner?.path || project} roots={roots} expandedRoots={expandedRoots} toggleRoot={toggleRoot} rootFolders={rootFolders} toggleBranch={toggleBranch} onFolderRemoved={folderRemoved} /></div>)}</div>
+  </div>;
+}
+
+function FolderFiles({ project, visible, owner, roots, expandedRoots, toggleRoot, rootFolders, toggleBranch, onFolderRemoved }: { onFolderRemoved: (folder: string, restore: () => Promise<void>) => void; project: string; visible: boolean; owner: string; roots: string[]; expandedRoots: Set<string>; toggleRoot: (root: string) => void; rootFolders: Record<string, Set<string>>; toggleBranch: (root: string, rel: string) => void }) {
+  const { platform } = useShortcutPreferences();
+  const s = useStore();
+  const debugVisible = s.debugOpen && visible && project === s.workdir;
   const runInTerminal = useRunInTerminal();
   const [files, setFiles] = React.useState<string[] | null>(null);
   const [directoryRevision, setDirectoryRevision] = React.useState(0);
@@ -87,6 +137,12 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [hidden, setHidden] = React.useState(false);
   const [checksOpen, setChecksOpen] = React.useState(false);
+  const [formatAllOpen, setFormatAllOpen] = React.useState(false);
+  const [comparison, setComparison] = React.useState<string | null>(null);
+  const [explorerView, setExplorerView] = React.useState<'files' | 'changes'>('files');
+  const repository = useWorkspaceGit(s.hub, project, visible, directoryRevision);
+  const changedFiles = React.useMemo(() => workspaceChanges(project, repository.git), [project, repository.git]);
+  const reviewSaved = (rel: string) => { s.pauseFollowing(); setComparison(rel); setBrowse(false); };
   const [checkResult, setCheckResult] = React.useState<ProjectCheckResult | null>(null);
   const [liveDiagnostics, setLiveDiagnostics] = React.useState<import('@/types').ProjectDiagnostic[]>([]);
   const updateLiveDiagnostics = React.useCallback((items: import('@/types').ProjectDiagnostic[]) => setLiveDiagnostics((previous) => JSON.stringify(previous) === JSON.stringify(items) ? previous : items), []);
@@ -96,6 +152,11 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
   const [collapsed, setCollapsed] = React.useState(false);
   const [open, setOpen] = React.useState<Set<string>>(new Set());
   const [docs, setDocs] = React.useState<Doc[]>([]);
+  const [editorStats, setEditorStats] = React.useState<{ rel: string; added?: number; removed?: number; binary?: boolean } | null>(null);
+  const [editorHistory, setEditorHistory] = React.useState<EditorHistory | null>(null);
+  const saveBusy = React.useRef(false);
+  const saveProject = React.useRef(project); saveProject.current = project;
+  const [saving, setSaving] = React.useState(false);
   const [cursors, setCursors] = React.useState<Record<string, { line: number; column: number }>>({});
   const [active, setActive] = React.useState<string | null>(null);
   const [line, setLine] = React.useState<number | undefined>();
@@ -105,11 +166,17 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
   const [error, setError] = React.useState<{ rel: string; intent: OpenIntent; line?: number; reload?: boolean } | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [opening, setOpening] = React.useState<string | null>(null);
+  const [showOpening, setShowOpening] = React.useState(false);
+  React.useEffect(() => { if (!busy) { setShowOpening(false); return; } const timer = setTimeout(() => setShowOpening(true), 200); return () => clearTimeout(timer); }, [busy]);
   const [confirmation, setConfirmation] = React.useState<{ paths: string[]; reload?: boolean } | null>(null);
+  const [comparing, setComparing] = React.useState<{ rel: string; diff: string | null } | null>(null);
+  const [restoring, setRestoring] = React.useState(true);
   const [small, setSmall] = React.useState(() => window.innerWidth < 640);
   const explorer = React.useRef<PanelImperativeHandle>(null);
   const fileGroup = React.useRef<HTMLDivElement>(null);
   const explorerWidth = React.useRef(224);
+  const debuggerWidth = React.useRef(280);
+  React.useEffect(() => { if (debugVisible) { setCollapsed(false); setBrowse(true); } }, [debugVisible]);
   const docsRef = React.useRef(docs); docsRef.current = docs;
   const sourceRef = React.useRef({ project: s.project, threadId: s.thread?.id }); sourceRef.current = { project: s.project, threadId: s.thread?.id };
   const activeRef = React.useRef(active); activeRef.current = active;
@@ -128,13 +195,14 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
   const load = React.useCallback(() => { s.hub.call<string[]>('listFiles', project).then((next) => setFiles((previous) => previous?.length === next.length && previous.every((file, index) => file === next[index]) ? previous : next)).catch(() => setFiles([])); }, [project, s.hub]);
   React.useEffect(() => { if (visible) { load(); setDirectoryRevision((value) => value + 1); } }, [visible, load]);
   React.useEffect(() => {
-    const query = window.matchMedia('(max-width: 639px)');
-    const change = () => setSmall(query.matches); query.addEventListener('change', change);
-    return () => query.removeEventListener('change', change);
+    const element = root.current; if (!element) return;
+    const change = () => setSmall(element.getBoundingClientRect().width < 640);
+    change(); const observer = new ResizeObserver(change); observer.observe(element);
+    return () => observer.disconnect();
   }, []);
   React.useEffect(() => {
-    if (visible) explorer.current?.resize(small ? browse ? '100%' : 0 : collapsed ? 0 : explorerWidth.current);
-  }, [visible, small, browse, collapsed]);
+    if (visible) explorer.current?.resize(small ? browse ? '100%' : 0 : collapsed ? 0 : debugVisible ? debuggerWidth.current : explorerWidth.current);
+  }, [visible, small, browse, collapsed, debugVisible]);
   React.useEffect(() => { if (s.hub.platform === 'desktop') s.hub.call<{ id: string; name: string }[]>('editors').then(setEditors).catch(() => {}); }, [s.hub]);
   React.useLayoutEffect(() => {
     if (!visible || !fileTabs.current) return;
@@ -159,23 +227,53 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
     }
     return request;
   }, [project, s.hub]);
+
+  // Reopen this folder's tabs from the last session, with any unsaved text (lib/drafts.mjs). A recovered
+  // draft keeps the version it was based on, so the disk check below reports a file changed meanwhile.
+  React.useEffect(() => {
+    let cancelled = false;
+    setRestoring(true);
+    (async () => {
+      const saved = savedFileSession(await s.hub.call('draft', `files:${project}`).catch(() => null));
+      const restored = (await Promise.all(saved.tabs.map(async (tab): Promise<Doc | null> => {
+        if (tab.text !== undefined) return { rel: tab.rel, size: tab.base!.length, binary: false, truncated: false, mtime: tab.mtime!, content: tab.base!, text: tab.text, dirty: true, pinned: true, mode: tab.mode, wrap: tab.wrap, recovered: true };
+        try { const file = await read(tab.rel); return { ...file, rel: tab.rel, text: file.content, dirty: false, pinned: tab.pinned, mode: tab.mode, wrap: tab.wrap }; } catch { return null; }
+      }))).filter((doc): doc is Doc => !!doc);
+      if (cancelled || !restored.length) return;
+      setDocs((open) => [...open, ...restored.filter((doc) => !open.some((item) => item.rel === doc.rel))]);
+      setActive((current) => current ?? (restored.some((doc) => doc.rel === saved.active) ? saved.active : restored[0].rel));
+      setBrowse(false);
+    })().finally(() => { if (!cancelled) setRestoring(false); });
+    return () => { cancelled = true; };
+  }, [project, read, s.hub]);
+  // ...and keep them for the next one, once the saved ones are back.
+  const sessionDraft = React.useRef<ReturnType<typeof draftWriter> | null>(null);
+  React.useEffect(() => {
+    let warned = false;
+    const writer = draftWriter(s.hub, `files:${project}`, { onError: (e) => { if (!warned) { warned = true; toast.warning(e.message); } } });
+    sessionDraft.current = writer;
+    return () => { writer.dispose(); sessionDraft.current = null; };
+  }, [project, s.hub]);
+  React.useEffect(() => { if (!restoring) sessionDraft.current?.set(fileSession(docs, active)); }, [docs, active, restoring]);
+
   const pauseFollowing = React.useRef(s.pauseFollowing); pauseFollowing.current = s.pauseFollowing;
-  const openDoc = React.useCallback(async (rel: string, intent: OpenIntent = 'preview', ln?: number, col?: number, following = false) => {
+  const openDoc = React.useCallback(async (rel: string, intent: OpenIntent = 'preview', ln?: number, col?: number, following = false, editor = false) => {
     if (!following) pauseFollowing.current();
+    setComparison(null);
     setColumn(col);
     setOpen((folders) => { const next = new Set(folders); const parts = rel.split('/'); parts.slice(0, -1).forEach((_, i) => next.add(parts.slice(0, i + 1).join('/'))); return next; });
     const id = ++sequence.current;
     setError(null);
     const existing = docsRef.current.find((doc) => doc.rel === rel);
     if (existing) {
-      if (intent === 'pinned') setDocs((all) => all.map((doc) => doc.rel === rel ? { ...doc, pinned: true } : doc));
+      if (intent === 'pinned' || editor) setDocs((all) => all.map((doc) => doc.rel === rel ? { ...doc, pinned: doc.pinned || intent === 'pinned' || (editor && !following), mode: editor && !doc.binary && !imageMime(rel) ? 'edit' : doc.mode } : doc));
       setActive(rel); setLine(ln); setBrowse(false); setBusy(false); setOpening(null); return;
     }
     setBusy(true); setOpening(rel);
     try {
       const file = await read(rel);
       if (id !== sequence.current) return;
-      const next: Doc = { ...file, rel, text: file.content, dirty: false, pinned: intent === 'pinned', mode: imageMime(rel) || /\.(md|mdx|markdown)$/i.test(rel) ? 'preview' : 'edit' };
+      const next: Doc = { ...file, rel, text: file.content, dirty: false, pinned: intent === 'pinned', mode: imageMime(rel) || !editor && /\.(md|mdx|markdown)$/i.test(rel) ? 'preview' : 'edit' };
       if (sourceRef.current.project) rememberFile({ project: sourceRef.current.project, rel, threadId: sourceRef.current.threadId });
       setDocs((all) => openFileTab(all, next, intent));
       setActive(rel); setLine(ln); setBrowse(false);
@@ -185,14 +283,22 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
   }, [read]);
   React.useEffect(() => {
     const request = s.fileToOpen;
-    if (!visible || !request || request.project !== project || handledIntent.current === request.n) return;
-    handledIntent.current = request.n; void openDoc(request.rel, request.intent, request.line, request.column, request.following);
-  }, [s.fileToOpen, visible, project, openDoc]);
+    if (!visible || restoring || !request || request.project !== project || handledIntent.current === request.n) return;
+    handledIntent.current = request.n; void openDoc(request.rel, request.intent, request.line, request.column, request.following, request.editor);
+  }, [s.fileToOpen, visible, restoring, project, openDoc]);
+
+  // A Write tool can announce a path before the file exists. Keep following that
+  // intent while it is current; a click or a project switch cancels the retry.
+  React.useEffect(() => {
+    if (!error || !visible || !s.following || !s.fileToOpen?.following || s.fileToOpen.rel !== error.rel || s.fileToOpen.project !== project) return;
+    const timer = setTimeout(() => void openDoc(error.rel, error.intent, error.line, undefined, true, true), 400);
+    return () => clearTimeout(timer);
+  }, [error, visible, s.following, s.fileToOpen, project, openDoc]);
 
   const autoOpened = React.useRef<string | null>(null);
   React.useEffect(() => {
     const id = s.thread?.id;
-    if (!visible || !s.codeLayout || !id || autoOpened.current === id || !files || busy) return;
+    if (!visible || restoring || !s.codeLayout || !id || autoOpened.current === id || !files || busy) return;
     if (s.fileToOpen?.project === project && !active) return;
     autoOpened.current = id;
     if (active) return;
@@ -201,13 +307,16 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
       || files.find((file) => /^readme\.md$/i.test(file))
       || files.find((file) => /\.(tsx?|jsx?|py|rs|go|java|html|css)$/i.test(file) && !/(^|\/)(node_modules|dist|build|fixtures|test|tests)\//.test(file));
     if (entry) void openDoc(entry);
-  }, [visible, s.codeLayout, s.thread?.id, files, busy, active, project, openDoc, s.fileToOpen]);
+  }, [visible, restoring, s.codeLayout, s.thread?.id, files, busy, active, project, openDoc, s.fileToOpen]);
 
   const watched = JSON.stringify([...new Set([...(active ? [active] : []), ...docs.map((doc) => doc.rel)])].slice(0, 24).sort());
   React.useEffect(() => {
     if (!visible) return;
     let disposed = false; let watchId = '';
+    const refreshing = new Set<string>(); const again = new Set<string>();
     const refresh = async (rel: string) => {
+      if (refreshing.has(rel)) { again.add(rel); return; }
+      refreshing.add(rel);
       try {
         const next = await read(rel);
         if (disposed) return;
@@ -215,6 +324,7 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
           ? { ...doc, diskChanged: next.content !== doc.content || next.mtime !== doc.mtime, diskError: false }
           : { ...doc, ...next, rel, text: next.content, dirty: false, diskChanged: false, diskError: false }));
       } catch { if (!disposed) setDocs((all) => all.map((doc) => doc.rel === rel ? { ...doc, diskError: true } : doc)); }
+      finally { refreshing.delete(rel); if (again.delete(rel) && !disposed) void refresh(rel); }
     };
     // Also catch changes made while this project was inactive.
     for (const rel of JSON.parse(watched) as string[]) void refresh(rel);
@@ -226,28 +336,83 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
     });
     s.hub.call<string>('watchFiles', project, JSON.parse(watched)).then((id) => {
       if (disposed) s.hub.call('unwatchFiles', id).catch(() => {});
-      else { watchId = id; setLive('Live updates'); }
+      else { watchId = id; setLive('Live updates'); for (const rel of JSON.parse(watched) as string[]) void refresh(rel); }
     }).catch(() => { if (!disposed) setLive('Live updates unavailable'); });
     return () => { disposed = true; if (typeof off === 'function') off(); if (watchId) s.hub.call('unwatchFiles', watchId).catch(() => {}); };
   }, [visible, project, watched, s.hub, read, load, watchRevision]);
 
   const doc = docs.find((doc) => doc.rel === active) ?? null;
+  const documentInfo = React.useMemo(() => doc ? { language: sourceLanguage(doc.rel, doc.text).label, spacing: editorSpacing(doc.rel, doc.text) } : null, [doc?.rel, doc?.text]);
+  const decorations = React.useMemo(() => explorerDecorations(project, repository.git, docs.filter((item) => item.dirty).map((item) => item.rel)), [project, repository.git, docs]);
+  const formatHint = React.useMemo(() => doc ? formattingHint(doc.rel, doc.text) : null, [doc?.rel, doc?.text]);
+  const canFormat = !!doc && !doc.binary && !doc.truncated && !!(formatParser(doc.rel) || nativeFormatTool(doc.rel) || configuredLanguage(s.st?.settings.languageServers, doc.rel));
+  const formatActive = () => {
+    if (!doc || !canFormat) return;
+    setDocs((all) => all.map((item) => item.rel === doc.rel ? { ...item, mode: 'edit' } : item));
+    requestAnimationFrame(() => requestAnimationFrame(() => window.dispatchEvent(new CustomEvent('tributary:format-file', { detail: { project, path: doc.rel } }))));
+  };
   const toggleWrap = () => setDocs((all) => all.map((item) => item.rel === active ? { ...item, wrap: !item.wrap } : item));
   const pin = (rel: string) => setDocs((all) => all.map((doc) => doc.rel === rel ? { ...doc, pinned: true } : doc));
   const save = async () => {
-    if (!doc || doc.binary || doc.truncated) return;
-    const text = doc.text;
+    if (!doc || doc.binary || doc.truncated || saveBusy.current) return;
+    saveBusy.current = true; setSaving(true);
+    let text = doc.text;
     try {
+      const editor = editorHistory?.path === doc.rel ? editorHistory : null;
+      const trusted = s.st?.projects.find((item) => item.path === s.project)?.trusted !== false;
+      if (s.st?.settings.formatOnSave !== false && canFormat && editor && (formatParser(doc.rel) || trusted)) {
+        let available = !!formatParser(doc.rel);
+        if (!available) {
+          const catalog = await s.hub.call<import('@/lib/language-tools').LanguageToolCatalog>('languageToolCatalog');
+          const tool = nativeFormatTool(doc.rel)?.toLowerCase() || '';
+          available = configuredLanguage(s.st?.settings.languageServers, doc.rel)
+            ? catalog.servers.some((entry) => entry.enabled && entry.available && configuredLanguage([entry], doc.rel))
+            : catalog.formatters.some((entry) => entry.available && !!entry.command && tool.includes(entry.command.toLowerCase()));
+        }
+        if (available) {
+          if (saveProject.current !== project || editor.text() !== doc.text) { toast.message('Draft changed. Save again.'); return; }
+          const formatted = await editor.format(true);
+          if (formatted === null) return;
+          text = formatted;
+        }
+      }
+      if (saveProject.current !== project || editor && editor.text() !== text) { toast.message('Draft changed. Save again.'); return; }
       const result = await s.hub.call<{ mtime: number }>('writeFile', project, doc.rel, text, doc.mtime);
+      if (saveProject.current !== project) return;
       setDocs((all) => all.map((item) => item.rel === doc.rel ? { ...item, mtime: result.mtime, dirty: item.text !== text, content: text, diskChanged: false, diskError: false } : item));
       s.refreshGit(project);
     } catch (e) { toast.error((e as Error).message); }
+    finally { saveBusy.current = false; setSaving(false); }
   };
   const reload = async (rel: string) => {
     try {
       const file = await read(rel);
       setDocs((all) => all.map((item) => item.rel === rel ? { ...item, ...file, text: file.content, dirty: false, diskChanged: false, diskError: false } : item));
     } catch { setError({ rel, intent: 'pinned', reload: true }); }
+  };
+  const forget = (rel: string) => setDocs((all) => all.map((item) => item.rel === rel ? { ...item, recovered: false } : item));
+  // The file on disk now against the unsaved text; nothing is written until the person picks a version.
+  const compare = async (target: Doc) => {
+    restoreFocus.current = document.activeElement as HTMLElement;
+    setComparing({ rel: target.rel, diff: null });
+    try { const diff = await s.hub.call<string>('compareDraft', project, target.rel, target.text); setComparing((open) => open?.rel === target.rel ? { rel: target.rel, diff } : open); }
+    catch (e) { setComparing(null); toast.error((e as Error).message); }
+  };
+  // Chosen after comparing: write the unsaved text over whatever is on disk now.
+  const overwrite = async (rel: string) => {
+    const target = docsRef.current.find((item) => item.rel === rel); if (!target) return;
+    try {
+      const current = await read(rel).catch(() => null);
+      const result = await s.hub.call<{ mtime: number }>('writeFile', project, rel, target.text, current?.mtime);
+      setDocs((all) => all.map((item) => item.rel === rel ? { ...item, mtime: result.mtime, content: target.text, dirty: item.text !== target.text, diskChanged: false, diskError: false, recovered: false } : item));
+      s.refreshGit(project);
+    } catch (e) { toast.error((e as Error).message); }
+  };
+  const returnFocus = (event: Event) => {
+    event.preventDefault();
+    const target = restoreFocus.current;
+    if (target?.isConnected) target.focus({ preventScroll: true });
+    else focusActiveTab();
   };
   const close = (paths: string[], confirmed = false) => {
     if (!confirmed && docsRef.current.some((doc) => paths.includes(doc.rel) && doc.dirty)) {
@@ -274,7 +439,7 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
   const iconButton = 'workbench-action shrink-0 [&_svg]:size-4';
 
   const fileNavigation = (<div className="workbench-toolbar workspace-file-navigation border-b bg-background/60 pr-2">
-        <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" className={cn(iconButton, s.codeLayout && !small && !collapsed && 'hidden')} aria-label={small ? 'Browse files' : collapsed ? 'Show explorer' : 'Collapse explorer'} aria-expanded={small ? browse : !collapsed} onClick={() => small ? setBrowse(!browse) : setCollapsed(!collapsed)}>{collapsed || (small && !browse) ? <PanelLeftOpen /> : <PanelLeftClose />}</Button></TooltipTrigger><TooltipContent>{small ? 'Browse files' : collapsed ? 'Show explorer' : 'Collapse explorer'}</TooltipContent></Tooltip>
+        <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" className={cn(iconButton, s.codeLayout && !small && !collapsed && 'hidden')} aria-label={small ? debugVisible ? 'Show debugger' : 'Browse files' : collapsed ? 'Show explorer' : 'Collapse explorer'} aria-expanded={small ? browse : !collapsed} onClick={() => small ? setBrowse(!browse) : setCollapsed(!collapsed)}>{collapsed || (small && !browse) ? <PanelLeftOpen /> : <PanelLeftClose />}</Button></TooltipTrigger><TooltipContent>{small ? 'Browse files' : collapsed ? 'Show explorer' : 'Collapse explorer'}</TooltipContent></Tooltip>
         <div ref={fileTabs} className="workspace-file-strip @container relative min-w-0 flex-1 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <TabsList aria-label="Open files" variant="line" className="workspace-file-list justify-start gap-0 rounded-none p-0">
             {docs.map((item) => <TabsTrigger key={item.rel} value={item.rel} data-file-path={item.rel} title={item.rel} aria-label={`${item.rel}${!item.pinned ? ', preview' : ''}${item.dirty ? ', unsaved' : ''}`} onDoubleClick={() => pin(item.rel)} className={cn('workspace-file-tab h-8 min-w-0 max-w-[min(16rem,100cqw)] flex-none justify-start rounded-none border-0 px-2.5 pr-8 text-[13px] font-normal after:hidden focus-visible:ring-inset max-sm:h-11 max-sm:pr-12', !item.pinned && 'italic')}>
@@ -286,17 +451,19 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
             {tabEnds.map(({ rel, right }) => <Button key={rel} variant="ghost" size="icon-sm" className={cn(iconButton, 'workspace-file-close pointer-events-auto absolute rounded-md')} style={{ left: right }} aria-label={`Close ${rel}`} onClick={() => close([rel])}><X /></Button>)}
           </div>
         </div>
-        <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon-sm" className={iconButton} aria-label="Open files menu" aria-busy={busy}>{busy ? <Spinner /> : <Ellipsis />}</Button></DropdownMenuTrigger>
+        <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon-sm" className={iconButton} aria-label="Open files menu" aria-busy={busy}>{showOpening ? <Spinner /> : <Ellipsis />}</Button></DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="max-h-[70dvh] max-w-[calc(100vw-16px)] overflow-y-auto max-sm:[&_[role=menuitem]]:min-h-11">
             <DropdownMenuItem onSelect={() => s.openPanel('preview')}>Project tools & extensions</DropdownMenuItem>
             <DropdownMenuItem onSelect={() => setChecksOpen(true)}>Lint, type check & tests…</DropdownMenuItem>
+            <DropdownMenuItem disabled={s.hub.platform === 'mock'} onSelect={() => setFormatAllOpen(true)}><WandSparkles />Format all files…</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuLabel>Open files</DropdownMenuLabel>
             {!docs.length && <DropdownMenuItem disabled>No open files</DropdownMenuItem>}
             {docs.map((item) => <DropdownMenuItem key={item.rel} title={item.rel} aria-label={`${item.rel}${item.dirty ? ', unsaved' : ''}`} onSelect={() => { void openDoc(item.rel); }}><Check className={cn('size-4', active !== item.rel && 'invisible')} /><span className={cn('max-w-64 truncate', !item.pinned && 'italic')}>{label(item.rel)}</span>{item.dirty && <Circle className="size-2 fill-current" />}</DropdownMenuItem>)}
             <DropdownMenuSeparator />
             {doc && <>
-              <DropdownMenuItem disabled={doc.binary || doc.truncated || !formatParser(doc.rel)} onSelect={() => { setDocs((all) => all.map((item) => item.rel === doc.rel ? { ...item, mode: 'edit' } : item)); requestAnimationFrame(() => requestAnimationFrame(() => window.dispatchEvent(new CustomEvent('tributary:format-file', { detail: { project, path: doc.rel } })))); }}><WandSparkles />Format document<span className="ml-auto text-xs text-muted-foreground">⇧Alt F</span></DropdownMenuItem>
+              {/\.(?:[cm]?js|[cm]?ts)$/i.test(doc.rel) && <DropdownMenuItem disabled={doc.dirty || doc.truncated} onSelect={() => s.openDebugger(doc.rel)}><Bug />Debug this file</DropdownMenuItem>}
+              <DropdownMenuItem disabled={!canFormat} onSelect={formatActive}><WandSparkles />Format document<span className="ml-auto"><ShortcutKeys keys={['Shift', 'Alt', 'F']} platform={platform} /></span></DropdownMenuItem>
               <DropdownMenuItem onSelect={() => void navigator.clipboard.writeText(doc.rel).then(() => toast.success('Relative path copied'), () => toast.error('Could not copy path'))}><Copy />Copy relative path</DropdownMenuItem>
               <DropdownMenuItem onSelect={() => { const separator = project.includes('\\') ? '\\' : '/'; void navigator.clipboard.writeText(project.replace(/[\\/]$/, '') + separator + doc.rel.replaceAll('/', separator)).then(() => toast.success('Full path copied'), () => toast.error('Could not copy path')); }}><Copy />Copy full path</DropdownMenuItem>
               {s.hub.platform !== 'mock' && <DropdownMenuItem onSelect={() => void s.hub.call('revealFile', project, doc.rel).catch((e) => toast.error(e.message))}><FolderOpen />Reveal in folder</DropdownMenuItem>}
@@ -317,16 +484,16 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
 
   return <div ref={root} className="relative flex h-full min-h-0 flex-col text-[13px]">
     <FileSwitcher visible={visible} paths={docs.map((doc) => doc.rel)} active={active} open={switcherOpen} setOpen={setSwitcherOpen} onSelect={(rel) => void openDoc(rel, 'pinned')} />
-    <Tabs value={active ?? ''} onValueChange={(rel) => { s.pauseFollowing(); ++sequence.current; setBusy(false); setOpening(null); setError(null); setActive(rel); setLine(undefined); setColumn(undefined); setBrowse(false); }} className="min-h-0 flex-1 gap-0">
+    <Tabs value={active ?? ''} onValueChange={(rel) => { setComparison(null); s.pauseFollowing(); ++sequence.current; setBusy(false); setOpening(null); setError(null); setActive(rel); setLine(undefined); setColumn(undefined); setBrowse(false); }} className="min-h-0 flex-1 gap-0">
       {(!s.codeLayout || small) && fileNavigation}
       {busy && <span role="status" className="sr-only">Opening file…</span>}
       {error && <div role="alert" className="absolute inset-x-0 top-10 z-20 flex items-center gap-1 border-b bg-popover px-3 py-1 text-xs max-sm:top-11"><span className="min-w-0 flex-1 truncate" title={error.rel}>Couldn’t read {error.rel.split('/').pop()}.</span><Button variant="ghost" size="sm" onClick={() => { if (error.reload) { setError(null); void reload(error.rel); } else void openDoc(error.rel, error.intent, error.line); }}>Retry</Button><Button variant="ghost" size="icon-sm" aria-label="Dismiss file error" onClick={() => setError(null)}><X /></Button></div>}
-      <ResizablePanelGroup id={`files-${project}`} elementRef={fileGroup} className="min-h-0 flex-1" disabled={small || collapsed} onLayoutChanged={(layout, meta) => { if (meta.isUserInteraction && !small && !collapsed && fileGroup.current) explorerWidth.current = Math.min(360, Math.max(176, layout[`explorer-${project}`] * (fileGroup.current.clientWidth - 1) / 100)); }}>
-        <ResizablePanel id={`explorer-${project}`} panelRef={explorer} defaultSize={small ? browse ? '100%' : 0 : 224} minSize={small ? browse ? '100%' : 0 : collapsed ? 0 : 176} maxSize={small ? browse ? '100%' : 0 : collapsed ? 0 : 360} groupResizeBehavior="preserve-pixel-size" className="h-full">
-          <div className={cn('workspace-explorer flex h-full min-h-0 flex-col bg-background/50', (small ? !browse : collapsed) && 'hidden')}>
+      <ResizablePanelGroup id={`files-${project}`} elementRef={fileGroup} className="min-h-0 flex-1" disabled={small || collapsed} onLayoutChanged={(layout, meta) => { if (meta.isUserInteraction && !small && !collapsed && fileGroup.current) (debugVisible ? debuggerWidth : explorerWidth).current = Math.min(360, Math.max(debugVisible ? 224 : 176, layout[`explorer-${project}`] * (fileGroup.current.clientWidth - 1) / 100)); }}>
+        <ResizablePanel id={`explorer-${project}`} panelRef={explorer} defaultSize={small ? browse ? '100%' : 0 : debugVisible ? 280 : 224} minSize={small ? browse ? '100%' : 0 : collapsed ? 0 : debugVisible ? 224 : 176} maxSize={small ? browse ? '100%' : 0 : collapsed ? 0 : 360} groupResizeBehavior="preserve-pixel-size" className="h-full">
+          {debugVisible ? <div className={cn('h-full min-h-0', (small ? !browse : collapsed) && 'hidden')}><DebugSidebar compact={small} onShowConsole={() => { if (small) setBrowse(false); }} /></div> : <div className={cn('workspace-explorer flex h-full min-h-0 flex-col bg-background/50', (small ? !browse : collapsed) && 'hidden')}>
             <div role="group" aria-label="File explorer" className="workbench-toolbar gap-0.5 border-b pr-2 pl-3">
-              <ProjectMenu><button aria-label="Explorer project options" className="flex min-w-0 flex-1 items-center gap-1 rounded text-left text-[13px] font-medium focus-visible:outline-2 focus-visible:outline-ring" title={project}><span className="truncate">{s.st?.projects.find((entry) => entry.path === s.project)?.name || project.split('/').pop()}</span><ChevronRight className="size-3 shrink-0 rotate-90 text-muted-foreground" /></button></ProjectMenu>
-              <Tooltip><TooltipTrigger asChild><Button ref={searchToggle} variant={searchOpen ? 'secondary' : 'ghost'} size="icon-sm" className={cn(iconButton, 'text-muted-foreground')} aria-label="Find a file" aria-expanded={searchOpen} aria-controls={searchOpen ? searchId : undefined} onClick={() => searchOpen ? closeSearch() : setSearchOpen(true)}><Search /></Button></TooltipTrigger><TooltipContent>Find a file</TooltipContent></Tooltip>
+              <ProjectMenu projectPath={owner}><button aria-label="Explorer project options" className="flex min-w-0 flex-1 items-center gap-1 rounded text-left text-[13px] font-medium focus-visible:outline-2 focus-visible:outline-ring" title={project}><span className="truncate">{s.st?.projects.find((entry) => entry.path === project)?.name || project.split('/').pop()}</span><ChevronRight className="size-3 shrink-0 rotate-90 text-muted-foreground" /></button></ProjectMenu>
+              <Tooltip><TooltipTrigger asChild><Button ref={searchToggle} variant={searchOpen ? 'secondary' : 'ghost'} size="icon-sm" className={cn(iconButton, 'text-muted-foreground')} aria-label="Find a file" aria-expanded={searchOpen} aria-controls={searchOpen ? searchId : undefined} onClick={() => { setExplorerView('files'); if (searchOpen) closeSearch(); else setSearchOpen(true); }}><Search /></Button></TooltipTrigger><TooltipContent>Find a file</TooltipContent></Tooltip>
               <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon-sm" className={cn(iconButton, 'relative text-muted-foreground')} aria-label="Explorer options"><Ellipsis />{hidden && <span className="absolute top-1 right-1 size-1 rounded-full bg-foreground" />}</Button></DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48 max-sm:[&_[role^=menuitem]]:min-h-11">
                   <DropdownMenuCheckboxItem checked={hidden} onCheckedChange={setHidden}>Show hidden files</DropdownMenuCheckboxItem>
@@ -338,63 +505,106 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
+            <div role="group" aria-label="Explorer view" className="flex shrink-0 gap-1 border-b px-2 py-1"><Button size="xs" variant={explorerView === 'files' ? 'secondary' : 'ghost'} aria-pressed={explorerView === 'files'} onClick={() => setExplorerView('files')}>Files</Button><Button size="xs" variant={explorerView === 'changes' ? 'secondary' : 'ghost'} aria-label="Show workspace changes" aria-pressed={explorerView === 'changes'} onClick={() => setExplorerView('changes')}><GitCompareArrows />Changes<span className="text-xs tabular-nums text-muted-foreground">{changedFiles.length}</span></Button></div>
+            {explorerView === 'changes' ? <WorkspaceChangeList project={project} git={repository.git} error={repository.error} loading={repository.loading} refresh={repository.refresh} selected={comparison} onSelect={reviewSaved} /> : <>
             {searchOpen && <div id={searchId} className="flex shrink-0 items-center gap-1 border-b p-1.5">
               <Input ref={search} value={filter} onChange={(event) => setFilter(event.target.value)} onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeSearch(); } }} placeholder="Find a file…" aria-label="Find a file" className="h-8 min-w-0 bg-transparent text-[13px] shadow-none max-sm:h-11" />
               <Button variant="ghost" size="icon-sm" className={iconButton} aria-label="Close file search" onClick={closeSearch}><X /></Button>
             </div>}
             <div className="min-h-0 flex-1 overflow-auto px-1 pt-0.5 pb-2" role="region" aria-label="Project files">
-              {!filter.trim() ? <DirectoryTree bridge={s.hub} project={project} active={active} openFile={openDoc} revision={directoryRevision} expanded={open} toggle={toggle} loading={opening} hidden={hidden} compact={s.compactFolders} sticky={s.stickyFolders} chains={chains} />
+              {!filter.trim() ? roots.length > 1 ? roots.map((folder) => <section key={folder} aria-label={`Folder ${folder}`}>
+                <WorkspaceFolderRow folder={folder} owner={owner} expanded={expandedRoots.has(folder)} onToggle={() => toggleRoot(folder)} onRemoved={onFolderRemoved} />
+                {expandedRoots.has(folder) && <div className="pl-2"><DirectoryTree bridge={s.hub} project={folder} active={folder === project ? active : null} openFile={(rel, intent) => { if (folder === project) void openDoc(rel, intent); else s.openFile(rel, undefined, intent, undefined, false, folder); }} revision={directoryRevision} expanded={rootFolders[folder] || EMPTY_BRANCHES} toggle={(rel) => toggleBranch(folder, rel)} loading={folder === project ? opening : null} hidden={hidden} compact={s.compactFolders} sticky={s.stickyFolders} chains={folder === project ? chains : EMPTY_CHAINS} decorations={folder === project ? decorations : undefined} reviewFile={folder === project ? reviewSaved : undefined} /></div>}
+              </section>) : <DirectoryTree bridge={s.hub} project={project} active={active} openFile={openDoc} revision={directoryRevision} expanded={open} toggle={toggle} loading={opening} hidden={hidden} compact={s.compactFolders} sticky={s.stickyFolders} chains={chains} decorations={decorations} reviewFile={reviewSaved} />
                 : files == null ? <div className="grid place-items-center p-6"><Spinner /></div>
-                  : tree.map((node) => <TreeNode key={node.path} n={node} depth={0} open={open} active={active} onOpen={openDoc} toggle={toggle} loading={opening} />)}
+                  : tree.map((node) => <TreeNode key={node.path} n={node} depth={0} open={open} active={active} onOpen={openDoc} toggle={toggle} loading={opening} decorations={decorations} />)}
               {filter.trim() && files && !shown.length && <p className="p-3 text-xs text-muted-foreground">No matching files.</p>}
             </div>
-          </div>
+            <ExplorerOutline path={doc && !doc.binary ? doc.rel : null} text={doc?.text || ''} line={doc ? cursors[doc.rel]?.line || 1 : 1} onSelect={(line, column) => { if (doc) void openDoc(doc.rel, 'pinned', line, column); }} /></>}
+
+          </div>}
         </ResizablePanel>
         <ResizableHandle aria-label="Resize file explorer" title="Arrow keys resize; Enter resets" onDoubleClick={() => { explorerWidth.current = 224; explorer.current?.resize(224); }} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); explorerWidth.current = 224; explorer.current?.resize(224); } }} className={small || collapsed ? 'hidden' : ''} />
         <ResizablePanel id={`reader-${project}`} minSize={small ? browse ? 0 : '100%' : 144} maxSize={small && browse ? 0 : '100%'} className="h-full min-w-0">
-          <div className={cn('flex h-full min-h-0 flex-col', small && browse && 'hidden')}>
+          <div className={cn('flex h-full min-h-0 min-w-0 flex-col overflow-hidden', small && browse && 'hidden')}>
             {s.codeLayout && !small && fileNavigation}
-            {doc ? <>
+            {debugVisible && <div className="debug-control-strip"><DebugControls /></div>}
+            {comparison ? <WorkspaceFileChange bridge={s.hub} project={project} rel={comparison} revision={`${repository.revision}:${directoryRevision}`} visible={visible} dirty={docs.some((item) => item.rel === comparison && item.dirty)} deleted={changedFiles.some((item) => item.rel === comparison && item.status === 'D')} onEdit={() => { const rel = comparison; setComparison(null); void openDoc(rel, 'pinned', undefined, undefined, false, true); }} onClose={() => { setComparison(null); if (!docs.length && small) setBrowse(true); }} /> : doc ? <>
               <div className="workspace-file-actions flex h-7 min-w-0 shrink-0 items-center border-b px-3 max-sm:h-11">
                 <nav aria-label="File breadcrumbs" title={doc.rel} className="min-w-0 flex-1 overflow-hidden text-xs text-muted-foreground"><ol className="flex min-w-0 items-center gap-1">
                   {(doc.rel.split('/').length > 3 ? ['…', ...doc.rel.split('/').slice(-2)] : doc.rel.split('/')).map((part, index, parts) => <li key={index} className={cn('flex min-w-0 items-center gap-1', index === parts.length - 1 && 'flex-1')} >{index > 0 && <ChevronRight className="size-3 shrink-0" />}<span className="truncate" aria-current={index === parts.length - 1 ? 'page' : undefined}>{part}</span></li>)}
                 </ol></nav>
                 {doc.mode === 'edit' && !doc.binary && <DocumentOutline path={doc.rel} text={doc.text} onSelect={(ln, col) => void openDoc(doc.rel, 'pinned', ln, col)} />}
               </div>
-              {(doc.diskChanged || doc.diskError) && <div role="status" className="flex shrink-0 flex-wrap items-center gap-1 border-b bg-muted px-3 py-1 text-xs"><span className="flex-1">{doc.diskError ? 'File unavailable. Draft kept.' : 'Changed on disk. Draft kept.'}</span><Button variant="ghost" size="sm" onClick={() => { if (doc.dirty) { restoreFocus.current = document.activeElement as HTMLElement; setConfirmation({ paths: [doc.rel], reload: true }); } else void reload(doc.rel); }}>Reload</Button></div>}
-              <div className="min-h-0 flex-1">
+              {doc.mode === 'edit' && !doc.binary && formatHint && (formatHint === 'Compact code' || !doc.wrap) && <div role="group" aria-label="Formatting actions" className="flex shrink-0 flex-wrap items-center gap-1 border-b bg-muted/30 px-3 py-1 text-xs text-muted-foreground"><span className="min-w-0 flex-1">{formatHint}</span>{canFormat && <Tooltip><TooltipTrigger asChild><Button size="xs" variant="ghost" onClick={formatActive}><WandSparkles />Format document</Button></TooltipTrigger><TooltipContent>Format indentation and line breaks <ShortcutKeys keys={['Shift', 'Alt', 'F']} platform={platform} /></TooltipContent></Tooltip>}{!doc.wrap && <Button size="xs" variant="ghost" onClick={toggleWrap}><WrapText />Wrap lines</Button>}<Button size="xs" variant="ghost" onClick={() => s.openSettings('language-tools')}>Formatting tools</Button></div>}
+              {(doc.diskChanged || doc.diskError) ? <div role="status" className="flex shrink-0 flex-wrap items-center gap-1 border-b bg-muted px-3 py-1 text-xs"><span className="flex-1">{doc.diskError ? 'File unavailable. Draft kept.' : 'Changed on disk. Draft kept.'}</span>{doc.dirty && <Button variant="ghost" size="sm" onClick={() => void compare(doc)}>Compare</Button>}<Button variant="ghost" size="sm" onClick={() => { if (doc.dirty) { restoreFocus.current = document.activeElement as HTMLElement; setConfirmation({ paths: [doc.rel], reload: true }); } else void reload(doc.rel); }}>Reload</Button></div>
+                : doc.recovered && doc.dirty && <div role="status" className="flex shrink-0 flex-wrap items-center gap-1 border-b bg-muted px-3 py-1 text-xs"><span className="flex-1">Unsaved changes restored from your last session.</span><Button variant="ghost" size="sm" onClick={() => void compare(doc)}>Compare</Button><Button variant="ghost" size="sm" onClick={() => forget(doc.rel)}>Keep</Button></div>}
+              <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
                 {docs.map((item) => <TabsContent key={item.rel} value={item.rel} tabIndex={-1} className="h-full min-h-0">
                   {item.rel === active && (item.binary && !IMAGE.test(item.rel) ? <p className="p-6 text-center text-sm text-muted-foreground">Binary file · {item.size.toLocaleString()} bytes</p>
                     : item.mode === 'preview' && previewable(item.rel) ? <FilePreview doc={item} project={project} />
-                      : <CodeEditor onNavigate={s.pauseFollowing} onDiagnostics={updateLiveDiagnostics} project={project} path={item.rel} value={item.text} line={line} column={column} readOnly={item.truncated} diagnostics={!item.dirty && checkResult && item.mtime <= checkResult.startedAt ? checkResult.diagnostics.filter((d) => d.rel === item.rel) : []} wrap={item.wrap} onToggleWrap={toggleWrap} onCursorChange={(position) => setCursors((all) => all[item.rel]?.line === position.line && all[item.rel]?.column === position.column ? all : { ...all, [item.rel]: position })} onSave={save} onChange={(value) => { s.pauseFollowing(); setDocs((all) => all.map((current) => current.rel === item.rel ? { ...current, text: value, dirty: value !== current.content, pinned: true } : current)); }} />)}
+                      : <CodeEditor onReview={() => void reviewSaved(item.rel)} onChangeStats={setEditorStats} followChanges={s.following && active === item.rel} onHistoryChange={setEditorHistory} onNavigate={s.pauseFollowing} onDiagnostics={updateLiveDiagnostics} project={project} path={item.rel} value={item.text} line={line} column={column} readOnly={item.truncated} diagnostics={!item.dirty && checkResult && item.mtime <= checkResult.startedAt ? checkResult.diagnostics.filter((d) => d.rel === item.rel) : []} wrap={item.wrap} onToggleWrap={toggleWrap} onCursorChange={(position) => setCursors((all) => all[item.rel]?.line === position.line && all[item.rel]?.column === position.column ? all : { ...all, [item.rel]: position })} onSave={save} onChange={(value) => { s.pauseFollowing(); setDocs((all) => all.map((current) => current.rel === item.rel ? { ...current, text: value, dirty: value !== current.content, pinned: true, recovered: false } : current)); }} />)}
                 </TabsContent>)}
               </div>
-              {!IMAGE.test(doc.rel) && <div className="workspace-file-footer flex min-w-0 shrink-0 items-center gap-1 border-t pr-2 pl-3">
-                <p role="status" aria-live="off" className="min-w-0 flex-1 truncate text-xs tabular-nums text-muted-foreground" title={doc.mode === 'edit' && !doc.binary ? `${doc.rel.split('.').pop()?.toUpperCase() || 'Text'} · ${doc.text.includes('\r\n') ? 'CRLF' : 'LF'} · ${live}` : live}>{doc.mode === 'edit' && !doc.binary ? <><span aria-label="Editor position">Ln {cursors[doc.rel]?.line ?? 1}, Col {cursors[doc.rel]?.column ?? 1}</span><span className="editor-file-details"> · {doc.rel.split('.').pop()?.toUpperCase() || 'Text'} · {doc.text.includes('\r\n') ? 'CRLF' : 'LF'}</span>{doc.truncated && ' · Read only'}</> : live}</p>
+              {debugVisible && <React.Suspense fallback={<p role="status" className="border-t p-2 text-xs">Opening console…</p>}><DebugConsole /></React.Suspense>}
+              {!IMAGE.test(doc.rel) && <div className="workspace-file-footer flex min-w-0 shrink-0 items-center gap-1 border-t px-2">
+                <Popover><PopoverTrigger asChild><button type="button" aria-label="Document information" className="editor-status-info flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded px-1 text-left text-xs tabular-nums text-muted-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring">
+                  {doc.mode === 'edit' && !doc.binary ? <><span role="status" aria-live="off" aria-label="Editor position" className="shrink-0 whitespace-nowrap">Ln {cursors[doc.rel]?.line ?? 1}<span className="editor-cursor-column">, Col {cursors[doc.rel]?.column ?? 1}</span></span><span className="editor-file-details min-w-0 truncate">{documentInfo!.language} · {documentInfo!.spacing.useTabs ? 'Tabs' : 'Spaces'}: {documentInfo!.spacing.tabSize} · UTF-8 · {doc.text.includes('\r\n') ? 'CRLF' : 'LF'}{doc.truncated && ' · Read only'}</span></> : <span className="truncate">{live}</span>}
+                </button></PopoverTrigger><PopoverContent align="start" side="top" className="w-72 max-w-[calc(100vw-16px)] text-xs"><p className="mb-3 break-all font-medium">{doc.rel}</p><dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-muted-foreground"><dt>Language</dt><dd className="text-foreground">{documentInfo!.language}</dd><dt>Indentation</dt><dd>{documentInfo!.spacing.useTabs ? 'Tabs' : 'Spaces'}: {documentInfo!.spacing.tabSize}</dd><dt>Encoding</dt><dd>UTF-8 · {doc.text.includes('\r\n') ? 'CRLF' : 'LF'}</dd><dt>File state</dt><dd>{doc.truncated ? 'Read only' : doc.dirty ? 'Unsaved changes' : 'Saved'}</dd><dt>Updates</dt><dd>{live}</dd></dl></PopoverContent></Popover>
+                {editorStats?.rel === doc.rel && !!((editorStats.added || 0) + (editorStats.removed || 0)) && <span className="editor-status-changes shrink-0"><LineChangeCount {...editorStats} /></span>}
+
                 <div role="group" aria-label="File actions" className="flex shrink-0 items-center gap-0.5">
-                <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={iconButton} aria-label="Project checks" aria-pressed={checksOpen} onClick={() => setChecksOpen((open) => !open)}><CircleAlert /></Button></TooltipTrigger><TooltipContent>Lint, type check & tests</TooltipContent></Tooltip>
-                {doc.mode === 'edit' && !doc.binary && <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={cn(iconButton, 'editor-wrap-control')} aria-label="Wrap lines" aria-pressed={!!doc.wrap} onClick={toggleWrap}><WrapText /></Button></TooltipTrigger><TooltipContent>Wrap lines (Alt+Z)</TooltipContent></Tooltip>}
-                {previewable(doc.rel) && !doc.binary && !IMAGE.test(doc.rel) && <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={iconButton} aria-label={doc.mode === 'edit' ? 'Preview file' : 'Edit file'} onClick={() => setDocs((all) => all.map((item) => item.rel === doc.rel ? { ...item, mode: item.mode === 'edit' ? 'preview' : 'edit' } : item))}>{doc.mode === 'edit' ? <Eye /> : <Pencil />}</Button></TooltipTrigger><TooltipContent>{doc.mode === 'edit' ? 'Preview' : 'Edit'}</TooltipContent></Tooltip>}
-                {editors.length > 0 && <DropdownMenu><DropdownMenuTrigger asChild><Button size="icon-sm" variant="ghost" className={iconButton} aria-label="Open in editor" title="Open in editor"><SquareArrowOutUpRight /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="max-sm:[&_[role=menuitem]]:min-h-11"><DropdownMenuLabel>Open in editor</DropdownMenuLabel>{editors.map((editor) => <DropdownMenuItem key={editor.id} onClick={() => s.hub.call('openInEditor', editor.id, project, doc.rel, line).catch((e) => toast.error(e.message))}>{editor.name}</DropdownMenuItem>)}</DropdownMenuContent></DropdownMenu>}
-                {!doc.binary && <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={iconButton} disabled={!doc.dirty || doc.truncated} aria-label="Save file" onClick={save}><Save /></Button></TooltipTrigger><TooltipContent>Save</TooltipContent></Tooltip>}
+                {doc.mode === 'edit' && !doc.binary && <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={cn(iconButton, 'editor-secondary-action')} aria-label="Format document" disabled={!canFormat} onClick={formatActive}><WandSparkles /></Button></TooltipTrigger><TooltipContent>Format document <ShortcutKeys keys={['Shift', 'Alt', 'F']} platform={platform} /></TooltipContent></Tooltip>}
+                {doc.mode === 'edit' && !doc.binary && <>
+                  <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={cn(iconButton, 'editor-secondary-action')} aria-label="Undo edit" disabled={doc.truncated || editorHistory?.path !== doc.rel || !editorHistory.canUndo} onClick={() => editorHistory?.undo()}><Undo2 /></Button></TooltipTrigger><TooltipContent>Undo edit <ShortcutKeys keys={['Mod', 'Z']} platform={platform} /></TooltipContent></Tooltip>
+                  <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={cn(iconButton, 'editor-secondary-action')} aria-label="Redo edit" disabled={doc.truncated || editorHistory?.path !== doc.rel || !editorHistory.canRedo} onClick={() => editorHistory?.redo()}><Redo2 /></Button></TooltipTrigger><TooltipContent>Redo edit <ShortcutKeys keys={platform === 'mac' ? ['Mod', 'Shift', 'Z'] : ['Mod', 'Y']} platform={platform} /></TooltipContent></Tooltip>
+                </>}
+                <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={cn(iconButton, 'editor-secondary-action')} aria-label="Review saved file changes" onClick={() => void reviewSaved(doc.rel)}><GitCompareArrows /></Button></TooltipTrigger><TooltipContent>Review saved changes</TooltipContent></Tooltip>
+                <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={cn(iconButton, 'editor-secondary-action')} aria-label="Project checks" aria-pressed={checksOpen} onClick={() => setChecksOpen((open) => !open)}><CircleAlert /></Button></TooltipTrigger><TooltipContent>Lint, type check & tests</TooltipContent></Tooltip>
+                {doc.mode === 'edit' && !doc.binary && <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={cn(iconButton, 'editor-secondary-action')} aria-label="Wrap lines" aria-pressed={!!doc.wrap} onClick={toggleWrap}><WrapText /></Button></TooltipTrigger><TooltipContent>Wrap lines <ShortcutKeys keys={['Alt', 'Z']} platform={platform} /></TooltipContent></Tooltip>}
+                {previewable(doc.rel) && !doc.binary && !IMAGE.test(doc.rel) && <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={cn(iconButton, 'editor-secondary-action')} aria-label={doc.mode === 'edit' ? 'Preview file' : 'Edit file'} onClick={() => setDocs((all) => all.map((item) => item.rel === doc.rel ? { ...item, mode: item.mode === 'edit' ? 'preview' : 'edit' } : item))}>{doc.mode === 'edit' ? <Eye /> : <Pencil />}</Button></TooltipTrigger><TooltipContent>{doc.mode === 'edit' ? 'Preview' : 'Edit'}</TooltipContent></Tooltip>}
+                {editors.length > 0 && <DropdownMenu><DropdownMenuTrigger asChild><Button size="icon-sm" variant="ghost" className={cn(iconButton, 'editor-secondary-action')} aria-label="Open in editor" title="Open in editor"><SquareArrowOutUpRight /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="max-sm:[&_[role=menuitem]]:min-h-11"><DropdownMenuLabel>Open in editor</DropdownMenuLabel>{editors.map((editor) => <DropdownMenuItem key={editor.id} onClick={() => s.hub.call('openInEditor', editor.id, project, doc.rel, line).catch((e) => toast.error(e.message))}>{editor.name}</DropdownMenuItem>)}</DropdownMenuContent></DropdownMenu>}
+                {!doc.binary && <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={iconButton} disabled={saving || !doc.dirty || doc.truncated} aria-label="Save file" aria-busy={saving} onClick={save}><Save /></Button></TooltipTrigger><TooltipContent>Save <ShortcutKeys keys={['Mod', 'S']} platform={platform} /></TooltipContent></Tooltip>}
+                <DropdownMenu><DropdownMenuTrigger asChild><Button size="icon-sm" variant="ghost" className={iconButton} aria-label="Editor actions"><Ellipsis /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" side="top" className="max-h-[70dvh] max-w-[calc(100vw-16px)] overflow-y-auto max-sm:[&_[role^=menuitem]]:min-h-11">
+                  <DropdownMenuLabel>Editor actions</DropdownMenuLabel>
+                  <DropdownMenuItem disabled={!canFormat} onSelect={formatActive}><WandSparkles />Format document<ShortcutKeys keys={['Shift', 'Alt', 'F']} platform={platform} /></DropdownMenuItem>
+                  <DropdownMenuItem disabled={doc.truncated || editorHistory?.path !== doc.rel || !editorHistory.canUndo} onSelect={() => editorHistory?.undo()}><Undo2 />Undo<ShortcutKeys keys={['Mod', 'Z']} platform={platform} /></DropdownMenuItem>
+                  <DropdownMenuItem disabled={doc.truncated || editorHistory?.path !== doc.rel || !editorHistory.canRedo} onSelect={() => editorHistory?.redo()}><Redo2 />Redo<ShortcutKeys keys={platform === 'mac' ? ['Mod', 'Shift', 'Z'] : ['Mod', 'Y']} platform={platform} /></DropdownMenuItem>
+                  <DropdownMenuCheckboxItem checked={!!doc.wrap} onCheckedChange={toggleWrap}>Wrap lines<ShortcutKeys keys={['Alt', 'Z']} platform={platform} /></DropdownMenuCheckboxItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => void reviewSaved(doc.rel)}><GitCompareArrows />Review saved changes</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => setChecksOpen(true)}><CircleAlert />Lint, type check & tests</DropdownMenuItem>
+                  {previewable(doc.rel) && !doc.binary && <DropdownMenuItem onSelect={() => setDocs((all) => all.map((item) => item.rel === doc.rel ? { ...item, mode: item.mode === 'edit' ? 'preview' : 'edit' } : item))}><Eye />{doc.mode === 'edit' ? 'Preview file' : 'Edit file'}</DropdownMenuItem>}
+                  {editors.map((editor) => <DropdownMenuItem key={editor.id} onSelect={() => void s.hub.call('openInEditor', editor.id, project, doc.rel, line).catch((error: Error) => toast.error(error.message))}><SquareArrowOutUpRight />Open in {editor.name}</DropdownMenuItem>)}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem disabled={saving || !doc.dirty || doc.truncated || doc.binary} onSelect={() => void save()}><Save />Save file<ShortcutKeys keys={['Mod', 'S']} platform={platform} /></DropdownMenuItem>
+                </DropdownMenuContent></DropdownMenu>
                 </div>
               </div>}
             </> : <Empty className="h-full border-0 p-4"><EmptyHeader><EmptyMedia variant="icon"><ImageIcon /></EmptyMedia><EmptyTitle>Select a file</EmptyTitle></EmptyHeader><EmptyContent><Button variant="outline" size="sm" onClick={browseFiles}><FolderOpen />Browse files</Button></EmptyContent></Empty>}
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
+      <FormatProjectDialog open={formatAllOpen} onOpenChange={setFormatAllOpen} project={project} getUnsaved={() => docsRef.current.filter((item) => item.dirty).map((item) => item.rel)} onApplied={() => { refreshFiles(); s.refreshGit(project); }} />
       {checksOpen && <div className="h-[min(300px,45%)] min-h-40 shrink-0 border-t"><ProjectChecks visible={visible} staleFiles={docs.filter((d) => d.dirty || (checkResult && d.mtime > checkResult.startedAt)).map((d) => d.rel)} liveDiagnostics={liveDiagnostics.filter((d) => d.rel === active && docs.some((doc) => doc.rel === active && doc.mode === 'edit'))} project={project} onClose={() => setChecksOpen(false)} onResult={setCheckResult} /></div>}
     </Tabs>
     <AlertDialog open={!!confirmation} onOpenChange={(isOpen) => { if (!isOpen) setConfirmation(null); }}>
-      <AlertDialogContent className="max-w-[calc(100vw-32px)] max-sm:[&_button]:min-h-11" onCloseAutoFocus={(event) => {
-        event.preventDefault();
-        const target = restoreFocus.current;
-        if (target?.isConnected) target.focus({ preventScroll: true });
-        else focusActiveTab();
-      }}>
+      <AlertDialogContent className="max-w-[calc(100vw-32px)] max-sm:[&_button]:min-h-11" onCloseAutoFocus={returnFocus}>
         <AlertDialogHeader><AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle><AlertDialogDescription className="break-words">{confirmation?.paths.filter((path) => docs.find((doc) => doc.rel === path)?.dirty).join(', ')}<br />Your edits will be lost.</AlertDialogDescription></AlertDialogHeader>
         <AlertDialogFooter><AlertDialogCancel>Keep editing</AlertDialogCancel><AlertDialogAction variant="destructive" onClick={() => { if (!confirmation) return; if (confirmation.reload) void reload(confirmation.paths[0]); else close(confirmation.paths, true); setConfirmation(null); }}>Discard changes</AlertDialogAction></AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+
+    <Dialog open={!!comparing} onOpenChange={(isOpen) => { if (!isOpen) setComparing(null); }}>
+      <DialogContent className="flex max-h-[85dvh] max-w-[calc(100vw-32px)] flex-col sm:max-w-3xl max-sm:[&_button]:min-h-11" onCloseAutoFocus={returnFocus}>
+        <DialogHeader><DialogTitle>Compare unsaved changes</DialogTitle><DialogDescription className="break-words">{comparing?.rel}: the file on disk (−) and your unsaved version (+). Nothing is written until you choose.</DialogDescription></DialogHeader>
+        <div className="min-h-0 flex-1 overflow-auto rounded-md border">{comparing?.diff == null ? <p role="status" className="p-3 text-sm text-muted-foreground">Comparing…</p> : comparing.diff ? <FileDiff diff={comparing.diff} /> : <p className="p-3 text-sm text-muted-foreground">Your unsaved version matches the file on disk.</p>}</div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setComparing(null)}>Keep editing</Button>
+          <Button variant="destructive" disabled={comparing?.diff == null} onClick={() => { if (!comparing) return; setComparing(null); void reload(comparing.rel); }}>Discard my changes</Button>
+          <Button disabled={comparing?.diff == null} onClick={() => { if (!comparing) return; setComparing(null); void overwrite(comparing.rel); }}>Save my version</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>;
 }

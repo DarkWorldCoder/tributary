@@ -1,3 +1,4 @@
+import { usePackIcon } from '@/lib/extension-appearance';
 import { Atom, Box, Braces, CodeXml, Container, Database, File, FileArchive, FileAudio, FileCode2, FileImage, FileKey, FileSpreadsheet, FileTerminal, FileText, FileVideo, GitBranch, Network, Package, Palette, Presentation, Settings2, ShieldCheck, Triangle, Type, type LucideIcon } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { fileKind, type FileKind } from '@/lib/file-kind.mjs';
@@ -25,9 +26,11 @@ const languages: Partial<Record<FileKind, [string, string]>> = {
 };
 
 export function FileTypeIcon({ path, loading = false, className }: { path: string; loading?: boolean; className?: string }) {
+  const custom = usePackIcon(path, false, false, className);
   const kind = fileKind(path); const language = languages[kind];
   const [Icon, color] = icons[kind] ?? icons.file!;
   if (loading) return <Spinner aria-hidden="true" className={cn('size-4 shrink-0 text-muted-foreground', className)} />;
+  if (custom && !loading) return custom;
   if (language) return <svg aria-hidden="true" data-file-kind={kind} viewBox="0 0 20 20" className={cn('size-4 shrink-0', language[1], className)}><rect x="1" y="1" width="18" height="18" rx="3" fill="currentColor" opacity=".1" /><text x="10" y="13.5" textAnchor="middle" fill="currentColor" fontFamily="var(--font-mono)" fontWeight="600" fontSize={language[0].length > 2 ? '8' : '10'}>{language[0]}</text></svg>;
   return <Icon aria-hidden="true" data-file-kind={kind} className={cn('size-4 shrink-0 text-muted-foreground', color, className)} />;
 }

@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { localHost } = require('./host');
+const { parseNumstat } = require('./change-stats');
 
 const run = (cwd, args, max = 200000, host = localHost) => host.exec('git', args, { cwd, timeout: 8000, maxBuffer: max * 4 })
   .then((r) => (r.code === 0 ? String(r.stdout) : null));
@@ -10,16 +11,19 @@ const run = (cwd, args, max = 200000, host = localHost) => host.exec('git', args
 async function gitInfo(cwd, { host = localHost } = {}) {
   const top = await run(cwd, ['rev-parse', '--show-toplevel'], undefined, host);
   if (!top) return null;
-  const [branch, status, stat] = await Promise.all([
+  const [branch, status, stat, numstat] = await Promise.all([
     run(cwd, ['rev-parse', '--abbrev-ref', 'HEAD'], undefined, host),
     run(cwd, ['status', '--porcelain=v1', '-z', '--untracked-files=all'], undefined, host),
     run(cwd, ['diff', 'HEAD', '--stat', '--stat-width=100'], undefined, host),
+    run(cwd, ['diff', 'HEAD', '--numstat', '-z', '--no-renames'], undefined, host),
   ]);
+  const counts = parseNumstat(numstat);
   const changed = []; const records = (status || '').split('\0');
   for (let i = 0; i < records.length; i++) {
     const record = records[i]; if (!record) continue;
     const code = record.slice(0, 2).trim(); const entry = { code, path: record.slice(3) };
     if (/[RC]/.test(code)) entry.from = records[++i];
+    Object.assign(entry, counts.get(entry.path));
     changed.push(entry);
   }
   return { root: top.trim(), branch: (branch || '').trim(), changed, stat: (stat || '').trim() };

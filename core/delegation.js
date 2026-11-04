@@ -22,7 +22,8 @@ async function openDelegation(hub, parent, message, { mode, signal } = {}) {
   let closed = false;
   const publish = (child) => {
     if (!hub.thread(parent.id)) return;
-    const item = { id: child.id, agentId: child.delegation.agentId, title: child.title, state: child.delegation.state };
+    const details = snapshot(hub, child);
+    const item = { id: child.id, agentId: child.delegation.agentId, title: child.title, state: child.delegation.state, branch: details.branch, model: details.model, error: details.error, files: details.files.slice(0, 8), fileCount: [...child.messages].reverse().find((m) => m.role === 'assistant')?.files?.length || 0 };
     message.delegations = (message.delegations || []).some((entry) => entry.id === child.id) ? message.delegations.map((entry) => entry.id === child.id ? item : entry) : [...(message.delegations || []), item];
     hub.store.save(false, parent.id); hub.emit('message', { threadId: parent.id, message });
   };

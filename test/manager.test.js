@@ -55,7 +55,7 @@ test('the manager splits the work, workers build pieces in parallel, and only pa
   hub.agents = [agent('boss', reply(`Plan:\n\`\`\`json\n${JSON.stringify(PLAN)}\n\`\`\``)), worker('w1', log), worker('w2', log)];
   const t = hub.createThread(proj, 'Build the feature');
   const seen = new Set();
-  hub.on('activity', (a) => { for (const e of a) if (e.kind === 'manager') for (const w of e.workers) seen.add(`${w.role}:${w.state}`); });
+  hub.on('activity', (a) => { for (const e of a) if (e.kind === 'manager') for (const w of e.workers) seen.add(`${w.task || w.role}:${w.state}`); });
   const result = await hub.runTeam(t.id, { recipe: 'manager', task: 'Build the feature', roles: { planner: 'boss', workers: ['w1', 'w2'] },
     testCommand: `node -e "process.exit(require('fs').existsSync('bad.txt') ? 1 : 0)"` });
 

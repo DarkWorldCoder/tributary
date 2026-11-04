@@ -3,7 +3,7 @@
 const { start, killTree, lines } = require('./proc');
 const { clip } = require('./parsers');
 const OPTIONS = [{ optionId: 'once', name: 'Allow once', kind: 'allow_once' }, { optionId: 'always', name: 'Allow for this session', kind: 'allow_always' }, { optionId: 'reject', name: 'Deny', kind: 'reject_once' }];
-function runCodexServer({ command, args = [], cwd, env, prompt, mode, resumeId, model, images = [], extraDirs = [], onEvent, signal }) {
+function runCodexServer({ command, args = [], cwd, env, prompt, mode, research = false, resumeId, model, images = [], extraDirs = [], onEvent, signal }) {
   return new Promise((resolve) => {
     if (signal?.aborted) { onEvent({ kind: 'done', ok: false }); resolve({ ok: false, sessionId: resumeId }); return; }
     const child = start(command, args, { cwd, env, keepOpen: true });
@@ -99,7 +99,7 @@ function runCodexServer({ command, args = [], cwd, env, prompt, mode, resumeId, 
     (async () => {
       await request('initialize', { clientInfo: { name: 'tributary', title: 'Tributary', version: '0.1.0' }, capabilities: { experimentalApi: false } }); write({ method: 'initialized', params: {} });
       const config = { cwd, model: model || undefined, approvalPolicy: mode === 'full' ? 'never' : 'on-request', approvalsReviewer: 'user', sandbox: mode === 'full' ? 'danger-full-access' : mode === 'read' ? 'read-only' : 'workspace-write' };
-      const result = await request(resumeId ? 'thread/resume' : 'thread/start', { ...config, ...(resumeId ? { threadId: resumeId } : {}) });
+      const result = await request(resumeId ? 'thread/resume' : 'thread/start', { ...config, ...(research ? { config: { web_search: 'live' } } : {}), ...(resumeId ? { threadId: resumeId } : {}) });
       threadId = result.thread.id; onEvent({ kind: 'session', sessionId: threadId, model: result.model, resumed: !!resumeId });
       if (signal?.aborted || finished) { abort(); return; }
       const sandboxPolicy = mode === 'full' ? { type: 'dangerFullAccess' } : mode === 'read' ? { type: 'readOnly' } : { type: 'workspaceWrite', writableRoots: [cwd, ...extraDirs], networkAccess: false };

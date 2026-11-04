@@ -18,15 +18,19 @@ export function toolTarget(t: Tool, project: string | null): string {
   if (t.name === 'TaskUpdate' || t.name === 'TaskGet') return `Task ${i.taskId ?? i.task_id ?? i.id ?? ''}${i.status ? ` · ${i.status.replaceAll('_', ' ')}` : ''}`.trim();
   if (t.name === 'TaskList') return 'Project tasks';
   if (/^agent\./.test(t.name) && i.prompt) return String(i.prompt).split('\n')[0].slice(0, 120);
-  const v = i.command ?? i.cmd ?? i.file_path ?? i.filePath ?? i.path ?? i.Path ?? i.pattern ?? i.query ?? i.url ?? i.description ?? (Array.isArray(i.changes) ? i.changes.map((c: any) => c.path).join(', ') : undefined);
+  const v = i.command ?? i.cmd ?? i.file_path ?? i.filePath ?? i.filepath ?? i.abs_path ?? i.path ?? i.Path ?? i.pattern ?? i.query ?? i.url ?? i.description ?? (Array.isArray(i.changes) ? i.changes.map((c: any) => c.path).join(', ') : undefined);
   if (v != null) return Array.isArray(v) ? v.join(' ') : relTo(project, String(v));
-  const s = JSON.stringify(i); return s && s !== '{}' ? s.slice(0, 160) : '';
+  const s = JSON.stringify(i); return s && s !== '{}' ? s.slice(0, 160) : t.title && t.title !== t.name ? relTo(project, t.title) : '';
 }
 const CMD = /^(shell|bash|run_shell_command|exec|terminal)$/i;
 const EDIT = /edit|write|replace|patch|create/i;
 const READ = /^(read|read_file|read_many_files|view|cat|open)$/i;
 const SEARCH = /grep|glob|search|find|ls|list/i;
 export function toolVerb(t: Tool): string {
+  if (t.name === 'AskUserQuestion') return 'Asked a question';
+  if (t.name === 'ExitPlanMode') return 'Finished planning';
+  if (t.name === 'EnterPlanMode') return 'Started planning';
+  if (t.name === 'ToolSearch') return 'Loaded tools';
   if (t.name === 'TodoWrite') return 'Updated plan';
   if (t.name === 'TaskCreate') return 'Added task';
   if (t.name === 'TaskUpdate') return 'Updated task';

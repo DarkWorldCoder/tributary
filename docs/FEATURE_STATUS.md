@@ -4,6 +4,8 @@ Source-reviewed on 2 November 2026. This tracks every candidate in PRODUCT_ROADM
 
 New in this pass: revision-checked memory editing/history, opt-in bounded memory context, strict handoff limits, team validation and persisted step records, unified connector diagnostics, live local file views with polling fallback, and optional direct HTTPS room hosting. Setup and evidence are in [COORDINATION_AND_MEMORY.md](COORDINATION_AND_MEMORY.md) and [PROJECT_ROOMS.md](PROJECT_ROOMS.md).
 
+Implemented on 3 November: the [Tests evidence workspace](QA_RESULTS.md) imports Playwright JSON reports, preserves attempts and non-passing outcomes, retains screenshots/traces and creates Markdown bug reports. Workspace focus and native desktop full screen now have separate controls and restore actions. This does not deliver the remaining autonomous QA roadmap.
+
 The largest outstanding engineering work is shared source-file synchronization and conflict resolution, durable isolated task worktrees with integration checks, account-based connector authorization, rich document import/export, complete memory lifecycle controls, and release hardening. None is implied complete by the new coordination records.
 
 | ID | Roadmap capability | Status | Evidence or remaining work |
@@ -82,7 +84,7 @@ The largest outstanding engineering work is shared source-file synchronization a
 | T04 | Shared team templates and approved workspace instructions | Partial | Local shared project instructions and included skills; no shared server template library. |
 | T05 | Workspace usage limits and an activity record of who did what | Partial | Durable room events and team-run history; no workspace spend quotas. |
 | T06 | Restricted sharing links with expiration, revocation, and a preview of what recipients see | Partial | Revocable access keys; no expiration or public share-link workflow. |
-| Q01 | Autosave and crash recovery with clear saved, saving, failed, and recoverable states | Partial | Persisted replies/documents, memory revisions and retained file drafts; unsaved file drafts do not survive app termination. |
+| Q01 | Autosave and crash recovery with clear saved, saving, failed, and recoverable states | Partial | Persisted replies/documents and memory revisions. The message being typed, open file tabs and unsaved file text survive a crash or restart (`core/drafts.js`, private, 30-day expiry); a file changed on disk meanwhile is compared, not overwritten. Queued messages and attachments are not yet recovered. |
 | Q02 | Plain-language diagnostics with secrets removed and user-controlled report sharing | Partial | Redacted connector configuration report; no complete support bundle. |
 | Q03 | Usage estimates, available provider-reported actuals, hard execution limits, and budget notifications | Partial | Provider usage where returned, output limits and bounded repair rounds; no hard monetary budget. |
 | Q04 | Show what data leaves the device, where it goes, and the applicable storage/retention controls | Partial | Connection destination and memory-sharing controls; no complete retention/data-governance UI. |

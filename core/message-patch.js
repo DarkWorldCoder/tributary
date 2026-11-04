@@ -4,11 +4,12 @@
 // applies it. A message the window has not seen yet, or one that finished, is sent whole.
 
 const GROWING = ['text', 'thinking'];
+const ARRAYS = ['tools', 'trace'];
 
 function snapshot(m) {
   const fields = {};
-  for (const [k, v] of Object.entries(m)) if (k !== 'tools' && !GROWING.includes(k)) fields[k] = JSON.stringify(v);
-  return { text: m.text || '', thinking: m.thinking || '', tools: (m.tools || []).map((t) => JSON.stringify(t)), fields };
+  for (const [k, v] of Object.entries(m)) if (!ARRAYS.includes(k) && !GROWING.includes(k)) fields[k] = JSON.stringify(v);
+  return { present: ARRAYS.filter((key) => key in m), text: m.text || '', thinking: m.thinking || '', arrays: Object.fromEntries(ARRAYS.map((key) => [key, (m[key] || []).map((item) => JSON.stringify(item))])), fields };
 }
 
 function createPatcher() {
@@ -26,13 +27,16 @@ function createPatcher() {
         // Thinking keeps only its last 20,000 characters, so it does not always grow at the end.
         if (a !== b) p[k] = b.startsWith(a) ? { from: a.length, add: b.slice(a.length) } : { from: 0, add: b };
       }
-      const set = {};
-      next.tools.forEach((t, i) => { if (prev.tools[i] !== t) set[i] = m.tools[i]; });
-      if (Object.keys(set).length || next.tools.length !== prev.tools.length) p.tools = { length: next.tools.length, set };
+      for (const key of ARRAYS) {
+        if (!next.present.includes(key)) continue;
+        const set = {};
+        next.arrays[key].forEach((item, i) => { if (prev.arrays[key][i] !== item) set[i] = m[key][i]; });
+        if (!prev.present.includes(key) || Object.keys(set).length || next.arrays[key].length !== prev.arrays[key].length) p[key] = { length: next.arrays[key].length, set };
+      }
       const fields = {};
       for (const [k, v] of Object.entries(next.fields)) if (prev.fields[k] !== v) fields[k] = m[k];
       if (Object.keys(fields).length) p.set = fields;
-      const unset = Object.keys(prev.fields).filter((k) => !(k in next.fields));
+      const unset = [...Object.keys(prev.fields).filter((k) => !(k in next.fields)), ...prev.present.filter((key) => !next.present.includes(key))];
       if (unset.length) p.unset = unset;
       if (m.ok != null) sent.delete(m.id); else sent.set(m.id, next);
       return p;

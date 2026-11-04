@@ -1,71 +1,48 @@
+import { configuredLanguage, serverCompletions } from '@/lib/language-tools';
+import { applyLspEdits, type LspEdit } from '@/lib/lsp-edits.mjs';
+import { changeGutter, setFileChanges } from '@/lib/change-gutter';
+import { editorDiffMarkers, editorDiffStats } from '@/lib/editor-diff.mjs';
+import { sourceGrammar } from '@/lib/source-grammar.mjs';
+import { sourceLanguage, sourceSyntaxSupported } from '@/lib/source-language.mjs';
+import { useDebugger } from '@/hooks/use-debugger';
+import { debugGutter, debugLines } from '@/lib/debug-editor';
 import * as React from 'react';
 import { basicSetup } from 'codemirror';
-import { EditorState, Compartment, Transaction, type Extension } from '@codemirror/state';
+import { EditorState, Compartment, Prec, Transaction, type Extension } from '@codemirror/state';
 import { EditorView, keymap } from '@codemirror/view';
 import { lintGutter, lintKeymap, setDiagnostics } from '@codemirror/lint';
 import { autocompletion } from '@codemirror/autocomplete';
 import { liveValidation, languageCompletions } from '@/lib/language-assistance';
 import { documentLanguage } from '@/lib/document-language-support.mjs';
 import { formatInWorker } from '@/lib/formatter';
-import { formatParser } from '@/lib/format-document.mjs';
+import { formatParser, nativeFormatTool } from '@/lib/format-document.mjs';
+import { editorSpacing } from '@/lib/editor-spacing.mjs';
 import { minimalChange } from '@/lib/text-change.mjs';
-import { undo as undoEdit, redo as redoEdit, selectAll, isolateHistory, indentWithTab } from '@codemirror/commands';
-import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
+import { undo as undoEdit, redo as redoEdit, selectAll, undoDepth, redoDepth, isolateHistory, indentWithTab } from '@codemirror/commands';
+import { HighlightStyle, syntaxHighlighting, indentUnit } from '@codemirror/language';
 import { tags as t } from '@lezer/highlight';
 import { MessageSquare, Undo2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { agentFlash, applyRemoteText, askAboutSelection, blameAt, blameGutter, showBlame, type Blame, type BlamePick, type BlameTurn } from '@/lib/agent-editor';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useStore } from '@/store';
+import { EditorContextMenu } from '@/components/editor-context-menu';
 import type { ActivityEntry, FileContent, ProjectDiagnostic } from '@/types';
 
-// Language support loads the first time a file of that kind opens, not with the app.
-const load = {
-  javascript: (o?: { jsx?: boolean; typescript?: boolean }) => import('@codemirror/lang-javascript').then((m) => m.javascript(o)),
-  python: () => import('@codemirror/lang-python').then((m) => m.python()),
-  json: () => import('@codemirror/lang-json').then((m) => m.json()),
-  css: () => import('@codemirror/lang-css').then((m) => m.css()),
-  html: () => import('@codemirror/lang-html').then((m) => m.html()),
-  markdown: () => import('@codemirror/lang-markdown').then((m) => m.markdown()),
-  rust: () => import('@codemirror/lang-rust').then((m) => m.rust()),
-  go: () => import('@codemirror/lang-go').then((m) => m.go()),
-  java: () => import('@codemirror/lang-java').then((m) => m.java()),
-  cpp: () => import('@codemirror/lang-cpp').then((m) => m.cpp()),
-  sql: () => import('@codemirror/lang-sql').then((m) => m.sql()),
-  yaml: () => import('@codemirror/lang-yaml').then((m) => m.yaml()),
-  php: () => import('@codemirror/lang-php').then((m) => m.php()),
-};
-export async function languageFor(path: string): Promise<Extension | null> {
-  const ext = path.split('.').pop()?.toLowerCase() ?? '';
-  switch (ext) {
-    case 'js': case 'mjs': case 'cjs': return load.javascript();
-    case 'jsx': return load.javascript({ jsx: true });
-    case 'ts': case 'mts': case 'cts': return load.javascript({ typescript: true });
-    case 'tsx': return load.javascript({ jsx: true, typescript: true });
-    case 'py': case 'pyi': return load.python();
-    case 'json': case 'jsonc': return load.json();
-    case 'css': case 'scss': case 'less': return load.css();
-    case 'html': case 'htm': case 'vue': case 'svelte': return load.html();
-    case 'md': case 'mdx': case 'markdown': return load.markdown();
-    case 'rs': return load.rust();
-    case 'go': return load.go();
-    case 'java': case 'kt': return load.java();
-    case 'c': case 'h': case 'cc': case 'cpp': case 'hpp': case 'cxx': return load.cpp();
-    case 'sql': return load.sql();
-    case 'yml': case 'yaml': return load.yaml();
-    case 'php': return load.php();
-    default: return null;
-  }
-}
+// Grammars are lazy and shared with source outlines and validation.
+export async function languageFor(path: string, text = ''): Promise<Extension | null> { return sourceGrammar(path, text); }
 
 // Colors come from CSS variables, so the editor follows the app (and VS Code) theme.
 const theme = EditorView.theme({
   '&': { height: '100%', fontSize: '13px', backgroundColor: 'var(--card)', color: 'var(--foreground)' },
   '&.cm-focused': { outline: 'none' },
-  '.cm-scroller': { fontFamily: 'var(--font-mono)', lineHeight: '1.55' },
-  '.cm-content': { caretColor: 'var(--foreground)', padding: '4px 0' },
+  '.cm-scroller': { fontFamily: 'var(--font-mono)', lineHeight: '22px' },
+  '.cm-content': { caretColor: 'var(--foreground)', padding: '8px 0' },
   '.cm-line': { padding: '0 12px 0 8px' },
-  '.cm-lineNumbers .cm-gutterElement': { padding: '0 8px 0 12px', minWidth: '32px' },
+  '.cm-lineNumbers .cm-gutterElement': { fontVariantNumeric: 'tabular-nums', textAlign: 'right', padding: '0 8px 0 12px', minWidth: '32px' },
+  '.cm-gutter-lint': { width: '14px' },
+  '.cm-gutter-lint .cm-gutterElement': { width: '14px', padding: '0 1px' },
+  '.cm-lint-marker': { width: '12px', height: '12px' },
   '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--foreground)' },
   '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection': { backgroundColor: 'color-mix(in oklch, var(--brand) 22%, transparent) !important' },
   '.cm-gutters': { backgroundColor: 'var(--card)', color: 'var(--muted-foreground)', border: 'none' },
@@ -92,35 +69,46 @@ const highlight = HighlightStyle.define([
 
 const undoKey = typeof navigator !== 'undefined' && /Mac/.test(navigator.platform) ? '⌘⌥Z' : 'Ctrl+Alt+Z';
 
+export type EditorHistory = { path: string; canUndo: boolean; canRedo: boolean; undo: () => void; redo: () => void; format: (automatic?: boolean) => Promise<string | null>; text: () => string | null };
+
 /** A real code editor (CodeMirror 6): multi-cursor, search, folding, bracket matching, undo history. */
-export function CodeEditor({ project: documentProject, path, value, onChange, onSave, readOnly, line, column, wrap = false, onCursorChange, onToggleWrap, diagnostics = [], onDiagnostics, onNavigate }: {
-  project?: string; path: string; value: string; onChange?: (v: string) => void; onSave?: () => void; readOnly?: boolean; line?: number; column?: number; wrap?: boolean; onCursorChange?: (position: { line: number; column: number }) => void; onToggleWrap?: () => void; diagnostics?: ProjectDiagnostic[]; onDiagnostics?: (diagnostics: ProjectDiagnostic[]) => void; onNavigate?: () => void;
+export function CodeEditor({ project: documentProject, path, value, onChange, onSave, readOnly, line, column, wrap = false, onCursorChange, onToggleWrap, diagnostics = [], onDiagnostics, onNavigate, onHistoryChange, onChangeStats, followChanges = false, onReview }: {
+  onReview?: () => void; project?: string; onChangeStats?: (stats: { rel: string; added?: number; removed?: number; binary?: boolean } | null) => void; followChanges?: boolean; path: string; value: string; onChange?: (v: string) => void; onSave?: () => void; readOnly?: boolean; line?: number; column?: number; wrap?: boolean; onCursorChange?: (position: { line: number; column: number }) => void; onToggleWrap?: () => void; diagnostics?: ProjectDiagnostic[]; onDiagnostics?: (diagnostics: ProjectDiagnostic[]) => void; onNavigate?: () => void; onHistoryChange?: (history: EditorHistory | null) => void;
 }) {
   const host = React.useRef<HTMLDivElement>(null);
   const view = React.useRef<EditorView | null>(null);
   const ro = React.useRef(new Compartment());
   const language = React.useRef(new Compartment());
   const wrapping = React.useRef(new Compartment());
-  const cb = React.useRef({ onChange, onSave, onCursorChange, onToggleWrap, onDiagnostics, onNavigate }); cb.current = { onChange, onSave, onCursorChange, onToggleWrap, onDiagnostics, onNavigate };
+  const cb = React.useRef({ onChange, onSave, onCursorChange, onToggleWrap, onDiagnostics, onNavigate, onHistoryChange, onChangeStats, onReview }); cb.current = { onChange, onSave, onCursorChange, onToggleWrap, onDiagnostics, onNavigate, onHistoryChange, onChangeStats, onReview };
   const [liveDiagnostics, setLiveDiagnostics] = React.useState<{ path: string; text: string; items: ProjectDiagnostic[] } | null>(null);
   // Agent-aware editing: who wrote each line (Alt+B toggles it), agent edits highlighted, a selection handed to an agent.
   const s = useStore(); const workspace = documentProject ?? s.workdir; const store = React.useRef(s); store.current = s;
+  const debug = useDebugger(workspace); const debugRef = React.useRef(debug); debugRef.current = debug;
+  const toggleBreakpoint = React.useRef((line: number) => {});
+  toggleBreakpoint.current = (line) => { const exists = debugRef.current.breakpoints.some((b) => b.rel === path && b.line === line); void store.current.hub.call('debugBreakpoint', workspace, path, line, !exists).catch((e) => toast.error(e.message)); };
   const [blameOn, setBlameOn] = React.useState(() => { try { return localStorage.getItem('tributary.blame') !== 'off'; } catch { return true; } });
   const [diskChanged, setDiskChanged] = React.useState(0);
   const [formatting, setFormatting] = React.useState(false);
+  const serverCompletion = React.useRef(new Compartment());
   const formatBusy = React.useRef(false);
-  const format = React.useRef(async () => {});
-  format.current = async () => {
-    const v = view.current; if (!v || readOnly || formatBusy.current || !formatParser(path)) return;
+  const format = React.useRef<(automatic?: boolean) => Promise<string | null>>(async () => null);
+  format.current = async (automatic = false) => {
+    const v = view.current; if (!v || readOnly || formatBusy.current || !(formatParser(path) || nativeFormatTool(path) || configuredLanguage(store.current.st?.settings.languageServers, path))) return null;
     const original = v.state.doc.toString(); formatBusy.current = true; setFormatting(true);
     try {
-      const text = await formatInWorker(path, original);
-      if (view.current !== v) return;
-      if (v.state.doc.toString() !== original) { toast.message('Draft changed while formatting. Try again.'); return; }
+      const configured = configuredLanguage(store.current.st?.settings.languageServers, path);
+      // Web languages use the bundled formatter consistently, even when an LSP
+      // also offers whitespace edits that leave compact blocks on one line.
+      const serverEdits = !formatParser(path) && configured ? await store.current.hub.call<LspEdit[] | null>('languageFormat', workspace, path, original, { tabSize: editorSpacing(path, original).tabSize, insertSpaces: !editorSpacing(path, original).useTabs }) : null;
+      const text = serverEdits ? applyLspEdits(original, serverEdits) : formatParser(path) && store.current.hub.platform === 'mock' ? await formatInWorker(path, original) : await store.current.hub.call<string>('formatSource', workspace, path, original, automatic);
+      if (view.current !== v) return null;
+      if (v.state.doc.toString() !== original) { toast.message('Draft changed while formatting. Try again.'); return null; }
       const change = minimalChange(original, text);
       if (change) v.dispatch({ changes: change, annotations: [Transaction.userEvent.of('input.format'), isolateHistory.of('full')] });
       v.focus();
-    } catch (error) { if (view.current === v) toast.error('Could not format document', { description: (error as Error).message.slice(0, 220) }); }
+      return text;
+    } catch (error) { if (view.current === v) toast.error('Could not format document', { description: (error as Error).message.slice(0, 220) }); return null; }
     finally { formatBusy.current = false; if (view.current === v) setFormatting(false); }
   };
   React.useEffect(() => {
@@ -148,65 +136,114 @@ export function CodeEditor({ project: documentProject, path, value, onChange, on
   };
 
   React.useEffect(() => {
+    let historyKey = '';
+    const reportHistory = (v: EditorView) => {
+      const canUndo = !v.state.readOnly && undoDepth(v.state) > 0;
+      const canRedo = !v.state.readOnly && redoDepth(v.state) > 0;
+      const key = `${canUndo}:${canRedo}`; if (key === historyKey) return; historyKey = key;
+      const run = (command: typeof undoEdit) => { if (view.current === v && !v.state.readOnly) { command(v); v.focus(); } };
+      cb.current.onHistoryChange?.({ path, canUndo, canRedo, undo: () => run(undoEdit), redo: () => run(redoEdit), format: (automatic) => format.current(automatic), text: () => view.current === v ? v.state.doc.toString() : null });
+    };
     const v = new EditorView({
       parent: host.current!,
       state: EditorState.create({
         doc: value,
         extensions: [
-          basicSetup, theme, lintGutter(), keymap.of(lintKeymap), syntaxHighlighting(highlight), keymap.of([indentWithTab, { key: 'Mod-s', preventDefault: true, run: () => { cb.current.onSave?.(); return true; } }, { key: 'Alt-z', run: () => { if (!cb.current.onToggleWrap) return false; cb.current.onToggleWrap(); return true; } }]),
+          basicSetup, theme, EditorState.tabSize.of(editorSpacing(path, value).tabSize), indentUnit.of(editorSpacing(path, value).indentUnit), Prec.high(lintGutter()), keymap.of(lintKeymap), syntaxHighlighting(highlight), keymap.of([indentWithTab, { key: 'Mod-s', preventDefault: true, run: () => { cb.current.onSave?.(); return true; } }, { key: 'Alt-z', run: () => { if (!cb.current.onToggleWrap) return false; cb.current.onToggleWrap(); return true; } }]),
           EditorView.contentAttributes.of({ 'aria-label': `Edit ${path}`, tabindex: '0' }),
           ro.current.of([EditorState.readOnly.of(!!readOnly), EditorView.editable.of(!readOnly)]),
           wrapping.current.of(wrap ? EditorView.lineWrapping : []),
           EditorView.updateListener.of((u) => {
+            reportHistory(u.view);
             if (u.docChanged && u.transactions.some((transaction) => !transaction.annotation(Transaction.remote))) cb.current.onChange?.(u.state.doc.toString());
             if (u.selectionSet && u.transactions.some((transaction) => transaction.isUserEvent('select'))) cb.current.onNavigate?.();
             if (u.selectionSet || u.docChanged) { const head = u.state.selection.main.head; const current = u.state.doc.lineAt(head); cb.current.onCursorChange?.({ line: current.number, column: head - current.from + 1 }); }
           }),
           language.current.of([]),
           ...(documentLanguage(path) ? [autocompletion({ override: [languageCompletions(path)] })] : []),
-          agentFlash,
+          serverCompletion.current.of([]), agentFlash, changeGutter(() => { if (cb.current.onReview) cb.current.onReview(); else store.current.openReview(path); }),
+          ...(/\.(?:[cm]?js|[cm]?ts)$/i.test(path) ? [Prec.highest(debugGutter((line) => toggleBreakpoint.current(line))), keymap.of([{ key: 'F9', run: (editor) => { toggleBreakpoint.current(editor.state.doc.lineAt(editor.state.selection.main.head).number); return true; } }])] : []),
           blameGutter((pick) => { const box = host.current!.getBoundingClientRect(); setPicked({ ...pick, x: pick.x - box.left, y: pick.y - box.top }); }),
-          keymap.of([{ key: 'Shift-Alt-f', run: () => { void format.current(); return !readOnly && !!formatParser(path); } }, { key: 'Mod-Alt-z', run: (v) => { const head = v.state.selection.main.head; const turn = blameAt(v.state, head); if (!turn) return false; void undo.current(turn, v.state.doc.lineAt(head).number); return true; } }]),
+          keymap.of([{ key: 'Shift-Alt-f', run: () => { void format.current(); return !readOnly && !!(formatParser(path) || nativeFormatTool(path) || configuredLanguage(store.current.st?.settings.languageServers, path)); } }, { key: 'Mod-Alt-z', run: (v) => { const head = v.state.selection.main.head; const turn = blameAt(v.state, head); if (!turn) return false; void undo.current(turn, v.state.doc.lineAt(head).number); return true; } }]),
           askAboutSelection(({ text, fromLine, toLine }) => {
             const st = store.current; const fence = path.split('.').pop() || '';
-            st.setDraft(`${st.draft ? `${st.draft}\n` : ''}In @${path}:${fromLine}${toLine > fromLine ? `-${toLine}` : ''}:\n\`\`\`${fence}\n${text}\n\`\`\`\n`);
+            st.setDraft(`${st.draft ? `${st.draft}\n` : ''}In @${workspace && workspace !== st.workdir ? `${workspace}/${path}` : path}:${fromLine}${toLine > fromLine ? `-${toLine}` : ''}:\n\`\`\`${fence}\n${text}\n\`\`\`\n`);
           }),
           keymap.of([{ key: 'Alt-b', run: () => { setBlameOn((on) => { try { localStorage.setItem('tributary.blame', on ? 'off' : 'on'); } catch { /* storage unavailable */ } return !on; }); return true; } }]),
         ],
       }),
     });
-    view.current = v;
-    languageFor(path).then((lang) => { if (lang && view.current === v) v.dispatch({ effects: language.current.reconfigure(lang) }); }).catch(() => { /* plain text */ });
+    view.current = v; reportHistory(v);
     cb.current.onCursorChange?.({ line: 1, column: 1 });
-    return () => { v.destroy(); view.current = null; };
+    return () => { v.destroy(); view.current = null; cb.current.onHistoryChange?.(null); };
     // A new path means a new document; the value is synced below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [path]);
+  }, [path, workspace]);
+
+  const hasServer = configuredLanguage(s.st?.settings.languageServers, path);
+  const serverRevision = JSON.stringify(s.st?.settings.languageServers || []);
+  React.useEffect(() => { const editor = view.current; if (editor && workspace) editor.dispatch({ effects: serverCompletion.current.reconfigure(hasServer ? autocompletion({ override: [serverCompletions(s.hub, workspace, path)] }) : []) }); }, [workspace, path, serverRevision, hasServer, s.hub]);
+  const [serverDiagnostics, setServerDiagnostics] = React.useState<{ text: string; items: ProjectDiagnostic[] } | null>(null);
+  const [serverError, setServerError] = React.useState('');
+  const currentText = React.useRef(value); currentText.current = value;
+  React.useEffect(() => {
+    if (!hasServer || !workspace) { setServerDiagnostics(null); setServerError(''); return; }
+    const off = s.hub.on('language-diagnostics', (event) => { if (event.project === workspace && event.rel === path && event.text === currentText.current) setServerDiagnostics({ text: event.text, items: event.diagnostics }); });
+    return () => { if (typeof off === 'function') off(); void s.hub.call('languageClose', workspace, path).catch(() => {}); };
+  }, [workspace, path, hasServer, serverRevision, s.hub]);
+  React.useEffect(() => {
+    if (!hasServer || !workspace) return;
+    let current = true;
+    const timer = setTimeout(() => { s.hub.call<{ active: boolean; diagnostics: ProjectDiagnostic[] }>('languageDocument', workspace, path, value).then((result) => { if (current) { setServerDiagnostics({ text: value, items: result.diagnostics }); setServerError(''); } }).catch((error) => { if (current) setServerError(error.message.replace(/^Error invoking remote method '[^']*': (Error: )?/, '')); }); }, 300);
+    return () => { current = false; clearTimeout(timer); };
+  }, [workspace, path, value, hasServer, serverRevision, s.hub]);
+
+  const sourceId = sourceLanguage(path, value).id;
+  React.useEffect(() => {
+    const editor = view.current; if (!editor) return; let alive = true;
+    languageFor(path, value).then((grammar) => { if (alive && view.current === editor) editor.dispatch({ effects: language.current.reconfigure(grammar || []) }); }).catch(() => {});
+    return () => { alive = false; };
+  }, [path, workspace, sourceId]);
 
   React.useEffect(() => {
     const run = (event: Event) => { const v = view.current; if (!v?.hasFocus) return; const action = (event as CustomEvent).detail; if (action === 'undo') undoEdit(v); else if (action === 'redo') redoEdit(v); else if (action === 'selectAll') selectAll(v); else document.execCommand(action); };
     window.addEventListener('tributary:editor-command', run); return () => window.removeEventListener('tributary:editor-command', run);
   }, []);
 
+  const debugKey = JSON.stringify([debug.breakpoints.filter((b) => b.rel === path).map((b) => b.line), debug.status, debug.frames.find((f) => f.id === debug.selectedFrame) || debug.frames[0]]);
+  React.useEffect(() => { const v = view.current; if (!v || !/\.(?:[cm]?js|[cm]?ts)$/i.test(path)) return; const frame = debug.frames.find((f) => f.id === debug.selectedFrame) || debug.frames[0]; v.dispatch({ effects: debugLines.of({ lines: debug.breakpoints.filter((b) => b.rel === path).map((b) => b.line), paused: debug.status === 'paused' && frame?.rel === path ? frame.line : null }) }); }, [debugKey, path]);
+
   // Replace the document when it changes from outside (reload after an agent edit).
   React.useEffect(() => {
     const v = view.current; if (!v) return;
     // Only the changed part is replaced, so the cursor and scroll position stay put; the changed lines light up.
-    if (applyRemoteText(v, value)) setDiskChanged((n) => n + 1);
-  }, [value]);
+    const change = followChanges ? minimalChange(v.state.doc.toString(), value) : null;
+    if (applyRemoteText(v, value, undefined, true)) {
+      setDiskChanged((n) => n + 1);
+      if (change) v.dispatch({ effects: EditorView.scrollIntoView(Math.min(value.length, change.from), { y: 'center' }) });
+    }
+  }, [value, followChanges]);
+  React.useEffect(() => {
+    const editor = view.current; if (!editor || !workspace) return;
+    let alive = true;
+    const timer = setTimeout(() => {
+      s.hub.call<string>('fileDiff', workspace, path).then((diff) => { if (alive && view.current === editor) { editor.dispatch({ effects: setFileChanges.of(editorDiffMarkers(diff)) }); cb.current.onChangeStats?.({ rel: path, ...editorDiffStats(diff) }); } }).catch(() => { if (alive && view.current === editor) { editor.dispatch({ effects: setFileChanges.of([]) }); cb.current.onChangeStats?.(null); } });
+    }, 150);
+    return () => { alive = false; clearTimeout(timer); };
+  }, [workspace, path, diskChanged, s.git?.stat, s.git?.branch, s.hub]);
   React.useEffect(() => {
     let current = true;
-    cb.current.onDiagnostics?.([]);
-    if (readOnly || !documentLanguage(path)) return;
+    if (readOnly || !(documentLanguage(path) || sourceSyntaxSupported(path, value))) return;
     const timer = setTimeout(() => {
-      liveValidation(path, value).then((items) => { if (current) { setLiveDiagnostics({ path, text: value, items }); cb.current.onDiagnostics?.(items); } }).catch(() => { if (current) setLiveDiagnostics(null); });
+      liveValidation(path, value).then((items) => { if (current) { setLiveDiagnostics({ path, text: value, items }); } }).catch(() => { if (current) setLiveDiagnostics(null); });
     }, 300);
     return () => { current = false; clearTimeout(timer); };
   }, [path, value, readOnly]);
-  const allDiagnostics = [...diagnostics, ...(liveDiagnostics?.path === path && liveDiagnostics.text === value ? liveDiagnostics.items : [])];
+  const allDiagnostics = [...diagnostics, ...(serverDiagnostics?.text === value ? serverDiagnostics.items : []), ...(liveDiagnostics?.path === path && liveDiagnostics.text === value ? liveDiagnostics.items : [])];
   const diagnosticKey = JSON.stringify(allDiagnostics);
   React.useEffect(() => {
     const v = view.current; if (!v) return;
+    cb.current.onDiagnostics?.(allDiagnostics);
     v.dispatch(setDiagnostics(v.state, allDiagnostics.map((d) => {
       const row = v.state.doc.line(Math.min(v.state.doc.lines, Math.max(1, d.line)));
       const from = Math.min(row.to, row.from + Math.max(0, d.column - 1));
@@ -248,7 +285,8 @@ export function CodeEditor({ project: documentProject, path, value, onChange, on
 
   return (
     <div className="relative h-full min-h-0 overflow-hidden">
-      <div ref={host} className="h-full min-h-0" />
+      <EditorContextMenu editor={view} project={workspace} path={path} format={() => void format.current()} canFormat={!!(formatParser(path) || nativeFormatTool(path) || hasServer)} hasServer={hasServer} wrap={wrap} toggleWrap={onToggleWrap}><div ref={host} className="h-full min-h-0" /></EditorContextMenu>
+      {serverError && <button type="button" className="absolute right-3 bottom-3 max-w-[calc(100%-24px)] truncate rounded border bg-popover px-2 py-1 text-left text-xs text-muted-foreground" title={serverError} onClick={() => s.openSettings('language-tools')}>Language server unavailable · Settings</button>}
       {formatting && <span role="status" className="pointer-events-none absolute right-3 bottom-3 rounded bg-popover px-2 py-1 text-xs text-muted-foreground">Formatting…</span>}
       {editing.length > 0 && (
         <div role="status" className="pointer-events-none absolute top-2 right-4 z-10 flex items-center gap-1.5 rounded-full border bg-popover/95 px-2.5 py-1 text-xs text-popover-foreground shadow-sm">

@@ -1,3 +1,4 @@
+import { sourceSyntaxSupported } from './source-language.mjs';
 import workerSource from './language-worker?worker&url';
 import type { CompletionSource } from '@codemirror/autocomplete';
 import { DOCUMENT_LIMIT, documentLanguage } from './document-language-support.mjs';
@@ -35,7 +36,7 @@ async function request<T>(method: 'validate' | 'complete' | 'outline', path: str
     try { instance.postMessage({ id, method, path, text, offset }); } catch { reset(); }
   });
 }
-export const liveValidation = (path: string, text: string) => documentLanguage(path) && text.length <= DOCUMENT_LIMIT ? request<ProjectDiagnostic[]>('validate', path, text) : Promise.resolve([]);
+export const liveValidation = (path: string, text: string) => (documentLanguage(path) || sourceSyntaxSupported(path, text)) && text.length <= DOCUMENT_LIMIT ? request<ProjectDiagnostic[]>('validate', path, text) : Promise.resolve([]);
 export function languageCompletions(path: string): CompletionSource {
   return async (context) => {
     if (context.state.doc.length > DOCUMENT_LIMIT) return null;

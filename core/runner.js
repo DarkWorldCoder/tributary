@@ -49,7 +49,7 @@ async function runTurn(opts) {
   if (agent.controlProtocol === 'codex-app-server' && !host) {
     // Local providers use the same built-in provider IDs as Codex's --oss launcher.
     const configArgs = gateway && ['ollama', 'lmstudio'].includes(gateway.protocol) ? ['-c', `model_provider=${JSON.stringify(gateway.protocol)}`] : gatewayArgs;
-    const r = await require('./codex-server').runCodexServer({ command: agent.path, args: agent.serverArgs || ['app-server', '--listen', 'stdio://', ...configArgs], cwd, env, prompt, mode, resumeId, model, images: opts.images, extraDirs: opts.extraDirs, onEvent: emit, signal });
+    const r = await require('./codex-server').runCodexServer({ command: agent.path, args: agent.serverArgs || ['app-server', '--listen', 'stdio://', ...configArgs], cwd, env, prompt, mode, research: !!opts.research && (!gateway || gateway.protocol === 'openai'), resumeId, model, images: opts.images, extraDirs: opts.extraDirs, onEvent: emit, signal });
     return { ok: r.ok, sessionId: r.sessionId || sessionId, text };
   }
 

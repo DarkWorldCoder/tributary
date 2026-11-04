@@ -16,7 +16,7 @@ function normalize(rows) {
     if (!row || typeof row !== 'object') continue;
     const id = row.model || row.id || (typeof row.name === 'string' ? row.name.replace(/^models\//, '') : '');
     try { if (!validateModel(id)) continue; } catch { continue; }
-    unique.set(id, { id, name: String(row.displayName || row.display_name || id).slice(0, 120), hidden: !!row.hidden });
+    unique.set(id, { id, name: String(row.displayName || row.display_name || id).slice(0, 120), hidden: !!row.hidden, ...(typeof row.resolvedModel === 'string' ? { resolvedModel: row.resolvedModel.slice(0, 200) } : {}) });
     if (unique.size >= 500) break;
   }
   return [...unique.values()];
@@ -51,6 +51,34 @@ function codexModels(agent, { timeoutMs = 12000 } = {}) {
     child.on('error', () => finish(new Error('Cannot start Codex model discovery. Check its installation.')));
     child.on('close', () => { if (!finished) finish(new Error('Codex closed before returning a model catalog.')); });
     send({ id: 1, method: 'initialize', params: { clientInfo: { name: 'tributary_model_picker', title: 'Tributary model picker', version: '0.1.0' } } });
+  });
+}
+
+function claudeModels(agent, { timeoutMs = 10000 } = {}) {
+  return new Promise((resolve, reject) => {
+    const env = { ...process.env, PATH: pathDirs(process.env).join(path.delimiter) }; delete env.CLAUDECODE;
+    const child = start(agent.path, ['-p', '--input-format', 'stream-json', '--output-format', 'stream-json', '--verbose', '--no-session-persistence', '--strict-mcp-config', '--mcp-config', '{"mcpServers":{}}', '--setting-sources', 'user'], { cwd: require('node:os').tmpdir(), env, keepOpen: true });
+    let finished = false; let buffer = ''; let bytes = 0;
+    const finish = (error, models) => { if (finished) return; finished = true; clearTimeout(timer); child.stdin.end(); killTree(child); error ? reject(error) : resolve(models); };
+    const timer = setTimeout(() => finish(new Error('Claude model discovery timed out.')), timeoutMs);
+    child.stderr.resume(); child.stdout.setEncoding('utf8');
+    child.stdout.on('data', (chunk) => {
+      bytes += Buffer.byteLength(chunk); if (bytes > 2 * 1024 * 1024) return finish(new Error('The model catalog exceeded its size limit.'));
+      buffer += chunk; let end;
+      while (!finished && (end = buffer.indexOf('\n')) >= 0) {
+        const line = buffer.slice(0, end); buffer = buffer.slice(end + 1); let message;
+        try { message = JSON.parse(line); } catch { continue; }
+        if (message.type !== 'control_response' || message.response?.request_id !== 'tributary-models') continue;
+        const rows = message.response.response?.models;
+        if (message.response.subtype !== 'success' || !Array.isArray(rows)) return finish(new Error('Claude did not return model metadata.'));
+        const models = normalize(rows.map((row) => ({ ...row, id: row.value })));
+        finish(models.length ? null : new Error('Claude returned no models.'), models);
+      }
+    });
+    child.once('error', () => finish(new Error('Cannot start Claude model discovery.')));
+    child.once('close', () => { if (!finished) finish(new Error('Claude closed before returning its models.')); });
+    // Only initialize metadata: never send a user message, prompt, or tool approval.
+    child.stdin.write(`${JSON.stringify({ type: 'control_request', request_id: 'tributary-models', request: { subtype: 'initialize' } })}\n`);
   });
 }
 
@@ -117,7 +145,10 @@ async function catalog(agent, gateway, options = {}) {
   if (gateway) return { ...result, source: 'provider', models: await providerModels(gateway, options), note: 'Reported by this provider. A listed model may need additional access or may not support this assistant.' };
   if (agent.id === 'codex') return { ...result, source: 'codex', models: await codexModels(agent, options), note: 'Reported by installed Codex. Access and usage limits depend on your sign-in and provider.' };
   if (agent.id === 'antigravity') return { ...result, source: 'antigravity', models: await antigravityModels(agent, options), note: 'Reported by installed Antigravity. Account access and limits apply.' };
+  if (agent.id === 'claude' && agent.path && !agent.custom) {
+    try { return { ...result, source: 'claude', models: await claudeModels(agent, options), note: 'Reported by installed Claude Code. Account access and limits apply.' }; } catch { /* Older CLIs retain explicit alias selection. */ }
+  }
   if (agent.id === 'claude') return { ...result, source: 'aliases', models: ['sonnet', 'opus', 'haiku', 'fable', 'best', 'sonnet[1m]', 'opus[1m]', 'opusplan'].map((id) => ({ id, name: { sonnet: 'Sonnet', opus: 'Opus', haiku: 'Haiku', fable: 'Fable', best: 'Best available', opusplan: 'Opus plan / Sonnet build' }[id] || id })), note: 'Claude model aliases, not an account access check. Version, plan, provider and organization restrictions apply.' };
   return { ...result, source: 'manual', note: 'Use Automatic or enter the model ID from your assistant or provider. Connect a gateway to discover its models.' };
 }
-module.exports = { validateModel, selectable, normalize, codexModels, antigravityModels, providerModels, catalog };
+module.exports = { validateModel, selectable, normalize, codexModels, claudeModels, antigravityModels, providerModels, catalog };
