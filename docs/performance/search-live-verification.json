@@ -1,0 +1,188 @@
+{
+  "date": "2026-11-05T12:54:13.916Z",
+  "passed": true,
+  "checks": [
+    "Ctrl+Shift+F and search on type over real files",
+    "slow responses cannot overwrite newer queries; only latest waiting search runs",
+    "IME composition does not launch incomplete searches",
+    "Enter searches immediately without duplicate debounce request",
+    "arrow navigation, collapse, and exact file/column opening",
+    "live filters, case option and visible regex errors",
+    "late search reply is safe after sidebar close",
+    "editor Find, match count, Replace All and undo use real CodeMirror history",
+    "top command picker fits 1280, 900, 390 and 320 pixel windows",
+    "Ctrl+P Quick Open uses real filename search"
+  ],
+  "layouts": [
+    {
+      "width": 1280,
+      "picker": 600,
+      "left": 340,
+      "right": 940,
+      "top": 40
+    },
+    {
+      "width": 900,
+      "picker": 558,
+      "left": 171,
+      "right": 729,
+      "top": 40
+    },
+    {
+      "width": 390,
+      "picker": 358,
+      "left": 16,
+      "right": 374,
+      "top": 40
+    },
+    {
+      "width": 320,
+      "picker": 288,
+      "left": 16,
+      "right": 304,
+      "top": 40
+    }
+  ],
+  "maxConcurrentSearches": 1,
+  "requests": [
+    {
+      "query": "greeting",
+      "options": {
+        "caseSensitive": false,
+        "wholeWord": false,
+        "regexp": false,
+        "include": "",
+        "exclude": "",
+        "detail": true
+      }
+    },
+    {
+      "query": "greet",
+      "options": {
+        "caseSensitive": false,
+        "wholeWord": false,
+        "regexp": false,
+        "include": "",
+        "exclude": "",
+        "detail": true
+      }
+    },
+    {
+      "query": "hello",
+      "options": {
+        "caseSensitive": false,
+        "wholeWord": false,
+        "regexp": false,
+        "include": "",
+        "exclude": "",
+        "detail": true
+      }
+    },
+    {
+      "query": "world",
+      "options": {
+        "caseSensitive": false,
+        "wholeWord": false,
+        "regexp": false,
+        "include": "",
+        "exclude": "",
+        "detail": true
+      }
+    },
+    {
+      "query": "greeting",
+      "options": {
+        "caseSensitive": false,
+        "wholeWord": false,
+        "regexp": false,
+        "include": "",
+        "exclude": "",
+        "detail": true
+      }
+    },
+    {
+      "query": "greeting",
+      "options": {
+        "caseSensitive": false,
+        "wholeWord": false,
+        "regexp": false,
+        "include": "main.ts",
+        "exclude": "",
+        "detail": true
+      }
+    },
+    {
+      "query": "greeting",
+      "options": {
+        "caseSensitive": false,
+        "wholeWord": false,
+        "regexp": false,
+        "include": "main.ts",
+        "exclude": "main.ts",
+        "detail": true
+      }
+    },
+    {
+      "query": "greeting",
+      "options": {
+        "caseSensitive": false,
+        "wholeWord": false,
+        "regexp": false,
+        "include": "",
+        "exclude": "",
+        "detail": true
+      }
+    },
+    {
+      "query": "HELLO",
+      "options": {
+        "caseSensitive": false,
+        "wholeWord": false,
+        "regexp": false,
+        "include": "",
+        "exclude": "",
+        "detail": true
+      }
+    },
+    {
+      "query": "HELLO",
+      "options": {
+        "caseSensitive": true,
+        "wholeWord": false,
+        "regexp": false,
+        "include": "",
+        "exclude": "",
+        "detail": true
+      }
+    },
+    {
+      "query": "[",
+      "options": {
+        "caseSensitive": false,
+        "wholeWord": false,
+        "regexp": true,
+        "include": "",
+        "exclude": "",
+        "detail": true
+      }
+    },
+    {
+      "query": "greet",
+      "options": {
+        "caseSensitive": false,
+        "wholeWord": false,
+        "regexp": true,
+        "include": "",
+        "exclude": "",
+        "detail": true
+      }
+    }
+  ],
+  "sourceHashes": {
+    "ui/src/components/project-search.tsx": "35ab8dfd1eaa368e419797de67569cde7cd809de93f27813308759e74ac25e83",
+    "ui/src/lib/editor-search.ts": "7ec2e61785f23b6dee50686eb25f1681fe5e4703e52a29a99831353d969b0130",
+    "ui/src/index.css": "6dfa3109875bd61634b1c136db44f97cb9fe09f3c7d2ee0c8f6ba1a2e7da18ee",
+    "test/e2e/search-ui.cjs": "5f2523300d7a129583c5b055905a55ba4fc5cf6d3a6b93bf910534ccf06c0a7c"
+  },
+  "scope": "Linux Electron source build; isolated real files and actual search worker. Agent discovery disabled; two search replies deliberately held to exercise races. Native minimum width reduced only in this fixture for 390/320 pixel renderer checks. No live provider or installer claim."
+}

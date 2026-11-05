@@ -1,4 +1,5 @@
 import type { EditorView, Panel, ViewUpdate } from '@codemirror/view';
+import '@vscode/codicons/dist/codicon.css';
 import { runScopeHandlers } from '@codemirror/view';
 import { SearchQuery, closeSearchPanel, findNext, findPrevious, getSearchQuery, openSearchPanel, replaceAll, replaceNext, setSearchQuery } from '@codemirror/search';
 
@@ -17,7 +18,8 @@ export function createEditorSearchPanel(view: EditorView): Panel {
   };
   const button = (name: string, label: string, text: string, run: () => void) => {
     const node = doc.createElement('button'); node.type = 'button'; node.name = name;
-    node.title = label; node.setAttribute('aria-label', label); node.textContent = text;
+    node.title = label; node.setAttribute('aria-label', label);
+    const icon = doc.createElement('span'); icon.className = `codicon codicon-${text}`; icon.setAttribute('aria-hidden', 'true'); node.append(icon);
     node.addEventListener('click', run); return node;
   };
   const searchField = field('search', 'Find'); searchField.setAttribute('main-field', 'true');
@@ -25,22 +27,22 @@ export function createEditorSearchPanel(view: EditorView): Panel {
   const count = el('span', 'cm-find-count'); count.setAttribute('aria-live', 'polite');
   const findBox = el('div', 'cm-find-input'); findBox.append(searchField);
   const options: Record<string, HTMLButtonElement> = {};
-  for (const [key, label, text] of [['caseSensitive', 'Match Case', 'Aa'], ['wholeWord', 'Match Whole Word', 'ab'], ['regexp', 'Use Regular Expression', '.*']]) {
+  for (const [key, label, text] of [['caseSensitive', 'Match Case', 'case-sensitive'], ['wholeWord', 'Match Whole Word', 'whole-word'], ['regexp', 'Use Regular Expression', 'regex']]) {
     const toggle = button(key, label, text, () => { toggle.setAttribute('aria-pressed', String(toggle.getAttribute('aria-pressed') !== 'true')); commit(); });
     toggle.setAttribute('aria-pressed', 'false'); options[key] = toggle; findBox.append(toggle);
   }
   const row = el('div', 'cm-find-row');
   const replaceRow = el('div', 'cm-replace-row'); replaceRow.hidden = true;
-  const expand = button('toggle-replace', 'Toggle Replace', '›', () => {
-    replaceRow.hidden = !replaceRow.hidden; expand.setAttribute('aria-expanded', String(!replaceRow.hidden)); expand.textContent = replaceRow.hidden ? '›' : '⌄';
+  const expand = button('toggle-replace', 'Toggle Replace', 'chevron-right', () => {
+    replaceRow.hidden = !replaceRow.hidden; expand.setAttribute('aria-expanded', String(!replaceRow.hidden)); expand.firstElementChild!.className = `codicon codicon-chevron-${replaceRow.hidden ? 'right' : 'down'}`;
   });
   expand.setAttribute('aria-expanded', 'false'); expand.disabled = view.state.readOnly;
-  const previous = button('prev', 'Previous Match (Shift+Enter)', '↑', () => { findPrevious(view); });
-  const next = button('next', 'Next Match (Enter)', '↓', () => { findNext(view); });
-  const close = button('close', 'Close (Escape)', '×', () => { closeSearchPanel(view); view.focus(); });
+  const previous = button('prev', 'Previous Match (Shift+Enter)', 'arrow-up', () => { findPrevious(view); });
+  const next = button('next', 'Next Match (Enter)', 'arrow-down', () => { findNext(view); });
+  const close = button('close', 'Close (Escape)', 'close', () => { closeSearchPanel(view); view.focus(); });
   row.append(findBox, count, previous, next, close);
   const replaceBox = el('div', 'cm-find-input'); replaceBox.append(replaceField);
-  replaceRow.append(replaceBox, button('replace', 'Replace (Enter)', 'Replace', () => { replaceNext(view); }), button('replaceAll', 'Replace All', 'All', () => { replaceAll(view); }));
+  replaceRow.append(replaceBox, button('replace', 'Replace (Enter)', 'replace', () => { replaceNext(view); }), button('replaceAll', 'Replace All', 'replace-all', () => { replaceAll(view); }));
   dom.append(expand, row, replaceRow);
   let query = getSearchQuery(view.state);
   function commit() {

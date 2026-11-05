@@ -24,6 +24,7 @@ export function ProjectSearchLauncher() {
 export function ProjectSearch({ project, visible, onClose, onOpen }: { project: string; visible: boolean; onClose: () => void; onOpen: (rel: string, line: number, column: number) => void }) {
   const s = useStore();
   const input = React.useRef<HTMLInputElement>(null);
+  const results = React.useRef<HTMLDivElement>(null);
   const [query, setQuery] = React.useState('');
   const [options, setOptions] = React.useState({ caseSensitive: false, wholeWord: false, regexp: false });
   const [details, setDetails] = React.useState(false);
@@ -31,50 +32,87 @@ export function ProjectSearch({ project, visible, onClose, onOpen }: { project: 
   const [result, setResult] = React.useState<Result | null>(null);
   const [collapsed, setCollapsed] = React.useState(new Set<string>());
   const [error, setError] = React.useState(''); const [busy, setBusy] = React.useState(false);
+  const [composing, setComposing] = React.useState(false);
   const revision = React.useRef(0);
   const inFlight = React.useRef(false);
+  const debounce = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const pending = React.useRef<null | { revision: number; query: string; options: typeof options; include: string; exclude: string; project: string }>(null);
+  const active = React.useRef(visible); active.current = visible;
   const live = React.useRef(true);
-  React.useEffect(() => { live.current = true; return () => { live.current = false; ++revision.current; }; }, []);
+  React.useEffect(() => { live.current = true; return () => { live.current = false; pending.current = null; ++revision.current; }; }, []);
   React.useEffect(() => { if (visible) input.current?.focus(); }, [visible]);
   React.useEffect(() => {
     const focus = () => { if (visible) { input.current?.focus(); input.current?.select(); } };
     window.addEventListener('tributary:search-project', focus);
     return () => window.removeEventListener('tributary:search-project', focus);
   }, [visible]);
-  const invalidate = () => { ++revision.current; setResult(null); setError(''); };
-  const search = async () => {
-    if (!project || !query.trim() || inFlight.current) return;
-    const request = ++revision.current; inFlight.current = true; setBusy(true); setError(''); setResult(null);
+  const invalidate = () => { ++revision.current; pending.current = null; setResult(null); setError(''); };
+  const search = React.useCallback(async () => {
+    clearTimeout(debounce.current);
+    if (!project || !query.trim() || !active.current || !live.current) return;
+    // Keep one worker request running and at most one newer query waiting.
+    // A stale reply must never replace results for text the user just typed.
+    pending.current = { revision: ++revision.current, project, query, options, include, exclude };
+    setBusy(true); setError('');
+    if (inFlight.current) return;
+    inFlight.current = true;
     try {
-      const next = await s.hub.call<Result>('searchProject', project, query, { ...options, include, exclude, detail: true });
-      if (live.current && request === revision.current) { setResult(next); setCollapsed(new Set()); }
-    } catch (cause) { if (live.current && request === revision.current) setError((cause as Error).message.replace(/^Error invoking remote method '[^']*': (Error: )?/, '')); }
-    finally { inFlight.current = false; if (live.current) setBusy(false); }
-  };
+      while (pending.current && active.current && live.current) {
+        const request = pending.current; pending.current = null;
+        try {
+          const next = await s.hub.call<Result>('searchProject', request.project, request.query, { ...request.options, include: request.include, exclude: request.exclude, detail: true });
+          if (live.current && active.current && request.revision === revision.current) { setResult(next); setCollapsed(new Set()); }
+        } catch (cause) {
+          if (live.current && active.current && request.revision === revision.current) setError((cause as Error).message.replace(/^Error invoking remote method '[^']*': (Error: )?/, ''));
+        }
+      }
+    } finally { inFlight.current = false; if (live.current) setBusy(false); }
+  }, [project, query, options, include, exclude, s.hub]);
+  React.useEffect(() => {
+    ++revision.current; pending.current = null; setResult(null); setError('');
+    if (!visible || !query.trim() || composing) { setBusy(false); return; }
+    debounce.current = setTimeout(() => void search(), 300);
+    return () => { clearTimeout(debounce.current); ++revision.current; pending.current = null; };
+  }, [visible, composing, search, query]);
   const grouped = React.useMemo(() => {
     const files = new Map<string, Match[]>();
     for (const match of result?.matches || []) { const rows = files.get(match.rel) || []; rows.push(match); files.set(match.rel, rows); }
     return [...files].sort(([a], [b]) => a.localeCompare(b));
   }, [result]);
   const toggleFile = (rel: string) => setCollapsed((previous) => { const next = new Set(previous); if (next.has(rel)) next.delete(rel); else next.add(rel); return next; });
-  return <section className="workspace-search flex h-full min-h-0 flex-col" aria-label="Search in files" onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); onClose(); } }}>
+  return <section className="workspace-search flex h-full min-h-0 flex-col" aria-label="Search in files" onKeyDown={(event) => {
+    if (event.nativeEvent.isComposing) return;
+    if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); onClose(); }
+    if (event.key === 'ArrowDown' && event.target === input.current && results.current?.querySelector('button')) {
+      event.preventDefault(); results.current.querySelector('button')?.focus();
+    }
+  }}>
     <header className="workbench-toolbar shrink-0 gap-0.5 px-3"><h2 className="min-w-0 flex-1 truncate text-[11px] font-medium uppercase">Search</h2>
       <Tooltip><TooltipTrigger asChild><Button size="icon-xs" variant="ghost" aria-label="Refresh search" disabled={busy || !query.trim()} onClick={() => void search()}><RefreshCw /></Button></TooltipTrigger><TooltipContent>Refresh search</TooltipContent></Tooltip>
       <Tooltip><TooltipTrigger asChild><Button size="icon-xs" variant="ghost" aria-label="Collapse search results" disabled={!grouped.length} onClick={() => setCollapsed(collapsed.size === grouped.length ? new Set() : new Set(grouped.map(([rel]) => rel)))}><ChevronsDownUp /></Button></TooltipTrigger><TooltipContent>Collapse / expand results</TooltipContent></Tooltip>
       <Tooltip><TooltipTrigger asChild><Button size="icon-xs" variant="ghost" aria-label="Close search sidebar" onClick={onClose}><X /></Button></TooltipTrigger><TooltipContent>Close search · Esc</TooltipContent></Tooltip>
     </header>
-    <form className="shrink-0 px-3 pt-1 pb-2" onSubmit={(event) => { event.preventDefault(); void search(); }}>
+    <form className="search-widgets shrink-0" onSubmit={(event) => { event.preventDefault(); if (!composing) void search(); }}>
       <div className="search-query-box flex h-[27px] min-w-0 items-center rounded-sm border bg-input px-1 focus-within:outline-1 focus-within:outline-ring">
-        <input ref={input} aria-label="Search project text" placeholder="Search" className="w-0 min-w-0 flex-1 bg-transparent px-1 text-[13px] outline-none" maxLength={512} value={query} onChange={(event) => { invalidate(); setQuery(event.target.value); }} />
+        <input ref={input} aria-label="Search project text" placeholder="Search" className="w-0 min-w-0 flex-1 bg-transparent px-1 text-[13px] outline-none" autoComplete="off" spellCheck={false} maxLength={512} value={query} onCompositionStart={() => { invalidate(); setComposing(true); }} onCompositionEnd={() => setComposing(false)} onKeyDown={(event) => { if (event.nativeEvent.isComposing && event.key === 'Enter') { event.preventDefault(); event.stopPropagation(); } }} onChange={(event) => { invalidate(); setQuery(event.target.value); }} />
         {([{ key: 'caseSensitive', label: 'Match Case', icon: CaseSensitive }, { key: 'wholeWord', label: 'Match Whole Word', icon: WholeWord }, { key: 'regexp', label: 'Use Regular Expression', icon: Regex }] as const).map(({ key, label, icon: Icon }) => <Tooltip key={key}><TooltipTrigger asChild><button type="button" aria-label={label} aria-pressed={options[key]} onClick={() => { invalidate(); setOptions({ ...options, [key]: !options[key] }); }} className={cn('grid size-[22px] shrink-0 place-items-center rounded-sm border border-transparent hover:bg-accent focus-visible:outline-1 focus-visible:outline-ring', options[key] && 'border-ring bg-accent')}><Icon className="size-4" /></button></TooltipTrigger><TooltipContent>{label}</TooltipContent></Tooltip>)}
       </div>
-      <div className="flex items-center justify-between gap-1 pt-1"><span className="truncate text-[11px] text-muted-foreground" title={project}>{project.split(/[\\/]/).at(-1)}</span><Tooltip><TooltipTrigger asChild><button className="grid size-6 place-items-center rounded hover:bg-accent focus-visible:outline-1 focus-visible:outline-ring" type="button" aria-label="Toggle search details" aria-expanded={details} onClick={() => setDetails(!details)}><Ellipsis className="size-4" /></button></TooltipTrigger><TooltipContent>Files to include / exclude</TooltipContent></Tooltip></div>
+      <div className="search-query-details flex justify-end"><Tooltip><TooltipTrigger asChild><button className="grid h-4 w-6 place-items-center rounded hover:bg-accent focus-visible:outline-1 focus-visible:outline-ring" type="button" aria-label="Toggle search details" aria-expanded={details} onClick={() => setDetails(!details)}><Ellipsis className="size-4" /></button></TooltipTrigger><TooltipContent>Files to include / exclude</TooltipContent></Tooltip></div>
       {details && <div className="space-y-2 pb-1 text-[11px]">{([{ label: 'files to include', value: include, set: setInclude, placeholder: '*.ts, src/**' }, { label: 'files to exclude', value: exclude, set: setExclude, placeholder: '*.test.ts' }]).map((filter) => <label className="block space-y-1" key={filter.label}><span>{filter.label}</span><input className="h-[26px] w-full rounded-sm border bg-input px-1.5 text-[12px] outline-none focus:outline-1 focus:outline-ring" aria-label={filter.label} placeholder={filter.placeholder} maxLength={512} value={filter.value} onChange={(event) => { invalidate(); filter.set(event.target.value); }} /></label>)}</div>}
       <button type="submit" className="sr-only" disabled={busy}>Search files</button>
     </form>
-    <div className="shrink-0 px-4 pb-2 text-[12px] text-muted-foreground" role="status">{busy ? 'Searching…' : result ? `${result.matches.length} ${result.matches.length === 1 ? 'result' : 'results'} in ${grouped.length} ${grouped.length === 1 ? 'file' : 'files'}${result.truncated ? ' · Limit reached' : ''}` : 'Press Enter to search.'}</div>
+    <div className="search-summary shrink-0 text-[12px] text-muted-foreground" role="status" aria-live="polite">{busy ? 'Searching…' : result ? `${result.matches.length} ${result.matches.length === 1 ? 'result' : 'results'} in ${grouped.length} ${grouped.length === 1 ? 'file' : 'files'}${result.truncated ? ' · Limit reached' : ''}` : 'Type to search files.'}</div>
     {error && <p role="alert" className="px-4 pb-2 text-xs text-destructive">{error}</p>}
-    <div className="min-h-0 flex-1 overflow-auto pb-2" role="region" aria-label="Project search results">
+    <div ref={results} className="min-h-0 flex-1 overflow-auto pb-2" role="region" aria-label="Project search results" onKeyDown={(event) => {
+      if (event.altKey || event.ctrlKey || event.metaKey || event.nativeEvent.isComposing) return;
+      const rows = [...event.currentTarget.querySelectorAll<HTMLButtonElement>('button')];
+      const index = rows.indexOf(event.target as HTMLButtonElement); if (index < 0) return;
+      const next = event.key === 'ArrowDown' ? Math.min(index + 1, rows.length - 1) : event.key === 'ArrowUp' ? index - 1 : event.key === 'Home' ? 0 : event.key === 'End' ? rows.length - 1 : null;
+      if (next !== null) { event.preventDefault(); event.stopPropagation(); (next < 0 ? input.current : rows[next])?.focus(); }
+      else if (event.target instanceof HTMLButtonElement && event.target.hasAttribute('aria-expanded') && ['ArrowLeft', 'ArrowRight'].includes(event.key)) {
+        event.preventDefault(); event.stopPropagation(); if ((event.key === 'ArrowRight') !== (event.target.getAttribute('aria-expanded') === 'true')) event.target.click();
+      }
+    }}>
       {result && !result.matches.length && <p className="px-4 py-2 text-xs text-muted-foreground">No results found. Try another search or check your filters.</p>}
       {grouped.map(([rel, matches]) => <div key={rel}>
         <button type="button" className="search-result-file flex h-[22px] w-full items-center gap-1 px-2 text-left text-[13px] hover:bg-accent focus-visible:bg-accent focus-visible:outline-1 focus-visible:outline-ring" title={rel} aria-expanded={!collapsed.has(rel)} onClick={() => toggleFile(rel)}>

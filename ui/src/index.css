@@ -317,6 +317,12 @@
 .workspace-file-tab[data-state="active"] { background: var(--card); }
 
 /* VS Code find-widget layout, adapted to CodeMirror and Tributary theme tokens. */
+.workspace-search .search-widgets { padding: 6px 12px 6px 20px; }
+.workspace-search .search-query-box { height: 27px; }
+.workspace-search .search-query-details { min-height: 16px; }
+.workspace-search .search-summary { padding: 0 22px 8px; overflow-wrap: anywhere; }
+.workspace-search .search-result-line { font-size: 13px; padding-left: 32px; }
+.workspace-search .search-result-line > span:first-child { width: 24px; text-align: right; margin-right: 4px; }
 .cm-editor > .cm-panels-top:has(.cm-vscode-search) { position: absolute; inset: 0 12px auto auto; z-index: 10; width: min(419px, calc(100% - 24px)); border: 0; background: transparent; }
 .cm-editor .cm-panel.cm-vscode-search { position: relative; padding: 4px 4px 4px 22px; border: 1px solid var(--border); border-radius: 4px; background: var(--popover); color: var(--popover-foreground); box-shadow: 0 3px 10px #0003; font: 12px/19px var(--font-sans); container-type: inline-size; }
 .cm-vscode-search .cm-find-row, .cm-vscode-search .cm-replace-row { display: flex; align-items: center; gap: 3px; min-height: 26px; }
@@ -328,7 +334,7 @@
 .cm-vscode-search button { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: 22px; height: 22px; padding: 0 3px; border: 1px solid transparent; border-radius: 3px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
 .cm-vscode-search button:hover:not(:disabled) { background: var(--accent); }
 .cm-vscode-search button[aria-pressed="true"] { background: var(--accent); border-color: var(--ring); }
-.cm-vscode-search button[name="wholeWord"] { text-decoration: underline; text-underline-offset: 2px; }
+.cm-vscode-search button .codicon { font-size: 16px; line-height: 16px; }
 .cm-vscode-search button[name="toggle-replace"] { position: absolute; left: 2px; top: 3px; bottom: 3px; height: auto; min-width: 16px; padding: 0; font-size: 20px; }
 .cm-editor .cm-vscode-search button[name="close"] { position: static !important; font-size: 18px; background: transparent; }
 @container (max-width: 330px) { .cm-vscode-search .cm-find-count { display: none; } }
@@ -346,6 +352,9 @@
   gap: 0; padding: 0; border-radius: 6px !important;
   box-shadow: var(--shadow-xl); animation: none;
 }
+/* Finder dialogs have no tooltip controls. Hide lingering workbench tooltips
+   while the modal owns focus, including after a narrow-window resize. */
+body:has(.feature-finder[data-state="open"]) [data-slot="tooltip-content"] { visibility: hidden; }
 .feature-finder [data-slot="command"] { border-radius: 6px !important; padding: 0; }
 .feature-finder [cmdk-list] { max-height: min(440px, 40dvh); padding: 0 6px 7px; scrollbar-width: thin; }
 .feature-finder [cmdk-item] { min-height: 22px; padding: 0 6px; font-size: 13px; line-height: 22px; border-radius: 3px !important; gap: 6px; }
