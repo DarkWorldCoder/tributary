@@ -1,0 +1,109 @@
+TARGET object:Ui#343865
+PATH 51 synthetic:(GC roots)#3
+  synthetic:(GC roots)#3 --element:29--> synthetic:C++ Persistent roots#461431
+  synthetic:C++ Persistent roots#461431 --internal:blink::ScriptState::ScriptState(v8::Local<v8::Context>, DOMWrapperWorld *, ExecutionContext *)@../../third_party/blink/renderer/platform/bindings/script_state.cc:37--> native:blink::ScriptStateImpl#82
+  native:blink::ScriptStateImpl#82 --element:1--> native:blink::V8PerContextData#47140
+  native:blink::V8PerContextData#47140 --element:3--> native:blink::HeapHashTableBacking<blink::HashTable<const char *, blink::KeyValuePair<const char *, cppgc::internal::BasicMember<blink::V8PerContextData::Data, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::KeyValuePairExtractor, blink::HashMapValueTraits<blink::HashTraits<const char *>, blink::HashTraits<cppgc::internal::BasicMember<blink::V8PerContextData::Data, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>>, blink::HashTraits<const char *>, blink::HeapAllocator>>#47146
+  native:blink::HeapHashTableBacking<blink::HashTable<const char *, blink::KeyValuePair<const char *, cppgc::internal::BasicMember<blink::V8PerContextData::Data, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::KeyValuePairExtractor, blink::HashMapValueTraits<blink::HashTraits<const char *>, blink::HashTraits<cppgc::internal::BasicMember<blink::V8PerContextData::Data, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>>, blink::HashTraits<const char *>, blink::HeapAllocator>>#47146 --element:1--> native:Modulator#9202
+  native:Modulator#9202 --element:3--> native:ModuleTreeLinkerRegistry#35056
+  native:ModuleTreeLinkerRegistry#35056 --element:1--> native:blink::HeapHashTableBacking<blink::HashTable<cppgc::internal::BasicMember<blink::ModuleTreeLinker, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>, cppgc::internal::BasicMember<blink::ModuleTreeLinker, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>, blink::IdentityExtractor, blink::HashTraits<cppgc::internal::BasicMember<blink::ModuleTreeLinker, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::HashTraits<cppgc::internal::BasicMember<blink::ModuleTreeLinker, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::HeapAllocator>>#35058
+  native:blink::HeapHashTableBacking<blink::HashTable<cppgc::internal::BasicMember<blink::ModuleTreeLinker, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>, cppgc::internal::BasicMember<blink::ModuleTreeLinker, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>, blink::IdentityExtractor, blink::HashTraits<cppgc::internal::BasicMember<blink::ModuleTreeLinker, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::HashTraits<cppgc::internal::BasicMember<blink::ModuleTreeLinker, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::HeapAllocator>>#35058 --element:1--> native:SingleModuleClient#78102
+  native:SingleModuleClient#78102 --element:4--> native:ModuleTreeClient#78104
+  native:ModuleTreeClient#78104 --element:2--> native:blink::ScriptPromiseResolver<blink::IDLAny>#78100
+  native:blink::ScriptPromiseResolver<blink::IDLAny>#78100 --element:2--> object:Promise#265975
+  object:Promise#265975 --internal:reactions_or_result--> native:system / PromiseReaction#116817
+  native:system / PromiseReaction#116817 --hidden:3--> object:Promise#116821
+  object:Promise#116821 --internal:reactions_or_result--> native:system / PromiseReaction#116829
+  native:system / PromiseReaction#116829 --hidden:3--> object:Promise#116845
+  object:Promise#116845 --internal:reactions_or_result--> native:system / PromiseReaction#116849
+  native:system / PromiseReaction#116849 --hidden:3--> object:Promise#116853
+  object:Promise#116853 --internal:reactions_or_result--> native:system / PromiseReaction#116855
+  native:system / PromiseReaction#116855 --hidden:3--> object:Promise#116857
+  object:Promise#116857 --internal:reactions_or_result--> native:system / PromiseReaction#116859
+  native:system / PromiseReaction#116859 --hidden:3--> object:Promise#116863
+  object:Promise#116863 --internal:reactions_or_result--> native:system / PromiseReaction#116865
+  native:system / PromiseReaction#116865 --hidden:1--> closure:#116867
+  closure:#116867 --internal:context--> object:system / Context / scope @459#116871
+  object:system / Context / scope @459#116871 --internal:extension--> object:Generator#116873
+  object:Generator#116873 --hidden:4--> object:Promise#116879
+  object:Promise#116879 --internal:reactions_or_result--> native:system / PromiseReaction#116881
+  native:system / PromiseReaction#116881 --hidden:1--> closure:#116883
+  closure:#116883 --internal:context--> object:system / Context / scope @111#116887
+  object:system / Context / scope @111#116887 --hidden:1--> object:Promise#116895
+  object:Promise#116895 --internal:reactions_or_result--> native:system / PromiseReaction#116897
+  native:system / PromiseReaction#116897 --hidden:1--> closure:#116901
+  closure:#116901 --internal:context--> object:system / Context / scope @459#116905
+  object:system / Context / scope @459#116905 --internal:extension--> object:Generator#116907
+  object:Generator#116907 --hidden:4--> object:Promise#116911
+  object:Promise#116911 --internal:reactions_or_result--> native:system / PromiseReaction#116915
+  native:system / PromiseReaction#116915 --hidden:1--> closure:#116917
+  closure:#116917 --internal:context--> object:system / Context / scope @459#116923
+  object:system / Context / scope @459#116923 --internal:extension--> object:Generator#116925
+  object:Generator#116925 --hidden:3--> object:Promise#116929
+  object:Promise#116929 --internal:reactions_or_result--> native:system / PromiseReaction#116943
+  native:system / PromiseReaction#116943 --hidden:1--> closure:#116945
+  closure:#116945 --internal:context--> object:system / Context / scope @459#188641
+  object:system / Context / scope @459#188641 --internal:extension--> object:Generator#188643
+  object:Generator#188643 --hidden:4--> object:Promise#188649
+  object:Promise#188649 --internal:reactions_or_result--> native:system / PromiseReaction#188651
+  native:system / PromiseReaction#188651 --hidden:2--> closure:#188653
+  closure:#188653 --internal:context--> object:system / Context / scope @75577#188657
+  object:system / Context / scope @75577#188657 --internal:previous--> object:system / Context / scope @75583#344845
+  object:system / Context / scope @75583#344845 --context:i--> closure:native_bind#344313
+  closure:native_bind#344313 --shortcut:bound_argument_0--> object:Ui#343865
+PATH 54 synthetic:(Global handles)#23
+  synthetic:(Global handles)#23 --internal:285 / V8PerContextData::context_--> native:system / NativeContext / file://#7751
+  native:system / NativeContext / file://#7751 --internal:global_proxy_object--> native:Window / file://#59739
+  native:Window / file://#59739 --element:21--> native:blink::LocalWindowProxyManager#9142
+  native:blink::LocalWindowProxyManager#9142 --element:2--> native:blink::LocalWindowProxy#34900
+  native:blink::LocalWindowProxy#34900 --element:1--> native:blink::ScriptStateImpl#82
+  native:blink::ScriptStateImpl#82 --element:1--> native:blink::V8PerContextData#47140
+  native:blink::V8PerContextData#47140 --element:3--> native:blink::HeapHashTableBacking<blink::HashTable<const char *, blink::KeyValuePair<const char *, cppgc::internal::BasicMember<blink::V8PerContextData::Data, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::KeyValuePairExtractor, blink::HashMapValueTraits<blink::HashTraits<const char *>, blink::HashTraits<cppgc::internal::BasicMember<blink::V8PerContextData::Data, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>>, blink::HashTraits<const char *>, blink::HeapAllocator>>#47146
+  native:blink::HeapHashTableBacking<blink::HashTable<const char *, blink::KeyValuePair<const char *, cppgc::internal::BasicMember<blink::V8PerContextData::Data, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::KeyValuePairExtractor, blink::HashMapValueTraits<blink::HashTraits<const char *>, blink::HashTraits<cppgc::internal::BasicMember<blink::V8PerContextData::Data, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>>, blink::HashTraits<const char *>, blink::HeapAllocator>>#47146 --element:1--> native:Modulator#9202
+  native:Modulator#9202 --element:3--> native:ModuleTreeLinkerRegistry#35056
+  native:ModuleTreeLinkerRegistry#35056 --element:1--> native:blink::HeapHashTableBacking<blink::HashTable<cppgc::internal::BasicMember<blink::ModuleTreeLinker, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>, cppgc::internal::BasicMember<blink::ModuleTreeLinker, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>, blink::IdentityExtractor, blink::HashTraits<cppgc::internal::BasicMember<blink::ModuleTreeLinker, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::HashTraits<cppgc::internal::BasicMember<blink::ModuleTreeLinker, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::HeapAllocator>>#35058
+  native:blink::HeapHashTableBacking<blink::HashTable<cppgc::internal::BasicMember<blink::ModuleTreeLinker, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>, cppgc::internal::BasicMember<blink::ModuleTreeLinker, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>, blink::IdentityExtractor, blink::HashTraits<cppgc::internal::BasicMember<blink::ModuleTreeLinker, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::HashTraits<cppgc::internal::BasicMember<blink::ModuleTreeLinker, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::HeapAllocator>>#35058 --element:1--> native:SingleModuleClient#78102
+  native:SingleModuleClient#78102 --element:4--> native:ModuleTreeClient#78104
+  native:ModuleTreeClient#78104 --element:2--> native:blink::ScriptPromiseResolver<blink::IDLAny>#78100
+  native:blink::ScriptPromiseResolver<blink::IDLAny>#78100 --element:2--> object:Promise#265975
+  object:Promise#265975 --internal:reactions_or_result--> native:system / PromiseReaction#116817
+  native:system / PromiseReaction#116817 --hidden:3--> object:Promise#116821
+  object:Promise#116821 --internal:reactions_or_result--> native:system / PromiseReaction#116829
+  native:system / PromiseReaction#116829 --hidden:3--> object:Promise#116845
+  object:Promise#116845 --internal:reactions_or_result--> native:system / PromiseReaction#116849
+  native:system / PromiseReaction#116849 --hidden:3--> object:Promise#116853
+  object:Promise#116853 --internal:reactions_or_result--> native:system / PromiseReaction#116855
+  native:system / PromiseReaction#116855 --hidden:3--> object:Promise#116857
+  object:Promise#116857 --internal:reactions_or_result--> native:system / PromiseReaction#116859
+  native:system / PromiseReaction#116859 --hidden:3--> object:Promise#116863
+  object:Promise#116863 --internal:reactions_or_result--> native:system / PromiseReaction#116865
+  native:system / PromiseReaction#116865 --hidden:1--> closure:#116867
+  closure:#116867 --internal:context--> object:system / Context / scope @459#116871
+  object:system / Context / scope @459#116871 --internal:extension--> object:Generator#116873
+  object:Generator#116873 --hidden:4--> object:Promise#116879
+  object:Promise#116879 --internal:reactions_or_result--> native:system / PromiseReaction#116881
+  native:system / PromiseReaction#116881 --hidden:1--> closure:#116883
+  closure:#116883 --internal:context--> object:system / Context / scope @111#116887
+  object:system / Context / scope @111#116887 --hidden:1--> object:Promise#116895
+  object:Promise#116895 --internal:reactions_or_result--> native:system / PromiseReaction#116897
+  native:system / PromiseReaction#116897 --hidden:1--> closure:#116901
+  closure:#116901 --internal:context--> object:system / Context / scope @459#116905
+  object:system / Context / scope @459#116905 --internal:extension--> object:Generator#116907
+  object:Generator#116907 --hidden:4--> object:Promise#116911
+  object:Promise#116911 --internal:reactions_or_result--> native:system / PromiseReaction#116915
+  native:system / PromiseReaction#116915 --hidden:1--> closure:#116917
+  closure:#116917 --internal:context--> object:system / Context / scope @459#116923
+  object:system / Context / scope @459#116923 --internal:extension--> object:Generator#116925
+  object:Generator#116925 --hidden:3--> object:Promise#116929
+  object:Promise#116929 --internal:reactions_or_result--> native:system / PromiseReaction#116943
+  native:system / PromiseReaction#116943 --hidden:1--> closure:#116945
+  closure:#116945 --internal:context--> object:system / Context / scope @459#188641
+  object:system / Context / scope @459#188641 --internal:extension--> object:Generator#188643
+  object:Generator#188643 --hidden:4--> object:Promise#188649
+  object:Promise#188649 --internal:reactions_or_result--> native:system / PromiseReaction#188651
+  native:system / PromiseReaction#188651 --hidden:2--> closure:#188653
+  closure:#188653 --internal:context--> object:system / Context / scope @75577#188657
+  object:system / Context / scope @75577#188657 --internal:previous--> object:system / Context / scope @75583#344845
+  object:system / Context / scope @75583#344845 --context:i--> closure:native_bind#344313
+  closure:native_bind#344313 --shortcut:bound_argument_0--> object:Ui#343865
+VISITED 95062

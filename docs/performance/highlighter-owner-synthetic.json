@@ -1,0 +1,1 @@
+{"cases":[{"name":"cancel-before-load","loads":0,"ownerReleased":true},{"name":"cancel-pending-load","loads":1,"ownerReleased":true},{"name":"completed-load","loads":1,"ownerReleased":true},{"name":"active-pending-owner","loads":1,"ownerReleased":false}]}

@@ -1,6 +1,10 @@
 import * as React from "react"
 
 import { loadHighlighter } from "@/lib/highlighter"
+import { subscribeHighlighter } from "@/lib/highlighter-subscription.mjs"
+
+// Keep the pending loader's scope independent from the hook's render/Fiber.
+const languageLoader = (language: string) => () => loadHighlighter(language)
 
 export function useHighlightedCode(value: string, language: string) {
   // A trailing newline would render as an extra empty line.
@@ -12,19 +16,9 @@ export function useHighlightedCode(value: string, language: string) {
   const highlighter = loaded?.language === language ? loaded.highlighter : null
 
   React.useEffect(() => {
-    let cancelled = false
-
-    loadHighlighter(language)
-      .then((next) => {
-        if (!cancelled) {
-          setLoaded({ language, highlighter: next })
-        }
-      })
-      .catch(() => {})
-
-    return () => {
-      cancelled = true
-    }
+    return subscribeHighlighter(languageLoader(language), (next) => {
+      setLoaded({ language, highlighter: next })
+    })
   }, [language])
 
   // The complete lines, highlighted. While the code streams, only the new

@@ -1,0 +1,113 @@
+{
+  "date": "2026-11-05T14:11:30.900Z",
+  "baseline": "ff26dfc frozen UI/desktop; same current core and dependencies",
+  "runs": {
+    "baseline": {
+      "date": "2026-11-05T14:11:27.068Z",
+      "mode": "baseline",
+      "ownerReleased": false,
+      "marked": {
+        "type": "Eu",
+        "tag": 0
+      },
+      "requests": [
+        "file:///tmp/tributary-highlight-before-QiGwvS/ui/dist/assets/typescript-bsJCZSQ-.js"
+      ],
+      "liveConsumerHighlighted": true,
+      "currentTextUnchanged": true,
+      "runtime": {
+        "node": "24.21.0",
+        "acorn": "8.18.0",
+        "ada": "4.0.0",
+        "amaro": "1.1.11",
+        "ares": "1.34.8",
+        "brotli": "1.2.0",
+        "cldr": "48.0",
+        "icu": "78.2",
+        "llhttp": "9.4.3",
+        "merve": "1.2.2",
+        "modules": "149",
+        "napi": "10",
+        "nbytes": "0.1.4",
+        "ncrypto": "0.0.1",
+        "nghttp2": "1.70.0",
+        "nghttp3": "",
+        "ngtcp2": "",
+        "openssl": "0.0.0",
+        "simdjson": "4.6.7",
+        "simdutf": "7.7.0",
+        "sqlite": "3.53.4",
+        "tz": "2026d",
+        "undici": "7.29.1",
+        "unicode": "17.0",
+        "uv": "1.52.1",
+        "uvwasi": "0.0.23",
+        "v8": "15.2.124.37-electron.0",
+        "zlib": "1.3.2.1-motley",
+        "zstd": "1.6.0",
+        "electron": "44.7.2",
+        "chrome": "152.0.7977.149"
+      },
+      "fixtureSha256": "19e100e13ae0da9a7fb7482ec32b3ba2cf8402879165a4cb8bcb8106be1d173c",
+      "uiSha256": "048caefb014b56991f9ce64dff9a41d2310ac52a392b6f53222135c8c178d9b6",
+      "scope": "Linux Electron source UI; actual file grammar import paused through the isolated session webRequest hook. React Fiber reached via version-pinned diagnostics, weakly observed after unmount/extra commits and diagnostic GC. Shared import then completes for a live consumer. No provider invoked, no production forced GC, no exact byte/RAM or latency claim."
+    },
+    "released": {
+      "date": "2026-11-05T14:11:30.837Z",
+      "mode": "released",
+      "ownerReleased": true,
+      "marked": {
+        "type": "Ou",
+        "tag": 0
+      },
+      "requests": [
+        "file:///home/ayushniroula/Desktop/projects/tributary/ui/dist/assets/typescript-bsJCZSQ-.js"
+      ],
+      "liveConsumerHighlighted": true,
+      "currentTextUnchanged": true,
+      "runtime": {
+        "node": "24.21.0",
+        "acorn": "8.18.0",
+        "ada": "4.0.0",
+        "amaro": "1.1.11",
+        "ares": "1.34.8",
+        "brotli": "1.2.0",
+        "cldr": "48.0",
+        "icu": "78.2",
+        "llhttp": "9.4.3",
+        "merve": "1.2.2",
+        "modules": "149",
+        "napi": "10",
+        "nbytes": "0.1.4",
+        "ncrypto": "0.0.1",
+        "nghttp2": "1.70.0",
+        "nghttp3": "",
+        "ngtcp2": "",
+        "openssl": "0.0.0",
+        "simdjson": "4.6.7",
+        "simdutf": "7.7.0",
+        "sqlite": "3.53.4",
+        "tz": "2026d",
+        "undici": "7.29.1",
+        "unicode": "17.0",
+        "uv": "1.52.1",
+        "uvwasi": "0.0.23",
+        "v8": "15.2.124.37-electron.0",
+        "zlib": "1.3.2.1-motley",
+        "zstd": "1.6.0",
+        "electron": "44.7.2",
+        "chrome": "152.0.7977.149"
+      },
+      "fixtureSha256": "19e100e13ae0da9a7fb7482ec32b3ba2cf8402879165a4cb8bcb8106be1d173c",
+      "uiSha256": "1ed5266b98b79e4ef7ebed5352be64c3c5161b178f4207f4e6a56735865e41d2",
+      "scope": "Linux Electron source UI; actual file grammar import paused through the isolated session webRequest hook. React Fiber reached via version-pinned diagnostics, weakly observed after unmount/extra commits and diagnostic GC. Shared import then completes for a live consumer. No provider invoked, no production forced GC, no exact byte/RAM or latency claim."
+    }
+  },
+  "sourceHashes": {
+    "ui/src/hooks/use-highlighted-code.ts": "ee4684251e9619bf823b01bf5c6babdb6a4d07e19ab9e5dda3d438a0744c2940",
+    "ui/src/lib/highlighter-subscription.mjs": "4b73f7375d936c8ac3b748b6ed3ee756809456e10ea772b332799e068a79cd73",
+    "scripts/performance/native-highlighter-owner.cjs": "19e100e13ae0da9a7fb7482ec32b3ba2cf8402879165a4cb8bcb8106be1d173c",
+    "scripts/performance/highlighter-owner.cjs": "10f42232ea35f16cf5f175990eb47c642c91b3105a6fff571c8a0e42b85f3d57"
+  },
+  "scope": "Actual native cancelled-component reachability with an intentionally stalled grammar import, not retained bytes, ordinary import latency, whole-app RAM or collector speed. Shared loader completion is preserved. No production finalizer or forced GC."
+}

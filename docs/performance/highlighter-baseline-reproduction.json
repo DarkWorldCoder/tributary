@@ -1,0 +1,22 @@
+{
+  "date": "2026-11-05T14:18:42.558Z",
+  "original": {
+    "host": "/tmp/tributary-highlight-before-QiGwvS",
+    "revision": "ff26dfc",
+    "uiSha256": "048caefb014b56991f9ce64dff9a41d2310ac52a392b6f53222135c8c178d9b6"
+  },
+  "rebuilt": {
+    "ref": "ff26dfc",
+    "host": "/tmp/tributary-code-parent-ZRE2Id",
+    "overriddenFiles": [
+      "ui/src/components/markdown.tsx",
+      "ui/src/components/code-editor.tsx",
+      "ui/src/components/desktop-titlebar.tsx",
+      "ui/src/hooks/use-highlighted-code.ts"
+    ],
+    "uiSha256": "048caefb014b56991f9ce64dff9a41d2310ac52a392b6f53222135c8c178d9b6",
+    "scope": "Selected revision Markdown/editor/titlebar/highlight hook and desktop; all other current source/config/dependencies and core are shared. Temporary comparison host, not an installer."
+  },
+  "builtEntryIdentical": true,
+  "scope": "Frozen copied ff26dfc UI entry versus the baseline builder output; an entry fingerprint comparison, not installer/signing or runtime-memory certification."
+}
