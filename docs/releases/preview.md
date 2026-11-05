@@ -9,6 +9,14 @@ Tributary preview for macOS, Windows and Linux.
 
 ### Included
 
+New in 0.1.4:
+
+- Hidden and ignored files, including `.env`, visible in the file explorer; create files and folders directly, or right-click a folder. Find project files with Ctrl/Cmd+P.
+- Independent split terminals, new-terminal shortcuts, and docking within the editor so chat stays full height. Shells survive hiding and reopening the workspace.
+- A unified source-control sidebar, compact chat controls, chronological tool activity, and direct installation of compatible Open VSX theme/icon packs.
+- Lower retained history and appearance-cache working sets, bounded terminal output transport, local-generation admission, and cleaner worker, language-server and preview lifetimes. Detailed synthetic benchmark scopes are documented in the repository; these are not universal RAM or inference-speed guarantees.
+- Gemini MCP placeholder restoration so a CLI config save does not leave managed credentials as plain text.
+
 New in 0.1.3: guided local-model setup for Unsloth, Ollama and LM Studio; model discovery, API-key setup and local chat or coding agents with file tools, command approvals and background workers; resume controls after network interruptions; a compact Notes/Context/Activity memory panel; compact history/project-memory budgets; and smaller sidebar status caches that keep full replies on disk until opened. Model downloads, loading and GPU memory remain managed by the local model app.
 
 Local coding agents and background teams, LAN project rooms, a multi-folder workspace, live file edits, Git comparisons, project-aware formatting, terminal, debugger, preview browser and QA tools.
