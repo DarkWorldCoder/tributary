@@ -41,7 +41,8 @@
     "bench:history-cache": "node scripts/performance/history-cache.cjs",
     "bench:writers": "node scripts/performance/writer-working-set.cjs",
     "bench:inference": "node scripts/performance/local-inference.cjs",
-    "bench:patch-cache": "node scripts/performance/patch-cache.cjs"
+    "bench:patch-cache": "node scripts/performance/patch-cache.cjs",
+    "bench:patch-hashing": "node scripts/performance/patch-hashing.cjs"
   },
   "devDependencies": {
     "electron": "44.7.2",

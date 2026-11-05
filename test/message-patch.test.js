@@ -63,6 +63,47 @@ test('large tool and metadata values use compact comparison signatures while pat
   patch = patcher.patch(m); received = applyPatch(received, clone(patch)); assert.deepEqual(received, clone(m)); assert.equal(patcher.stats().entries, 0);
 });
 
+test('large comparison signatures preserve ASCII, Unicode and transitions without narrowing code units', async () => {
+  const { applyPatch } = await loadApply(); const patcher = createPatcher();
+  const prefix = 'output '.repeat(1000);
+  const m = { id: 'encodings', role: 'assistant', text: '', tools: [{ id: 'tool', output: prefix }], trace: [{ details: prefix }], metadata: { value: prefix }, ok: null };
+  patcher.full(m); let received = clone(m);
+  for (const tail of ['ASCII', 'नमस्ते', '世界', '😀', 'café', 'e\u0301', '\u0100', '\u0200', '\ud800', '\ud801', '\udc00', '\udc01', '\u0000', '\u007f', '\u0080', '\u00ff', 'ASCII']) {
+    m.tools[0].output = prefix + tail; m.trace[0].details = tail + prefix; m.metadata.value = prefix + tail;
+    const patch = patcher.patch(m);
+    assert.ok(patch.tools, `tool changed for ${JSON.stringify(tail)}`); assert.ok(patch.trace); assert.ok(patch.set.metadata);
+    received = applyPatch(received, clone(patch)); assert.deepEqual(received, clone(m));
+    assert.deepEqual(patcher.patch(m), {}, 'equal values keep their signature through the same encoding path');
+    assert.ok(patcher.stats().accountedBytes < 4096);
+  }
+  m.ok = true; patcher.full(m); assert.equal(patcher.stats().entries, 0);
+});
+
+test('raw tool-output comparisons preserve metadata, framing and transitions to generic values', async () => {
+  const { applyPatch } = await loadApply(); const patcher = createPatcher();
+  const m = { id: 'raw-output', role: 'assistant', text: '', ok: null, tools: [JSON.parse('{"id":"tool","output":"","input":{"__proto__":"data","file_path":"a"},"files":["a"]}')] };
+  m.tools[0].output = 'long\n'.repeat(2000); patcher.full(m); let received = clone(m);
+  for (const change of [() => { m.tools[0].input.file_path = 'b'; }, () => { m.tools[0].files.push('b'); }, () => { m.tools[0].output += '\0\0🌍'; }, () => { m.tools[0].output = ''; }, () => { m.tools[0].output = { nested: 'output' }; }, () => { m.tools[0].output = '\0'.repeat(5000); }, () => { delete m.tools[0].output; }]) {
+    change(); const patch = patcher.patch(m); assert.ok(patch.tools);
+    received = applyPatch(received, clone(patch)); assert.deepEqual(received, clone(m)); assert.deepEqual(patcher.patch(m), {});
+  }
+});
+
+test('custom tool serialization and accessors retain the generic single-read behavior', () => {
+  const output = 'large'.repeat(2000);
+  for (const kind of ['root-getter', 'nested-getter', 'nested-toJSON', 'proxy', 'toJSON-getter']) {
+    let reads = 0; let tool = { id: kind, output, input: {} };
+    if (kind === 'root-getter') Object.defineProperty(tool, 'status', { enumerable: true, get() { reads++; return 'done'; } });
+    if (kind === 'nested-getter') Object.defineProperty(tool.input, 'value', { enumerable: true, get() { reads++; return 'value'; } });
+    if (kind === 'nested-toJSON') tool.input.toJSON = () => { reads++; return { value: 'custom' }; };
+    if (kind === 'proxy') tool = new Proxy(tool, { get(target, key, receiver) { if (key === 'output') reads++; return Reflect.get(target, key, receiver); } });
+    if (kind === 'toJSON-getter') Object.defineProperty(tool, 'toJSON', { get() { reads++; return () => ({ id: kind, output }); } });
+    const patcher = createPatcher(), m = { id: kind, role: 'assistant', tools: [tool] };
+    patcher.full(m); assert.equal(reads, 1, kind);
+    assert.deepEqual(patcher.patch(m), {}); assert.equal(reads, 2, kind);
+  }
+});
+
 test('user and system messages never retain streaming snapshots or serialize their fields for patch bookkeeping', () => {
   const patcher = createPatcher();
   for (const role of ['user', 'system']) {

@@ -1,0 +1,37 @@
+{
+  "date": "2026-11-05T09:38:19.869Z",
+  "checks": {
+    "fullRegressions": {
+      "tests": 546,
+      "passed": 546,
+      "failed": 0
+    },
+    "focusedRegressions": {
+      "tests": 30,
+      "passed": 30,
+      "failed": 0
+    },
+    "vscodeBuild": "Passed by npm pretest hook",
+    "sourceSyntax": true,
+    "diffCheck": true
+  },
+  "benchmark": "patch-hashing-benchmark.json",
+  "native": "native-patch-hashing-verification.json",
+  "alternatives": "patch-hashing-alternatives.json",
+  "sourceHashes": {
+    "core/message-patch.js": "0688561eb8e893ef4efd1dff29f542f7de986663732edd8175b26434c3b216a0",
+    "test/message-patch.test.js": "2863e95cbd7171bcac3476a81a92cea73dce99c91333af7a57191c99170375c7",
+    "scripts/performance/patch-hashing.cjs": "7f396a69b96010c8e9704b9f4e9251cd438e80b1c205afcbf3d7224556bb0293",
+    "scripts/performance/native-patch-cache.cjs": "9414493938253f5bad19daef151336eb484c2e0d755bba5b38df577ac0dd1604"
+  },
+  "reading": {
+    "url": "https://www.dataorienteddesign.com/dodbook/node6.html",
+    "scope": "Full reduced-edition chapter text; linked footnotes, diagram images and source examples not separately validated.",
+    "readerSha256": "e6f6c0e2ad2012ac8b3f27491b22e9d908a1f3fd6bb37b38d67f5a177a13dbb6"
+  },
+  "limits": [
+    "Patcher timing is not end-to-end app or model-generation latency.",
+    "Small retained guard overhead remains; serialization peaks and app RAM are separate.",
+    "Only synthetic Linux Node and real Linux desktop fixtures were measured."
+  ]
+}

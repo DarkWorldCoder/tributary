@@ -8,6 +8,7 @@ const ARRAYS = ['tools', 'trace'];
 const MAX_BASES = 64;
 const MAX_BASE_BYTES = 8 * 1024 * 1024;
 const { createHash } = require('node:crypto');
+const { isProxy } = require('node:util').types;
 // Large tool/metadata JSON is needed for equality, never for reconstructing a
 // patch. Keep a fixed SHA-256 signature instead of a second long-lived copy.
 // A literal NUL cannot begin JSON, so signatures cannot equal serialized JSON.
@@ -16,10 +17,47 @@ function comparison(value) {
   return json?.length > 4096 ? `\0${json.length}:${createHash('sha256').update(json, 'utf16le').digest('base64')}` : json;
 }
 
+// Only specialize inert JSON data. Accessors, custom serialization, proxies,
+// unfamiliar prototypes and expensive/cyclic metadata keep the generic path.
+function plainData(value, budget) {
+  if (--budget.left < 0) return false;
+  const type = typeof value;
+  if (value === null || type === 'string' || type === 'number' || type === 'boolean' || type === 'undefined') return true;
+  if (type !== 'object' || isProxy(value)) return false;
+  const prototype = Object.getPrototypeOf(value);
+  if ((prototype !== null && prototype !== Object.prototype && !(Array.isArray(value) && prototype === Array.prototype)) || 'toJSON' in value) return false;
+  const descriptors = Object.getOwnPropertyDescriptors(value);
+  if (Array.isArray(value)) {
+    if (value.length > budget.left) return false;
+    for (let i = 0; i < value.length; i++) if (!Object.hasOwn(descriptors, i)) return false;
+  }
+  for (const descriptor of Object.values(descriptors)) {
+    if (!('value' in descriptor) || !plainData(descriptor.value, budget)) return false;
+  }
+  return true;
+}
+
+function toolComparison(tool) {
+  if (!tool || typeof tool !== 'object' || isProxy(tool)) return comparison(tool);
+  const prototype = Object.getPrototypeOf(tool);
+  if ((prototype !== null && prototype !== Object.prototype) || 'toJSON' in tool) return comparison(tool);
+  const descriptors = Object.getOwnPropertyDescriptors(tool), output = descriptors.output;
+  if (!output?.enumerable || typeof output.value !== 'string' || output.value.length <= 4096) return comparison(tool);
+  const metadata = Object.create(null);
+  for (const [key, descriptor] of Object.entries(descriptors)) {
+    if (!('value' in descriptor)) return comparison(tool);
+    if (key !== 'output' && descriptor.enumerable) metadata[key] = descriptor.value;
+  }
+  if (!plainData(metadata, { left: 128 })) return comparison(tool);
+  // JSON metadata cannot contain a literal NUL. Its terminator separates it
+  // unambiguously from the raw UTF-16 output; neither long string is retained.
+  return `\0o:${output.value.length}:${createHash('sha256').update(JSON.stringify(metadata), 'utf16le').update('\0', 'utf16le').update(output.value, 'utf16le').digest('base64')}`;
+}
+
 function snapshot(m) {
   const fields = {};
   for (const [k, v] of Object.entries(m)) if (!ARRAYS.includes(k) && !GROWING.includes(k)) fields[k] = comparison(v);
-  return { present: ARRAYS.filter((key) => key in m), text: m.text || '', thinking: m.thinking || '', arrays: Object.fromEntries(ARRAYS.map((key) => [key, (m[key] || []).map(comparison)])), fields };
+  return { present: ARRAYS.filter((key) => key in m), text: m.text || '', thinking: m.thinking || '', arrays: Object.fromEntries(ARRAYS.map((key) => [key, (m[key] || []).map(key === 'tools' ? toolComparison : comparison)])), fields };
 }
 
 // A comparison base is disposable: a cache miss sends the complete live message.

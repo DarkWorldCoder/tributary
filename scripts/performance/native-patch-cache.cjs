@@ -36,7 +36,7 @@ app.on('browser-window-created', (_event, win) => {
     await run(`document.querySelector('[title="Cache fixture"]').click()`); await delay(200);
     await run(`(async()=>{window.__cacheReceived=new Map();const {applyPatch}=await import(${JSON.stringify(pathToFileURL(path.join(repo, 'ui/src/lib/message-patch.mjs')).href)});window.hub.on('message',d=>window.__cacheReceived.set(d.message.id,d.message));window.hub.on('message-patch',d=>window.__cacheReceived.set(d.id,applyPatch(window.__cacheReceived.get(d.id),d.patch)));return true})()`);
     await until(() => transport.state().ready, 'transport ready');
-    const count = 80, messages = Array.from({ length: count }, (_, i) => ({ id: 'cache-' + i, role: 'assistant', agent: 'fixture', mode: 'read', kind: 'chat', text: 'Initial ' + i, thinking: '', tools: [{ id: 'tool-' + i, name: 'Read', input: { file_path: project + '/README.md' }, status: 'done', output: crypto.randomBytes(49152).toString('base64') }], files: [], trace: [], permissions: [], notices: [], ok: null, ts: Date.now() }));
+    const count = 80, messages = Array.from({ length: count }, (_, i) => ({ id: 'cache-' + i, role: 'assistant', agent: 'fixture', mode: 'read', kind: 'chat', text: 'Initial ' + i, thinking: '', tools: [{ id: 'tool-' + i, name: 'Read', input: { file_path: project + '/README.md' }, status: 'done', output: crypto.randomBytes(49152).toString('base64') + (i % 4 === 0 ? '\0\ud800🌍नमस्ते\n' : '') }], files: [], trace: [], permissions: [], notices: [], ok: null, ts: Date.now() }));
     const emit = name => hub.withHistoryOperation(() => { const t = hub.thread(thread.id); for (const message of messages) hub.emit(name, { threadId: t.id, message }); });
     const drained = () => hub.histories.pins.size === 0 && transport.state().active === 0;
     const exact = async () => {
@@ -49,7 +49,7 @@ app.on('browser-window-created', (_event, win) => {
     phase = 'pressure'; for (const m of messages) { m.text += ' latest'; m.permissions = [{ id: 'p', state: 'allowed' }]; }
     emit('event'); await delay(100); await until(drained, 'pressure delivery'); await exact();
     assert.ok(packets.some(p => p.phase === 'pressure' && p.name === 'message'), 'evicted bases must fall back to full');
-    phase = 'hot'; const hot = messages.at(-1); hot.text += ' HOT_PATCH'; hub.emit('event', { threadId: thread.id, message: hot }); await delay(100); await until(drained, 'hot delta'); await exact();
+    phase = 'hot'; const hot = messages.at(-1); hot.text += ' HOT_PATCH'; hot.tools[0].output += ' LIVE_OUTPUT_🌍\n'; hub.emit('event', { threadId: thread.id, message: hot }); await delay(100); await until(drained, 'hot delta'); await exact();
     assert.ok(packets.some(p => p.phase === 'hot' && p.name === 'message-patch'));
     phase = 'final'; for (const m of messages) { m.ok = true; m.text += ' CACHE_FINAL_' + m.id; }
     emit('message'); hub.store.save(true); await until(drained, 'final delivery'); const finalDigest = await exact();
