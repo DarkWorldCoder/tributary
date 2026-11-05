@@ -53,3 +53,14 @@ test('shared grammar loading keeps independent pane lifetimes and absorbs a fail
   configureEditorGrammar(a.view, a.compartment, true, () => { throw Error('Synthetic import failure'); }); await tick();
   assert.equal(a.view.state.tree.length, 0); assert.ok(b.view.state.tree.length > 0);
 });
+
+
+test('cancelled imports and inactive effects release their view owner while retained promises/cleanups stay alive', async () => {
+  const { execFileSync } = await import('node:child_process');
+  const { fileURLToPath } = await import('node:url');
+  const probe = fileURLToPath(new URL('../scripts/performance/grammar-owner-probe.mjs', import.meta.url));
+  const module = fileURLToPath(new URL('../ui/src/lib/editor-grammar.mjs', import.meta.url));
+  const result = JSON.parse(execFileSync(process.execPath, ['--expose-gc', probe, module], { encoding: 'utf8', timeout: 15000 }));
+  assert.deepEqual(result.cases.map((entry) => entry.loads), [1, 0, 0]);
+  assert.ok(result.cases.every((entry) => entry.ownerReleased));
+});

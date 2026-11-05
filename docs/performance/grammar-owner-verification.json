@@ -1,0 +1,122 @@
+{
+  "date": "2026-11-05T11:17:19.936Z",
+  "baseline": "9edfe0b",
+  "before": {
+    "cases": [
+      {
+        "name": "cancel-pending-load",
+        "loads": 1,
+        "ownerReleased": false
+      },
+      {
+        "name": "inactive-effect",
+        "loads": 0,
+        "ownerReleased": false
+      },
+      {
+        "name": "cancel-before-load",
+        "loads": 0,
+        "ownerReleased": true
+      }
+    ]
+  },
+  "after": {
+    "cases": [
+      {
+        "name": "cancel-pending-load",
+        "loads": 1,
+        "ownerReleased": true
+      },
+      {
+        "name": "inactive-effect",
+        "loads": 0,
+        "ownerReleased": true
+      },
+      {
+        "name": "cancel-before-load",
+        "loads": 0,
+        "ownerReleased": true
+      }
+    ]
+  },
+  "method": "Separate Node subprocesses; explicit diagnostic GC after event-loop turns; unresolved load promises and current inactive-effect cleanups deliberately remain rooted. WeakRef is read only after the collection loop.",
+  "scope": "Reachability of synthetic owner objects, not exact bytes, real EditorView/app RAM, natural GC latency or model memory. No product forced GC or finalizer dependency.",
+  "sourceHashes": {
+    "baseline": "10ed2db8a3b0dc05b44b1be004634ebfed0ebeedbde31016079810dcde0b0dbf",
+    "current": "e8cb4f3849415b157b767044359fb6feec30cf814554f58b5897ad2d63bd71d1",
+    "probe": "db0fb40916d3bac66881c233297030f1a7d6d946abcfc4eabe6778846dee81d5",
+    "runner": "c37b4c8a66a968055034d8ba0f115efbf2a0e01b8aa4912ade6c586e49f139d6"
+  },
+  "checks": {
+    "fullRegressions": {
+      "passed": 554,
+      "failed": 0
+    },
+    "focusedRegressions": {
+      "passed": 6,
+      "failed": 0
+    },
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "vscodeBuild": "passed via pretest"
+  },
+  "nativeCorrectness": {
+    "date": "2026-11-05T11:19:08.686Z",
+    "baselineRevision": "adc8a97",
+    "hostUiSha256": "5d74a29ec6ae9c5cdae67baf96b5f9a91e5ac51542e69997a7fbe17c5eb9f0ca",
+    "liveViewCount": 1,
+    "parkedViewsReleased": true,
+    "pendingDiskSaveCompleted": true,
+    "newerDraftStayedDirty": true,
+    "dirtyDocumentsPreserved": true,
+    "selectionPreserved": true,
+    "externalEditFlashVerified": true,
+    "pendingFormatCompletedWhileHidden": true,
+    "undoRedoExact": true,
+    "runtime": {
+      "node": "24.21.0",
+      "acorn": "8.18.0",
+      "ada": "4.0.0",
+      "amaro": "1.1.11",
+      "ares": "1.34.8",
+      "brotli": "1.2.0",
+      "cldr": "48.0",
+      "icu": "78.2",
+      "llhttp": "9.4.3",
+      "merve": "1.2.2",
+      "modules": "149",
+      "napi": "10",
+      "nbytes": "0.1.4",
+      "ncrypto": "0.0.1",
+      "nghttp2": "1.70.0",
+      "nghttp3": "",
+      "ngtcp2": "",
+      "openssl": "0.0.0",
+      "simdjson": "4.6.7",
+      "simdutf": "7.7.0",
+      "sqlite": "3.53.4",
+      "tz": "2026d",
+      "undici": "7.29.1",
+      "unicode": "17.0",
+      "uv": "1.52.1",
+      "uvwasi": "0.0.23",
+      "v8": "15.2.124.37-electron.0",
+      "zlib": "1.3.2.1-motley",
+      "zstd": "1.6.0",
+      "electron": "44.7.2",
+      "chrome": "152.0.7977.149"
+    },
+    "sourceHashes": {
+      "ui/src/components/code-editor.tsx": "1096a5e0984a7628290df2c326ef81f9385b6bad711730a88aa9b104c0c17bd0",
+      "ui/src/lib/editor-grammar.mjs": "e8cb4f3849415b157b767044359fb6feec30cf814554f58b5897ad2d63bd71d1",
+      "ui/src/hooks/use-debugger.ts": "81bf888ba706b7ffbb617fe87988ffb0f86e72b4ad1b0841de5e61cdc6599e15",
+      "ui/src/lib/agent-editor.ts": "72564f4694da74697e65535aca5b58f161732af386c9f12767c5beb2e403a5d2",
+      "scripts/performance/native-editor-parking.cjs": "ab072735d0a39376b44dec34fd7e1c2255d0d805d41f0c3f86af4a00765b02c9",
+      "ui/src/lib/editor-memento.mjs": "46fa4e706d856bab09a99b3570d4c58781b68104f53f0054c923a1b1da565c3e",
+      "ui/src/components/workspace-files.tsx": "469c74923e74931fd0c55c83e5f79cddbd6f77063d9ecb2450ac248630b2bd70"
+    },
+    "warmViewCount": 1,
+    "allHiddenViewCount": 0,
+    "scope": "Desktop correctness run alongside regressions; collected process/heap samples intentionally excluded. Not a RAM or graphics benchmark."
+  }
+}
