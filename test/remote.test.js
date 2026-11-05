@@ -159,6 +159,34 @@ test('git helpers: status, diffs, file list and commit run on the host', { skip 
   assert.strictEqual(await git.gitInfo(tmp(), { host }), null, 'a folder without git');
 });
 
+test('remote filename prefixes stream through SSH and preserve newline names in the non-Git fallback', { skip }, async () => {
+  const d = repo(); const host = sshHost(box(d));
+  fs.writeFileSync(path.join(d, 'two\nlines.txt'), ''); fs.writeFileSync(path.join(d, 'नयाँ.ts'), '');
+  const raw = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], { cwd: d, encoding: 'utf8' });
+  const expected = [...new Set(raw.split('\0').filter(Boolean))];
+  const listed = await sentOverSsh(() => git.listFiles(d, 2, { host }));
+  assert.deepStrictEqual(listed.result, expected.slice(0, 2));
+  assert.ok(listed.commands.some(command => command.includes("'ls-files'") && command.includes('.cache/tributary/run/')));
+  const plain = tmp(); fs.writeFileSync(path.join(plain, 'two\nlines.ts'), ''); fs.writeFileSync(path.join(plain, 'नयाँ.ts'), '');
+  const fallback = await sentOverSsh(() => git.listFiles(plain, 10, { host }));
+  assert.deepStrictEqual(fallback.result.sort(), ['two\nlines.ts', 'नयाँ.ts'].sort());
+  assert.ok(fallback.commands.some(command => command.includes("'find'") && command.includes("'-print0'")));
+  assert.strictEqual((await git.listFiles(plain, 1, { host })).length, 1);
+});
+
+test('streamed remote command timeout cleans up the recorded remote process group', { skip, timeout: 15000 }, async () => {
+  const { readPathCommand } = require('../core/path-command');
+  const d = tmp(), host = sshHost(box(d)); let child;
+  const owned = { spawn(...args) { child = host.spawn(...args); return child; }, kill: c => host.kill(c) };
+  const result = await readPathCommand(owned, process.execPath, ['-e', "process.stdout.write('ready\\0partial');setInterval(()=>{},1000)"], { cwd: d, limit: 1, timeout: 500 });
+  assert.strictEqual(result.ok, false); assert.match(result.failure, /timed out/);
+  const deadline = Date.now() + 10000;
+  while (child.exitCode === null && child.signalCode === null && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 25));
+  assert.ok(child.exitCode !== null || child.signalCode !== null);
+  while (fs.existsSync(path.join(REMOTE_HOME, child.tributaryPidFile)) && Date.now() < deadline) await new Promise(resolve => setTimeout(resolve, 25));
+  assert.strictEqual(fs.existsSync(path.join(REMOTE_HOME, child.tributaryPidFile)), false);
+});
+
 test('git helpers: a turn\'s touched files are found from fingerprints taken on the host', { skip }, async () => {
   const d = repo();
   const host = sshHost(box(d));

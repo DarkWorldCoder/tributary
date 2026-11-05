@@ -10,7 +10,7 @@ const base = path.resolve('release', platform === 'mac' ? `mac${arch === 'arm64'
 const resources = path.join(base, platform === 'mac' ? 'Resources' : 'resources');
 const archive = path.join(resources, 'app.asar');
 const entries = new Set(listPackage(archive).map((name) => name.replaceAll('\\', '/')));
-for (const file of ['core/index.js', 'server/lan-host.js', 'desktop/main.js', 'ui/dist/index.html', 'node_modules/jsonc-parser/package.json', 'node_modules/prettier/package.json', 'LICENSE']) {
+for (const file of ['core/index.js', 'core/path-command.js', 'core/path-prefix.js', 'server/lan-host.js', 'desktop/main.js', 'ui/dist/index.html', 'node_modules/jsonc-parser/package.json', 'node_modules/prettier/package.json', 'LICENSE']) {
   if (!entries.has('/' + file)) throw new Error(`Package is missing ${file}`);
 }
 if ([...entries].some((file) => /(?:^|\/)\.env(?:\.|$)/.test(file))) throw new Error('Environment files must never be packaged.');

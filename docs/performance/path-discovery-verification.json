@@ -1,0 +1,28 @@
+{
+  "date": "2026-11-05T13:05:51.813Z",
+  "fullTests": {
+    "passed": 569,
+    "failed": 0
+  },
+  "pathTests": 8,
+  "offlineSshIncluded": true,
+  "types": "passed",
+  "uiBuild": "passed",
+  "vscodeBuild": "passed",
+  "actualDesktop": "path-discovery-desktop.json",
+  "syntheticAsar": "path-discovery-asar.json",
+  "sourceHashes": {
+    "core/git.js": "259a59f7d04c71b669fb20e1ff744a0464aaf1a6fd7890e5626eb70a82131001",
+    "core/path-command.js": "129922e5bedcc5db17f62abb80d268fe474e620e018a1ce241375d754b1207a0",
+    "core/path-prefix.js": "da014dad4c9536e9799458986ee5708163300f01bfe89afe9b761bfb6ecfeaa7",
+    "core/host.js": "4b49bdeff7c61dd1aba576a4feecf0c4ce6ea39c12ee2c7071300e26710701ca",
+    "core/proc.js": "d2e5c49dcf231f3aea4bfa294b10aa6a3a8df53b59b9a7e49323e70f409e8101",
+    "scripts/performance/path-discovery.cjs": "afa6a0d3e431c4f531cc09990a84c28331fc2f8bed691b647d1e89064e521db5",
+    "package.json": "6225990648d158127e868cfcacc4a5b3e9ff296a8657bbec22ad326d446e0beb",
+    "test/path-prefix.test.js": "6dd1f243724d67248fce9c9072949522b6446d3173a1a02827ba025ef18253aa",
+    "test/remote.test.js": "0228d82d5e9c7ae12fcc8c9f1df57daaa98b61461e1b5ffc51b84871bcf43b4b",
+    "test/e2e/path-discovery-asar.cjs": "fba430ddabc2bdbe04e16c8149c08ac45dfa34a3034a991ebdadbbb951972038",
+    "scripts/verify-distribution.cjs": "bd6bcc50ab868ea507259d88afd0eb09a5a34895033436f802f715db912d9124"
+  },
+  "scope": "Linux source tree. Native Windows/macOS, a new installer, live SSH network, real model RAM/VRAM and total-application speed are not established."
+}

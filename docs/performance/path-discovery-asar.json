@@ -1,0 +1,15 @@
+{
+  "date": "2026-11-05T13:03:10.083Z",
+  "passed": true,
+  "modules": [
+    "git.js",
+    "host.js",
+    "ssh.js",
+    "proc.js",
+    "change-stats.js",
+    "path-command.js",
+    "path-prefix.js"
+  ],
+  "stdout": "PATH_ASAR_OK 24.21.0",
+  "scope": "Actual Electron runtime, synthetic ASAR containing streamed Git dependencies, external temporary real Git repository. No installer, live remote host or native Windows/macOS release claim."
+}

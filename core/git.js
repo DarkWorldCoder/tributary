@@ -4,6 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const { localHost } = require('./host');
 const { parseNumstat } = require('./change-stats');
+const { readPathCommand } = require('./path-command');
+const { pathPrefixFromText } = require('./path-prefix');
 
 const run = (cwd, args, max = 200000, host = localHost) => host.exec('git', args, { cwd, timeout: 8000, maxBuffer: max * 4 })
   .then((r) => (r.code === 0 ? String(r.stdout) : null));
@@ -74,18 +76,31 @@ const SKIP = ['node_modules', '.git', 'dist', 'build', '.venv', '__pycache__', '
 
 // Files for @-mentions: tracked and untracked, honoring .gitignore. Falls back to a shallow walk.
 async function listFiles(cwd, limit = 20000, { host = localHost } = {}) {
-  const out = await run(cwd, ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], 50_000_000, host);
-  if (out != null) return [...new Set(out.split('\0').filter(Boolean))].slice(0, limit);
+  if (!Number.isSafeInteger(limit) || limit < 0) throw new RangeError('Invalid file limit');
+  if (!limit) return [];
+  const args = ['ls-files', '--cached', '--others', '--exclude-standard', '-z'];
+  if (typeof host.spawn === 'function') {
+    const result = await readPathCommand(host, 'git', args, { cwd, limit });
+    if (result.ok) return result.files;
+  } else {
+    const out = await run(cwd, args, 50_000_000, host);
+    if (out != null) return pathPrefixFromText(out, limit);
+  }
   if (host.remote) {
     const prune = SKIP.flatMap((n, i) => [...(i ? ['-o'] : []), '-name', n]);
-    const r = await host.exec('find', ['.', '-maxdepth', '7', '(', ...prune, '-o', '-name', '.*', '!', '-name', '.', ')', '-prune', '-o', '-type', 'f', '-print'], { cwd, timeout: 15000 });
-    return r.stdout.split('\n').filter(Boolean).map((f) => f.replace(/^\.\//, '')).slice(0, limit);
+    const args = ['.', '-maxdepth', '7', '(', ...prune, '-o', '-name', '.*', '!', '-name', '.', ')', '-prune', '-o', '-type', 'f'];
+    if (typeof host.spawn === 'function') {
+      const result = await readPathCommand(host, 'find', [...args, '-print0'], { cwd, limit, timeout: 15000, maxBytes: 64 * 1024 * 1024, stripDot: true });
+      return result.files;
+    }
+    const r = await host.exec('find', [...args, '-print'], { cwd, timeout: 15000 });
+    return pathPrefixFromText(String(r.stdout), limit, { separator: '\n', stripDot: true });
   }
   const files = []; const skip = new Set(SKIP);
   const walk = (dir, depth) => {
     if (depth > 6 || files.length >= limit) return;
     let ents = []; try { ents = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
-    for (const e of ents) { if (skip.has(e.name) || e.name.startsWith('.')) continue; const p = path.join(dir, e.name); if (e.isDirectory()) walk(p, depth + 1); else files.push(path.relative(cwd, p)); }
+    for (const e of ents) { if (files.length >= limit) break; if (skip.has(e.name) || e.name.startsWith('.')) continue; const p = path.join(dir, e.name); if (e.isDirectory()) walk(p, depth + 1); else files.push(path.relative(cwd, p)); }
   };
   walk(cwd, 0); return files;
 }
