@@ -1,0 +1,81 @@
+[
+  {
+    "label": "failed-state-only-release",
+    "snapshotSha256": "2e31867fd503c61ecc94b563c0595c8896ec4151b1b0e6665d97ba4c8db57a0f",
+    "filenameSizedBackingArrays": 12,
+    "arrays": [
+      {
+        "nodeId": 355841,
+        "edges": 20000,
+        "selfBytes": 80008
+      },
+      {
+        "nodeId": 543435,
+        "edges": 20000,
+        "selfBytes": 80008
+      },
+      {
+        "nodeId": 644693,
+        "edges": 20000,
+        "selfBytes": 80008
+      },
+      {
+        "nodeId": 702171,
+        "edges": 20000,
+        "selfBytes": 80008
+      },
+      {
+        "nodeId": 742173,
+        "edges": 20000,
+        "selfBytes": 80008
+      },
+      {
+        "nodeId": 892987,
+        "edges": 20000,
+        "selfBytes": 80008
+      },
+      {
+        "nodeId": 1088931,
+        "edges": 20000,
+        "selfBytes": 80008
+      },
+      {
+        "nodeId": 1111191,
+        "edges": 20000,
+        "selfBytes": 80008
+      },
+      {
+        "nodeId": 1437327,
+        "edges": 20000,
+        "selfBytes": 80008
+      },
+      {
+        "nodeId": 1590203,
+        "edges": 20000,
+        "selfBytes": 80008
+      },
+      {
+        "nodeId": 1602439,
+        "edges": 20000,
+        "selfBytes": 80008
+      },
+      {
+        "nodeId": 1666843,
+        "edges": 20000,
+        "selfBytes": 80008
+      }
+    ]
+  },
+  {
+    "label": "stable-owner",
+    "snapshotSha256": "ffe5f75f6a510aa2ec821a3bc9f3d4b2caa6b095795cd24a3f7291ecdcc208b9",
+    "filenameSizedBackingArrays": 1,
+    "arrays": [
+      {
+        "nodeId": 976991,
+        "edges": 20000,
+        "selfBytes": 80008
+      }
+    ]
+  }
+]

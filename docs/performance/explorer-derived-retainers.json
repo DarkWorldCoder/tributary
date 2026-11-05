@@ -1,0 +1,341 @@
+{
+  "kind": "exploratory failed state-only release, before stable owner implementation",
+  "measuredUiSha256": "96f18fdbd729a8238ebdcfbf5ce22e7331e284ff58aa015235c2f1ee27622de1",
+  "snapshotSha256": "2e31867fd503c61ecc94b563c0595c8896ec4151b1b0e6665d97ba4c8db57a0f",
+  "scope": "Isolated temporary native renderer after three return passes. Reverse strong-edge BFS paths exclude weak edges. Extracts demonstrate reference paths, not exact retained-size attribution. Full heap stays in /tmp; no user sessions were involved.",
+  "findings": [
+    "React effect cleanup closures through editor context-menu callbacks retain an earlier FolderFiles activation and its filename array.",
+    "A hidden-window find-file listener similarly retains a prior activation.",
+    "The replacement keeps a stable releasable cell in activation scopes and unregisters hidden find-file handlers."
+  ],
+  "paths": [
+    {
+      "target": {
+        "i": 177920,
+        "type": "array",
+        "name": "(object elements)",
+        "bytes": 80008,
+        "edges": 20000
+      },
+      "tail": [
+        {
+          "i": 919843,
+          "type": "object",
+          "name": "Object",
+          "bytes": 32,
+          "edges": 7,
+          "edge": "inst"
+        },
+        {
+          "i": 656387,
+          "type": "object",
+          "name": "Object",
+          "bytes": 16,
+          "edges": 3,
+          "edge": "destroy"
+        },
+        {
+          "i": 656388,
+          "type": "closure",
+          "name": "",
+          "bytes": 28,
+          "edges": 6,
+          "edge": "context"
+        },
+        {
+          "i": 946305,
+          "type": "object",
+          "name": "system / Context / scope @845797",
+          "bytes": 68,
+          "edges": 16,
+          "edge": "previous"
+        },
+        {
+          "i": 946330,
+          "type": "object",
+          "name": "system / Context / scope @845793",
+          "bytes": 40,
+          "edges": 9,
+          "edge": "l"
+        },
+        {
+          "i": 886479,
+          "type": "closure",
+          "name": "or",
+          "bytes": 28,
+          "edges": 6,
+          "edge": "context"
+        },
+        {
+          "i": 758143,
+          "type": "object",
+          "name": "system / Context / scope @922249",
+          "bytes": 492,
+          "edges": 122,
+          "edge": "C"
+        },
+        {
+          "i": 806342,
+          "type": "object",
+          "name": "Array",
+          "bytes": 16,
+          "edges": 20003,
+          "edge": "elements"
+        },
+        {
+          "i": 177920,
+          "type": "array",
+          "name": "(object elements)",
+          "bytes": 80008,
+          "edges": 20000
+        }
+      ]
+    },
+    {
+      "target": {
+        "i": 271715,
+        "type": "array",
+        "name": "(object elements)",
+        "bytes": 80008,
+        "edges": 20000
+      },
+      "tail": [
+        {
+          "i": 854500,
+          "type": "object",
+          "name": "Object",
+          "bytes": 32,
+          "edges": 7,
+          "edge": "inst"
+        },
+        {
+          "i": 850989,
+          "type": "object",
+          "name": "Object",
+          "bytes": 16,
+          "edges": 3,
+          "edge": "destroy"
+        },
+        {
+          "i": 1207028,
+          "type": "closure",
+          "name": "",
+          "bytes": 28,
+          "edges": 6,
+          "edge": "context"
+        },
+        {
+          "i": 1207032,
+          "type": "object",
+          "name": "system / Context / scope @845797",
+          "bytes": 68,
+          "edges": 16,
+          "edge": "previous"
+        },
+        {
+          "i": 1207036,
+          "type": "object",
+          "name": "system / Context / scope @845793",
+          "bytes": 40,
+          "edges": 9,
+          "edge": "l"
+        },
+        {
+          "i": 461152,
+          "type": "closure",
+          "name": "or",
+          "bytes": 28,
+          "edges": 6,
+          "edge": "context"
+        },
+        {
+          "i": 461108,
+          "type": "object",
+          "name": "system / Context / scope @922249",
+          "bytes": 492,
+          "edges": 122,
+          "edge": "C"
+        },
+        {
+          "i": 461193,
+          "type": "object",
+          "name": "Array",
+          "bytes": 16,
+          "edges": 20003,
+          "edge": "elements"
+        },
+        {
+          "i": 271715,
+          "type": "array",
+          "name": "(object elements)",
+          "bytes": 80008,
+          "edges": 20000
+        }
+      ]
+    },
+    {
+      "target": {
+        "i": 322344,
+        "type": "array",
+        "name": "(object elements)",
+        "bytes": 80008,
+        "edges": 20000
+      },
+      "tail": [
+        {
+          "i": 1342747,
+          "type": "native",
+          "name": "blink::HeapVectorBacking<cppgc::internal::BasicMember<blink::RegisteredEventListener, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>",
+          "bytes": 40,
+          "edges": 6,
+          "edge": 4
+        },
+        {
+          "i": 1312858,
+          "type": "native",
+          "name": "blink::RegisteredEventListener",
+          "bytes": 16,
+          "edges": 1,
+          "edge": 1
+        },
+        {
+          "i": 1312856,
+          "type": "native",
+          "name": "EventListener",
+          "bytes": 24,
+          "edges": 1,
+          "edge": 1
+        },
+        {
+          "i": 1312857,
+          "type": "native",
+          "name": "V8EventListener",
+          "bytes": 40,
+          "edges": 3,
+          "edge": 1
+        },
+        {
+          "i": 1026278,
+          "type": "closure",
+          "name": "e",
+          "bytes": 28,
+          "edges": 6,
+          "edge": "context"
+        },
+        {
+          "i": 1024779,
+          "type": "object",
+          "name": "system / Context / scope @927189",
+          "bytes": 20,
+          "edges": 4,
+          "edge": "previous"
+        },
+        {
+          "i": 1145475,
+          "type": "object",
+          "name": "system / Context / scope @922249",
+          "bytes": 492,
+          "edges": 122,
+          "edge": "C"
+        },
+        {
+          "i": 448022,
+          "type": "object",
+          "name": "Array",
+          "bytes": 16,
+          "edges": 20003,
+          "edge": "elements"
+        },
+        {
+          "i": 322344,
+          "type": "array",
+          "name": "(object elements)",
+          "bytes": 80008,
+          "edges": 20000
+        }
+      ]
+    },
+    {
+      "target": {
+        "i": 351083,
+        "type": "array",
+        "name": "(object elements)",
+        "bytes": 80008,
+        "edges": 20000
+      },
+      "tail": [
+        {
+          "i": 1342747,
+          "type": "native",
+          "name": "blink::HeapVectorBacking<cppgc::internal::BasicMember<blink::RegisteredEventListener, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>",
+          "bytes": 40,
+          "edges": 6,
+          "edge": 5
+        },
+        {
+          "i": 1319302,
+          "type": "native",
+          "name": "blink::RegisteredEventListener",
+          "bytes": 16,
+          "edges": 1,
+          "edge": 1
+        },
+        {
+          "i": 1319300,
+          "type": "native",
+          "name": "EventListener",
+          "bytes": 24,
+          "edges": 1,
+          "edge": 1
+        },
+        {
+          "i": 1319301,
+          "type": "native",
+          "name": "V8EventListener",
+          "bytes": 40,
+          "edges": 3,
+          "edge": 1
+        },
+        {
+          "i": 1181444,
+          "type": "closure",
+          "name": "e",
+          "bytes": 28,
+          "edges": 6,
+          "edge": "context"
+        },
+        {
+          "i": 756202,
+          "type": "object",
+          "name": "system / Context / scope @927189",
+          "bytes": 20,
+          "edges": 4,
+          "edge": "previous"
+        },
+        {
+          "i": 1233391,
+          "type": "object",
+          "name": "system / Context / scope @922249",
+          "bytes": 492,
+          "edges": 122,
+          "edge": "C"
+        },
+        {
+          "i": 447212,
+          "type": "object",
+          "name": "Array",
+          "bytes": 16,
+          "edges": 20003,
+          "edge": "elements"
+        },
+        {
+          "i": 351083,
+          "type": "array",
+          "name": "(object elements)",
+          "bytes": 80008,
+          "edges": 20000
+        }
+      ]
+    }
+  ]
+}

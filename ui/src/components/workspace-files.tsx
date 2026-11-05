@@ -42,7 +42,7 @@ import { ProjectChecks } from '@/components/project-checks';
 import { FileSwitcher } from '@/components/file-switcher';
 import { FileDiff } from '@/components/file-diff';
 import { draftWriter, fileSession, savedFileSession } from '@/lib/drafts.mjs';
-import { folderChains } from '@/lib/workbench-navigation.mjs';
+import { createExplorerIndex, type ExplorerNode as Node } from '@/lib/explorer-index.mjs';
 import { imageMime, imageSource } from '@/lib/image-preview.mjs';
 import { projectProfile } from '@/lib/project-profile.mjs';
 import { rememberFile } from '@/lib/recent-work.mjs';
@@ -53,21 +53,6 @@ import { useRunInTerminal } from '@/hooks/use-run-in-terminal';
 import { useStore } from '@/store';
 import type { FileContent, ProjectCheckResult } from '@/types';
 
-type Node = { name: string; path: string; dir: boolean; children: Node[] };
-function buildTree(files: string[]): Node[] {
-  const root: Node = { name: '', path: '', dir: true, children: [] };
-  for (const f of files) {
-    let cur = root; const parts = f.split('/');
-    parts.forEach((p, i) => {
-      const isDir = i < parts.length - 1; const path = parts.slice(0, i + 1).join('/');
-      let n = cur.children.find((c) => c.name === p && c.dir === isDir);
-      if (!n) { n = { name: p, path, dir: isDir, children: [] }; cur.children.push(n); }
-      cur = n;
-    });
-  }
-  const sort = (n: Node) => { n.children.sort((a, b) => Number(b.dir) - Number(a.dir) || a.name.localeCompare(b.name)); n.children.forEach(sort); };
-  sort(root); return root.children;
-}
 function TreeNode({ n, depth, open, toggle, active, onOpen, loading, decorations }: { decorations?: ReturnType<typeof explorerDecorations>; n: Node; depth: number; open: Set<string>; toggle: (p: string) => void; active: string | null; onOpen: (p: string, intent?: OpenIntent) => void; loading?: string | null }) {
   const isOpen = open.has(n.path);
   return (
@@ -132,7 +117,9 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
   const s = useStore();
   const debugVisible = s.debugOpen && visible && project === s.workdir;
   const runInTerminal = useRunInTerminal();
-  const [files, setFiles] = React.useState<string[] | null>(null);
+  const [index] = React.useState(createExplorerIndex);
+  const [indexVersion, bumpIndex] = React.useReducer((version: number) => version + 1, 0);
+  const indexWarm = React.useRef(warm); indexWarm.current = warm;
   const [directoryRevision, setDirectoryRevision] = React.useState(0);
   const [live, setLive] = React.useState('Connecting…');
   const [watchRevision, setWatchRevision] = React.useState(0);
@@ -143,8 +130,12 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
   const [creation, setCreation] = React.useState<{ project: string; kind: 'file' | 'folder'; name: string } | null>(null);
   const [creationBusy, setCreationBusy] = React.useState(false);
   const [creationError, setCreationError] = React.useState('');
-  const [matches, setMatches] = React.useState<string[]>([]);
-  React.useEffect(() => { let alive = true; setMatches([]); const timer = setTimeout(() => { if (filter.trim()) void s.hub.call<string[]>('findFiles', project, filter, { showHidden: hidden }).then((items) => { if (alive) setMatches(items); }).catch(() => {}); }, 150); return () => { alive = false; clearTimeout(timer); }; }, [project, filter, hidden, s.hub, directoryRevision]);
+  React.useEffect(() => {
+    let alive = true; const { token, changed } = index.beginSearch(); if (changed) bumpIndex();
+    if (!warm || !filter.trim()) return;
+    const timer = setTimeout(() => { if (!indexWarm.current) return; void s.hub.call<string[]>('findFiles', project, filter, { showHidden: hidden }).then((items) => { if (alive && indexWarm.current && index.acceptMatches(token, items)) bumpIndex(); }).catch(() => {}); }, 150);
+    return () => { alive = false; clearTimeout(timer); };
+  }, [project, filter, hidden, s.hub, directoryRevision, warm, index]);
   const [checksOpen, setChecksOpen] = React.useState(false);
   const [formatAllOpen, setFormatAllOpen] = React.useState(false);
   const [comparison, setComparison] = React.useState<string | null>(null);
@@ -203,7 +194,14 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
   const searchToggle = React.useRef<HTMLButtonElement>(null);
   React.useEffect(() => { if (searchOpen && visible && !collapsed && (!small || browse)) search.current?.focus(); }, [searchOpen, visible, collapsed, small, browse]);
   const restoreFocus = React.useRef<HTMLElement | null>(null);
-  const load = React.useCallback(() => { s.hub.call<string[]>('listFiles', project).then((next) => setFiles((previous) => previous?.length === next.length && previous.every((file, index) => file === next[index]) ? previous : next)).catch(() => setFiles([])); }, [project, s.hub]);
+  const load = React.useCallback(() => {
+    if (!indexWarm.current) return;
+    const token = index.beginList();
+    void s.hub.call<string[]>('listFiles', project).then((next) => {
+      if (indexWarm.current && index.acceptFiles(token, next)) bumpIndex();
+    }).catch(() => { if (indexWarm.current && index.acceptFiles(token, [])) bumpIndex(); });
+  }, [project, s.hub, index]);
+  React.useEffect(() => { if (!warm) { index.release(); bumpIndex(); } }, [warm, index]);
   React.useEffect(() => { if (visible) { load(); setDirectoryRevision((value) => value + 1); } }, [visible, load]);
   React.useEffect(() => {
     const element = root.current; if (!element) return;
@@ -309,16 +307,16 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
   const autoOpened = React.useRef<string | null>(null);
   React.useEffect(() => {
     const id = s.thread?.id;
-    if (!visible || restoring || !s.codeLayout || !id || autoOpened.current === id || !files || busy) return;
+    if (!visible || restoring || !s.codeLayout || !id || autoOpened.current === id || !index.files || busy) return;
     if (s.fileToOpen?.project === project && !active) return;
     autoOpened.current = id;
     if (active) return;
     const recorded = s.thread?.messages.flatMap((message) => message.role === 'assistant' ? message.files.filter((file) => !file.external).map((file) => file.rel) : []).at(-1);
-    const entry = recorded && files.includes(recorded) ? recorded : projectProfile(files).entry || files.find((file) => /^(src\/)?(main|app|index)\.[cm]?[jt]sx?$/i.test(file))
-      || files.find((file) => /^readme\.md$/i.test(file))
-      || files.find((file) => /\.(tsx?|jsx?|py|rs|go|java|html|css)$/i.test(file) && !/(^|\/)(node_modules|dist|build|fixtures|test|tests)\//.test(file));
+    const entry = recorded && index.files.includes(recorded) ? recorded : projectProfile(index.files).entry || index.files.find((file) => /^(src\/)?(main|app|index)\.[cm]?[jt]sx?$/i.test(file))
+      || index.files.find((file) => /^readme\.md$/i.test(file))
+      || index.files.find((file) => /\.(tsx?|jsx?|py|rs|go|java|html|css)$/i.test(file) && !/(^|\/)(node_modules|dist|build|fixtures|test|tests)\//.test(file));
     if (entry) void openDoc(entry);
-  }, [visible, restoring, s.codeLayout, s.thread?.id, files, busy, active, project, openDoc, s.fileToOpen]);
+  }, [visible, restoring, s.codeLayout, s.thread?.id, indexVersion, index, busy, active, project, openDoc, s.fileToOpen]);
 
   const watched = JSON.stringify([...new Set([...(active ? [active] : []), ...docs.map((doc) => doc.rel)])].slice(0, 24).sort());
   React.useEffect(() => {
@@ -435,13 +433,8 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
     // A removed close button cannot receive focus; select its surviving neighbour.
     requestAnimationFrame(focusActiveTab);
   };
-  const shown = React.useMemo(() => {
-    const query = filter.trim().toLowerCase();
-    return query ? [...new Set([...(files ?? []), ...matches])].filter((file) => file.toLowerCase().includes(query) && (hidden || !file.split('/').some((part) => part.startsWith('.')))).slice(0, 2000) : [];
-  }, [files, matches, filter, hidden]);
-  const tree = React.useMemo(() => buildTree(shown), [shown]);
-  const chains = React.useMemo(() => folderChains(files || []), [files]);
-  React.useEffect(() => { if (filter.trim()) setOpen((folders) => new Set([...folders, ...shown.flatMap((file) => { const parts = file.split('/'); return parts.slice(0, -1).map((_, i) => parts.slice(0, i + 1).join('/')); })])); }, [shown, filter]);
+  index.derive(filter, hidden, s.compactFolders, warm);
+  React.useEffect(() => { if (warm && filter.trim()) setOpen((folders) => new Set([...folders, ...index.shown.flatMap((file) => { const parts = file.split('/'); return parts.slice(0, -1).map((_, i) => parts.slice(0, i + 1).join('/')); })])); }, [indexVersion, filter, hidden, warm, index]);
   const toggle = (path: string) => setOpen((folders) => { const next = new Set(folders); if (next.has(path)) next.delete(path); else next.add(path); return next; });
   const browseFiles = () => { setBrowse(true); setCollapsed(false); setSearchOpen(true); };
   const closeSearch = () => { setSearchOpen(false); setFilter(''); searchToggle.current?.focus(); };
@@ -459,7 +452,7 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
       if (creation.kind === 'file') { if (creation.project === project) await openDoc(result.rel, 'pinned'); else s.openFile(result.rel, undefined, 'pinned', undefined, false, creation.project); }
     } catch (error) { setCreationError((error as Error).message); } finally { setCreationBusy(false); }
   };
-  React.useEffect(() => { const find = () => { if (visible) { browseFiles(); requestAnimationFrame(() => search.current?.focus()); } }; window.addEventListener('tributary:find-file', find); return () => window.removeEventListener('tributary:find-file', find); }, [visible]);
+  React.useEffect(() => { if (!visible) return; const find = () => { browseFiles(); requestAnimationFrame(() => search.current?.focus()); }; window.addEventListener('tributary:find-file', find); return () => window.removeEventListener('tributary:find-file', find); }, [visible]);
   const label = (rel: string) => fileTabLabel(rel, docs.map((doc) => doc.rel));
   const iconButton = 'workbench-action shrink-0 [&_svg]:size-4';
 
@@ -544,14 +537,14 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
               {warm && <>
               {!filter.trim() ? roots.length > 1 ? roots.map((folder) => <section key={folder} aria-label={`Folder ${folder}`}>
                 <WorkspaceFolderRow folder={folder} owner={owner} expanded={expandedRoots.has(folder)} onToggle={() => toggleRoot(folder)} onRemoved={onFolderRemoved} />
-                {expandedRoots.has(folder) && <div className="pl-2"><DirectoryTree session={directorySession(folder)} createEntry={(parent, kind) => startCreation(folder, parent, kind)} bridge={s.hub} project={folder} active={folder === project ? active : null} openFile={(rel, intent) => { if (folder === project) void openDoc(rel, intent); else s.openFile(rel, undefined, intent, undefined, false, folder); }} revision={directoryRevision} expanded={rootFolders[folder] || EMPTY_BRANCHES} toggle={(rel) => toggleBranch(folder, rel)} loading={folder === project ? opening : null} hidden={hidden} compact={s.compactFolders} sticky={s.stickyFolders} chains={folder === project ? chains : EMPTY_CHAINS} decorations={folder === project ? decorations : undefined} reviewFile={folder === project ? reviewSaved : undefined} /></div>}
-              </section>) : <DirectoryTree session={directorySession(project)} createEntry={(parent, kind) => startCreation(project, parent, kind)} bridge={s.hub} project={project} active={active} openFile={openDoc} revision={directoryRevision} expanded={open} toggle={toggle} loading={opening} hidden={hidden} compact={s.compactFolders} sticky={s.stickyFolders} chains={chains} decorations={decorations} reviewFile={reviewSaved} />
-                : files == null ? <div className="grid place-items-center p-6"><Spinner /></div>
-                  : tree.map((node) => <TreeNode key={node.path} n={node} depth={0} open={open} active={active} onOpen={openDoc} toggle={toggle} loading={opening} decorations={decorations} />)}
-              {filter.trim() && files && !shown.length && <p className="p-3 text-xs text-muted-foreground">No matching files.</p>}
+                {expandedRoots.has(folder) && <div className="pl-2"><DirectoryTree session={directorySession(folder)} createEntry={(parent, kind) => startCreation(folder, parent, kind)} bridge={s.hub} project={folder} active={folder === project ? active : null} openFile={(rel, intent) => { if (folder === project) void openDoc(rel, intent); else s.openFile(rel, undefined, intent, undefined, false, folder); }} revision={directoryRevision} expanded={rootFolders[folder] || EMPTY_BRANCHES} toggle={(rel) => toggleBranch(folder, rel)} loading={folder === project ? opening : null} hidden={hidden} compact={s.compactFolders} sticky={s.stickyFolders} chains={folder === project ? index.chains : EMPTY_CHAINS} decorations={folder === project ? decorations : undefined} reviewFile={folder === project ? reviewSaved : undefined} /></div>}
+              </section>) : <DirectoryTree session={directorySession(project)} createEntry={(parent, kind) => startCreation(project, parent, kind)} bridge={s.hub} project={project} active={active} openFile={openDoc} revision={directoryRevision} expanded={open} toggle={toggle} loading={opening} hidden={hidden} compact={s.compactFolders} sticky={s.stickyFolders} chains={index.chains} decorations={decorations} reviewFile={reviewSaved} />
+                : index.files == null ? <div className="grid place-items-center p-6"><Spinner /></div>
+                  : index.tree.map((node) => <TreeNode key={node.path} n={node} depth={0} open={open} active={active} onOpen={openDoc} toggle={toggle} loading={opening} decorations={decorations} />)}
+              {filter.trim() && index.files && !index.shown.length && <p className="p-3 text-xs text-muted-foreground">No matching files.</p>}
               </>}
             </div>
-            <ExplorerOutline path={doc && !doc.binary ? doc.rel : null} text={doc?.text || ''} line={doc ? cursors[doc.rel]?.line || 1 : 1} onSelect={(line, column) => { if (doc) void openDoc(doc.rel, 'pinned', line, column); }} /></>
+            <ExplorerOutline active={visible && !s.searchFilesOpen && !debugVisible && (small ? browse : !collapsed)} path={doc && !doc.binary ? doc.rel : null} text={doc?.text || ''} line={doc ? cursors[doc.rel]?.line || 1 : 1} onSelect={(line, column) => { if (doc) void openDoc(doc.rel, 'pinned', line, column); }} /></>
 
           </div>}
         </ResizablePanel>

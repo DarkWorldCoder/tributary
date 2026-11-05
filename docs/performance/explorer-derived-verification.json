@@ -1,0 +1,115 @@
+{
+  "checks": {
+    "fullTests": 559,
+    "failed": 0,
+    "typescript": true,
+    "uiBuild": true,
+    "vscodeBuild": true,
+    "nativeChangedRuns": [
+      {
+        "realGitIndexesHave20000Entries": true,
+        "outlineExpansionAndScrollPreserved": true,
+        "dirtyTextPreserved": true,
+        "filterPreservedAndHiddenSearchCancelled": true,
+        "lateIndexReplyCannotReplaceNewerIndex": true,
+        "lateHiddenOutlineReplySafe": true
+      },
+      {
+        "realGitIndexesHave20000Entries": true,
+        "outlineExpansionAndScrollPreserved": true,
+        "dirtyTextPreserved": true,
+        "filterPreservedAndHiddenSearchCancelled": true,
+        "lateIndexReplyCannotReplaceNewerIndex": true,
+        "lateHiddenOutlineReplySafe": true
+      },
+      {
+        "realGitIndexesHave20000Entries": true,
+        "outlineExpansionAndScrollPreserved": true,
+        "dirtyTextPreserved": true,
+        "filterPreservedAndHiddenSearchCancelled": true,
+        "lateIndexReplyCannotReplaceNewerIndex": true,
+        "lateHiddenOutlineReplySafe": true
+      }
+    ],
+    "treeRegression": {
+      "pagesAndExpandedFoldersPreserved": true,
+      "scrollAnchorPreserved": true,
+      "keyboardFocusPreserved": true,
+      "currentContextTreeStayedWarm": true,
+      "dirtyEditorTextPreserved": true,
+      "latePageCompletionSafe": true,
+      "creationDraftAndPendingOperationPreserved": true,
+      "multiRootExpansionAndScrollPreserved": true,
+      "externalFileAdditionVisible": true
+    }
+  },
+  "medians": {
+    "six-indexes-and-outlines": {
+      "baseline": {
+        "rendererHeapBytes": 66071976,
+        "domNodes": 20223,
+        "processTreePssKiB": 468107,
+        "processTreePrivateKiB": 335428,
+        "outlineRows": 1800
+      },
+      "released": {
+        "rendererHeapBytes": 28713756,
+        "domNodes": 6148,
+        "processTreePssKiB": 417013,
+        "processTreePrivateKiB": 285984,
+        "outlineRows": 300
+      }
+    },
+    "after-one-return-pass": {
+      "baseline": {
+        "rendererHeapBytes": 66939232,
+        "domNodes": 20919,
+        "processTreePssKiB": 483880,
+        "processTreePrivateKiB": 348632,
+        "outlineRows": 1800
+      },
+      "released": {
+        "rendererHeapBytes": 28650844,
+        "domNodes": 6148,
+        "processTreePssKiB": 443736,
+        "processTreePrivateKiB": 309332,
+        "outlineRows": 300
+      }
+    },
+    "after-three-return-passes": {
+      "baseline": {
+        "rendererHeapBytes": 67343308,
+        "domNodes": 20919,
+        "processTreePssKiB": 512045,
+        "processTreePrivateKiB": 377436,
+        "outlineRows": 1800
+      },
+      "released": {
+        "rendererHeapBytes": 29115724,
+        "domNodes": 6148,
+        "processTreePssKiB": 461000,
+        "processTreePrivateKiB": 326636,
+        "outlineRows": 300
+      }
+    }
+  },
+  "navigation": {
+    "baseline": {
+      "editorVisibleMs": 437.2686249999988,
+      "restoreListCalls": 18
+    },
+    "released": {
+      "editorVisibleMs": 307.04733399999895,
+      "restoreListCalls": 18
+    }
+  },
+  "sourceHashes": {
+    "ui/src/components/workspace-files.tsx": "1d37da69d43c56b6e56091b26a5adbc1d8cf3c6294fd2815dac4f82cbb495c7d",
+    "ui/src/components/explorer-outline.tsx": "9afd260a600aa8d62fa29c97c4c69b69ae3e9fef5647a63999d75a92d99b5404",
+    "ui/src/lib/explorer-index.mjs": "0e04f006ff23a71f8b749b77dd28bfe09875c9c28b7883a78868971a72ec97d6",
+    "scripts/performance/native-explorer-derived.cjs": "cac6a1c7ee00349b7672056422d065412ef23b77e04631feafa821f4836a3897",
+    "scripts/performance/explorer-derived.cjs": "04c4a7050b8f227cd93f1de2bbd006ad62a76c0ca678cda644b1f44a4e4fc54a"
+  },
+  "evidence": "explorer-derived-pairs.json",
+  "treeMemoryExcluded": "Separate tree regression ran concurrently with regressions; only correctness used."
+}
