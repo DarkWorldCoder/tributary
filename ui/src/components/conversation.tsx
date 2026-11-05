@@ -1,6 +1,7 @@
 import { LineChangeCount } from '@/components/line-change-count';
 import { AgentError } from '@/components/agent-error';
 import { ChatAttachments } from '@/components/chat-attachments';
+import { ActivityTime, SidebarActivity } from '@/components/sidebar-activity';
 import * as React from 'react';
 import { toast } from 'sonner';
 import {
@@ -73,6 +74,7 @@ function Step({ t }: { t: Tool }) {
 function Activity({ m, entries, live = false }: { m: AgentMessage; entries: ReplyActivity[]; live?: boolean }) {
   const s = useStore();
   const [open, setOpen] = React.useState<boolean | null>(null);
+  if (s.codeLayout) return <SidebarActivity m={m} entries={entries} live={live} />;
   const steps = entries.flatMap((entry) => entry.kind === 'tool' && m.tools[entry.toolIndex] ? [m.tools[entry.toolIndex]] : []);
   const lastRun = [...steps].reverse().find((tool) => tool.status === 'running');
   const waiting = live && (m.permissions || []).some((request) => request.status === 'pending');
@@ -82,7 +84,7 @@ function Activity({ m, entries, live = false }: { m: AgentMessage; entries: Repl
   const commands = steps.filter((tool) => toolVerb(tool) === 'Ran').length;
   if (commands) summaries.push(`Ran ${commands} command${commands === 1 ? '' : 's'}`);
   const completed = summaries.join(' · ') || (steps.length ? `${steps.length} tool ${steps.length === 1 ? 'call' : 'calls'}` : entries.some((entry) => entry.kind === 'plan') ? 'Updated plan' : 'Thought');
-  const label = waiting ? 'Waiting for your answer' : live ? lastRun ? toolProgress(lastRun) : last?.kind === 'thinking' ? 'Thinking' : last?.kind === 'plan' ? 'Planning' : 'Processing' : completed;
+  const label = waiting ? 'Waiting for your answer' : live && s.running && m.modelPhase === 'waiting-model' ? 'Waiting for local model' : live ? lastRun ? toolProgress(lastRun) : last?.kind === 'thinking' ? 'Thinking' : last?.kind === 'plan' ? 'Planning' : 'Processing' : completed;
   return <Trace className="reply-activity" aria-label="Reply activity">
     <TraceCollapsible open={open ?? live} onOpenChange={setOpen}>
       <TraceCollapsibleTrigger>
@@ -119,10 +121,11 @@ function LegacyActivity({ m }: { m: AgentMessage }) {
   return entries.length ? <Activity m={m} entries={entries} /> : null;
 }
 
-function LiveProgress({ m }: { m: AgentMessage }) {
+function LiveProgress({ m, active }: { m: AgentMessage; active: boolean }) {
   const waiting = (m.permissions || []).some((request) => request.status === 'pending');
   const running = [...(m.tools || [])].reverse().find((tool) => tool.status === 'running');
-  const label = waiting ? 'Waiting for your answer' : running ? toolProgress(running) : m.text ? 'Writing response' : 'Processing request';
+  const last = m.trace?.at(-1);
+  const label = waiting ? 'Waiting for your answer' : active && m.modelPhase === 'waiting-model' ? 'Waiting for local model' : running ? toolProgress(running) : last?.kind === 'thinking' && last.endedAt == null ? 'Thinking' : m.text ? 'Writing response' : active && m.modelPhase === 'generating' ? 'Generating response' : 'Processing request';
   return <div role="status" aria-live="polite" className="flex min-w-0 items-center gap-2 py-1 text-[13px] text-muted-foreground"><Spinner className="size-3.5 shrink-0" /><span>{label}</span></div>;
 }
 
@@ -178,17 +181,17 @@ function ReplyContent({ m, agent }: { m: AgentMessage; agent: Agent }) {
   const s = useStore();
   const live = m.ok == null;
   const parts = replySegments(m.text || '', m.permissions, m.trace);
-  return <div className="reply-timeline flex min-w-0 flex-col gap-3">
+  return <div className={cn('reply-timeline flex min-w-0 flex-col gap-3', s.codeLayout && 'sidebar-reply-timeline')}>
     {!m.trace && <LegacyActivity m={m} />}
     {parts.map((part, index) => {
       if (part.kind === 'activity') return <Activity key={part.id} m={m} entries={part.entries} live={live && index === parts.length - 1} />;
-      if (part.kind === 'text') return <Markdown key={`text:${index}`} text={part.text} />;
+      if (part.kind === 'text') return <div key={`text:${index}`} className={cn(s.codeLayout && 'sidebar-timeline-item')}><Markdown text={part.text} /></div>;
       const r = part.request;
-      if (r.status === 'pending' && live && s.running) return r.questions ? <AgentQuestionCard key={r.id} r={r} agent={agent} /> : <PermissionCard key={r.id} r={r} agent={agent} />;
+      if (r.status === 'pending' && live && s.running) return <div key={r.id} className={cn(s.codeLayout && 'sidebar-timeline-item')} data-status="pending">{r.questions ? <AgentQuestionCard r={r} agent={agent} /> : <PermissionCard r={r} agent={agent} />}</div>;
       const label = r.status === 'allowed' ? 'Allowed once' : r.status === 'always' ? 'Always allowed' : r.status === 'rejected' ? 'Denied' : 'Cancelled';
-      return <details key={r.id} className="min-w-0 text-xs text-muted-foreground"><summary className="cursor-pointer rounded py-1 focus-visible:outline-2 focus-visible:outline-ring"><span className="inline-flex max-w-full items-center gap-1.5 align-middle"><ShieldQuestion className="size-3.5 shrink-0" /><span className="truncate">{label} · {r.title}</span></span></summary><pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded bg-muted p-2 font-mono">{r.command || r.path || r.detail || r.title}</pre></details>;
+      return <details key={r.id} className={cn('min-w-0 text-xs text-muted-foreground', s.codeLayout && 'sidebar-timeline-item')}><summary className="cursor-pointer rounded py-1 focus-visible:outline-2 focus-visible:outline-ring"><span className="inline-flex max-w-full items-center gap-1.5 align-middle"><ShieldQuestion className="size-3.5 shrink-0" /><span className="truncate">{label} · {r.title}</span></span></summary><pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded bg-muted p-2 font-mono">{r.command || r.path || r.detail || r.title}</pre></details>;
     })}
-    {live && parts.at(-1)?.kind !== 'activity' && <LiveProgress m={m} />}
+    {live && (s.codeLayout || parts.at(-1)?.kind !== 'activity') && <div className={cn(s.codeLayout && 'sidebar-timeline-item')} data-status="running"><LiveProgress m={m} active={s.running} /></div>}
   </div>;
 }
 
@@ -484,6 +487,7 @@ function AgentTurn({ m, agent, prompt }: { m: AgentMessage; agent: Agent; prompt
           {m.kind === 'plan' || m.kind === 'research' ? <Badge variant="secondary">{m.kind === 'research' ? 'Deep research' : 'Plan'}</Badge> : <Badge variant="outline" className="font-normal text-muted-foreground">{MODE_LABEL[m.mode] ?? m.mode}</Badge>}
           {m.gateway && <Badge variant="outline" className="border-brand/30 font-normal text-brand">via {m.gateway}</Badge>}
           {m.handoff && HANDOFF[m.handoff] && <span className="text-xs text-muted-foreground">{HANDOFF[m.handoff]}</span>}
+          {s.codeLayout && <ActivityTime ts={m.ts} />}
         </MessageHeader>
         <ReplyContent m={m} agent={agent} />
         {(m.notices || []).map((n, i) => <p key={i} className="flex items-center gap-1.5 text-sm text-warning"><Info className="size-3.5" /> {n}</p>)}
@@ -529,8 +533,9 @@ function UserTurn({ m, agent, showTarget }: { m: UserMessage; agent: Agent; show
           : <>{m.team ? `${m.team.role === 'member' ? 'Question' : `To the ${m.team.role}`},` : m.kind === 'research' ? 'Research request for' : m.kind === 'plan' ? 'Plan request for' : m.kind === 'implement' ? 'Run plan with' : 'To'} <AgentAvatar agent={agent} size="xs" /> {agent.name}</>}
       </span>}
       {!!m.attachments?.length && <ChatAttachments files={m.attachments} />}
-      <Bubble align="end" variant="secondary" className={cn('max-w-[85%]', s.codeLayout && 'max-w-[95%] rounded-xl bg-muted/70')}>
-        <BubbleContent className="text-[0.9375rem] whitespace-pre-wrap">{m.text}</BubbleContent>
+      {s.codeLayout && <ActivityTime ts={m.ts} />}
+      <Bubble align="end" variant={s.codeLayout ? 'outline' : 'secondary'} className={cn('max-w-[85%]', s.codeLayout && 'w-full max-w-full')}>
+        <BubbleContent className={cn('text-[0.9375rem] whitespace-pre-wrap', s.codeLayout && 'w-full rounded-md')}>{m.text}</BubbleContent>
       </Bubble>
     </div>
   );

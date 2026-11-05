@@ -1,0 +1,2 @@
+export type TerminalPacket = { owner: string; seq: number; data: string };
+export function terminalConsumer(options: { owner: string; write: (data: string, done: () => void) => void; acknowledge: (owner: string, seq: number) => void }, config?: { delay?: number }): { receive: (packet: TerminalPacket) => void; flush: () => void; dispose: () => void; stats: () => { queued: number; callbacks: number; timer: boolean; disposed: boolean } };

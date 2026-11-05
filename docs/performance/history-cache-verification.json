@@ -1,0 +1,68 @@
+{
+  "date": "2026-11-04T17:18:56.421Z",
+  "scope": "Owner-aware saved writer-history release, desktop and VS Code request/transport lifecycle",
+  "status": "Implemented and verified locally; broad memory-efficiency goal remains active; not committed or released",
+  "sourceHashes": {
+    "core/history-cache.js": "48e335347d75ce157e069825d333f4a06cd61e334ed092dc683a5694d37e04e1",
+    "core/store.js": "19de81c44725851415c19379888dce1e87f337ebaa636053a82dd9766e5aac20",
+    "core/hub.js": "ffc3d54bd4a69221f6c523c2333bc5e0f9ec2b430d77d793995a21bee3ca876e",
+    "core/activity.js": "0e119e7067175561bbca99926d336be29bcff566b986fcfce2bb4e31775b26bd",
+    "core/delegation.js": "8547c65480f149e5680351cedca34f56a40c1868af82f16c133356de02baafd4",
+    "core/message-delivery.js": "4f13873d9e351d521aefdfff39ceae80a39d7b56d11da33c26520a147b563537",
+    "desktop/main.js": "b42d312ab39d0fbeb35174cb803819d9fce28ce7224551f353946601bd9289a4",
+    "vscode/extension.js": "b0a1bb084d588e384a3d47a4c641142b228856643640d07ddf2f9b9286ee83a5",
+    "test/history-cache.test.js": "a8095fde25da05d694df644d302ecf2f5df837e8a8e62047c51eaa988e27cf27",
+    "scripts/performance/history-cache.cjs": "6e44e1e45ead4e763029648c9da73693785f000a22313e3b3bcb4269eb254890",
+    "scripts/performance/native-history-cache.cjs": "577d3be0ee72b7351a830f4f89422b05bfae3a390d4c4312f412174be583b002"
+  },
+  "checks": {
+    "fullRegression": {
+      "passed": 484,
+      "failed": 0,
+      "log": "/tmp/tributary-history-full-tests.log"
+    },
+    "finalOwnershipChecks": {
+      "passed": 14,
+      "failed": 0,
+      "log": "/tmp/tributary-history-cache-tests.log",
+      "note": "Includes an additional external thread-deletion assertion after the full run; production source unchanged."
+    },
+    "typeScript": "passed",
+    "vscodeBundle": "built by pretest",
+    "diffCheck": "passed"
+  },
+  "summary": {
+    "standalone": {
+      "compatibilityHeapDeltaBytes": 77259192,
+      "managedHeapDeltaBytes": 1277480,
+      "compatibilityElapsedMs": 6199.808945,
+      "managedElapsedMs": 5137.445548,
+      "threeAlternatingPairs": true,
+      "allExactReopenParity": true
+    },
+    "native": {
+      "compatibilityHeapBytes": 81751812,
+      "managedHeapBytes": 6259204,
+      "compatibilityTreePssKiB": 911892,
+      "managedTreePssKiB": 601791,
+      "completeProcessTrees": true,
+      "processCounts": [
+        6,
+        6
+      ],
+      "originalProcessesExited": true,
+      "onePairOnly": true
+    }
+  },
+  "reading": {
+    "ostepChapter22": "Full author-hosted 18-page chapter read, including references and homework; simulation exercises not executed; not the entire book",
+    "nodeAsyncContext": "run, context-loss and disable documentation read; implementation uses Node 24-supported APIs"
+  },
+  "boundaries": [
+    "No model weights or VRAM measured",
+    "Forced collection used only for diagnostic samples, never enabled in normal app startup",
+    "One native pair under Xvfb; shared-host activity and committed heap are not exact cache attribution",
+    "Direct mutable SDK access remains unmanaged for compatibility",
+    "No general completeness claim for every future callback or integration"
+  ]
+}

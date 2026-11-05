@@ -85,12 +85,12 @@ test('VS Code extension: activates, serves the UI with the bridge, and answers h
     for (const c of ['tributary.open', 'tributary.askSelection', 'tributary.addFile', 'tributary.reviewChanges', 'tributary.newThread', 'tributary.focus']) assert.ok(fake.commands.has(c), c);
     const provider = fake.views.get('tributary.chat'); assert.ok(provider);
 
-    const posted = []; let onMsg = null;
+    const posted = []; let onMsg = null; let disposeView;
     const webview = {
       options: null, html: '', cspSource: 'vscode-resource:', asWebviewUri: (u) => ({ toString: () => `vscode-resource:${u.fsPath}` }),
       postMessage: (m) => { posted.push(m); return Promise.resolve(true); }, onDidReceiveMessage: (fn) => { onMsg = fn; return { dispose() {} }; },
     };
-    provider.resolveWebviewView({ webview, onDidDispose: () => {} });
+    provider.resolveWebviewView({ webview, onDidDispose: (fn) => { disposeView = fn; } });
     assert.ok(webview.options.enableScripts);
     const html = webview.html;
     assert.ok(html.indexOf('vscode-bridge.js') > -1 && html.indexOf('vscode-bridge.js') < html.indexOf('type="module"'), 'bridge loads before the app');
@@ -118,6 +118,27 @@ test('VS Code extension: activates, serves the UI with the bridge, and answers h
     assert.strictEqual(posted.find((m) => m.id === 102).result, false);
     await onMsg({ type: 'call', id: 8, method: 'nope', args: [] });
     assert.match(posted.find((m) => m.id === 8).error, /Unknown method/);
+    fs.writeFileSync(path.join(ws, 'main.ts'), 'const value=1;');
+    await onMsg({ type: 'call', id: 201, method: 'configureLanguageTools', args: [[{ id: 'typescript', enabled: true, command: process.execPath, args: [path.join(__dirname, 'fake-language-server.cjs')] }]] });
+    await onMsg({ type: 'call', id: 202, method: 'languageAcquire', args: [ws, 'main.ts'] });
+    const owner = posted.find((m) => m.id === 202).result;
+    await onMsg({ type: 'call', id: 203, method: 'languageDocument', args: [ws, 'main.ts', 'const value=1;', owner] });
+    assert.equal(posted.find((m) => m.id === 203).result.active, true);
+    const disposeFirst = disposeView; const firstMessage = onMsg;
+    provider.resolveWebviewView({ webview: { ...webview }, onDidDispose: (fn) => { disposeView = fn; } });
+    await onMsg({ type: 'call', id: 204, method: 'languageAcquire', args: [ws, 'main.ts'] });
+    const other = posted.find((m) => m.id === 204).result;
+    await onMsg({ type: 'call', id: 205, method: 'languageDocument', args: [ws, 'main.ts', 'const value=1;', other] });
+    assert.equal(posted.find((m) => m.id === 205).result.active, true);
+    disposeFirst();
+    await firstMessage({ type: 'call', id: 206, method: 'languageAcquire', args: [ws, 'main.ts'] });
+    assert.equal(posted.some((m) => m.id === 206), false, 'disposed webviews cannot acquire more owners');
+    await onMsg({ type: 'call', id: 207, method: 'languageToolCatalog', args: [] });
+    assert.equal(posted.find((m) => m.id === 207).result.servers.find((server) => server.id === 'typescript').running, true, 'another webview still owns the server');
+    await onMsg({ type: 'call', id: 208, method: 'languageClose', args: [ws, 'main.ts', other] });
+    await onMsg({ type: 'call', id: 209, method: 'languageToolCatalog', args: [] });
+    assert.equal(posted.find((m) => m.id === 209).result.servers.find((server) => server.id === 'typescript').running, false);
+    disposeView();
     ext.deactivate();
   } finally {
     Module._resolveFilename = orig; delete require.cache.vscode;

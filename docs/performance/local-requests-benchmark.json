@@ -1,0 +1,79 @@
+{
+  "checkedOn": "2026-11-04T13:31:48.369Z",
+  "node": "v24.21.0",
+  "platform": "linux-x64",
+  "fingerprint": "9661a50226464b72b83dc511ceb1874c05c14919f606b2473689177275973411",
+  "fingerprintFiles": [
+    "core/local-requests.js",
+    "core/direct.js",
+    "core/hub.js",
+    "scripts/performance/local-requests.cjs"
+  ],
+  "scope": "24 actual HTTP requests to a disposable loopback server. Counts and byte sizes are real received JSON bodies retained until a fixed 30ms reply. The ungated comparison uses the normal compatible-provider path with identical body content. No weights, inference, GPU, KV-cache allocation, other applications, packaged Electron memory or whole-app RAM measured. Lower parallelism trades overlap for queueing latency.",
+  "cases": [
+    {
+      "mode": "unlimited",
+      "requests": 24,
+      "peakActiveRequestBodies": 24,
+      "peakRetainedReceiverBodyBytes": 1538976,
+      "queuedEvents": 0,
+      "durationMs": 115.489,
+      "completed": 24,
+      "finalActiveBodies": 0,
+      "finalClientQueue": {
+        "services": 0,
+        "active": 0,
+        "waiting": 0
+      },
+      "checksum": "a18807c27c400f22036abda407ed1b4cb42d459a503117f97ed310e55512f034"
+    },
+    {
+      "mode": "1",
+      "requests": 24,
+      "peakActiveRequestBodies": 1,
+      "peakRetainedReceiverBodyBytes": 64124,
+      "queuedEvents": 23,
+      "durationMs": 822.556,
+      "completed": 24,
+      "finalActiveBodies": 0,
+      "finalClientQueue": {
+        "services": 0,
+        "active": 0,
+        "waiting": 0
+      },
+      "checksum": "a18807c27c400f22036abda407ed1b4cb42d459a503117f97ed310e55512f034"
+    },
+    {
+      "mode": "2",
+      "requests": 24,
+      "peakActiveRequestBodies": 2,
+      "peakRetainedReceiverBodyBytes": 128248,
+      "queuedEvents": 22,
+      "durationMs": 465.195,
+      "completed": 24,
+      "finalActiveBodies": 0,
+      "finalClientQueue": {
+        "services": 0,
+        "active": 0,
+        "waiting": 0
+      },
+      "checksum": "a18807c27c400f22036abda407ed1b4cb42d459a503117f97ed310e55512f034"
+    },
+    {
+      "mode": "4",
+      "requests": 24,
+      "peakActiveRequestBodies": 4,
+      "peakRetainedReceiverBodyBytes": 256496,
+      "queuedEvents": 20,
+      "durationMs": 273.526,
+      "completed": 24,
+      "finalActiveBodies": 0,
+      "finalClientQueue": {
+        "services": 0,
+        "active": 0,
+        "waiting": 0
+      },
+      "checksum": "a18807c27c400f22036abda407ed1b4cb42d459a503117f97ed310e55512f034"
+    }
+  ]
+}

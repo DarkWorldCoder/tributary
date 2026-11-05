@@ -27,12 +27,17 @@ async function runDirectTurn({ gateway, prompt, images = [], model, onEvent, sig
     if (gateway?.apiKey) value = value.split(gateway.apiKey).join('[redacted]');
     return value.slice(0, 500);
   };
-  let reader;
+  let response; let reader; let releaseLocal; let modelPhase = false;
   try {
     const config = connectionConfig(gateway);
     if (typeof prompt !== 'string' || !prompt.trim() || prompt.length > 60000) throw new Error('Use a request between 1 and 60,000 characters.');
+    if (gateway.localRuntime) {
+      releaseLocal = await require('./local-requests').localRequests.acquire(gateway, { signal, onQueued: () => { modelPhase = true; onEvent({ kind: 'model-phase', phase: 'waiting-model' }); } });
+      signal?.throwIfAborted();
+      modelPhase = true; onEvent({ kind: 'model-phase', phase: 'generating' });
+    }
     const combined = AbortSignal.any([...(signal ? [signal] : []), AbortSignal.timeout(timeoutMs)]);
-    const response = await fetch(config.endpoint, {
+    response = await fetch(config.endpoint, {
       method: 'POST', redirect: 'error', signal: combined,
       headers: { 'Content-Type': 'application/json', ...(gateway.apiKey ? { Authorization: `Bearer ${gateway.apiKey}` } : {}) },
       body: JSON.stringify({ model: model || gateway.model, stream: true, max_tokens: config.limit,
@@ -115,7 +120,13 @@ async function runDirectTurn({ gateway, prompt, images = [], model, onEvent, sig
     if (toolMode) throw new Error(message);
     onEvent({ kind: 'error', message }); onEvent({ kind: 'done', ok: false });
     return { ok: false, sessionId: null, text };
-  } finally { if (reader) { try { await reader.cancel(); } catch {} reader.releaseLock(); } }
+  } finally {
+    try {
+      if (reader) { try { await reader.cancel(); } catch {} reader.releaseLock(); }
+      else { try { await response?.body?.cancel(); } catch {} }
+    }
+    finally { releaseLocal?.(); if (modelPhase) onEvent({ kind: 'model-phase', phase: null }); }
+  }
 }
 
 function directAgents(gateways) {

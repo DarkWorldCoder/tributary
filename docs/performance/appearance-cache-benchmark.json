@@ -1,0 +1,1110 @@
+{
+  "date": "2026-11-05T05:41:40.906Z",
+  "runtime": {
+    "node": "v24.21.0",
+    "platform": "linux",
+    "arch": "x64"
+  },
+  "fixture": {
+    "packs": 32,
+    "iconVariantsPerPack": 2,
+    "fullJsonBytes": 61477508,
+    "requestsPerProcess": 3
+  },
+  "boundaries": [
+    "Deterministic valid synthetic SVG assets; no downloads or inference",
+    "Original whole-file list/appearance algorithm is preserved as WholePackReference",
+    "Three alternating process pairs per operation; one cold migration process",
+    "Not an Electron, GPU, visible-icon rendering or total-app RAM benchmark"
+  ],
+  "sourceHashes": {
+    "core/extension-cache.js": "6e67bba130d29e98a61f2a6155399de25a9760be28fc4d170f13b60474844a4d",
+    "core/extension-packs.js": "defbd3de941e01f6b6c91ba58d039843c9ccc2df871c104725e02628ce9883ee",
+    "scripts/performance/appearance-cache.cjs": "dc873096f779bf2f61110e8d93999055cc4d9fb33788bf5c6da199841eac61cb"
+  },
+  "cases": [
+    {
+      "round": 0,
+      "mode": "whole-pack",
+      "operation": "list",
+      "requests": 3,
+      "stats": {
+        "legacyReadBytes": 184432524,
+        "sqlReturnedTextBytes": 0,
+        "readFileCalls": 96,
+        "maxConcurrentLegacyReads": 32
+      },
+      "baseline": {
+        "rss": 65269760,
+        "heapTotal": 41549824,
+        "heapUsed": 7070576,
+        "external": 2407379,
+        "arrayBuffers": 143787
+      },
+      "baselinePssKiB": 26813,
+      "peakSampled": {
+        "rss": 270651392,
+        "heapTotal": 327680000,
+        "heapUsed": 192006672,
+        "external": 36029691,
+        "arrayBuffers": 33712267
+      },
+      "peakSampledHeapDeltaBytes": 184936096,
+      "natural": {
+        "rss": 268886016,
+        "heapTotal": 327680000,
+        "heapUsed": 192011696,
+        "external": 19243231,
+        "arrayBuffers": 10108128,
+        "pssKiB": 223621
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 83779584,
+        "heapTotal": 142475264,
+        "heapUsed": 7294320,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 42757,
+        "physicalHeapBytes": 12128256
+      },
+      "elapsedMs": [
+        184.982774,
+        197.84149500000007,
+        176.73727300000007
+      ],
+      "exactPayloadParity": true,
+      "jsonInputBytes": 184432524,
+      "notes": [
+        "SQL counters include returned JSON text, not SQLite file/page IO",
+        "Sampled peak includes verification serialization and can miss synchronous native allocation peaks",
+        "Diagnostic GC only at initial/final boundaries; no app GC changes"
+      ]
+    },
+    {
+      "round": 0,
+      "mode": "indexed",
+      "operation": "list",
+      "requests": 3,
+      "stats": {
+        "legacyReadBytes": 0,
+        "sqlReturnedTextBytes": 34188,
+        "readFileCalls": 0,
+        "maxConcurrentLegacyReads": 0
+      },
+      "baseline": {
+        "rss": 65196032,
+        "heapTotal": 41549824,
+        "heapUsed": 7071152,
+        "external": 2407379,
+        "arrayBuffers": 143787
+      },
+      "baselinePssKiB": 24520,
+      "peakSampled": {
+        "rss": 67043328,
+        "heapTotal": 41549824,
+        "heapUsed": 7546960,
+        "external": 2461183,
+        "arrayBuffers": 143787
+      },
+      "peakSampledHeapDeltaBytes": 475808,
+      "natural": {
+        "rss": 67043328,
+        "heapTotal": 41549824,
+        "heapUsed": 7541640,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 25463
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 67174400,
+        "heapTotal": 41811968,
+        "heapUsed": 7213944,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 25502,
+        "physicalHeapBytes": 10813440
+      },
+      "elapsedMs": [
+        2.514101000000039,
+        1.2203160000000253,
+        1.0991369999999847
+      ],
+      "exactPayloadParity": true,
+      "jsonInputBytes": 34188,
+      "notes": [
+        "SQL counters include returned JSON text, not SQLite file/page IO",
+        "Sampled peak includes verification serialization and can miss synchronous native allocation peaks",
+        "Diagnostic GC only at initial/final boundaries; no app GC changes"
+      ]
+    },
+    {
+      "round": 0,
+      "mode": "whole-pack",
+      "operation": "theme",
+      "requests": 3,
+      "stats": {
+        "legacyReadBytes": 5763504,
+        "sqlReturnedTextBytes": 0,
+        "readFileCalls": 3,
+        "maxConcurrentLegacyReads": 1
+      },
+      "baseline": {
+        "rss": 59031552,
+        "heapTotal": 16121856,
+        "heapUsed": 7014544,
+        "external": 2407379,
+        "arrayBuffers": 143787
+      },
+      "baselinePssKiB": 18675,
+      "peakSampled": {
+        "rss": 70819840,
+        "heapTotal": 36347904,
+        "heapUsed": 18832232,
+        "external": 2985766,
+        "arrayBuffers": 668370
+      },
+      "peakSampledHeapDeltaBytes": 11817688,
+      "natural": {
+        "rss": 66973696,
+        "heapTotal": 32485376,
+        "heapUsed": 15141256,
+        "external": 2985766,
+        "arrayBuffers": 143787,
+        "pssKiB": 26487
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 59355136,
+        "heapTotal": 24772608,
+        "heapUsed": 7153648,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 19172,
+        "physicalHeapBytes": 10031104
+      },
+      "elapsedMs": [
+        10.342692999999997,
+        8.571127999999987,
+        8.595262999999989
+      ],
+      "exactPayloadParity": true,
+      "jsonInputBytes": 5763504,
+      "notes": [
+        "SQL counters include returned JSON text, not SQLite file/page IO",
+        "Sampled peak includes verification serialization and can miss synchronous native allocation peaks",
+        "Diagnostic GC only at initial/final boundaries; no app GC changes"
+      ]
+    },
+    {
+      "round": 0,
+      "mode": "indexed",
+      "operation": "theme",
+      "requests": 3,
+      "stats": {
+        "legacyReadBytes": 0,
+        "sqlReturnedTextBytes": 483,
+        "readFileCalls": 0,
+        "maxConcurrentLegacyReads": 0
+      },
+      "baseline": {
+        "rss": 59027456,
+        "heapTotal": 15859712,
+        "heapUsed": 7015392,
+        "external": 2407379,
+        "arrayBuffers": 143787
+      },
+      "baselinePssKiB": 19336,
+      "peakSampled": {
+        "rss": 60932096,
+        "heapTotal": 15859712,
+        "heapUsed": 7434784,
+        "external": 2461183,
+        "arrayBuffers": 143787
+      },
+      "peakSampledHeapDeltaBytes": 419392,
+      "natural": {
+        "rss": 60932096,
+        "heapTotal": 15859712,
+        "heapUsed": 7241256,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 20255
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 60932096,
+        "heapTotal": 16121856,
+        "heapUsed": 7137400,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 20259,
+        "physicalHeapBytes": 9895936
+      },
+      "elapsedMs": [
+        2.4162450000000035,
+        0.9703209999999984,
+        0.893259999999998
+      ],
+      "exactPayloadParity": true,
+      "jsonInputBytes": 483,
+      "notes": [
+        "SQL counters include returned JSON text, not SQLite file/page IO",
+        "Sampled peak includes verification serialization and can miss synchronous native allocation peaks",
+        "Diagnostic GC only at initial/final boundaries; no app GC changes"
+      ]
+    },
+    {
+      "round": 0,
+      "mode": "whole-pack",
+      "operation": "combined",
+      "requests": 3,
+      "stats": {
+        "legacyReadBytes": 11527008,
+        "sqlReturnedTextBytes": 0,
+        "readFileCalls": 6,
+        "maxConcurrentLegacyReads": 1
+      },
+      "baseline": {
+        "rss": 58830848,
+        "heapTotal": 15859712,
+        "heapUsed": 7014504,
+        "external": 2407379,
+        "arrayBuffers": 143787
+      },
+      "baselinePssKiB": 19321,
+      "peakSampled": {
+        "rss": 75464704,
+        "heapTotal": 55316480,
+        "heapUsed": 22623680,
+        "external": 2985766,
+        "arrayBuffers": 668370
+      },
+      "peakSampledHeapDeltaBytes": 15609176,
+      "natural": {
+        "rss": 68538368,
+        "heapTotal": 49000448,
+        "heapUsed": 14874792,
+        "external": 2985766,
+        "arrayBuffers": 668370,
+        "pssKiB": 28869
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 61849600,
+        "heapTotal": 42250240,
+        "heapUsed": 8121944,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 22281,
+        "physicalHeapBytes": 10993664
+      },
+      "elapsedMs": [
+        17.698154000000002,
+        16.396186999999998,
+        20.141143999999997
+      ],
+      "exactPayloadParity": true,
+      "jsonInputBytes": 11527008,
+      "notes": [
+        "SQL counters include returned JSON text, not SQLite file/page IO",
+        "Sampled peak includes verification serialization and can miss synchronous native allocation peaks",
+        "Diagnostic GC only at initial/final boundaries; no app GC changes"
+      ]
+    },
+    {
+      "round": 0,
+      "mode": "indexed",
+      "operation": "combined",
+      "requests": 3,
+      "stats": {
+        "legacyReadBytes": 0,
+        "sqlReturnedTextBytes": 2881554,
+        "readFileCalls": 0,
+        "maxConcurrentLegacyReads": 0
+      },
+      "baseline": {
+        "rss": 59113472,
+        "heapTotal": 16121856,
+        "heapUsed": 7015360,
+        "external": 2407379,
+        "arrayBuffers": 143787
+      },
+      "baselinePssKiB": 19182,
+      "peakSampled": {
+        "rss": 67604480,
+        "heapTotal": 28884992,
+        "heapUsed": 13011176,
+        "external": 2461183,
+        "arrayBuffers": 143787
+      },
+      "peakSampledHeapDeltaBytes": 5995816,
+      "natural": {
+        "rss": 65867776,
+        "heapTotal": 28884992,
+        "heapUsed": 11072032,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 25694
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 63053824,
+        "heapTotal": 25735168,
+        "heapUsed": 8098600,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 22927,
+        "physicalHeapBytes": 10993664
+      },
+      "elapsedMs": [
+        5.1843450000000075,
+        3.8339809999999943,
+        4.4734630000000095
+      ],
+      "exactPayloadParity": true,
+      "jsonInputBytes": 2881554,
+      "notes": [
+        "SQL counters include returned JSON text, not SQLite file/page IO",
+        "Sampled peak includes verification serialization and can miss synchronous native allocation peaks",
+        "Diagnostic GC only at initial/final boundaries; no app GC changes"
+      ]
+    },
+    {
+      "round": 1,
+      "mode": "indexed",
+      "operation": "list",
+      "requests": 3,
+      "stats": {
+        "legacyReadBytes": 0,
+        "sqlReturnedTextBytes": 34188,
+        "readFileCalls": 0,
+        "maxConcurrentLegacyReads": 0
+      },
+      "baseline": {
+        "rss": 65314816,
+        "heapTotal": 41549824,
+        "heapUsed": 7071152,
+        "external": 2407379,
+        "arrayBuffers": 143787
+      },
+      "baselinePssKiB": 26693,
+      "peakSampled": {
+        "rss": 67162112,
+        "heapTotal": 41549824,
+        "heapUsed": 7664840,
+        "external": 2461183,
+        "arrayBuffers": 143787
+      },
+      "peakSampledHeapDeltaBytes": 593688,
+      "natural": {
+        "rss": 67162112,
+        "heapTotal": 41549824,
+        "heapUsed": 7541640,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 27791
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 67293184,
+        "heapTotal": 41549824,
+        "heapUsed": 7213944,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 27847,
+        "physicalHeapBytes": 10293248
+      },
+      "elapsedMs": [
+        2.685653000000002,
+        1.1811710000000062,
+        1.0755869999999845
+      ],
+      "exactPayloadParity": true,
+      "jsonInputBytes": 34188,
+      "notes": [
+        "SQL counters include returned JSON text, not SQLite file/page IO",
+        "Sampled peak includes verification serialization and can miss synchronous native allocation peaks",
+        "Diagnostic GC only at initial/final boundaries; no app GC changes"
+      ]
+    },
+    {
+      "round": 1,
+      "mode": "whole-pack",
+      "operation": "list",
+      "requests": 3,
+      "stats": {
+        "legacyReadBytes": 184432524,
+        "sqlReturnedTextBytes": 0,
+        "readFileCalls": 96,
+        "maxConcurrentLegacyReads": 32
+      },
+      "baseline": {
+        "rss": 70172672,
+        "heapTotal": 41549824,
+        "heapUsed": 7070368,
+        "external": 2407379,
+        "arrayBuffers": 143787
+      },
+      "baselinePssKiB": 31528,
+      "peakSampled": {
+        "rss": 267067392,
+        "heapTotal": 326975488,
+        "heapUsed": 191249000,
+        "external": 19247839,
+        "arrayBuffers": 16930443
+      },
+      "peakSampledHeapDeltaBytes": 184178632,
+      "natural": {
+        "rss": 264077312,
+        "heapTotal": 323452928,
+        "heapUsed": 187817456,
+        "external": 19243231,
+        "arrayBuffers": 16925835,
+        "pssKiB": 221290
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 83132416,
+        "heapTotal": 142475264,
+        "heapUsed": 7294112,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 44558,
+        "physicalHeapBytes": 12128256
+      },
+      "elapsedMs": [
+        182.11384600000002,
+        192.03409799999997,
+        186.159492
+      ],
+      "exactPayloadParity": true,
+      "jsonInputBytes": 184432524,
+      "notes": [
+        "SQL counters include returned JSON text, not SQLite file/page IO",
+        "Sampled peak includes verification serialization and can miss synchronous native allocation peaks",
+        "Diagnostic GC only at initial/final boundaries; no app GC changes"
+      ]
+    },
+    {
+      "round": 1,
+      "mode": "indexed",
+      "operation": "theme",
+      "requests": 3,
+      "stats": {
+        "legacyReadBytes": 0,
+        "sqlReturnedTextBytes": 483,
+        "readFileCalls": 0,
+        "maxConcurrentLegacyReads": 0
+      },
+      "baseline": {
+        "rss": 59514880,
+        "heapTotal": 15859712,
+        "heapUsed": 7015256,
+        "external": 2407379,
+        "arrayBuffers": 143787
+      },
+      "baselinePssKiB": 20871,
+      "peakSampled": {
+        "rss": 61485056,
+        "heapTotal": 15859712,
+        "heapUsed": 7434752,
+        "external": 2461183,
+        "arrayBuffers": 143787
+      },
+      "peakSampledHeapDeltaBytes": 419496,
+      "natural": {
+        "rss": 61485056,
+        "heapTotal": 15859712,
+        "heapUsed": 7241120,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 21874
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 61485056,
+        "heapTotal": 16121856,
+        "heapUsed": 7364712,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 21882,
+        "physicalHeapBytes": 9637888
+      },
+      "elapsedMs": [
+        2.3529879999999963,
+        0.9823209999999989,
+        0.8392510000000044
+      ],
+      "exactPayloadParity": true,
+      "jsonInputBytes": 483,
+      "notes": [
+        "SQL counters include returned JSON text, not SQLite file/page IO",
+        "Sampled peak includes verification serialization and can miss synchronous native allocation peaks",
+        "Diagnostic GC only at initial/final boundaries; no app GC changes"
+      ]
+    },
+    {
+      "round": 1,
+      "mode": "whole-pack",
+      "operation": "theme",
+      "requests": 3,
+      "stats": {
+        "legacyReadBytes": 5763504,
+        "sqlReturnedTextBytes": 0,
+        "readFileCalls": 3,
+        "maxConcurrentLegacyReads": 1
+      },
+      "baseline": {
+        "rss": 59367424,
+        "heapTotal": 15859712,
+        "heapUsed": 7014544,
+        "external": 2407379,
+        "arrayBuffers": 143787
+      },
+      "baselinePssKiB": 20847,
+      "peakSampled": {
+        "rss": 71356416,
+        "heapTotal": 36085760,
+        "heapUsed": 18832992,
+        "external": 2985766,
+        "arrayBuffers": 668370
+      },
+      "peakSampledHeapDeltaBytes": 11818448,
+      "natural": {
+        "rss": 67506176,
+        "heapTotal": 32223232,
+        "heapUsed": 14937232,
+        "external": 2985766,
+        "arrayBuffers": 143787,
+        "pssKiB": 28746
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 59887616,
+        "heapTotal": 24510464,
+        "heapUsed": 7153648,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 21218,
+        "physicalHeapBytes": 9768960
+      },
+      "elapsedMs": [
+        8.037797000000012,
+        7.402169000000001,
+        7.049246999999994
+      ],
+      "exactPayloadParity": true,
+      "jsonInputBytes": 5763504,
+      "notes": [
+        "SQL counters include returned JSON text, not SQLite file/page IO",
+        "Sampled peak includes verification serialization and can miss synchronous native allocation peaks",
+        "Diagnostic GC only at initial/final boundaries; no app GC changes"
+      ]
+    },
+    {
+      "round": 1,
+      "mode": "indexed",
+      "operation": "combined",
+      "requests": 3,
+      "stats": {
+        "legacyReadBytes": 0,
+        "sqlReturnedTextBytes": 2881554,
+        "readFileCalls": 0,
+        "maxConcurrentLegacyReads": 0
+      },
+      "baseline": {
+        "rss": 59027456,
+        "heapTotal": 16121856,
+        "heapUsed": 7015360,
+        "external": 2407379,
+        "arrayBuffers": 143787
+      },
+      "baselinePssKiB": 20763,
+      "peakSampled": {
+        "rss": 67809280,
+        "heapTotal": 28360704,
+        "heapUsed": 12973176,
+        "external": 2461183,
+        "arrayBuffers": 143787
+      },
+      "peakSampledHeapDeltaBytes": 5957816,
+      "natural": {
+        "rss": 66019328,
+        "heapTotal": 28360704,
+        "heapUsed": 11040032,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 26646
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 63131648,
+        "heapTotal": 25473024,
+        "heapUsed": 8098600,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 23838,
+        "physicalHeapBytes": 10731520
+      },
+      "elapsedMs": [
+        4.917839000000001,
+        3.778000000000006,
+        3.1131480000000096
+      ],
+      "exactPayloadParity": true,
+      "jsonInputBytes": 2881554,
+      "notes": [
+        "SQL counters include returned JSON text, not SQLite file/page IO",
+        "Sampled peak includes verification serialization and can miss synchronous native allocation peaks",
+        "Diagnostic GC only at initial/final boundaries; no app GC changes"
+      ]
+    },
+    {
+      "round": 1,
+      "mode": "whole-pack",
+      "operation": "combined",
+      "requests": 3,
+      "stats": {
+        "legacyReadBytes": 11527008,
+        "sqlReturnedTextBytes": 0,
+        "readFileCalls": 6,
+        "maxConcurrentLegacyReads": 1
+      },
+      "baseline": {
+        "rss": 59179008,
+        "heapTotal": 16121856,
+        "heapUsed": 7014504,
+        "external": 2407379,
+        "arrayBuffers": 143787
+      },
+      "baselinePssKiB": 20791,
+      "peakSampled": {
+        "rss": 75882496,
+        "heapTotal": 55316480,
+        "heapUsed": 22622608,
+        "external": 2985766,
+        "arrayBuffers": 668370
+      },
+      "peakSampledHeapDeltaBytes": 15608104,
+      "natural": {
+        "rss": 68956160,
+        "heapTotal": 49000448,
+        "heapUsed": 14873496,
+        "external": 2985766,
+        "arrayBuffers": 668370,
+        "pssKiB": 30450
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 62271488,
+        "heapTotal": 42250240,
+        "heapUsed": 8121944,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 23866,
+        "physicalHeapBytes": 11251712
+      },
+      "elapsedMs": [
+        15.220101,
+        13.518108999999995,
+        16.596033000000006
+      ],
+      "exactPayloadParity": true,
+      "jsonInputBytes": 11527008,
+      "notes": [
+        "SQL counters include returned JSON text, not SQLite file/page IO",
+        "Sampled peak includes verification serialization and can miss synchronous native allocation peaks",
+        "Diagnostic GC only at initial/final boundaries; no app GC changes"
+      ]
+    },
+    {
+      "round": 2,
+      "mode": "whole-pack",
+      "operation": "list",
+      "requests": 3,
+      "stats": {
+        "legacyReadBytes": 184432524,
+        "sqlReturnedTextBytes": 0,
+        "readFileCalls": 96,
+        "maxConcurrentLegacyReads": 32
+      },
+      "baseline": {
+        "rss": 65196032,
+        "heapTotal": 41811968,
+        "heapUsed": 7070440,
+        "external": 2407379,
+        "arrayBuffers": 143787
+      },
+      "baselinePssKiB": 26597,
+      "peakSampled": {
+        "rss": 380977152,
+        "heapTotal": 440512512,
+        "heapUsed": 304337952,
+        "external": 36029691,
+        "arrayBuffers": 33712267
+      },
+      "peakSampledHeapDeltaBytes": 297267512,
+      "natural": {
+        "rss": 380977152,
+        "heapTotal": 440512512,
+        "heapUsed": 304368656,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 335762
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 83058688,
+        "heapTotal": 142475264,
+        "heapUsed": 7294184,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 44714,
+        "physicalHeapBytes": 12128256
+      },
+      "elapsedMs": [
+        187.32964600000003,
+        210.04985399999998,
+        165.328351
+      ],
+      "exactPayloadParity": true,
+      "jsonInputBytes": 184432524,
+      "notes": [
+        "SQL counters include returned JSON text, not SQLite file/page IO",
+        "Sampled peak includes verification serialization and can miss synchronous native allocation peaks",
+        "Diagnostic GC only at initial/final boundaries; no app GC changes"
+      ]
+    },
+    {
+      "round": 2,
+      "mode": "indexed",
+      "operation": "list",
+      "requests": 3,
+      "stats": {
+        "legacyReadBytes": 0,
+        "sqlReturnedTextBytes": 34188,
+        "readFileCalls": 0,
+        "maxConcurrentLegacyReads": 0
+      },
+      "baseline": {
+        "rss": 65220608,
+        "heapTotal": 41811968,
+        "heapUsed": 7071152,
+        "external": 2407379,
+        "arrayBuffers": 143787
+      },
+      "baselinePssKiB": 26628,
+      "peakSampled": {
+        "rss": 67223552,
+        "heapTotal": 41811968,
+        "heapUsed": 7634688,
+        "external": 2461183,
+        "arrayBuffers": 143787
+      },
+      "peakSampledHeapDeltaBytes": 563536,
+      "natural": {
+        "rss": 67223552,
+        "heapTotal": 41811968,
+        "heapUsed": 7543568,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 27723
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 67223552,
+        "heapTotal": 41811968,
+        "heapUsed": 7214064,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 27787,
+        "physicalHeapBytes": 10813440
+      },
+      "elapsedMs": [
+        2.5684990000000028,
+        1.189661000000001,
+        1.0669420000000116
+      ],
+      "exactPayloadParity": true,
+      "jsonInputBytes": 34188,
+      "notes": [
+        "SQL counters include returned JSON text, not SQLite file/page IO",
+        "Sampled peak includes verification serialization and can miss synchronous native allocation peaks",
+        "Diagnostic GC only at initial/final boundaries; no app GC changes"
+      ]
+    },
+    {
+      "round": 2,
+      "mode": "whole-pack",
+      "operation": "theme",
+      "requests": 3,
+      "stats": {
+        "legacyReadBytes": 5763504,
+        "sqlReturnedTextBytes": 0,
+        "readFileCalls": 3,
+        "maxConcurrentLegacyReads": 1
+      },
+      "baseline": {
+        "rss": 58953728,
+        "heapTotal": 16121856,
+        "heapUsed": 7014472,
+        "external": 2407379,
+        "arrayBuffers": 143787
+      },
+      "baselinePssKiB": 20783,
+      "peakSampled": {
+        "rss": 71008256,
+        "heapTotal": 36085760,
+        "heapUsed": 18766312,
+        "external": 2985766,
+        "arrayBuffers": 668370
+      },
+      "peakSampledHeapDeltaBytes": 11751840,
+      "natural": {
+        "rss": 67158016,
+        "heapTotal": 32223232,
+        "heapUsed": 14902616,
+        "external": 2985766,
+        "arrayBuffers": 143787,
+        "pssKiB": 28718
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 59539456,
+        "heapTotal": 24510464,
+        "heapUsed": 7153576,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 21190,
+        "physicalHeapBytes": 10027008
+      },
+      "elapsedMs": [
+        7.902721,
+        6.833461999999997,
+        6.700525999999996
+      ],
+      "exactPayloadParity": true,
+      "jsonInputBytes": 5763504,
+      "notes": [
+        "SQL counters include returned JSON text, not SQLite file/page IO",
+        "Sampled peak includes verification serialization and can miss synchronous native allocation peaks",
+        "Diagnostic GC only at initial/final boundaries; no app GC changes"
+      ]
+    },
+    {
+      "round": 2,
+      "mode": "indexed",
+      "operation": "theme",
+      "requests": 3,
+      "stats": {
+        "legacyReadBytes": 0,
+        "sqlReturnedTextBytes": 483,
+        "readFileCalls": 0,
+        "maxConcurrentLegacyReads": 0
+      },
+      "baseline": {
+        "rss": 58925056,
+        "heapTotal": 16384000,
+        "heapUsed": 7015256,
+        "external": 2407379,
+        "arrayBuffers": 143787
+      },
+      "baselinePssKiB": 20663,
+      "peakSampled": {
+        "rss": 60895232,
+        "heapTotal": 16384000,
+        "heapUsed": 7450848,
+        "external": 2461183,
+        "arrayBuffers": 143787
+      },
+      "peakSampledHeapDeltaBytes": 435592,
+      "natural": {
+        "rss": 60895232,
+        "heapTotal": 16384000,
+        "heapUsed": 7241120,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 21678
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 60895232,
+        "heapTotal": 16384000,
+        "heapUsed": 7137264,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 21706,
+        "physicalHeapBytes": 9900032
+      },
+      "elapsedMs": [
+        3.550027,
+        2.606583999999998,
+        2.2823470000000157
+      ],
+      "exactPayloadParity": true,
+      "jsonInputBytes": 483,
+      "notes": [
+        "SQL counters include returned JSON text, not SQLite file/page IO",
+        "Sampled peak includes verification serialization and can miss synchronous native allocation peaks",
+        "Diagnostic GC only at initial/final boundaries; no app GC changes"
+      ]
+    },
+    {
+      "round": 2,
+      "mode": "whole-pack",
+      "operation": "combined",
+      "requests": 3,
+      "stats": {
+        "legacyReadBytes": 11527008,
+        "sqlReturnedTextBytes": 0,
+        "readFileCalls": 6,
+        "maxConcurrentLegacyReads": 1
+      },
+      "baseline": {
+        "rss": 59015168,
+        "heapTotal": 16121856,
+        "heapUsed": 7014504,
+        "external": 2407379,
+        "arrayBuffers": 143787
+      },
+      "baselinePssKiB": 20679,
+      "peakSampled": {
+        "rss": 76038144,
+        "heapTotal": 55316480,
+        "heapUsed": 22621128,
+        "external": 2985766,
+        "arrayBuffers": 668370
+      },
+      "peakSampledHeapDeltaBytes": 15606624,
+      "natural": {
+        "rss": 69083136,
+        "heapTotal": 49000448,
+        "heapUsed": 14874680,
+        "external": 2985766,
+        "arrayBuffers": 668370,
+        "pssKiB": 30350
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 62402560,
+        "heapTotal": 42250240,
+        "heapUsed": 8121944,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 23766,
+        "physicalHeapBytes": 11251712
+      },
+      "elapsedMs": [
+        20.932962000000003,
+        17.673800999999997,
+        20.745893000000024
+      ],
+      "exactPayloadParity": true,
+      "jsonInputBytes": 11527008,
+      "notes": [
+        "SQL counters include returned JSON text, not SQLite file/page IO",
+        "Sampled peak includes verification serialization and can miss synchronous native allocation peaks",
+        "Diagnostic GC only at initial/final boundaries; no app GC changes"
+      ]
+    },
+    {
+      "round": 2,
+      "mode": "indexed",
+      "operation": "combined",
+      "requests": 3,
+      "stats": {
+        "legacyReadBytes": 0,
+        "sqlReturnedTextBytes": 2881554,
+        "readFileCalls": 0,
+        "maxConcurrentLegacyReads": 0
+      },
+      "baseline": {
+        "rss": 58859520,
+        "heapTotal": 16121856,
+        "heapUsed": 7015288,
+        "external": 2407379,
+        "arrayBuffers": 143787
+      },
+      "baselinePssKiB": 20715,
+      "peakSampled": {
+        "rss": 67670016,
+        "heapTotal": 28360704,
+        "heapUsed": 13007120,
+        "external": 2461183,
+        "arrayBuffers": 143787
+      },
+      "peakSampledHeapDeltaBytes": 5991832,
+      "natural": {
+        "rss": 65880064,
+        "heapTotal": 28360704,
+        "heapUsed": 11039960,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 26602
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 63160320,
+        "heapTotal": 25997312,
+        "heapUsed": 8098528,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 23818,
+        "physicalHeapBytes": 11255808
+      },
+      "elapsedMs": [
+        5.753293999999997,
+        4.541770999999997,
+        3.2310950000000105
+      ],
+      "exactPayloadParity": true,
+      "jsonInputBytes": 2881554,
+      "notes": [
+        "SQL counters include returned JSON text, not SQLite file/page IO",
+        "Sampled peak includes verification serialization and can miss synchronous native allocation peaks",
+        "Diagnostic GC only at initial/final boundaries; no app GC changes"
+      ]
+    },
+    {
+      "round": 0,
+      "mode": "migration",
+      "operation": "list",
+      "requests": 3,
+      "stats": {
+        "legacyReadBytes": 61477508,
+        "sqlReturnedTextBytes": 34188,
+        "readFileCalls": 32,
+        "maxConcurrentLegacyReads": 1
+      },
+      "baseline": {
+        "rss": 65679360,
+        "heapTotal": 41549824,
+        "heapUsed": 7071160,
+        "external": 2407379,
+        "arrayBuffers": 143787
+      },
+      "baselinePssKiB": 26765,
+      "peakSampled": {
+        "rss": 110551040,
+        "heapTotal": 114196480,
+        "heapUsed": 46477008,
+        "external": 5084098,
+        "arrayBuffers": 2766702
+      },
+      "peakSampledHeapDeltaBytes": 39405848,
+      "natural": {
+        "rss": 97009664,
+        "heapTotal": 101212160,
+        "heapUsed": 33766832,
+        "external": 4034932,
+        "arrayBuffers": 1717536,
+        "pssKiB": 56787
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 68861952,
+        "heapTotal": 75366400,
+        "heapUsed": 7350488,
+        "external": 2461183,
+        "arrayBuffers": 143787,
+        "pssKiB": 29306,
+        "physicalHeapBytes": 11337728
+      },
+      "elapsedMs": [
+        1256.243547,
+        1.2976469999998699,
+        1.0141899999998714
+      ],
+      "exactPayloadParity": true,
+      "jsonInputBytes": 61511696,
+      "notes": [
+        "SQL counters include returned JSON text, not SQLite file/page IO",
+        "Sampled peak includes verification serialization and can miss synchronous native allocation peaks",
+        "Diagnostic GC only at initial/final boundaries; no app GC changes"
+      ]
+    }
+  ]
+}

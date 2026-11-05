@@ -1,13 +1,9 @@
 import * as React from 'react';
-import { FileCode2, GitBranch, RefreshCw, X } from 'lucide-react';
+import { FileCode2, RefreshCw, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { FileTypeIcon } from '@/components/file-type-icon';
 import { FileDiff } from '@/components/file-diff';
-import { LineChangeCount } from '@/components/line-change-count';
-import { workspaceChanges } from '@/lib/workspace-changes.mjs';
-import { cn } from '@/lib/utils';
 import type { GitInfo, HubBridge } from '@/types';
 
 export function useWorkspaceGit(bridge: HubBridge, project: string, visible: boolean, revision: number) {
@@ -31,26 +27,6 @@ export function useWorkspaceGit(bridge: HubBridge, project: string, visible: boo
     return () => { active = false; clearInterval(timer); };
   }, [bridge, project, visible, revision, refreshKey]);
   return { git, error, loading, refresh, revision: revisionKey };
-}
-
-export function WorkspaceChangeList({ project, git, error, loading, refresh, selected, onSelect }: {
-  project: string; git: GitInfo | null; error: string; loading: boolean; refresh: () => void; selected: string | null; onSelect: (rel: string) => void;
-}) {
-  const [filter, setFilter] = React.useState('');
-  const changes = React.useMemo(() => workspaceChanges(project, git), [project, git]);
-  const shown = changes.filter((file) => `${file.rel} ${file.label}`.toLowerCase().includes(filter.toLowerCase()));
-  return <section aria-label="Workspace changes" className="flex min-h-0 flex-1 flex-col">
-    <div className="shrink-0 space-y-2 border-b px-2 py-2">
-      <div className="flex items-center gap-1.5 text-xs"><GitBranch className="size-3.5 shrink-0 text-muted-foreground" /><span className="min-w-0 flex-1 truncate" title={git?.branch}>{git?.branch || (git ? 'No commits yet' : 'Changes')}</span><Tooltip><TooltipTrigger asChild><Button size="icon-xs" variant="ghost" aria-label="Refresh workspace changes" onClick={refresh}><RefreshCw /></Button></TooltipTrigger><TooltipContent>Refresh changes</TooltipContent></Tooltip></div>
-      <Input aria-label="Filter workspace changes" placeholder="Find a changed file…" className="h-7 text-xs" value={filter} onChange={(e) => setFilter(e.target.value)} />
-      <p className="text-xs text-muted-foreground">{changes.length} changed {changes.length === 1 ? 'file' : 'files'} · Saved changes</p>
-    </div>
-    {error && <p role="alert" className="break-words px-3 py-2 text-xs text-destructive">{error}</p>}
-    <ul className="min-h-0 flex-1 overflow-auto py-1">
-      {shown.map((file) => <li key={file.rel}><button aria-label={`Review ${file.label.toLowerCase()} ${file.rel}`} aria-current={selected === file.rel ? 'page' : undefined} title={file.from ? `${file.from} → ${file.rel}` : file.rel} onClick={() => onSelect(file.rel)} className={cn('flex min-h-8 w-full items-center gap-2 px-2 text-left hover:bg-muted/60 max-sm:min-h-11', selected === file.rel && 'bg-accent')}><FileTypeIcon path={file.rel} /><span className="min-w-0 flex-1"><span className="block truncate text-[13px]">{file.rel.split('/').at(-1)}</span>{file.rel.includes('/') && <span className="block truncate text-[11px] text-muted-foreground">{file.rel.slice(0, file.rel.lastIndexOf('/'))}</span>}</span><LineChangeCount {...file} /><span aria-label={file.label} className={cn('shrink-0 font-mono text-xs', file.status === 'A' ? 'text-success' : file.status === 'D' ? 'text-destructive' : 'text-warning')}>{file.status}</span></button></li>)}
-      {!shown.length && <li role="status" className="px-3 py-6 text-center text-xs text-muted-foreground">{loading ? 'Reading changes…' : filter ? 'No changed files match.' : git ? 'No saved changes in this folder.' : 'This folder is not a Git repository.'}</li>}
-    </ul>
-  </section>;
 }
 
 export function WorkspaceFileChange({ bridge, project, rel, revision, visible, dirty, deleted, onEdit, onClose }: {

@@ -1,0 +1,70 @@
+{
+  "checkedOn": "2026-11-04",
+  "scope": "LSP byte-reader correctness, allocation retention and actual deterministic stdio subprocess integration. Not a real language server or total application RAM measurement.",
+  "checks": {
+    "framerAndLanguageIntegrationTests": {
+      "passed": 25,
+      "failed": 0,
+      "command": "node --test test/lsp-framing.test.js test/language-tools.test.js"
+    },
+    "fullRegressionTests": {
+      "passed": 447,
+      "failed": 0,
+      "command": "npm test"
+    },
+    "syntaxChecks": [
+      "core/lsp-framing.js",
+      "scripts/performance/lsp-framing.cjs"
+    ],
+    "diffWhitespace": "passed",
+    "productionForcedGcCallsAdded": false
+  },
+  "protocolCases": [
+    "Multibyte UTF-8 split at byte boundaries",
+    "Multiple coalesced frames and per-frame size bounds",
+    "Lazy geometric body allocation and exact small configured bounds",
+    "Dedicated retained allocation backing rather than shared Buffer-pool retention",
+    "Invalid or duplicated Content-Length, oversized header/body and truncated EOF",
+    "Callback failure/disposal and 100 partial-reader cleanup cycles",
+    "Concurrent Unicode completion/formatting replies and diagnostics over a real local stdio process",
+    "Invalid JSON-RPC top-level null and child stdout closure reject initialization, clear pending requests/listeners/buffers and stop the child"
+  ],
+  "benchmark": {
+    "artifact": "docs/performance/lsp-framing-benchmark.json",
+    "command": "npm run bench:lsp -- --output docs/performance/lsp-framing-benchmark.json",
+    "cases": 4,
+    "alternatingOrderRoundsPerCase": 3,
+    "checksumParityAllCases": true,
+    "retentionRuns": [
+      {
+        "mode": "previous",
+        "completedFrames": 1,
+        "unfinishedBodyBytes": 1,
+        "retainedReaderBackingBytes": 4194359,
+        "postGcArrayBufferDeltaBytes": 4194359,
+        "postDisposeArrayBufferDeltaBytes": 0,
+        "inputTransportReferencesDroppedBeforeCollection": true
+      },
+      {
+        "mode": "optimized",
+        "completedFrames": 1,
+        "unfinishedBodyBytes": 1,
+        "retainedReaderBackingBytes": 4096,
+        "postGcArrayBufferDeltaBytes": 4096,
+        "postDisposeArrayBufferDeltaBytes": 0,
+        "inputTransportReferencesDroppedBeforeCollection": true
+      }
+    ],
+    "limits": "An untimed batch checks checksums and copy counts; timed runs check counts. No JSON parsing or actual language-server IO in parser timings. Full-suite activity had finished before the recorded benchmark; unrelated OS scheduling and frequency were not isolated."
+  },
+  "sourceSha256": {
+    "core/lsp-framing.js": "8378d6359ed67626fa3329525b790befbb9393e1503494d9436cd3ff3ecbf16a",
+    "core/language-tools.js": "05d5a3e1b35382eb1c8076b35ec186cc77040b2ae40da4d968aab62cd4628aa0",
+    "test/lsp-framing.test.js": "a56d2b8b4236be8e46815fc4abecf29d676877c5d92d0ac49b58af74bca09cc7",
+    "test/language-tools.test.js": "6a3da91039b6bf3c3364707c4f08c431a84c52886e41a592515123757eedf5b6",
+    "test/fake-language-server.cjs": "b1684ea4ca9c8c6fe35454c5702e5c2ca10fcd59896ad8d9c1c0c62055e76dd8",
+    "scripts/performance/lsp-framing.cjs": "cfe2e024f684c1979e4679e958259348509dbfbebd1b5dc17989a1b69b3ea649",
+    "package.json": "70ad11f9157ca4ecd762a233141d0f1613f2a830a590f14501d2b916af029730"
+  },
+  "remaining": "Actual language-server indexing/cold-start tradeoffs, total Electron RAM under dirty editor/terminal/preview/provider workloads, broader stdout/IPC/PTY producer backpressure and cross-platform packaged measurements remain open."
+}

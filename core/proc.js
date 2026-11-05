@@ -24,16 +24,48 @@ function killTree(child) {
   t.unref();
 }
 
-// Split a stream into lines, calling onLine for each complete line.
+// Search only new input for delimiters. Repeatedly searching/flattening an ever
+// growing partial JSON frame makes fragmented long replies quadratic.
 function lines(stream, onLine) {
-  let buf = '';
+  let blocks = []; let pieces = []; let disposed = false;
+  const append = (piece) => {
+    if (!piece) return;
+    pieces.push(piece);
+    // Tiny transport chunks should not require one retained array slot each.
+    if (pieces.length === 64) { blocks.push(pieces.join('')); pieces = []; }
+  };
+  const take = (last = '') => {
+    if (!blocks.length && !pieces.length) return last;
+    append(last);
+    const line = blocks.length ? [...blocks, ...pieces].join('') : pieces.join('');
+    blocks = []; pieces = [];
+    return line;
+  };
+  const data = (chunk) => {
+    let start = 0; let end;
+    while (!disposed && (end = chunk.indexOf('\n', start)) >= 0) {
+      const line = blocks.length || pieces.length ? take(chunk.slice(start, end)) : chunk.slice(start, end); start = end + 1;
+      onLine(line);
+    }
+    if (!disposed) append(chunk.slice(start));
+  };
+  const dispose = () => { disposed = true; blocks = []; pieces = []; stream.off('data', data); stream.off('end', end); stream.off('close', dispose); };
+  const end = () => { const final = take(); dispose(); if (final) onLine(final); };
   stream.setEncoding('utf8');
-  stream.on('data', (d) => {
-    buf += d;
-    let i;
-    while ((i = buf.indexOf('\n')) >= 0) { onLine(buf.slice(0, i)); buf = buf.slice(i + 1); }
-  });
-  stream.on('end', () => { if (buf) onLine(buf); buf = ''; });
+  stream.on('data', data); stream.once('end', end); stream.once('close', dispose);
+  return dispose;
 }
 
-module.exports = { start, killTree, lines };
+// Diagnostics need a tail, not complete protocol frames. A newline-free error
+// stream must not accumulate in the line framer before this bound is applied.
+function streamTail(stream, limit, onTail) {
+  if (!Number.isSafeInteger(limit) || limit < 1) throw new RangeError('Invalid stream tail limit');
+  let tail = '';
+  const data = (chunk) => { tail = (tail + chunk.slice(-limit)).slice(-limit); onTail(tail); };
+  const dispose = () => { tail = ''; stream.off('data', data); stream.off('end', dispose); stream.off('close', dispose); };
+  stream.setEncoding('utf8');
+  stream.on('data', data); stream.once('end', dispose); stream.once('close', dispose);
+  return dispose;
+}
+
+module.exports = { start, killTree, lines, streamTail };

@@ -1,0 +1,68 @@
+{
+  "checkedOn": "2026-11-04",
+  "application": "Source-run Electron with production UI, disposable profile and project on Xvfb",
+  "checks": {
+    "narrowSidebar": "360px: inline Read and Bash cards, chronological prose, no horizontal overflow",
+    "wideSidebar": "649px: rail and dots stay aligned after dragging the workspace divider",
+    "outputExpansion": "Show more reveals the last of 14 output rows; Show less restores the bounded preview",
+    "fileLink": "Open services.go in code editor opens the actual editable file",
+    "approval": "A fresh chat with the local fake ACP agent positioned its pending command approval after the Bash card and showed Waiting for your answer. Allow once completed the turn, removed the pending buttons, and retained exactly two tool cards without duplicates.",
+    "regressionTests": {
+      "passed": 397,
+      "failed": 0
+    },
+    "typescript": "passed",
+    "productionUiBuild": "passed",
+    "diffWhitespace": "passed"
+  },
+  "limits": "No paid provider calls. Native approval verification used test/fake-acp.js. Historical messages without recorded activity timing keep generic Thought labels and omit tool timestamps. Default tool previews are bounded to 6 lines or 1800 characters; expanded previews are bounded to 500 lines or 60000 characters. Original stored tool output is unchanged.",
+  "latestUiRecheck": {
+    "checkedOn": "2026-11-04",
+    "application": "Production UI in a separate source-run Electron window with a disposable profile; synthetic saved chat; no model requests",
+    "sidebarWidthsPx": [
+      360,
+      668.75
+    ],
+    "checks": {
+      "horizontalPageOverflow": false,
+      "timelineOrder": [
+        "thinking",
+        "commentary",
+        "read",
+        "commentary",
+        "command",
+        "approval",
+        "commentary"
+      ],
+      "expandedOutput": "Last of 14 rows visible after Show more; Show less restores the six-line preview",
+      "codeWhitespace": "IN and OUT preserve whitespace and indentation with keyboard-accessible horizontal scrolling",
+      "fileLink": "Open services.go in code editor resolves to the editable services.go document",
+      "typescript": "passed",
+      "productionUiBuild": "passed",
+      "focusedTests": {
+        "passed": 19,
+        "failed": 0
+      },
+      "languageIntegrationTests": {
+        "passed": 12,
+        "failed": 0
+      },
+      "disposableAppExitCode": 0,
+      "fullRegressionTests": {
+        "passed": 444,
+        "failed": 0
+      }
+    },
+    "sourceSha256": {
+      "ui/src/components/sidebar-activity.tsx": "b71d3058354dad949126da978cdd6eb4245b8c9b576816cfba2bd2c591f1901f",
+      "ui/src/components/conversation.tsx": "db9d0921961c40508dcebda007d815a91c25ebc889848f6ddb53be05782ff782",
+      "ui/src/lib/tool-preview.mjs": "0176b412bdfcce8b995fc2e9477cfbd4d396d04f242539985e029c67ee227661",
+      "ui/src/index.css": "46db5587f4cab324bc1331f61c2d80d4774b7470a99f515346991f0fb340b38a"
+    },
+    "screenshots": [
+      "/tmp/tributary-sidebar-current.png",
+      "/tmp/tributary-sidebar-current-wide.png"
+    ],
+    "limits": "This recheck covers saved-message rendering, output controls, file navigation and resizing. A live provider stream was not invoked; the earlier fake-ACP approval check above is historical evidence."
+  }
+}

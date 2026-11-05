@@ -1,0 +1,168 @@
+{
+  "checkedOn": "2026-11-04",
+  "application": "Source-run Electron 44.7.2, production UI, disposable SQLite profile/project on Xvfb with background throttling disabled",
+  "scope": "Observed dedicated language-worker isolates, not whole-app RAM, renderer retained documents, process RSS or inference memory. No garbage collection was forced.",
+  "sourceSha256": {
+    "ui/src/lib/worker-client.mjs": "2162363da03edc1fad2a97dd77829564d492b0e908f1cbf039e9a60a95c88386",
+    "ui/src/lib/language-assistance.ts": "cc36b656fa746b9ef647acefc9765d0a432ef66ac6b75b50dd039cdb9b81fff1",
+    "ui/src/lib/formatter.ts": "9cbbbf22ce3a1432e41cc3953032be990b6e6742d7968dd28691f09ca3109cf7",
+    "ui/src/lib/document-language.mjs": "4e8ee155402a3669e98b3299b6587a9a26f36bc8478486f50641a25c09908f69",
+    "ui/src/components/code-editor.tsx": "aaa0b45d862c3ee44a833412cbad6bad33dda62140632f05fa14397621b8addd",
+    "ui/src/components/document-outline.tsx": "df0a9ca0d0a7515852dfb1006b7474a4c23e13099d3a76a89e46576086ed8d07",
+    "ui/src/components/explorer-outline.tsx": "eca2b7ed7d6350af817a3f8e8fa6960767a5be1311b7d3abbcb828fba67efe61",
+    "test/worker-client.test.mjs": "6aaa4a4be592bdd777a41426fb287bdce9a0875f2ce3e16d2db1c6d7b070df5a",
+    "scripts/performance/worker-heap.cjs": "e3e6757259d6126fbd8e478ff3e34b788bb631ebc6ecfbfab86c826fb16063a5"
+  },
+  "policy": {
+    "languageIdleMs": 60000,
+    "formatterIdleMs": 30000,
+    "languageMaxPending": 16,
+    "formatterMaxPending": 8,
+    "postedAtOnce": 1
+  },
+  "fixture": {
+    "documents": [
+      {
+        "name": "README.md",
+        "bytes": 50
+      },
+      {
+        "name": "data0.json",
+        "bytes": 327782
+      },
+      {
+        "name": "data1.json",
+        "bytes": 327782
+      },
+      {
+        "name": "data2.json",
+        "bytes": 327782
+      },
+      {
+        "name": "data3.json",
+        "bytes": 327782
+      },
+      {
+        "name": "data4.json",
+        "bytes": 327782
+      },
+      {
+        "name": "data5.json",
+        "bytes": 327782
+      },
+      {
+        "name": "draft.json",
+        "bytes": 19
+      }
+    ],
+    "originalDraft": "{\n  \"answer\": 42\n}\n"
+  },
+  "samples": {
+    "baseline": {
+      "at": 1793800592147,
+      "workers": []
+    },
+    "activeAfterVisits": {
+      "at": 1793800672349,
+      "workers": [
+        {
+          "id": "577721225831655106335E6AE3DFA776",
+          "heap": {
+            "usedSize": 12542164,
+            "totalSize": 16084992,
+            "embedderHeapUsedSize": 639824,
+            "backingStorageSize": 2575240
+          },
+          "script": "language-worker-CH1OClrh.js"
+        }
+      ]
+    },
+    "stillIdle": {
+      "at": 1793800708535,
+      "workers": [
+        {
+          "id": "577721225831655106335E6AE3DFA776",
+          "heap": {
+            "usedSize": 12551284,
+            "totalSize": 16084992,
+            "embedderHeapUsedSize": 639824,
+            "backingStorageSize": 2575240
+          },
+          "script": "language-worker-CH1OClrh.js"
+        }
+      ]
+    },
+    "expired": {
+      "at": 1793800753563,
+      "workers": []
+    },
+    "recreatedOnUndo": {
+      "at": 1793800784445,
+      "workers": [
+        {
+          "id": "17F98992B178B502866A110DB3E1B86D",
+          "heap": {
+            "usedSize": 4510064,
+            "totalSize": 7602176,
+            "embedderHeapUsedSize": 773712,
+            "backingStorageSize": 2575378
+          },
+          "script": "language-worker-CH1OClrh.js"
+        }
+      ]
+    },
+    "secondExpiry": {
+      "at": 1793800878130,
+      "browser": "Chrome/152.0.7977.149",
+      "workers": [],
+      "scope": "Worker isolates only; no GC forced. Not whole-app RAM or a before/after savings estimate."
+    },
+    "secondRecreation": {
+      "at": 1793800900389,
+      "browser": "Chrome/152.0.7977.149",
+      "workers": [
+        {
+          "id": "6B0D688DCF4B4F7C2019D67C85FEF80F",
+          "script": "language-worker-CH1OClrh.js",
+          "heap": {
+            "usedSize": 4450400,
+            "totalSize": 7602176,
+            "embedderHeapUsedSize": 773712,
+            "backingStorageSize": 2575378
+          }
+        }
+      ],
+      "scope": "Worker isolates only; no GC forced. Not whole-app RAM or a before/after savings estimate."
+    }
+  },
+  "firstExpiryObservation": {
+    "lastRecordedPresentMsAfterActiveSample": 36186,
+    "firstRecordedAbsentMsAfterActiveSample": 81214,
+    "note": "Samples bracket expiry; they do not measure the exact 60-second deadline or collection latency."
+  },
+  "checks": {
+    "readmePreview": "No dedicated worker target before a JSON file opened.",
+    "workerReuse": "The same worker target served sequential JSON document visits before its first expiry.",
+    "dirtyDraft": "A trailing-space edit remained unsaved and unchanged after expiry.",
+    "undoRedo": "Undo restored the exact original draft and cleared its dirty marker; redo restored the trailing space and dirty marker after worker recreation.",
+    "diagnostics": "After recreation, adding ! produced one JSON lint range and one gutter marker; undo removed the error.",
+    "secondCycle": "A second idle check found no workers; undo then restored original text, a clean dirty marker and zero lint errors with a third distinct worker target.",
+    "fullRegression": {
+      "passed": 425,
+      "failed": 0,
+      "note": "Full suite finished with the initial 9 worker tests. The expanded 12-test worker suite then passed separately."
+    },
+    "workerFocused": {
+      "passed": 12,
+      "failed": 0
+    },
+    "typescript": "passed",
+    "productionUiBuild": "passed",
+    "diffWhitespace": "passed"
+  },
+  "limits": [
+    "Formatter protocol and lifecycle covered by the shared client tests; native editor formatting normally uses the host formatter, so no native browser-formatter memory saving is claimed.",
+    "Worker heap samples include parser/modules/cache and transient allocations; they are not a retained-live-object comparison.",
+    "No packaged builds or macOS/Windows runtime measurements. Cold-start and rapid-typing latency still need workload profiling."
+  ]
+}

@@ -70,7 +70,12 @@ export function ProjectPreview({ visible = true }: { visible?: boolean }) {
   };
   const move = (direction: number) => setBrowser((state) => ({ ...state, tabs: state.tabs.map((tab) => tab.id === active.id ? movePreview(tab, direction) : tab) }));
   const add = () => { const tab = newPreviewTab(crypto.randomUUID()); setBrowser((state) => ({ tabs: [...state.tabs, tab], active: tab.id })); requestAnimationFrame(() => addressInput.current?.focus()); };
-  const close = (id: string) => { focusTab.current = id === browser.active; setBrowser((state) => { const index = state.tabs.findIndex((tab) => tab.id === id); const tabs = state.tabs.filter((tab) => tab.id !== id); if (!tabs.length) { const tab = newPreviewTab(crypto.randomUUID()); return { tabs: [tab], active: tab.id }; } return { tabs, active: state.active === id ? tabs[Math.min(index, tabs.length - 1)].id : state.active }; }); };
+  const close = (id: string) => {
+    focusTab.current = id === browser.active;
+    if (pendingStart.current === id) pendingStart.current = null;
+    setRevisions((state) => { const next = { ...state }; delete next[id]; return next; });
+    setBrowser((state) => { const index = state.tabs.findIndex((tab) => tab.id === id); const tabs = state.tabs.filter((tab) => tab.id !== id); if (!tabs.length) { const tab = newPreviewTab(crypto.randomUUID()); return { tabs: [tab], active: tab.id }; } return { tabs, active: state.active === id ? tabs[Math.min(index, tabs.length - 1)].id : state.active }; });
+  };
   const showStart = () => setBrowser((state) => ({ ...state, tabs: state.tabs.map((tab) => tab.id === active.id ? { ...tab, index: -1 } : tab) }));
   const openExternal = (url: string) => void s.hub.call('openExternal', url).catch((e: Error) => toast.error(e.message));
   const control = async (action: 'start' | 'stop' | 'restart') => {

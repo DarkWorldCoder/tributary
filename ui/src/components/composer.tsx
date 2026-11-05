@@ -268,7 +268,7 @@ export function Composer({ autoFocus, className }: { autoFocus?: boolean; classN
   const agentControls = <><AgentPicker />
           <ModelPicker />
           {!everyday && <><TaskModePicker value={taskMode} onChange={selectTaskMode} compact={s.codeLayout} researchAvailable={researchAvailable} /><ModePicker readOnly={planOn || researchOn} /></>}</>;
-  const sendActions = (<div className="ml-auto flex shrink-0 items-center gap-1">
+  const sendActions = (<div className="composer-send flex shrink-0 items-center gap-1">
             {s.running && <Button size="icon-sm" variant="secondary" className="rounded-full" onClick={s.stop} aria-label="Stop"><Square className="fill-current" /></Button>}
             {(!s.running || !!text.trim() || attachments.length > 0) && (
               <Tooltip><TooltipTrigger asChild>
@@ -277,7 +277,7 @@ export function Composer({ autoFocus, className }: { autoFocus?: boolean; classN
             )}
           </div>);
   return (
-    <div className={cn('relative min-w-0', className)} onDragOver={(event) => { if (event.dataTransfer.types.includes('Files')) { event.preventDefault(); event.dataTransfer.dropEffect = 'copy'; } }} onDrop={(event) => { if (event.dataTransfer.files.length) { event.preventDefault(); void attach([...event.dataTransfer.files]); } }}>
+    <div className={cn('composer-host @container relative min-w-0', className)} onDragOver={(event) => { if (event.dataTransfer.types.includes('Files')) { event.preventDefault(); event.dataTransfer.dropEffect = 'copy'; } }} onDrop={(event) => { if (event.dataTransfer.files.length) { event.preventDefault(); void attach([...event.dataTransfer.files]); } }}>
       <input ref={picker} type="file" multiple className="sr-only" tabIndex={-1} aria-label="Attach files" onChange={(event) => { void attach([...(event.target.files || [])]); event.target.value = ''; }} />
       {!!attachments.length && <ChatAttachments files={attachments} onRemove={(id) => changeAttachments(attachments.filter((file) => file.id !== id))} />}
       {uploading && <p role="status" className="px-2 py-1 text-xs text-muted-foreground">Adding attachments…</p>}
@@ -313,11 +313,10 @@ export function Composer({ autoFocus, className }: { autoFocus?: boolean; classN
           aria-autocomplete="list" aria-controls={showSuggest ? suggestionId : undefined} aria-activedescendant={showSuggest ? `${suggestionId}-${sel}` : undefined}
           className={cn("max-h-64 min-h-14 px-4 pt-3.5 text-[0.9375rem]", s.codeLayout && "min-h-11 px-3 pt-3 text-sm", chatView && "min-h-11 px-2 py-3 text-[13px]")}
         />
-        {!chatView && <InputGroupAddon align="block-end" className={cn("flex-wrap gap-1 pb-2", s.codeLayout && "composer-toolbar px-2 pt-0 pb-1.5")}>
-          <ComposerTools everyday={everyday} planOn={planOn} setPlanOn={(value) => selectTaskMode(value ? 'plan' : 'ask')} researchOn={researchOn} setResearchOn={(value) => selectTaskMode(value ? 'research' : 'ask')} researchAvailable={researchAvailable} focusMessage={() => ref.current?.focus()} onAttach={() => picker.current?.click()} />
-          {workspaceToggle}
-          {teamToggle}
-          {agentControls}
+        {!chatView && <InputGroupAddon align="block-end" className={cn("composer-toolbar gap-1 pb-2", s.codeLayout && "px-2 pt-0 pb-1.5")}>
+          <div className="composer-primary flex shrink-0 items-center"><ComposerTools everyday={everyday} planOn={planOn} setPlanOn={(value) => selectTaskMode(value ? 'plan' : 'ask')} researchOn={researchOn} setResearchOn={(value) => selectTaskMode(value ? 'research' : 'ask')} researchAvailable={researchAvailable} focusMessage={() => ref.current?.focus()} onAttach={() => picker.current?.click()} />
+          {workspaceToggle}{teamToggle}</div>
+          <div className="composer-agent-controls flex min-w-0 flex-wrap items-center">{agentControls}</div>
           {sendActions}
         </InputGroupAddon>}
         {chatView && <InputGroupAddon align="inline-end" className="shrink-0 p-1">{sendActions}</InputGroupAddon>}

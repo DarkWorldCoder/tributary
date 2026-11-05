@@ -1,0 +1,26 @@
+{
+  "checkedOn": "2026-11-04",
+  "platform": "linux-x64",
+  "application": "Source-run Electron with production UI, isolated profile and disposable loopback HTTP server on Xvfb",
+  "benchmark": "local-requests-benchmark.json",
+  "checks": [
+    {
+      "name": "Queued chat has a truthful native status and remains cancellable",
+      "observed": "Selected the waiting chat through search. The sidebar displayed Waiting for local model and exposed Stop. Clicking Stop completed that chat with ok=false. The fixture still reported received=1 and pending=1, proving the cancelled second chat sent no generation POST."
+    },
+    {
+      "name": "Generation slots transfer between native chats and clear their phase",
+      "observed": "A fresh pair of chats reported generating and waiting-model respectively. Releasing the first fixture response completed its chat with ok=true and admitted the second. Releasing the second completed it with ok=true. Both replies matched the fixture response and both modelPhase fields were absent afterward. An earlier intentionally held request reached its request timeout during UI navigation; this fresh pair was used for completion verification."
+    },
+    {
+      "name": "Concurrency preference is editable and persisted through the desktop host",
+      "observed": "Settings > Connections > Edit showed Parallel local requests with 1, 2 and 4 choices. Selected 2 and saved. The native state RPC reported localConcurrency=2 and reopening the editor selected 2. Changed back to 1 through the same UI before the fresh ordered-completion check."
+    }
+  ],
+  "regressionTests": { "total": 416, "passed": 416, "failed": 0, "durationMs": 70185.408813 },
+  "typescript": "passed",
+  "productionUiBuild": "passed",
+  "diffWhitespace": "passed",
+  "metadataDiscovery": { "unsloth": "offline", "ollama": "offline", "lmstudio": "offline", "generationRequestsSent": 0 },
+  "limits": "All generation checks used a disposable server, not a real inference runtime. No model weights, KV cache, VRAM, packaged builds or cross-platform memory were measured. Admission is per local service and app process, and only configured local direct/built-in-agent requests pass through it. Other clients, native CLI agents and runtime preallocation remain outside the limiter. Test app and fixture server were stopped afterward."
+}

@@ -14,8 +14,9 @@ export function ExplorerOutline({ path, text, line, onSelect }: { path: string |
   React.useEffect(() => {
     if (!open || !path || !supported) return;
     let current = true; setBusy(true); setError(false);
-    const timer = setTimeout(() => { void documentOutline(path, text).then((items) => { if (current) setResult({ path, items }); }).catch(() => { if (current) setError(true); }).finally(() => { if (current) setBusy(false); }); }, 180);
-    return () => { current = false; clearTimeout(timer); };
+    const controller = new AbortController();
+    const timer = setTimeout(() => { void documentOutline(path, text, controller.signal).then((items) => { if (current) setResult({ path, items }); }).catch(() => { if (current) setError(true); }).finally(() => { if (current) setBusy(false); }); }, 180);
+    return () => { current = false; clearTimeout(timer); controller.abort(); };
   }, [open, path, text, supported, retry]);
   const items = result?.path === path ? result.items : [];
   const selected = items.filter((item) => item.line <= line).at(-1);

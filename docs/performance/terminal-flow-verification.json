@@ -1,0 +1,207 @@
+{
+  "checkedOn": "2026-11-04",
+  "scope": "Terminal transport flow control and lifecycle, isolated real PTY tests and source-run Electron with production UI in a disposable Linux/Xvfb profile. No model calls or user projects.",
+  "checks": {
+    "terminalFlowTests": {
+      "passed": 12,
+      "failed": 0,
+      "includedIn": "npm test"
+    },
+    "legacyLocalAndSshTests": {
+      "passed": 23,
+      "failed": 0
+    },
+    "fullRegressionTests": {
+      "passed": 465,
+      "failed": 0
+    },
+    "typescript": "passed",
+    "productionUiBuild": "passed",
+    "diffWhitespace": "passed"
+  },
+  "contract": {
+    "accountingUnit": "UTF-16 code units; not bytes or total RAM",
+    "highWatermark": 131072,
+    "lowWatermark": 32768,
+    "maximumFrameCodeUnits": 16384,
+    "maximumOutstandingFrames": 128,
+    "resumePacketThreshold": 32,
+    "coalescingMs": 8,
+    "acks": "Coalesced, cumulative, after contiguous xterm parser callbacks, matched to consumer token",
+    "overshoot": "Already delivered native reads may exceed the high watermark; the producer must honor PTY pause/resume. This is not a universal RAM limit."
+  },
+  "correctness": [
+    "No initial output before consumer attachment",
+    "Invalid, future, duplicated and stale token ACKs cannot release output",
+    "Reattachment replays unparsed frames before new ones, including synchronous ACK reentrancy",
+    "Natural exit waits for final parser ACK before emitting exit",
+    "Explicit close discards display backlog, disposes queue/timers/subscriptions and terminates the PTY",
+    "200 repeated transport/consumer disposals leave no pending records or timers",
+    "A real PTY delivers 4194304 ASCII code units through a deliberately slow stand-in parser with exact SHA-256 parity",
+    "Closing both exited-but-unparsed and paused flooding PTYs releases their manager entries",
+    "Folderless terminal adoption preserves its null project association",
+    "Renderer replacement and shutdown invalidate pending terminal environment preparation before a PTY can spawn"
+  ],
+  "native": {
+    "installedElectronVersion": "44.7.2",
+    "initial": {
+      "cwd": "/tmp/tributary-terminal-flow-9KBy5M/project",
+      "id": "59330f64-faf3-4ed7-8380-5a8422a90f2e",
+      "project": "/tmp/tributary-terminal-flow-9KBy5M/project",
+      "test": {
+        "disposed": false,
+        "ended": false,
+        "frames": 0,
+        "maxOutstanding": 0,
+        "maxRead": 631,
+        "maxRetained": 631,
+        "outstanding": 0,
+        "owner": "b5b49c49-8142-42c8-bbea-4e5a3e52531b",
+        "paused": false,
+        "pid": 1082397,
+        "queued": 0,
+        "retained": 0,
+        "timer": false
+      },
+      "title": "zsh"
+    },
+    "hidden": {
+      "hidden": true,
+      "terminals": [
+        {
+          "cwd": "/tmp/tributary-terminal-flow-9KBy5M/project",
+          "id": "59330f64-faf3-4ed7-8380-5a8422a90f2e",
+          "project": "/tmp/tributary-terminal-flow-9KBy5M/project",
+          "test": {
+            "disposed": false,
+            "ended": false,
+            "frames": 14,
+            "maxOutstanding": 120639,
+            "maxRead": 16008,
+            "maxRetained": 133034,
+            "outstanding": 131072,
+            "owner": "b5b49c49-8142-42c8-bbea-4e5a3e52531b",
+            "paused": true,
+            "pid": 1082397,
+            "queued": 1962,
+            "retained": 133034,
+            "timer": false
+          },
+          "title": "zsh"
+        }
+      ]
+    },
+    "beforeReload": {
+      "cwd": "/tmp/tributary-terminal-flow-9KBy5M/project",
+      "id": "59330f64-faf3-4ed7-8380-5a8422a90f2e",
+      "project": "/tmp/tributary-terminal-flow-9KBy5M/project",
+      "test": {
+        "disposed": false,
+        "ended": false,
+        "frames": 11,
+        "maxOutstanding": 131072,
+        "maxRead": 19596,
+        "maxRetained": 135151,
+        "outstanding": 131072,
+        "owner": "b5b49c49-8142-42c8-bbea-4e5a3e52531b",
+        "paused": true,
+        "pid": 1082397,
+        "queued": 870,
+        "retained": 131942,
+        "timer": false
+      },
+      "title": "zsh"
+    },
+    "reattached": {
+      "cwd": "/tmp/tributary-terminal-flow-9KBy5M/project",
+      "id": "59330f64-faf3-4ed7-8380-5a8422a90f2e",
+      "project": "/tmp/tributary-terminal-flow-9KBy5M/project",
+      "test": {
+        "disposed": false,
+        "ended": false,
+        "frames": 14,
+        "maxOutstanding": 131072,
+        "maxRead": 19596,
+        "maxRetained": 135151,
+        "outstanding": 131072,
+        "owner": "cc98e749-9af8-405f-9d94-380a275305db",
+        "paused": true,
+        "pid": 1082397,
+        "queued": 4036,
+        "retained": 135108,
+        "timer": false
+      },
+      "title": "zsh"
+    },
+    "settled": {
+      "cwd": "/tmp/tributary-terminal-flow-9KBy5M/project",
+      "id": "59330f64-faf3-4ed7-8380-5a8422a90f2e",
+      "project": "/tmp/tributary-terminal-flow-9KBy5M/project",
+      "test": {
+        "disposed": false,
+        "ended": false,
+        "frames": 0,
+        "maxOutstanding": 131072,
+        "maxRead": 65536,
+        "maxRetained": 181589,
+        "outstanding": 0,
+        "owner": "cc98e749-9af8-405f-9d94-380a275305db",
+        "paused": false,
+        "pid": 1082397,
+        "queued": 0,
+        "retained": 0,
+        "timer": false
+      },
+      "title": "zsh"
+    },
+    "sameTerminalId": true,
+    "sameShellPid": true,
+    "consumerTokenChanged": true,
+    "unicodeMarkerRendered": "FINAL_RECOVERED_🙂_नमस्ते_OK",
+    "producer": {
+      "pid": 1089350,
+      "aliveAfterInterrupt": false
+    },
+    "exitMarkerRenderedAfterOutput": "process exited with code 0",
+    "terminalListAfterExit": [],
+    "appWrapperExitCode": 0,
+    "screenshot": "/tmp/tributary-terminal-final-recovered.png",
+    "measuredMaximumOutstandingCodeUnits": 131072,
+    "measuredMaximumRetainedCodeUnits": 181589,
+    "largestObservedReadCodeUnits": 65536,
+    "cleanup": {
+      "shellPidAbsent": true,
+      "producerPidAbsent": true
+    }
+  },
+  "nativeSourceSha256": {
+    "core/terminal.js": "2934ae6e474ea1b9546e12880dd785a89b37d4ab031e36ffcf365525975281db",
+    "core/terminal-output.js": "72c85bec51951db280d216d8e9ac41816aeac7031c73db5a903030514afd752c",
+    "desktop/main.js": "f1fc96970890a6a2fc24a5eb87525744f1b3ad585b2bfc2d0143b7f42418affe",
+    "ui/src/components/terminal-panel.tsx": "643745cd740a27e3821986738e1b663fd727dc24bd0e65d0f83636359605e4e3",
+    "ui/src/components/terminal-view.tsx": "82625c46ee59b4691dcfcfb2fb53c4608e257ae0c7b17a243367743abcdb8027",
+    "ui/src/lib/terminal-consumer.mjs": "0b52740b2ba6518aa0c0349737413a477ca81d2b51aa09c16b4e83c6a33e6776",
+    "ui/dist/assets/app.js": "be926cec2b4dd2fc37211a48bc46ce20e629d5357ac1a53e73423e480f700f37"
+  },
+  "sourceSha256": {
+    "core/terminal.js": "2934ae6e474ea1b9546e12880dd785a89b37d4ab031e36ffcf365525975281db",
+    "core/terminal-output.js": "72c85bec51951db280d216d8e9ac41816aeac7031c73db5a903030514afd752c",
+    "desktop/main.js": "f1fc96970890a6a2fc24a5eb87525744f1b3ad585b2bfc2d0143b7f42418affe",
+    "ui/src/components/terminal-panel.tsx": "643745cd740a27e3821986738e1b663fd727dc24bd0e65d0f83636359605e4e3",
+    "ui/src/components/terminal-view.tsx": "82625c46ee59b4691dcfcfb2fb53c4608e257ae0c7b17a243367743abcdb8027",
+    "ui/src/lib/terminal-consumer.mjs": "0b52740b2ba6518aa0c0349737413a477ca81d2b51aa09c16b4e83c6a33e6776",
+    "ui/src/lib/terminal-consumer.d.mts": "f022b494a1e710b3d6d88c469f465cb6f6ad57282a060be99f253ac7f5ae9159",
+    "ui/src/types.ts": "c21b28df59553afe9ab072811f937eef45c650453c0078933f78f23ea7b345d9",
+    "test/terminal-flow.test.mjs": "0697c33371d32435bd99e66fe2675a23b7cf72e496792cd240064048bdcd0641",
+    "package.json": "0e6036a4599fd9cff1bbe43d4192e7522cd5ad7a688a32b2eb3ec21b9d00ce06"
+  },
+  "builtTerminalAssetsSha256": {
+    "ui/dist/assets/terminal-panel-BVE7Us9i.js": "46d91e8deb18ddf6bfa859434d3aee634e4c7ed5c033bd1eda40c3e183cd6722",
+    "ui/dist/assets/terminal-panel-DifwlrUo.js": "1379e98c2efa7975ef9750808067e74875ce6f94ba70e5293654a116168b1856",
+    "ui/dist/assets/terminal-panel-I24C6RYn.js": "a4cd244a5a97e38f48b9be6de614d135c7650692567bd47ef31f62164101e7f3",
+    "ui/dist/assets/terminal-panel-C4EX8eZm.js": "699744f711241eeb3a74f9d89ee68876d412d434e224282a95a49bee39db9150",
+    "ui/dist/assets/terminal-panel-DQ856bw2.js": "7beedaa9103a9d23abcd47f9e9960a8026efb4fe6b84bcb1f53a7da9d8c71d1a",
+    "ui/dist/assets/terminal-panel-AV6CESPi.js": "f9de5ca981afd16b813530f9602da2ad3ec02fc41f079a8f3c1e165b8045896a"
+  },
+  "limits": "Queue counts are transport accounting, not a before/after Electron RAM result. The native UI workload ran during regression activity; no typing/interrupt latency distribution is claimed. Exact 4 MiB checksum parity uses a deliberately slow stand-in consumer; native xterm checks visible marker, flow window, hide/reload and interruption. A new renderer recovers its PTY and unacknowledged output, not previously parsed scrollback or terminal editor state. Sparse packet ceiling is independently tested with small configured limits. Legacy direct TerminalManager clients keep their synchronous event mode and do not gain this desktop ACK protocol. Packaged/macOS/Windows native measurements, aggregate budgets across many terminals and visited xterm/GPU/scrollback retention remain open."
+}

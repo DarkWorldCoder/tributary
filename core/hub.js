@@ -49,7 +49,7 @@ const now = () => Date.now();
 class Hub extends EventEmitter {
   // approvals: this host can show tool permission requests and answer them (the desktop app and
   // VS Code). Without it, requests the permission mode does not settle are declined automatically.
-  constructor({ dataDir, secrets, home, fetchImpl, approvals = false }) {
+  constructor({ dataDir, secrets, home, fetchImpl, approvals = false, historyCache = false }) {
     super();
     this.approvals = approvals;
     this.pendingPermissions = new Map(); // request id -> { threadId, request, settle }
@@ -74,7 +74,11 @@ class Hub extends EventEmitter {
     watchActivity(this); // 'activity' events for the live view
     this.fileWatches = new FileWatches((event) => this.emit('files-changed', event));
     this.projectChecks = new (require('./project-checks').ProjectChecks)();
+    this.histories = historyCache ? require('./history-cache').manageHistories(this, historyCache === true ? {} : historyCache) : null;
   }
+
+  withHistoryOperation(fn) { return this.histories ? this.histories.run(fn) : fn(); }
+  holdHistory(id) { return this.histories?.hold(id) || (() => {}); }
 
   async init() {
     if (!fs.existsSync(this.customAgentsFile)) {
@@ -125,6 +129,8 @@ class Hub extends EventEmitter {
   get extensionPacks() { return this._extensionPacks ||= new (require('./extension-packs').ExtensionPacks)(this.dataDir); }
   listExtensionPacks() { return this.extensionPacks.list(); }
   async importExtensionPack(filename) { const result = await this.extensionPacks.install(filename); this.setSettings({ extensionRevision: now() }); return result; }
+  searchExtensionPacks(query) { return this.extensionPacks.search(query); }
+  async installExtensionPack(id) { const result = await this.extensionPacks.installFromRegistry(id); this.setSettings({ extensionRevision: now() }); return result; }
   extensionAppearance(theme, icons) { return this.extensionPacks.appearance(theme, icons); }
   async removeExtensionPack(id) { await this.extensionPacks.remove(id); const patch = {}; for (const key of ['extensionTheme', 'extensionIcons']) if (String(this.store.data.settings[key] || '').startsWith(`${id}:`)) patch[key] = ''; this.setSettings(patch); }
 
@@ -198,7 +204,7 @@ class Hub extends EventEmitter {
     const model = found.models.find((model) => model.id === input.model);
     if (!model) throw new Error('Choose a model currently reported by this service.');
     const previous = this.store.data.gateways.find((gateway) => gateway.direct && gateway.localRuntime === config.service.id && gateway.baseUrl === config.baseUrl && gateway.model === model.id);
-    return this.saveGateway({ id: previous?.id, name: `${config.service.name} · ${model.name}`.slice(0, 80), protocol: 'openai', baseUrl: config.baseUrl, model: model.id, direct: true, localRuntime: config.service.id, historyBudget: input.historyBudget ?? 4000, localAgent: input.localAgent === true, apiKey: config.apiKey, maxOutputTokens: 2048 });
+    return this.saveGateway({ id: previous?.id, name: `${config.service.name} · ${model.name}`.slice(0, 80), protocol: 'openai', baseUrl: config.baseUrl, model: model.id, direct: true, localRuntime: config.service.id, historyBudget: input.historyBudget ?? 4000, localConcurrency: input.localConcurrency ?? previous?.localConcurrency ?? 1, localAgent: input.localAgent === true, apiKey: config.apiKey, maxOutputTokens: 2048 });
   }
   async modelCatalog(agentId, gatewayId) {
     const agent = this.agent(agentId);
@@ -279,7 +285,9 @@ class Hub extends EventEmitter {
   // The person opened this thread: its finished changes no longer need review.
   markThreadSeen(id) {
     const t = this.thread(id);
-    if (!t || threadStatus(t, { running: this.running.has(id) }) !== 'review') return;
+    if (!t) return;
+    const { last } = this.store.summary(t);
+    if (threadStatus({ seenAt: t.seenAt, messages: last ? [last] : [] }, { running: this.running.has(id) }) !== 'review') return;
     t.seenAt = now(); this.store.save(); this.emit('threads', t.project);
   }
   // Every agent at work right now: conversations, team steps and race candidates (core/activity.js).
@@ -288,11 +296,14 @@ class Hub extends EventEmitter {
   async lineAuthors(dir, rel) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return lineAuthors(this, dir, rel); }
   // Keep hunk undo available inside a conversation's separate working copy too.
   async revertTurnHunk(dir, rel, messageId, line) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return revertTurnHunk(this, dir, rel, messageId, line); }
-  thread(id) { return this.store.data.threads.find((t) => t.id === id) || null; }
+  thread(id) { const t = this.store.data.threads.find((t) => t.id === id) || null; if (t) this.histories?.touch(id); return t; }
+  // Desktop/extension responses are read-only transport snapshots. Internal work
+  // continues to use thread(), which owns mutable messages throughout a turn.
+  readThread(id) { const t = this.thread(id); return t ? this.store.readThread(t) : null; }
   createThread(projectPath, title) {
     if (!this.project(projectPath)) this.addProject(projectPath);
     const t = { id: uid(), project: projectPath, title: title || 'New thread', createdAt: now(), updatedAt: now(), messages: [], agentSessions: {}, lastAgent: null };
-    this.store.data.threads.push(t); this.store.save(); this.emit('threads', projectPath);
+    this.store.data.threads.push(t); this.histories?.touch(t.id); this.store.save(); this.emit('threads', projectPath);
     return t;
   }
   renameThread(id, title) { const t = this.thread(id); if (t) { t.title = String(title).slice(0, 120); this.store.save(); this.emit('threads', t.project); } }
@@ -325,6 +336,7 @@ class Hub extends EventEmitter {
       if (typeof clean.localAgent !== 'boolean') throw new Error('Choose chat or local coding agent mode.');
       clean.historyBudget = g.historyBudget ?? prev?.historyBudget ?? 4000;
       if (![4000, 8000, 12000].includes(clean.historyBudget)) throw new Error('Choose a compact, balanced or extended local history budget.');
+      clean.localConcurrency = require('./local-requests').requestLimit(g.localConcurrency ?? prev?.localConcurrency);
     }
     if (clean.direct) connectionConfig(clean);
     if (g.apiKey) { await this.secrets.set(`gateway:${id}`, g.apiKey); clean.hasKey = true; } else if (prev) clean.hasKey = prev.hasKey;
@@ -571,9 +583,10 @@ class Hub extends EventEmitter {
       }
       case 'plan': msg.plan = e.items; break;
       case 'notice': msg.notices.push(e.text); break;
+      case 'model-phase': if (e.phase === 'waiting-model' || e.phase === 'generating') msg.modelPhase = e.phase; else delete msg.modelPhase; break;
       case 'usage': msg.usage = e.usage; if (e.costUsd != null) msg.costUsd = e.costUsd; break;
       case 'error': msg.error = msg.error ? `${msg.error}\n${e.message}` : e.message; break;
-      case 'done': msg.ok = e.ok; if (!msg.text && e.result) msg.text = e.result; break;
+      case 'done': msg.ok = e.ok; delete msg.modelPhase; if (!msg.text && e.result) msg.text = e.result; break;
       default: break;
     }
   }
@@ -593,6 +606,7 @@ class Hub extends EventEmitter {
   // "Always" is remembered for the rest of the agent session: edits as a group, anything else by
   // its exact command (or title), on top of the agent's own allow_always option.
   askPermission(t, msg, agent, request, signal, event) {
+    this.histories?.touch(t.id);
     const scope = `${t.id}\0${request.sessionId || ''}`;
     const key = request.kind === 'edit' ? 'edit' : `${request.kind}\0${request.command || request.detail || request.title}`;
     if (!request.questions && this.alwaysAllowed.get(scope)?.has(key)) return Promise.resolve('always');
@@ -776,16 +790,19 @@ class Hub extends EventEmitter {
   get languageTools() { return this._languageTools ||= new (require('./language-tools').LanguageTools)({ getConfig: () => this.store.data.settings.languageServers, trusted: (dir) => { const project = this.workspaceOwner(dir); return !!project && project.trusted !== false; }, publish: (event) => this.emit('language-diagnostics', event) }); }
   languageToolCatalog() { return this.languageTools.catalog(); }
   configureLanguageTools(input) { const config = require('./language-tools').configurations(input); this.languageTools.stopAll(); this.setSettings({ languageServers: config }); return this.languageTools.catalog(); }
-  languageDocument(dir, rel, text) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.languageTools.open(dir, rel, text); }
-  languageComplete(dir, rel, text, position) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.languageTools.complete(dir, rel, text, position); }
-  languageFormat(dir, rel, text, options) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.languageTools.format(dir, rel, text, options); }
-  languageLocations(dir, rel, text, position, kind) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.languageTools.locations(dir, rel, text, position, kind); }
-  languageClose(dir, rel) { this._languageTools?.closeDocument(dir, rel); }
+  languageAcquire(dir, rel) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.languageTools.acquire(dir, rel); }
+  languageDocument(dir, rel, text, owner) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.languageTools.open(dir, rel, text, owner); }
+  languageComplete(dir, rel, text, position, owner) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.languageTools.complete(dir, rel, text, position, owner); }
+  languageFormat(dir, rel, text, options, owner) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.languageTools.format(dir, rel, text, options, owner); }
+  languageLocations(dir, rel, text, position, kind, owner) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.languageTools.locations(dir, rel, text, position, kind, owner); }
+  languageClose(dir, rel, owner) { this._languageTools?.closeDocument(dir, rel, owner); }
   formatSource(dir, rel, text, automatic) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return require('./project-format').formatProjectSource(dir, rel, text, this.qaTrusted(dir), automatic === true); }
   get projectFormatter() { return this._projectFormatter ||= new (require('./project-format').ProjectFormatter)({ trusted: (dir) => this.isWorkspace(dir) && this.qaTrusted(dir), write: (dir, rel, text, mtime) => this.writeFile(dir, rel, text, mtime) }); }
   previewFormat(dir, exclude) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.projectFormatter.preview(dir, exclude); }
   formatDiff(dir, token, rel) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.projectFormatter.diff(dir, token, rel); }
   applyFormat(dir, token, selected, exclude, undo) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.projectFormatter.apply(dir, token, selected, exclude, undo === true); }
+  async createEntry(dir, rel, kind) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return folderFiles.createEntry(dir, rel, kind); }
+  async findFiles(dir, query, options) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return folderFiles.findFiles(dir, query, options); }
   async readDirectory(dir, rel, options) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return folderFiles.readDirectory(dir, rel, options); }
   async readFile(dir, rel) {
     if (!this.isWorkspace(dir)) throw new Error('Unknown project');
@@ -938,6 +955,7 @@ class Hub extends EventEmitter {
   }
   // The folder a turn ran in (the conversation's separate copy at the time, or the project) and its repository.
   async turnFolder(t, m) {
+    this.histories?.touch(t.id);
     const dir = m.workdir || t.project;
     if (m.workdir && !fs.existsSync(dir)) throw new Error('This turn ran in a separate copy that has been discarded.');
     const g = await gitInfo(dir); if (!g) throw new Error('Not a git repository');

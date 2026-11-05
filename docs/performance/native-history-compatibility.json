@@ -1,0 +1,368 @@
+{
+  "date": "2026-11-04T17:11:05.507Z",
+  "mode": "compatibility",
+  "runtime": {
+    "electron": "44.7.2",
+    "node": "24.21.0",
+    "platform": "linux",
+    "arch": "x64"
+  },
+  "mainPid": 1248463,
+  "fixture": "Actual desktop window, 32 chats with 64 long saved replies/tool logs each, 32 real Hub turns through a deterministic local CLI. No external providers or inference.",
+  "diagnostic": {
+    "forcedMainGcAtSampleBoundaries": true,
+    "forcedRendererGc": false,
+    "productionGcChanged": false
+  },
+  "sourceHashes": {
+    "core/history-cache.js": "48e335347d75ce157e069825d333f4a06cd61e334ed092dc683a5694d37e04e1",
+    "core/store.js": "19de81c44725851415c19379888dce1e87f337ebaa636053a82dd9766e5aac20",
+    "core/hub.js": "ffc3d54bd4a69221f6c523c2333bc5e0f9ec2b430d77d793995a21bee3ca876e",
+    "core/message-delivery.js": "4f13873d9e351d521aefdfff39ceae80a39d7b56d11da33c26520a147b563537",
+    "desktop/main.js": "b42d312ab39d0fbeb35174cb803819d9fce28ce7224551f353946601bd9289a4",
+    "scripts/performance/native-history-cache.cjs": "577d3be0ee72b7351a830f4f89422b05bfae3a390d4c4312f412174be583b002"
+  },
+  "baseline": {
+    "main": {
+      "rss": 381034496,
+      "heapTotal": 72794112,
+      "heapUsed": 5192856,
+      "external": 2640944,
+      "arrayBuffers": 0,
+      "physicalHeapBytes": 72585216
+    },
+    "tree": {
+      "startedAt": 1793812254697,
+      "finishedAt": 1793812254785,
+      "rootPid": 1248463,
+      "rootStarted": "1777039",
+      "complete": true,
+      "processTreeChanged": false,
+      "issues": [],
+      "processes": [
+        {
+          "pid": 1248463,
+          "ppid": 1248456,
+          "started": "1777039",
+          "role": "main",
+          "rssKiB": 372896,
+          "pssKiB": 296377,
+          "privateKiB": 269140,
+          "privateHugetlbKiB": 0,
+          "sharedHugetlbKiB": 0,
+          "swapPssKiB": 0
+        },
+        {
+          "pid": 1248465,
+          "ppid": 1248463,
+          "started": "1777043",
+          "role": "zygote",
+          "rssKiB": 55152,
+          "pssKiB": 13248,
+          "privateKiB": 996,
+          "privateHugetlbKiB": 0,
+          "sharedHugetlbKiB": 0,
+          "swapPssKiB": 0
+        },
+        {
+          "pid": 1248466,
+          "ppid": 1248463,
+          "started": "1777044",
+          "role": "zygote",
+          "rssKiB": 55148,
+          "pssKiB": 13118,
+          "privateKiB": 776,
+          "privateHugetlbKiB": 0,
+          "sharedHugetlbKiB": 0,
+          "swapPssKiB": 0
+        },
+        {
+          "pid": 1248551,
+          "ppid": 1248463,
+          "started": "1777182",
+          "role": "utility",
+          "rssKiB": 80352,
+          "pssKiB": 27660,
+          "privateKiB": 14008,
+          "privateHugetlbKiB": 0,
+          "sharedHugetlbKiB": 0,
+          "swapPssKiB": 0
+        },
+        {
+          "pid": 1248547,
+          "ppid": 1248465,
+          "started": "1777180",
+          "role": "gpu-process",
+          "rssKiB": 149260,
+          "pssKiB": 76852,
+          "privateKiB": 36804,
+          "privateHugetlbKiB": 0,
+          "sharedHugetlbKiB": 0,
+          "swapPssKiB": 0
+        },
+        {
+          "pid": 1248589,
+          "ppid": 1248466,
+          "started": "1777194",
+          "role": "renderer",
+          "rssKiB": 130800,
+          "pssKiB": 79619,
+          "privateKiB": 50844,
+          "privateHugetlbKiB": 0,
+          "sharedHugetlbKiB": 0,
+          "swapPssKiB": 0
+        }
+      ],
+      "totals": {
+        "rssKiB": 843608,
+        "pssKiB": 506874,
+        "privateKiB": 372568,
+        "privateHugetlbKiB": 0,
+        "sharedHugetlbKiB": 0,
+        "swapPssKiB": 0
+      },
+      "observedTotals": {
+        "rssKiB": 843608,
+        "pssKiB": 506874,
+        "privateKiB": 372568,
+        "privateHugetlbKiB": 0,
+        "sharedHugetlbKiB": 0,
+        "swapPssKiB": 0
+      },
+      "scope": "Linux process-tree sample, not atomic. PSS apportions shared pages; summed RSS double-counts sharing. Hugetlb is separate. Detached/reparented helpers, external model runtimes and display-server/GPU-driver allocations outside these processes are excluded. No forced GC."
+    }
+  },
+  "naturalIdle": {
+    "main": {
+      "rss": 828878848,
+      "heapTotal": 195215360,
+      "heapUsed": 81810816,
+      "external": 2698668,
+      "arrayBuffers": 0,
+      "physicalHeapBytes": 195215360
+    },
+    "tree": {
+      "startedAt": 1793812264366,
+      "finishedAt": 1793812264449,
+      "rootPid": 1248463,
+      "rootStarted": "1777039",
+      "complete": true,
+      "processTreeChanged": false,
+      "issues": [],
+      "processes": [
+        {
+          "pid": 1248463,
+          "ppid": 1248456,
+          "started": "1777039",
+          "role": "main",
+          "rssKiB": 810500,
+          "pssKiB": 733292,
+          "privateKiB": 705684,
+          "privateHugetlbKiB": 0,
+          "sharedHugetlbKiB": 0,
+          "swapPssKiB": 0
+        },
+        {
+          "pid": 1248465,
+          "ppid": 1248463,
+          "started": "1777043",
+          "role": "zygote",
+          "rssKiB": 55152,
+          "pssKiB": 13252,
+          "privateKiB": 996,
+          "privateHugetlbKiB": 0,
+          "sharedHugetlbKiB": 0,
+          "swapPssKiB": 0
+        },
+        {
+          "pid": 1248466,
+          "ppid": 1248463,
+          "started": "1777044",
+          "role": "zygote",
+          "rssKiB": 55148,
+          "pssKiB": 13111,
+          "privateKiB": 776,
+          "privateHugetlbKiB": 0,
+          "sharedHugetlbKiB": 0,
+          "swapPssKiB": 0
+        },
+        {
+          "pid": 1248551,
+          "ppid": 1248463,
+          "started": "1777182",
+          "role": "utility",
+          "rssKiB": 80452,
+          "pssKiB": 27522,
+          "privateKiB": 13892,
+          "privateHugetlbKiB": 0,
+          "sharedHugetlbKiB": 0,
+          "swapPssKiB": 0
+        },
+        {
+          "pid": 1248547,
+          "ppid": 1248465,
+          "started": "1777180",
+          "role": "gpu-process",
+          "rssKiB": 150164,
+          "pssKiB": 77387,
+          "privateKiB": 37224,
+          "privateHugetlbKiB": 0,
+          "sharedHugetlbKiB": 0,
+          "swapPssKiB": 0
+        },
+        {
+          "pid": 1248589,
+          "ppid": 1248466,
+          "started": "1777194",
+          "role": "renderer",
+          "rssKiB": 284488,
+          "pssKiB": 232524,
+          "privateKiB": 203276,
+          "privateHugetlbKiB": 0,
+          "sharedHugetlbKiB": 0,
+          "swapPssKiB": 0
+        }
+      ],
+      "totals": {
+        "rssKiB": 1435904,
+        "pssKiB": 1097088,
+        "privateKiB": 961848,
+        "privateHugetlbKiB": 0,
+        "sharedHugetlbKiB": 0,
+        "swapPssKiB": 0
+      },
+      "observedTotals": {
+        "rssKiB": 1435904,
+        "pssKiB": 1097088,
+        "privateKiB": 961848,
+        "privateHugetlbKiB": 0,
+        "sharedHugetlbKiB": 0,
+        "swapPssKiB": 0
+      },
+      "scope": "Linux process-tree sample, not atomic. PSS apportions shared pages; summed RSS double-counts sharing. Hugetlb is separate. Detached/reparented helpers, external model runtimes and display-server/GPU-driver allocations outside these processes are excluded. No forced GC."
+    }
+  },
+  "retainedAfterDiagnosticGc": {
+    "main": {
+      "rss": 774496256,
+      "heapTotal": 155631616,
+      "heapUsed": 81751812,
+      "external": 2698591,
+      "arrayBuffers": 0,
+      "physicalHeapBytes": 155631616
+    },
+    "tree": {
+      "startedAt": 1793812264479,
+      "finishedAt": 1793812264574,
+      "rootPid": 1248463,
+      "rootStarted": "1777039",
+      "complete": true,
+      "processTreeChanged": false,
+      "issues": [],
+      "processes": [
+        {
+          "pid": 1248463,
+          "ppid": 1248456,
+          "started": "1777039",
+          "role": "main",
+          "rssKiB": 624848,
+          "pssKiB": 547636,
+          "privateKiB": 520024,
+          "privateHugetlbKiB": 0,
+          "sharedHugetlbKiB": 0,
+          "swapPssKiB": 0
+        },
+        {
+          "pid": 1248465,
+          "ppid": 1248463,
+          "started": "1777043",
+          "role": "zygote",
+          "rssKiB": 55152,
+          "pssKiB": 13252,
+          "privateKiB": 996,
+          "privateHugetlbKiB": 0,
+          "sharedHugetlbKiB": 0,
+          "swapPssKiB": 0
+        },
+        {
+          "pid": 1248466,
+          "ppid": 1248463,
+          "started": "1777044",
+          "role": "zygote",
+          "rssKiB": 55148,
+          "pssKiB": 13111,
+          "privateKiB": 776,
+          "privateHugetlbKiB": 0,
+          "sharedHugetlbKiB": 0,
+          "swapPssKiB": 0
+        },
+        {
+          "pid": 1248551,
+          "ppid": 1248463,
+          "started": "1777182",
+          "role": "utility",
+          "rssKiB": 80452,
+          "pssKiB": 27522,
+          "privateKiB": 13892,
+          "privateHugetlbKiB": 0,
+          "sharedHugetlbKiB": 0,
+          "swapPssKiB": 0
+        },
+        {
+          "pid": 1248547,
+          "ppid": 1248465,
+          "started": "1777180",
+          "role": "gpu-process",
+          "rssKiB": 150164,
+          "pssKiB": 77387,
+          "privateKiB": 37224,
+          "privateHugetlbKiB": 0,
+          "sharedHugetlbKiB": 0,
+          "swapPssKiB": 0
+        },
+        {
+          "pid": 1248589,
+          "ppid": 1248466,
+          "started": "1777194",
+          "role": "renderer",
+          "rssKiB": 284952,
+          "pssKiB": 232984,
+          "privateKiB": 203732,
+          "privateHugetlbKiB": 0,
+          "sharedHugetlbKiB": 0,
+          "swapPssKiB": 0
+        }
+      ],
+      "totals": {
+        "rssKiB": 1250716,
+        "pssKiB": 911892,
+        "privateKiB": 776644,
+        "privateHugetlbKiB": 0,
+        "sharedHugetlbKiB": 0,
+        "swapPssKiB": 0
+      },
+      "observedTotals": {
+        "rssKiB": 1250716,
+        "pssKiB": 911892,
+        "privateKiB": 776644,
+        "privateHugetlbKiB": 0,
+        "sharedHugetlbKiB": 0,
+        "swapPssKiB": 0
+      },
+      "scope": "Linux process-tree sample, not atomic. PSS apportions shared pages; summed RSS double-counts sharing. Hugetlb is separate. Detached/reparented helpers, external model runtimes and display-server/GPU-driver allocations outside these processes are excluded. No forced GC."
+    }
+  },
+  "loadedWriterHistories": 32,
+  "exactDurableParity": true,
+  "ui": {
+    "ready": true,
+    "overflow": false
+  },
+  "elapsedMs": 7676.40686,
+  "idleWaitMs": 3045,
+  "limitations": [
+    "One native run per mode; no distribution or hardware-GPU claim",
+    "Diagnostic main GC differs from natural application collection",
+    "PSS and committed heap can remain higher than live JavaScript objects"
+  ]
+}

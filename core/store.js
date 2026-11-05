@@ -45,6 +45,7 @@ class Store {
   sync() { return null; }
   watch() {}
   isLoaded() { return true; }
+  readThread(t) { return t; }
   summary(t) { const m = t.messages || []; for (let i = m.length - 1; i >= 0; i--) if (m[i].role === 'assistant') return { count: m.length, last: statusSummary(m[i]) }; return { count: m.length, last: null }; }
   close() { if (this.timer) this.save(true); }
 }
@@ -144,16 +145,40 @@ class SqliteStore {
   // A thread's messages load from the database the first time something reads thread.messages, so startup reads
   // only thread metadata and memory holds only the conversations used in this session.
   lazy(t) {
-    Object.defineProperty(t, 'messages', { configurable: true, enumerable: true, get: () => this.loadMessages(t), set: (v) => { this.settle(t, v); } });
+    Object.defineProperty(t, 'messages', { configurable: true, enumerable: true, get: () => this.loadMessages(t), set: (v) => { this.historyCache?.touch(t.id); this.settle(t, v); } });
     return t;
   }
   settle(t, messages) { Object.defineProperty(t, 'messages', { value: messages, writable: true, enumerable: true, configurable: true }); return messages; }
   isLoaded(t) { return !Object.getOwnPropertyDescriptor(t, 'messages')?.get; }
+  // A transport read needs the full reply, but does not need to turn a historical
+  // conversation into permanent writer state. Already-loaded writers keep their
+  // exact live objects, including changes not flushed to SQLite yet.
+  readThread(t) {
+    if (this.isLoaded(t)) { this.historyCache?.touch(t.id); return t; }
+    const result = {};
+    for (const key of Object.keys(t)) if (key !== 'messages') result[key] = t[key];
+    result.messages = [];
+    if (!this.closed) for (const row of this.q.messages.iterate(`m:${t.id}`)) result.messages.push(JSON.parse(row.data));
+    return result;
+  }
   loadMessages(t) {
+    this.historyCache?.touch(t.id);
     const coll = `m:${t.id}`;
-    const messages = this.closed ? [] : this.q.messages.all(coll).map((r) => { this.snap.set(keyOf(coll, r.id), { h: digest(r.data), pos: r.pos }); return JSON.parse(r.data); });
+    const messages = [];
+    if (!this.closed) for (const r of this.q.messages.iterate(coll)) { this.snap.set(keyOf(coll, r.id), { h: digest(r.data), pos: r.pos }); messages.push(JSON.parse(r.data)); }
     this.summaries.delete(t.id);
     return this.settle(t, messages);
+  }
+  // The owner has released all live references. Persist explicit removals before
+  // dropping message fingerprints: a future full flush must not tombstone rows
+  // merely because their history is lazy again. A failed save leaves it loaded.
+  releaseMessages(t) {
+    if (this.closed || !this.isLoaded(t) || !this.data.threads.includes(t) || this.historyCache?.pins.has(t.id) || this.historyCache?.unmanaged.has(t.id)) return false;
+    this.save(true, t.id);
+    const prefix = `m:${t.id}${SEP}`;
+    for (const key of this.snap.keys()) if (key.startsWith(prefix)) this.snap.delete(key);
+    this.summaries.delete(t.id); this.lazy(t);
+    return true;
   }
   // What the thread list shows (message count, last reply) without loading the messages.
   summary(t) {
@@ -318,6 +343,7 @@ class SqliteStore {
 
   close() {
     if (this.closed) return;
+    this.historyCache?.close();
     if (this.poll) clearInterval(this.poll);
     this.poll = null;
     if (this.timer) this.save(true);

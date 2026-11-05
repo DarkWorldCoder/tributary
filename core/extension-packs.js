@@ -1,7 +1,7 @@
 'use strict';
 // Import declarative theme/icon contributions only. VSIX entrypoints and scripts
 // are never extracted or run. Only referenced, bounded assets enter the cache.
-const fs = require('node:fs'); const path = require('node:path'); const crypto = require('node:crypto');
+const fs = require('node:fs'); const path = require('node:path');
 const yauzl = require('yauzl'); const { parse } = require('jsonc-parser');
 const COLOR = /^#[\da-f]{3,8}$/i;
 const json = (buffer) => { const errors = []; const value = parse(buffer.toString('utf8'), errors, { allowTrailingComma: true }); if (errors.length || !value || typeof value !== 'object') throw new Error('Invalid extension JSON.'); return value; };
@@ -77,13 +77,16 @@ async function readVsix(filename) {
   } finally { zip.close(); }
 }
 class ExtensionPacks {
-  constructor(dir) { this.dir = path.join(dir, 'extension-packs'); }
-  filename(id) { if (typeof id !== 'string' || !/^[a-z\d][a-z\d_.-]{0,201}$/i.test(id)) throw new Error('Invalid extension pack.'); return path.join(this.dir, `${id}.json`); }
-  async install(filename) { const pack = await readVsix(filename); await fs.promises.mkdir(this.dir, { recursive: true }); const file = this.filename(pack.id); const temp = `${file}.${crypto.randomUUID()}.tmp`; await fs.promises.writeFile(temp, JSON.stringify(pack), { mode: 0o600 }); await fs.promises.rename(temp, file); return this.summary(pack); }
-  summary(pack) { return { id: pack.id, name: pack.name, publisher: pack.publisher, version: pack.version, hasRuntime: pack.hasRuntime, themes: pack.themes.map(({ id, label, dark }) => ({ id, label, dark })), iconThemes: pack.iconThemes.map(({ id, label }) => ({ id, label })) }; }
-  async read(id) { const file = this.filename(id); if ((await fs.promises.stat(file)).size > 100 * 1024 * 1024) throw new Error('Invalid extension cache.'); return JSON.parse(await fs.promises.readFile(file, 'utf8')); }
-  async list() { const names = await fs.promises.readdir(this.dir).catch(() => []); const packs = await Promise.all(names.filter((name) => name.endsWith('.json')).map((name) => this.read(name.slice(0, -5)).then((pack) => this.summary(pack)).catch(() => null))); return packs.filter(Boolean); }
-  async appearance(themeId, iconsId) { const load = async (id, key) => { if (!id) return null; const packId = id.split(':')[0]; return (await this.read(packId))[key].find((item) => item.id === id) || null; }; return { theme: await load(themeId, 'themes'), icons: await load(iconsId, 'iconThemes') }; }
-  async remove(id) { await fs.promises.rm(this.filename(id), { force: true }); }
+  constructor(dir) { this.dir = path.join(dir, 'extension-packs'); this.cache = new (require('./extension-cache').ExtensionCache)(this.dir); }
+  filename(id) { return this.cache.filename(id); }
+  async install(filename, expected) { const pack = await readVsix(filename); if (expected && (pack.id !== expected.id || pack.version !== expected.version)) throw new Error('Extension package identity does not match the registry.'); return this.cache.install(pack); }
+  get catalog() { return this._catalog ||= new (require('./extension-registry').OpenVSX)(); }
+  search(query) { return this.catalog.search(query); }
+  installFromRegistry(id) { return this.catalog.install(id, (file, expected) => this.install(file, expected)); }
+  summary(pack) { return require('./extension-cache').summary(pack); }
+  read(id) { return this.cache.read(id); }
+  list() { return this.cache.list(); }
+  appearance(themeId, iconsId) { return this.cache.appearance(themeId, iconsId); }
+  remove(id) { return this.cache.remove(id); }
 }
 module.exports = { ExtensionPacks, readVsix, safePath };

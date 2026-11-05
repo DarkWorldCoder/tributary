@@ -54,3 +54,11 @@ test('Option letter shortcuts use their physical letter and never intercept AltG
   const altgr = { ...event, ctrlKey: true, metaKey: false, getModifierState: (key) => key === 'AltGraph' };
   assert.equal(shortcutAction(altgr, { platform: 'pc' }), null); assert.equal(bindingFromEvent(altgr, 'pc'), null);
 });
+
+test('terminal shortcuts recognize shifted digit and backquote keys', async () => {
+  const { shortcutAction } = await import('../core/shortcuts.mjs');
+  const event = { ctrlKey: true, metaKey: false, shiftKey: true, altKey: false };
+  assert.equal(shortcutAction({ ...event, key: '%', code: 'Digit5' }, { platform: 'pc' }), 'split-terminal');
+  assert.equal(shortcutAction({ ...event, key: '~', code: 'Backquote' }, { platform: 'pc' }), 'new-terminal');
+  assert.equal(shortcutAction({ ...event, shiftKey: false, key: 'p', code: 'KeyP' }, { platform: 'pc' }), 'find-file');
+});

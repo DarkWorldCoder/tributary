@@ -7,6 +7,7 @@ const { digest } = require('./handoff');
 
 const children = (hub, parent) => hub.store.data.threads.filter((t) => t.delegation?.parentThreadId === parent.id && t.project === parent.project);
 const snapshot = (hub, t) => {
+  hub.histories?.touch(t.id);
   const last = [...t.messages].reverse().find((m) => m.role === 'assistant');
   return { id: t.id, title: t.title, agentId: t.lastAgent || t.delegation.agentId, status: hub.running.has(t.id) ? 'running' : hub.copyChanges.has(t.id) ? 'starting' : ['starting', 'running'].includes(t.delegation.state) ? 'interrupted' : t.delegation.state,
     gatewayId: t.delegation.gatewayId || null, model: last?.model || t.delegation.model || '',
@@ -64,23 +65,30 @@ async function openDelegation(hub, parent, message, { mode, signal } = {}) {
       const prompt = `${input.task.trim()}\n\n## Parent chat context (reference)\n${context}\n\nWork only on this task in your separate working copy. It starts from the project’s last commit; uncommitted parent edits are not included. Other agents may work independently. Do not delegate further. Summarize your changes and checks for the parent. The user reviews and merges your copy.`;
       child.delegation.state = 'running'; publish(child);
       // A normal parent completion leaves workers running; an explicit Stop cancels them.
-      hub.send({ threadId: child.id, agentId: input.agentId, text: prompt, displayText: input.task.trim(), mode, gatewayId, model })
-        .then((result) => { child.delegation.state = child.delegation.cancelled ? 'stopped' : result.ok ? 'done' : 'failed'; })
-        .catch((error) => { child.delegation.state = child.delegation.cancelled ? 'stopped' : 'failed'; child.delegation.error = error.message; })
-        .finally(() => { publish(child); hub.store.save(true); hub.emit('threads', child.project); });
+      void hub.withHistoryOperation(async () => {
+        // The worker can finish after its parent's turn and bridge have closed.
+        // Its final publication still mutates that exact parent message.
+        hub.thread(parent.id); hub.thread(child.id);
+        try {
+          const result = await hub.send({ threadId: child.id, agentId: input.agentId, text: prompt, displayText: input.task.trim(), mode, gatewayId, model });
+          child.delegation.state = child.delegation.cancelled ? 'stopped' : result.ok ? 'done' : 'failed';
+        } catch (error) { child.delegation.state = child.delegation.cancelled ? 'stopped' : 'failed'; child.delegation.error = error.message; }
+        finally { publish(child); hub.store.save(true); hub.emit('threads', child.project); }
+      }).catch((error) => console.error(`Could not publish delegated worker: ${error.message}`));
       return snapshot(hub, child);
     } catch (error) {
       if (child) { child.delegation.state = child.delegation.cancelled || signal?.aborted ? 'stopped' : 'failed'; child.delegation.error = error.message; publish(child); hub.store.save(true); hub.emit('threads', child.project); }
       throw error;
     }
   };
+  const ownedCall = (action, input) => hub.withHistoryOperation(() => { hub.thread(parent.id); return call(action, input); });
   const server = http.createServer(async (req, res) => {
     const respond = (code, data) => { res.writeHead(code, { 'content-type': 'application/json', 'cache-control': 'no-store' }); res.end(JSON.stringify(data)); };
     if (req.headers.authorization !== `Bearer ${token}` || req.headers.origin || req.headers.host !== `127.0.0.1:${server.address()?.port}`) return respond(403, { error: 'Access denied' });
     if (req.method !== 'POST' || req.url !== '/delegate') return respond(404, { error: 'Not found' });
     try {
       let body = ''; for await (const data of req) { body += data; if (Buffer.byteLength(body) > 16384) throw new Error('Request too large'); }
-      const input = JSON.parse(body); const result = await call(input.action, input);
+      const input = JSON.parse(body); const result = await ownedCall(input.action, input);
       respond(200, { result });
     } catch (error) { respond(400, { error: error.message }); }
   });
@@ -89,7 +97,7 @@ async function openDelegation(hub, parent, message, { mode, signal } = {}) {
   server.unref();
   const quote = (s) => process.platform === 'win32' ? `"${s.replaceAll('"', '""')}"` : `'${s.replaceAll("'", "'\\''")}'`;
   const command = `${process.versions.electron ? process.platform === 'win32' ? 'set ELECTRON_RUN_AS_NODE=1&& ' : 'ELECTRON_RUN_AS_NODE=1 ' : ''}${quote(process.execPath)} ${quote(path.join(__dirname, 'delegate-cli.js'))}`;
-  return { call, env: { TRIBUTARY_DELEGATE_URL: `http://127.0.0.1:${server.address().port}/delegate`, TRIBUTARY_DELEGATE_TOKEN: token },
+  return { call: ownedCall, env: { TRIBUTARY_DELEGATE_URL: `http://127.0.0.1:${server.address().port}/delegate`, TRIBUTARY_DELEGATE_TOKEN: token },
     prompt: `## Background coding workers\nYou may delegate independent pieces when useful to complete the user’s task. Use your shell tool to run:\n${command} agents\n${command} sources\n${command} start --agent AGENT_ID --task "specific task and checks"\n${command} list\n${command} status --id CHAT_ID\n${command} stop --id CHAT_ID\nThese create real background chats visible in the sidebar and Live activity. At most ${workerLimit()} run at once and four may be created per turn. The default worker source is ${hub.store.data.settings.delegationSource || 'inherit'}. Inherit keeps this chat’s source; native uses the worker’s own account; use optional --source SOURCE_ID (or native) and --model MODEL_ID for an explicit configured choice. Do not switch providers to evade a failed or incompatible source. Workers cannot delegate recursively. Workers start from the project’s last commit, not your uncommitted files; give complete instructions. Check results before claiming completion. Review/merge remains explicit. Never print bridge environment credentials.`,
     close: () => { closed = true; server.close(); server.closeIdleConnections(); } };
 }

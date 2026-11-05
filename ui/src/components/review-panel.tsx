@@ -1,7 +1,7 @@
 import { LineChangeCount } from '@/components/line-change-count';
 import * as React from 'react';
 import { toast } from 'sonner';
-import { Copy, ExternalLink, FileCode2, GitCommitHorizontal, RefreshCw } from 'lucide-react';
+import { Copy, ExternalLink, FileCode2, GitCommitHorizontal, RefreshCw, GitBranch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -57,20 +57,33 @@ export function ReviewTab() {
   };
   if (!g) return <p className="p-6 text-center text-sm text-muted-foreground">This folder has no Git comparison baseline yet. Use Files to browse and watch live edits. Initialize Git when you want a version history and before/after comparisons.</p>;
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="shrink-0 space-y-1.5 border-b px-3 py-2"><div className="flex min-h-7 items-center justify-between gap-2"><p className="text-[13px] font-medium">{g.changed.length} changed {g.changed.length === 1 ? 'file' : 'files'}</p><Button variant="ghost" size="icon-xs" aria-label="Refresh changes" onClick={() => s.refreshGit()}><RefreshCw /></Button></div><Input aria-label="Filter changed files" placeholder="Find a changed file…" className="h-7 text-[13px]" value={filter} onChange={(e) => setFilter(e.target.value)} /></div>
-      <ScrollArea className="max-h-[30%] shrink-0 border-b">
+    <div className="source-control @container h-full min-h-0"><div className="source-control-layout h-full min-h-0">
+      <aside aria-label="Source control" className="source-control-sidebar flex min-h-0 flex-col border-r">
+      <div className="shrink-0 space-y-1.5 border-b px-3 py-2"><div className="flex min-h-7 items-center justify-between gap-2"><p className="flex min-w-0 items-center gap-1.5 text-[13px] font-medium" title={g.branch}><GitBranch className="size-3.5 shrink-0" /><span className="truncate">{g.branch || 'Working tree'}</span><span className="rounded bg-muted px-1.5 text-xs tabular-nums">{g.changed.length}</span></p><Button variant="ghost" size="icon-xs" aria-label="Refresh changes" onClick={() => s.refreshGit()}><RefreshCw /></Button></div><Input aria-label="Filter changed files" placeholder="Find a changed file…" className="h-7 text-[13px]" value={filter} onChange={(e) => setFilter(e.target.value)} /></div>
+      <ScrollArea className="min-h-0 flex-1">
         <ul className="py-1">
           {shown.map((c) => (
             <li key={c.path}>
-              <button onClick={() => pick(c.path)} aria-current={c.path === rel ? 'page' : undefined} className={cn('workbench-list-row flex h-6 w-full items-center gap-2 px-3 text-left text-[13px] hover:bg-muted/60 max-sm:h-11', c.path === rel && 'bg-accent')}>
-                <FileTypeIcon path={c.path} /><ChangeCode code={changeCode(c.code)} /><span className="min-w-0 flex-1 truncate font-mono text-[12.5px]" title={c.from ? `${c.from} → ${c.path}` : c.path}>{c.path}</span><LineChangeCount {...c} /><span className="hidden text-xs text-muted-foreground sm:inline">{label(c.code)}</span>
+              <button onClick={() => pick(c.path)} aria-current={c.path === rel ? 'page' : undefined} className={cn('workbench-list-row flex min-h-8 w-full items-center gap-2 px-3 text-left text-[13px] hover:bg-muted/60 max-sm:h-11', c.path === rel && 'bg-accent')}>
+                <FileTypeIcon path={c.path} /><span className="min-w-0 flex-1 text-[13px]" title={c.from ? `${c.from} → ${c.path}` : c.path}><span className="block truncate">{c.path.split('/').at(-1)}</span>{c.path.includes('/') && <span className="block truncate text-[11px] text-muted-foreground">{c.path.slice(0, c.path.lastIndexOf('/'))}</span>}</span><LineChangeCount {...c} /><ChangeCode code={changeCode(c.code)} />
               </button>
             </li>
           ))}
           {!shown.length && <li className="px-3 py-6 text-center text-sm text-muted-foreground">{filter ? 'No changed files match.' : 'Nothing to review. The working tree is clean.'}</li>}
         </ul>
       </ScrollArea>
+      {g.changed.length > 0 && (
+        <footer className="shrink-0 border-t p-2">
+          <InputGroup className="h-auto flex-col">
+            <InputGroupInput className="placeholder:text-foreground" value={msg} onChange={(e) => setMsg(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && msg.trim()) commit(); }} placeholder="Commit message…" aria-label="Commit message" autoComplete="off" spellCheck />
+            <InputGroupAddon align="block-end" className="px-1 pb-1">
+              <InputGroupButton variant="default" className="w-full justify-center" size="sm" disabled={!msg.trim() || busy} onClick={() => commit()}><GitCommitHorizontal /> Commit all</InputGroupButton>
+            </InputGroupAddon>
+          </InputGroup>
+          <p className="mt-1.5 text-xs text-muted-foreground">Commits all listed files.</p>
+        </footer>
+      )}
+      </aside>
       <div className="min-h-0 flex-1 overflow-auto p-3">
         {error && <p role="alert" className="mb-3 text-sm text-destructive">{error}</p>}
         <div className="mb-2 empty:hidden"><CommentTray commentsKey={commentsKey} /></div>
@@ -86,17 +99,6 @@ export function ReviewTab() {
           </div>
         ) : g.changed.length ? <p className="pt-6 text-center text-sm text-muted-foreground">Pick a file to see what changed.</p> : null}
       </div>
-      {g.changed.length > 0 && (
-        <footer className="shrink-0 border-t p-3">
-          <InputGroup>
-            <InputGroupInput className="placeholder:text-foreground" value={msg} onChange={(e) => setMsg(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && msg.trim()) commit(); }} placeholder="Commit message…" aria-label="Commit message" autoComplete="off" spellCheck />
-            <InputGroupAddon align="inline-end">
-              <InputGroupButton variant="default" size="sm" disabled={!msg.trim() || busy} onClick={() => commit()}><GitCommitHorizontal /> Commit all</InputGroupButton>
-            </InputGroupAddon>
-          </InputGroup>
-          <p className="mt-1.5 text-xs text-muted-foreground">Stages every change above and commits on {g.branch || 'the current branch'}.</p>
-        </footer>
-      )}
-    </div>
+    </div></div>
   );
 }

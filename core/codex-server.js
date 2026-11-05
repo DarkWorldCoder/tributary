@@ -1,6 +1,6 @@
 'use strict';
 // Codex app-server over private stdio: native threads, streaming items and host approvals.
-const { start, killTree, lines } = require('./proc');
+const { start, killTree, lines, streamTail } = require('./proc');
 const { clip } = require('./parsers');
 const OPTIONS = [{ optionId: 'once', name: 'Allow once', kind: 'allow_once' }, { optionId: 'always', name: 'Allow for this session', kind: 'allow_always' }, { optionId: 'reject', name: 'Deny', kind: 'reject_once' }];
 function runCodexServer({ command, args = [], cwd, env, prompt, mode, research = false, resumeId, model, images = [], extraDirs = [], onEvent, signal }) {
@@ -92,7 +92,7 @@ function runCodexServer({ command, args = [], cwd, env, prompt, mode, research =
       if (message.method) { if (message.id != null) void serverRequest(message); else notification(message); }
       else if (message.id != null && calls.has(message.id)) { const call = calls.get(message.id); calls.delete(message.id); clearTimeout(call.timer); message.error ? call.fail(new Error(message.error.message || 'Codex request failed')) : call.done(message.result); }
     });
-    lines(child.stderr, (line) => { tail = `${tail}${line}\n`.slice(-2000); });
+    streamTail(child.stderr, 2000, (text) => { tail = text; });
     child.on('error', (error) => finish(false, error.message));
     child.on('close', (code) => { if (!finished) finish(false, tail.trim() || `Codex app-server exited (${code}).`); });
     signal?.addEventListener('abort', abort, { once: true });

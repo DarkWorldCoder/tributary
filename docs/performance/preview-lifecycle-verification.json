@@ -1,0 +1,50 @@
+{
+  "checkedOn": "2026-11-04",
+  "scope": "Preview-server startup cancellation, process/subscription lifetime and UTF-8 log-tail correctness. Disposable real Node child processes and localhost HTTP fixtures; no model calls or user projects.",
+  "checks": {
+    "focusedTests": {
+      "command": "node --test test/preview-browser.test.js",
+      "passed": 10,
+      "failed": 0
+    },
+    "fullRegressionTests": {
+      "command": "npm test",
+      "passed": 453,
+      "failed": 0
+    },
+    "syntax": [
+      "core/preview-server.js",
+      "desktop/main.js"
+    ],
+    "diffWhitespace": "passed"
+  },
+  "verifiedCases": [
+    "Existing localhost HTTP server start, duplicate-start suppression, restart and stop",
+    "Actual exit code and bounded log output",
+    "Stop during unresolved discovery settles the startup without waiting for discovery",
+    "Late discovery rejection does not revive or fail a stopped job",
+    "Stop-all cancels unresolved discovery and lazy environment preparation together",
+    "Cancelled older launch cannot delete the pending token of its replacement",
+    "Concurrent stop callers share one actual child completion",
+    "Byte-fragmented valid UTF-8 on stdout and stderr independently stays readable",
+    "Ten real short-lived output processes leave no job child/completion/timer references or owned stdout/stderr/spawn/error listeners",
+    "After those cycles, waiting beyond the coalescing deadline emits no delayed state events",
+    "Discovery and environment failures retain an explicit failed state while clearing pending ownership"
+  ],
+  "retentionContract": {
+    "outputTailMaximumUtf16CodeUnits": 32768,
+    "completedJobChildReference": null,
+    "completedJobPromiseReference": null,
+    "completedJobTimerReference": null,
+    "ownedOutputListenersAfterClose": 0,
+    "pendingStartupEntriesAfterCancel": 0,
+    "stoppedMetadata": "Retained for UI status, output and URL; not evicted across arbitrary numbers of project roots."
+  },
+  "sourceSha256": {
+    "core/preview-server.js": "c5e9fd8a76d3d90e04ef0aa351283b7636e5ed7920fb3af12a46355b7488e288",
+    "desktop/main.js": "9d763e490a5a2528f5ce59a2346a8a1a0e4c31f61abf719e079bde69aa7efcdd",
+    "test/preview-browser.test.js": "bd3b2b6a8b5a5aeaa4def61963af81fc717212965067f32a00f61c5650b70f20"
+  },
+  "limits": "This is lifecycle/correctness evidence, not a before/after Electron RAM or string-backing-storage benchmark. Cancellation revokes startup but does not abort filesystem or secret-store IO already executing. Stopped metadata and iframe lifetimes remain open; terminal coalescing still lacks renderer-to-producer backpressure. Native application-quit behavior, packaged and cross-platform runtime memory were not exercised by these tests.",
+  "followup": "Desktop terminal flow control was implemented subsequently; see terminal-flow-verification.json. The terminal limitation above describes this preview-only verification stage."
+}

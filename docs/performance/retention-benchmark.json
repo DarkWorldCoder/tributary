@@ -1,0 +1,82 @@
+{
+  "node": "v24.21.0",
+  "platform": "linux",
+  "arch": "x64",
+  "sourceFiles": [
+    "core/store.js",
+    "core/hub.js",
+    "desktop/main.js",
+    "vscode/extension.js",
+    "ui/src/lib/document-cache.mjs",
+    "ui/src/components/document-panel.tsx",
+    "scripts/performance/retention.cjs"
+  ],
+  "sourceSha256": "85400276c9a94c2ebfc68f6e80da58b112221bc2e8ea021f2959285c581a79f2",
+  "fixtures": {
+    "histories": "32 persisted chats, 48 long replies each, two complete view cycles; each mode has its own process",
+    "documents": "40 saved documents, 5 old versions each, 2 dirty drafts and 1 current document; each mode has its own process"
+  },
+  "cases": [
+    {
+      "kind": "histories",
+      "previous": {
+        "mode": "previous",
+        "checksum": 777600,
+        "beforeHeapMB": 4.796,
+        "afterHeapMB": 28.464,
+        "heapDeltaMB": 23.668,
+        "rssMB": 107.648,
+        "retainedJsonBytes": 24257696,
+        "loadedConversations": 32,
+        "retainedMessageFingerprints": 1536,
+        "firstReadMedianMs": 2.582,
+        "repeatReadMedianMs": 0.001,
+        "parity": true
+      },
+      "optimized": {
+        "mode": "optimized",
+        "checksum": 777600,
+        "beforeHeapMB": 4.697,
+        "afterHeapMB": 5.515,
+        "heapDeltaMB": 0.818,
+        "rssMB": 88.848,
+        "retainedJsonBytes": 0,
+        "loadedConversations": 0,
+        "retainedMessageFingerprints": 0,
+        "firstReadMedianMs": 1.204,
+        "repeatReadMedianMs": 1.048,
+        "parity": true
+      },
+      "retainedJsonReductionPercent": 100
+    },
+    {
+      "kind": "documents",
+      "previous": {
+        "mode": "previous",
+        "checksum": 8320110,
+        "beforeHeapMB": 4.633,
+        "afterHeapMB": 49.999,
+        "heapDeltaMB": 45.366,
+        "rssMB": 99.27,
+        "retainedJsonBytes": 55855945,
+        "retainedDocuments": 40,
+        "dirtyDocumentsRetained": 2,
+        "parity": true
+      },
+      "optimized": {
+        "mode": "optimized",
+        "checksum": 8320110,
+        "beforeHeapMB": 4.633,
+        "afterHeapMB": 8.055,
+        "heapDeltaMB": 3.422,
+        "rssMB": 55.293,
+        "retainedJsonBytes": 4189191,
+        "retainedDocuments": 3,
+        "dirtyDocumentsRetained": 2,
+        "parity": true
+      },
+      "retainedJsonReductionPercent": 92.5
+    }
+  ],
+  "scope": "Retention of SQLite writer history induced by read-only views, and the saved-document panel cache only. Post-GC heap/RSS are noisy process samples. Not total Electron RAM, renderer retention, native page-cache size, UI latency, installer or model/VRAM performance. The previous document policy is simulated unbounded retention; the previous history path hydrates each thread.messages. Reopening histories trades a fresh SQLite parse for avoiding permanent writer retention."
+}

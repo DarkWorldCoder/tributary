@@ -36,6 +36,52 @@ test('listing long conversations keeps bodies on disk and only bounded status fl
   writer.store.close(); hub.store.close();
 });
 
+test('transport reads and review acknowledgements do not retain historical chat bodies as writer state', () => {
+  const dataDir = tmp(); const proj = tmp(); const writer = open(dataDir); const expected = [];
+  for (let i = 0; i < 12; i++) {
+    const thread = writer.createThread(proj, `View ${i}`);
+    thread.messages.push({ ...reply(`reply-${i} `.repeat(10000)), thinking: 'thinking', tools: [{ name: 'Bash', output: 'tool result' }], files: [{ path: path.join(proj, 'file.js'), rel: 'file.js', added: 2, removed: 1 }], permissions: [{ status: 'allowed' }], attachments: [{ id: 'image', mime: 'image/png' }] });
+    expected.push(structuredClone(thread));
+  }
+  writer.store.save(true); writer.store.close();
+  const hub = open(dataDir);
+  try {
+    for (const thread of expected) {
+      const view = hub.readThread(thread.id);
+      assert.deepStrictEqual(view, thread, 'transport keeps the complete persisted message shape');
+      hub.markThreadSeen(thread.id);
+      assert.equal(hub.threads(proj).find((row) => row.id === thread.id).status, 'done');
+      view.messages[0].text = 'this transport copy is not a writer';
+    }
+    hub.store.save(true);
+    assert.equal(hub.store.data.threads.filter((thread) => hub.store.isLoaded(thread)).length, 0);
+    assert.equal([...hub.store.snap.keys()].filter((key) => key.startsWith('m:')).length, 0, 'transport reads retain no message fingerprints');
+    assert.equal(hub.readThread(expected[0].id).messages[0].text, expected[0].messages[0].text, 'view mutation was not persisted');
+    assert.equal(hub.readThread('missing'), null);
+  } finally { hub.store.close(); }
+});
+
+test('transport snapshots see external writes and preserve active local message identities and pending edits', () => {
+  const dataDir = tmp(); const proj = tmp(); const writer = open(dataDir);
+  const thread = writer.createThread(proj); thread.messages.push(reply('first')); writer.store.save(true);
+  const hub = open(dataDir);
+  try {
+    assert.equal(hub.readThread(thread.id).messages.length, 1);
+    writer.thread(thread.id).messages.push(reply('from the CLI')); writer.store.save(true); hub.store.sync();
+    assert.deepStrictEqual(hub.readThread(thread.id).messages.map((m) => m.text), ['first', 'from the CLI']);
+    assert.equal(hub.store.isLoaded(hub.thread(thread.id)), false);
+    const live = hub.thread(thread.id); const message = live.messages[0]; message.text = 'unsaved stream';
+    hub.store.save(false, live.id, message.id);
+    assert.strictEqual(hub.readThread(live.id), live);
+    assert.strictEqual(hub.readThread(live.id).messages[0], message);
+    assert.equal(hub.readThread(live.id).messages[0].text, 'unsaved stream');
+    hub.store.save(true);
+    writer.store.sync(); assert.equal(writer.thread(thread.id).messages[0].text, 'unsaved stream');
+    hub.deleteThread(live.id); hub.store.save(true); assert.equal(hub.readThread(live.id), null);
+    writer.store.sync(); assert.equal(writer.thread(live.id), null);
+  } finally { writer.store.close(); hub.store.close(); }
+});
+
 test('the first start moves hub.json into the database once and keeps the old file as a backup', () => {
   const dataDir = tmp(); const proj = tmp();
   const legacy = {

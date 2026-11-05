@@ -15,7 +15,7 @@ export interface RegistryAgent {
   install: { kind: 'npx' | 'uvx' | 'binary' | 'unknown'; runnable: boolean; command?: string; args?: string[] };
 }
 export interface Project { path: string; name: string; trusted?: boolean; folders?: string[]; kind?: 'personal' }
-export interface Gateway { id: string; name: string; protocol: Protocol; baseUrl: string; model: string; wireApi?: 'chat' | 'responses'; hasKey?: boolean; apiKey?: string; clearKey?: boolean; direct?: boolean; localRuntime?: 'unsloth' | 'ollama' | 'lmstudio' | null; historyBudget?: number; localAgent?: boolean; maxOutputTokens?: number }
+export interface Gateway { id: string; name: string; protocol: Protocol; baseUrl: string; model: string; wireApi?: 'chat' | 'responses'; hasKey?: boolean; apiKey?: string; clearKey?: boolean; direct?: boolean; localRuntime?: 'unsloth' | 'ollama' | 'lmstudio' | null; historyBudget?: number; localConcurrency?: number; localAgent?: boolean; maxOutputTokens?: number }
 export interface TaskTemplate { id: string; title: string; group: string; description: string; needsMaterial?: boolean }
 export interface TaskInput { templateId: string; goal: string; audience?: string; material?: string }
 export interface DocumentVersion { title: string; content: string; revision: number; updatedAt: number }
@@ -59,13 +59,14 @@ export interface Tool { id?: string; name: string; title?: string; input?: Recor
 export interface FileChange { path: string; rel: string; external?: boolean; change?: string; viaGit?: boolean; added?: number; removed?: number; binary?: boolean }
 export interface Attachment { id: string; name: string; mime: string; size: number }
 export interface UserMessage { attachments?: Attachment[]; id: string; role: 'user'; text: string; target: string; ts?: number; kind?: 'chat' | 'plan' | 'research' | 'implement' | 'race'; team?: { recipe: string; role: string } }
-export type ReplyTrace =
-  | { kind: 'thinking'; textOffset: number; start: number; end: number }
+export type ReplyTrace = ({ ts?: number } & (
+  | { kind: 'thinking'; textOffset: number; start: number; end: number; endedAt?: number }
   | { kind: 'tool'; textOffset: number; toolIndex: number }
   | { kind: 'plan'; textOffset: number; items: { text: string; done: boolean }[] }
-  | { kind: 'permission'; textOffset: number; requestId: string };
+  | { kind: 'permission'; textOffset: number; requestId: string }));
 export type ReplyActivity = Exclude<ReplyTrace, { kind: 'permission' }>;
 export interface AgentMessage {
+  modelPhase?: 'waiting-model' | 'generating';
   trace?: ReplyTrace[]; thinkingLength?: number; networkInterrupted?: boolean;
   delegations?: { id: string; agentId: string; title: string; state: string; branch?: string; model?: string; error?: string; files?: string[]; fileCount?: number }[];
   memoryContext?: { characters: number; budget: number; sources: { source: string; line: number }[] };
@@ -103,7 +104,7 @@ export interface HubEvents {
   collaboration: import('../../core/collaboration/client.mjs').RoomState;
   state: undefined; threads: string; message: { threadId: string; message: Message }; 'message-patch': { threadId: string; id: string; patch: import('./lib/message-patch.mjs').MessagePatch };
   running: { threadId: string; running: boolean }; insert: string; 'focus-project': string;
-  activity: ActivityEntry[]; notification: AppNotification; 'term-data': { id: string; data: string }; 'term-exit': { id: string; code: number }; 'open-thread': string;
+  activity: ActivityEntry[]; notification: AppNotification; 'term-data': { id: string; data: string; owner?: string; seq?: number }; 'term-exit': { id: string; code: number }; 'open-thread': string;
 }
 // The live view (core/activity.js): every busy thread and the agents working in it.
 export interface ActivityWorker {

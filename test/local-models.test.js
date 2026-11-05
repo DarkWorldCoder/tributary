@@ -51,6 +51,11 @@ test('Unsloth local setup persists an encrypted-store profile, starts real strea
   assert.equal(requests.filter((request) => request.method === 'POST').length, 0, 'setup has not sent any generation request');
   assert.equal(hub.state().gateways[0].localRuntime, 'unsloth'); assert.ok(!JSON.stringify(hub.state()).includes(key));
   assert.equal(hub.state().gateways[0].historyBudget, 4000);
+  assert.equal(hub.state().gateways[0].localConcurrency, 1);
+  await hub.saveGateway({ ...hub.state().gateways[0], localConcurrency: 2 });
+  assert.equal(await hub.connectLocalModel(input), id);
+  assert.equal(hub.state().gateways[0].localConcurrency, 2, 'reconnecting keeps the existing concurrency preference');
+  await assert.rejects(hub.saveGateway({ ...hub.state().gateways[0], localConcurrency: 99 }), /parallel local requests/);
   const thread = hub.createThread(hub.personalWorkspace(), 'Local model chat');
   hub.enableMemory(thread.project);
   hub.saveMemory(thread.project, '# Decisions\n' + Array.from({ length: 100 }, (_, index) => `- Local model decision ${index}: keep private reference material on this device.`).join('\n'));
@@ -62,6 +67,7 @@ test('Unsloth local setup persists an encrypted-store profile, starts real strea
   assert.equal(generation.url, '/v1/chat/completions'); assert.equal(generation.body.model, 'local-chat'); assert.equal(generation.body.enable_tools, false); assert.ok(!generation.body.tools);
   hub.store.save(true);
   restarted = new Hub({ dataDir, secrets });
+  assert.equal(restarted.state().gateways[0].localConcurrency, 2);
   assert.equal((await restarted.resolveGateway(id)).apiKey, key);
   assert.equal(restarted.thread(thread.id).messages.at(-1).text, 'A local reply');
   assert.ok(!fs.readFileSync(path.join(dataDir, 'tributary.db')).includes(key));

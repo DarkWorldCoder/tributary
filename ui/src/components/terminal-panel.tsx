@@ -33,6 +33,7 @@ type Term = {
   done?: boolean;
   named?: boolean;
   shellTitle?: string;
+  group?: string;
 };
 
 /** Terminal tabs per project. Hidden, not unmounted, when the panel is closed, so shells and scrollback survive. */
@@ -66,16 +67,21 @@ export function TerminalPanel({ hidden = false }: { hidden?: boolean } = {}) {
   const size = Math.min(maxSize, Math.max(minSize, side ? width : height));
   const desktop = s.hub.platform === "desktop";
   const creating = React.useRef(new Set<string | null>());
+  const lifetime = React.useRef({ active: true });
+  const termsRef = React.useRef(terms); termsRef.current = terms;
   const create = React.useCallback(
-    async (command?: string, cwd = s.workdir) => {
+    async (command?: string, cwd = s.workdir, group?: string) => {
       wire();
+      const owner = lifetime.current;
       creating.current.add(s.workdir);
       try {
-        const id = await s.hub.call<string>("createTerminal", { cwd, command });
+        const id = await s.hub.call<string>("createTerminal", { cwd, project: s.workdir, command });
+        if (!owner.active) { void s.hub.call('termKill', id).catch(() => {}); return; }
         setTerms((t) => [
           ...t,
           {
             id,
+            group,
             project: s.workdir,
             title: command
               ? command.split(" ")[0]
@@ -91,12 +97,20 @@ export function TerminalPanel({ hidden = false }: { hidden?: boolean } = {}) {
     },
     [s.hub, s.workdir],
   );
+  const createRef = React.useRef(create); createRef.current = create;
   // The first terminal opens with the panel, running a pending setup command if there is one.
   React.useEffect(() => {
-    if (desktop && !terms.length) {
+    if (!desktop) return;
+    let current = true; wire();
+    void s.hub.call<Array<{ id: string; title: string; cwd?: string; project?: string | null }>>('termList').catch(() => []).then((list) => {
+      if (!current) return;
+      const recovered = list.map((term) => ({ id: term.id, title: term.title, project: term.project !== undefined ? term.project : term.cwd ?? null }));
+      setTerms((current) => [...new Map([...recovered, ...current].map((term) => [term.id, term])).values()]);
       const pending = takePendingTerminalCommand();
-      void create(pending?.command, pending?.cwd ?? s.workdir);
-    } // eslint-disable-next-line react-hooks/exhaustive-deps
+      if (pending || !recovered.length && !termsRef.current.length && !creating.current.size) void createRef.current(pending?.command, pending?.cwd);
+      else if (recovered.length) setActive((current) => current ?? recovered.at(-1)!.id);
+    });
+    return () => { current = false; };
   }, [desktop]);
   React.useEffect(() => {
     const h = () => {
@@ -116,6 +130,16 @@ export function TerminalPanel({ hidden = false }: { hidden?: boolean } = {}) {
     });
   };
   const visible = terms.filter((t) => t.project === s.workdir);
+  const activeTerm = visible.find((term) => term.id === active);
+  const activeGroup = activeTerm?.group || activeTerm?.id;
+  const panes = visible.filter((term) => (term.group || term.id) === activeGroup);
+  const split = React.useCallback(() => { const current = termsRef.current.find((term) => term.id === active); if (current && termsRef.current.filter((term) => term.project === s.workdir && (term.group || term.id) === (current.group || current.id)).length < 4) void create(undefined, s.workdir, current.group || current.id); }, [active, create, s.workdir]);
+  React.useEffect(() => {
+    if (!desktop || hidden) return;
+    const onSplit = () => split(); const onNew = () => { void create(); };
+    window.addEventListener('tributary:split-terminal', onSplit); window.addEventListener('tributary:new-terminal', onNew);
+    return () => { window.removeEventListener('tributary:split-terminal', onSplit); window.removeEventListener('tributary:new-terminal', onNew); };
+  }, [desktop, hidden, split, create]);
   // Each project keeps its own terminals: switching projects shows that project's, starting one if needed.
   React.useEffect(() => {
     if (!desktop || hidden || !terms.length || creating.current.has(s.workdir))
@@ -124,14 +148,14 @@ export function TerminalPanel({ hidden = false }: { hidden?: boolean } = {}) {
     else if (!visible.some((t) => t.id === active))
       setActive(visible[visible.length - 1].id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [s.workdir, hidden]);
+  }, [s.workdir, hidden, terms.length]);
   // Shells end with the panel (closing the window or removing the project), not when it is only hidden.
-  const termsRef = React.useRef(terms);
-  termsRef.current = terms;
   React.useEffect(
-    () => () => {
-      for (const t of termsRef.current)
-        hub.call("termKill", t.id).catch(() => {});
+    () => {
+      const owner = { active: true }; lifetime.current = owner;
+      return () => { owner.active = false;
+        for (const t of termsRef.current) hub.call("termKill", t.id).catch(() => {});
+      };
     },
     [],
   );
@@ -345,7 +369,9 @@ export function TerminalPanel({ hidden = false }: { hidden?: boolean } = {}) {
                   label="New terminal"
                   icon="add"
                   onClick={() => void create()}
+                  tooltip={<>New terminal <ShortcutLabel action="new-terminal" /></>}
                 />
+                <TerminalAction label="Split terminal" icon="split-horizontal" disabled={!active || panes.length >= 4} onClick={split} tooltip={<>Split terminal <ShortcutLabel action="split-terminal" /></>} />
                 <TerminalAction
                   label="Find in terminal"
                   icon="search"
@@ -451,7 +477,7 @@ export function TerminalPanel({ hidden = false }: { hidden?: boolean } = {}) {
             />
           </div>
         </header>
-        <div className="min-h-0 flex-1">
+        <div className="grid min-h-0 flex-1" style={{ gridTemplateColumns: `repeat(${Math.min(2, Math.max(1, panes.length))}, minmax(0, 1fr))`, gridTemplateRows: `repeat(${panes.length > 2 ? 2 : 1}, minmax(0, 1fr))` }}>
           {desktop && !visible.length && (
             <div className="grid h-full place-items-center">
               <Button variant="outline" size="sm" onClick={() => void create()}>
@@ -461,20 +487,20 @@ export function TerminalPanel({ hidden = false }: { hidden?: boolean } = {}) {
           )}
           {desktop ? (
             terms.map((t) => (
-              <Tabs.Content
+              <div
                 key={t.id}
-                value={t.id}
-                forceMount
+                aria-label={t.title}
+                onFocusCapture={() => setActive(t.id)}
                 className={cn(
-                  "h-full min-h-0 outline-none",
-                  (hidden || t.id !== active || t.project !== s.workdir) &&
+                  "h-full min-h-0 min-w-0 border-r border-b border-border outline-none",
+                  (hidden || !panes.some((pane) => pane.id === t.id) || t.project !== s.workdir) &&
                     "hidden",
                 )}
               >
                 <XtermView
                   id={t.id}
                   project={t.project}
-                  active={!hidden && t.id === active && t.project === s.workdir}
+                  active={!hidden && panes.some((pane) => pane.id === t.id) && t.project === s.workdir}
                   onExit={() =>
                     setTerms((x) =>
                       x.map((y) => (y.id === t.id ? { ...y, done: true } : y)),
@@ -490,7 +516,7 @@ export function TerminalPanel({ hidden = false }: { hidden?: boolean } = {}) {
                   onKill={() => kill(t.id)}
                   onOpenFile={(rel, line) => s.openFile(rel, line)}
                 />
-              </Tabs.Content>
+              </div>
             ))
           ) : (
             <div className="grid h-full place-items-center p-4 text-center text-sm text-muted-foreground">

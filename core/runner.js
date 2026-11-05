@@ -2,7 +2,7 @@
 // Run one turn of any agent and stream normalized events.
 const { createParser } = require('./parsers');
 const { runAcp } = require('./acp');
-const { start, killTree, lines } = require('./proc');
+const { start, killTree, lines, streamTail } = require('./proc');
 const { gatewayLaunch } = require('./gateways');
 const { pathDirs } = require('./agents');
 const { mergeEnv } = require('./host');
@@ -90,7 +90,7 @@ async function runTurn(opts) {
       emit(e);
       if (control && e.kind === 'done') { controls.close(); child.stdin.end(); }
     } });
-    lines(child.stderr, (l) => { stderrTail = `${stderrTail}${l}\n`.slice(-4000); });
+    streamTail(child.stderr, 4000, (tail) => { stderrTail = tail; });
     child.on('error', (e) => { emit({ kind: 'error', message: `Could not start ${agent.name}: ${e.message}` }); });
     child.on('close', (code) => {
       clearTimeout(stopTimer); controls?.close();

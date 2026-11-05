@@ -1,5 +1,5 @@
 import { WorkspaceFolderRow } from '@/components/workspace-folder-row';
-import { useWorkspaceGit, WorkspaceChangeList, WorkspaceFileChange } from '@/components/workspace-changes';
+import { useWorkspaceGit, WorkspaceFileChange } from '@/components/workspace-changes';
 import { workspaceChanges } from '@/lib/workspace-changes.mjs';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 import { FormatProjectDialog } from '@/components/format-project-dialog';
@@ -11,12 +11,12 @@ import { LineChangeCount } from '@/components/line-change-count';
 import { sourceLanguage } from '@/lib/source-language.mjs';
 import { editorSpacing } from '@/lib/editor-spacing.mjs';
 import { DebugSidebar, DebugControls } from '@/components/debug-sidebar';
-import { ShortcutKeys } from '@/components/shortcut-settings';
+import { ShortcutLabel, ShortcutKeys } from '@/components/shortcut-settings';
 import { useShortcutPreferences } from '@/hooks/use-shortcut-preferences';
 import { DocumentOutline } from '@/components/document-outline';
 import * as React from 'react';
 import { toast } from 'sonner';
-import { GitCompareArrows, Bug, Copy, CircleAlert, SquareTerminal, WandSparkles, Check, ChevronRight, Circle, Ellipsis, Eye, FolderOpen, Image as ImageIcon, PanelLeftClose, PanelLeftOpen, Pencil, Pin, RefreshCw, RotateCw, Save, Search, Undo2, Redo2, SquareArrowOutUpRight, WrapText, X } from 'lucide-react';
+import { FilePlus, FolderPlus, GitCompareArrows, Bug, Copy, CircleAlert, SquareTerminal, WandSparkles, Check, ChevronRight, Circle, Ellipsis, Eye, FolderOpen, Image as ImageIcon, PanelLeftClose, PanelLeftOpen, Pencil, Pin, RefreshCw, RotateCw, Save, Search, Undo2, Redo2, SquareArrowOutUpRight, WrapText, X } from 'lucide-react';
 import type { PanelImperativeHandle } from 'react-resizable-panels';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
@@ -135,11 +135,16 @@ function FolderFiles({ project, visible, owner, roots, expandedRoots, toggleRoot
   const [watchRevision, setWatchRevision] = React.useState(0);
   const [filter, setFilter] = React.useState('');
   const [searchOpen, setSearchOpen] = React.useState(false);
-  const [hidden, setHidden] = React.useState(false);
+  const [hidden, setHiddenState] = React.useState(() => { try { return localStorage.getItem('tributary.showHiddenFiles') !== 'false'; } catch { return true; } });
+  const setHidden = (value: boolean) => { setHiddenState(value); try { localStorage.setItem('tributary.showHiddenFiles', String(value)); } catch {} };
+  const [creation, setCreation] = React.useState<{ project: string; kind: 'file' | 'folder'; name: string } | null>(null);
+  const [creationBusy, setCreationBusy] = React.useState(false);
+  const [creationError, setCreationError] = React.useState('');
+  const [matches, setMatches] = React.useState<string[]>([]);
+  React.useEffect(() => { let alive = true; setMatches([]); const timer = setTimeout(() => { if (filter.trim()) void s.hub.call<string[]>('findFiles', project, filter, { showHidden: hidden }).then((items) => { if (alive) setMatches(items); }).catch(() => {}); }, 150); return () => { alive = false; clearTimeout(timer); }; }, [project, filter, hidden, s.hub, directoryRevision]);
   const [checksOpen, setChecksOpen] = React.useState(false);
   const [formatAllOpen, setFormatAllOpen] = React.useState(false);
   const [comparison, setComparison] = React.useState<string | null>(null);
-  const [explorerView, setExplorerView] = React.useState<'files' | 'changes'>('files');
   const repository = useWorkspaceGit(s.hub, project, visible, directoryRevision);
   const changedFiles = React.useMemo(() => workspaceChanges(project, repository.git), [project, repository.git]);
   const reviewSaved = (rel: string) => { s.pauseFollowing(); setComparison(rel); setBrowse(false); };
@@ -426,8 +431,8 @@ function FolderFiles({ project, visible, owner, roots, expandedRoots, toggleRoot
   };
   const shown = React.useMemo(() => {
     const query = filter.trim().toLowerCase();
-    return query ? (files ?? []).filter((file) => file.toLowerCase().includes(query) && (hidden || !file.split('/').some((part) => part.startsWith('.')))).slice(0, 2000) : [];
-  }, [files, filter, hidden]);
+    return query ? [...new Set([...(files ?? []), ...matches])].filter((file) => file.toLowerCase().includes(query) && (hidden || !file.split('/').some((part) => part.startsWith('.')))).slice(0, 2000) : [];
+  }, [files, matches, filter, hidden]);
   const tree = React.useMemo(() => buildTree(shown), [shown]);
   const chains = React.useMemo(() => folderChains(files || []), [files]);
   React.useEffect(() => { if (filter.trim()) setOpen((folders) => new Set([...folders, ...shown.flatMap((file) => { const parts = file.split('/'); return parts.slice(0, -1).map((_, i) => parts.slice(0, i + 1).join('/')); })])); }, [shown, filter]);
@@ -435,6 +440,20 @@ function FolderFiles({ project, visible, owner, roots, expandedRoots, toggleRoot
   const browseFiles = () => { setBrowse(true); setCollapsed(false); setSearchOpen(true); };
   const closeSearch = () => { setSearchOpen(false); setFilter(''); searchToggle.current?.focus(); };
   const refreshFiles = () => { load(); setDirectoryRevision((value) => value + 1); setWatchRevision((value) => value + 1); };
+  const startCreation = (root: string, parent: string, kind: 'file' | 'folder') => { setCreationError(''); setCreation({ project: root, kind, name: parent ? `${parent}/` : '' }); };
+  const submitCreation = async (event: React.FormEvent) => {
+    event.preventDefault(); if (!creation || creationBusy) return; setCreationBusy(true); setCreationError('');
+    try {
+      const result = await s.hub.call<{ rel: string }>('createEntry', creation.project, creation.name, creation.kind);
+      setHidden(true); refreshFiles();
+      const parts = result.rel.split('/'); if (creation.kind === 'file') parts.pop();
+      if (creation.project === project) setOpen((old) => new Set([...old, ...parts.map((_, i) => parts.slice(0, i + 1).join('/'))]));
+      else for (const folder of parts.map((_, i) => parts.slice(0, i + 1).join('/'))) if (!rootFolders[creation.project]?.has(folder)) toggleBranch(creation.project, folder);
+      setCreation(null);
+      if (creation.kind === 'file') { if (creation.project === project) await openDoc(result.rel, 'pinned'); else s.openFile(result.rel, undefined, 'pinned', undefined, false, creation.project); }
+    } catch (error) { setCreationError((error as Error).message); } finally { setCreationBusy(false); }
+  };
+  React.useEffect(() => { const find = () => { if (visible) { browseFiles(); requestAnimationFrame(() => search.current?.focus()); } }; window.addEventListener('tributary:find-file', find); return () => window.removeEventListener('tributary:find-file', find); }, [visible]);
   const label = (rel: string) => fileTabLabel(rel, docs.map((doc) => doc.rel));
   const iconButton = 'workbench-action shrink-0 [&_svg]:size-4';
 
@@ -493,9 +512,13 @@ function FolderFiles({ project, visible, owner, roots, expandedRoots, toggleRoot
           {debugVisible ? <div className={cn('h-full min-h-0', (small ? !browse : collapsed) && 'hidden')}><DebugSidebar compact={small} onShowConsole={() => { if (small) setBrowse(false); }} /></div> : <div className={cn('workspace-explorer flex h-full min-h-0 flex-col bg-background/50', (small ? !browse : collapsed) && 'hidden')}>
             <div role="group" aria-label="File explorer" className="workbench-toolbar gap-0.5 border-b pr-2 pl-3">
               <ProjectMenu projectPath={owner}><button aria-label="Explorer project options" className="flex min-w-0 flex-1 items-center gap-1 rounded text-left text-[13px] font-medium focus-visible:outline-2 focus-visible:outline-ring" title={project}><span className="truncate">{s.st?.projects.find((entry) => entry.path === project)?.name || project.split('/').pop()}</span><ChevronRight className="size-3 shrink-0 rotate-90 text-muted-foreground" /></button></ProjectMenu>
-              <Tooltip><TooltipTrigger asChild><Button ref={searchToggle} variant={searchOpen ? 'secondary' : 'ghost'} size="icon-sm" className={cn(iconButton, 'text-muted-foreground')} aria-label="Find a file" aria-expanded={searchOpen} aria-controls={searchOpen ? searchId : undefined} onClick={() => { setExplorerView('files'); if (searchOpen) closeSearch(); else setSearchOpen(true); }}><Search /></Button></TooltipTrigger><TooltipContent>Find a file</TooltipContent></Tooltip>
+              <Tooltip><TooltipTrigger asChild><Button ref={searchToggle} variant={searchOpen ? 'secondary' : 'ghost'} size="icon-sm" className={cn(iconButton, 'text-muted-foreground')} aria-label="Find a file" aria-expanded={searchOpen} aria-controls={searchOpen ? searchId : undefined} onClick={() => { if (searchOpen) closeSearch(); else setSearchOpen(true); }}><Search /></Button></TooltipTrigger><TooltipContent>Find a file <ShortcutLabel action="find-file" /></TooltipContent></Tooltip>
+              <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" className={iconButton} aria-label="New file" onClick={() => startCreation(project, '', 'file')}><FilePlus /></Button></TooltipTrigger><TooltipContent>New file</TooltipContent></Tooltip>
+              <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" className={iconButton} aria-label="New folder" onClick={() => startCreation(project, '', 'folder')}><FolderPlus /></Button></TooltipTrigger><TooltipContent>New folder</TooltipContent></Tooltip>
               <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon-sm" className={cn(iconButton, 'relative text-muted-foreground')} aria-label="Explorer options"><Ellipsis />{hidden && <span className="absolute top-1 right-1 size-1 rounded-full bg-foreground" />}</Button></DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48 max-sm:[&_[role^=menuitem]]:min-h-11">
+                  <DropdownMenuItem onSelect={() => startCreation(project, '', 'file')}><FilePlus />New file…</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => startCreation(project, '', 'folder')}><FolderPlus />New folder…</DropdownMenuItem>
                   <DropdownMenuCheckboxItem checked={hidden} onCheckedChange={setHidden}>Show hidden files</DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem checked={s.compactFolders} onCheckedChange={s.setCompactFolders}>Compact folders</DropdownMenuCheckboxItem>
                   <DropdownMenuCheckboxItem checked={s.stickyFolders} onCheckedChange={s.setStickyFolders}>Sticky folders</DropdownMenuCheckboxItem>
@@ -505,8 +528,8 @@ function FolderFiles({ project, visible, owner, roots, expandedRoots, toggleRoot
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            <div role="group" aria-label="Explorer view" className="flex shrink-0 gap-1 border-b px-2 py-1"><Button size="xs" variant={explorerView === 'files' ? 'secondary' : 'ghost'} aria-pressed={explorerView === 'files'} onClick={() => setExplorerView('files')}>Files</Button><Button size="xs" variant={explorerView === 'changes' ? 'secondary' : 'ghost'} aria-label="Show workspace changes" aria-pressed={explorerView === 'changes'} onClick={() => setExplorerView('changes')}><GitCompareArrows />Changes<span className="text-xs tabular-nums text-muted-foreground">{changedFiles.length}</span></Button></div>
-            {explorerView === 'changes' ? <WorkspaceChangeList project={project} git={repository.git} error={repository.error} loading={repository.loading} refresh={repository.refresh} selected={comparison} onSelect={reviewSaved} /> : <>
+            <div className="flex shrink-0 items-center justify-between border-b px-2 py-1"><span className="px-1 text-xs text-muted-foreground">Explorer</span><Button size="xs" variant="ghost" aria-label="Show workspace changes" onClick={() => { void s.openReview(); }}><GitCompareArrows />Changes<span className="text-xs tabular-nums text-muted-foreground">{changedFiles.length}</span></Button></div>
+            <>
             {searchOpen && <div id={searchId} className="flex shrink-0 items-center gap-1 border-b p-1.5">
               <Input ref={search} value={filter} onChange={(event) => setFilter(event.target.value)} onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeSearch(); } }} placeholder="Find a file…" aria-label="Find a file" className="h-8 min-w-0 bg-transparent text-[13px] shadow-none max-sm:h-11" />
               <Button variant="ghost" size="icon-sm" className={iconButton} aria-label="Close file search" onClick={closeSearch}><X /></Button>
@@ -514,13 +537,13 @@ function FolderFiles({ project, visible, owner, roots, expandedRoots, toggleRoot
             <div className="min-h-0 flex-1 overflow-auto px-1 pt-0.5 pb-2" role="region" aria-label="Project files">
               {!filter.trim() ? roots.length > 1 ? roots.map((folder) => <section key={folder} aria-label={`Folder ${folder}`}>
                 <WorkspaceFolderRow folder={folder} owner={owner} expanded={expandedRoots.has(folder)} onToggle={() => toggleRoot(folder)} onRemoved={onFolderRemoved} />
-                {expandedRoots.has(folder) && <div className="pl-2"><DirectoryTree bridge={s.hub} project={folder} active={folder === project ? active : null} openFile={(rel, intent) => { if (folder === project) void openDoc(rel, intent); else s.openFile(rel, undefined, intent, undefined, false, folder); }} revision={directoryRevision} expanded={rootFolders[folder] || EMPTY_BRANCHES} toggle={(rel) => toggleBranch(folder, rel)} loading={folder === project ? opening : null} hidden={hidden} compact={s.compactFolders} sticky={s.stickyFolders} chains={folder === project ? chains : EMPTY_CHAINS} decorations={folder === project ? decorations : undefined} reviewFile={folder === project ? reviewSaved : undefined} /></div>}
-              </section>) : <DirectoryTree bridge={s.hub} project={project} active={active} openFile={openDoc} revision={directoryRevision} expanded={open} toggle={toggle} loading={opening} hidden={hidden} compact={s.compactFolders} sticky={s.stickyFolders} chains={chains} decorations={decorations} reviewFile={reviewSaved} />
+                {expandedRoots.has(folder) && <div className="pl-2"><DirectoryTree createEntry={(parent, kind) => startCreation(folder, parent, kind)} bridge={s.hub} project={folder} active={folder === project ? active : null} openFile={(rel, intent) => { if (folder === project) void openDoc(rel, intent); else s.openFile(rel, undefined, intent, undefined, false, folder); }} revision={directoryRevision} expanded={rootFolders[folder] || EMPTY_BRANCHES} toggle={(rel) => toggleBranch(folder, rel)} loading={folder === project ? opening : null} hidden={hidden} compact={s.compactFolders} sticky={s.stickyFolders} chains={folder === project ? chains : EMPTY_CHAINS} decorations={folder === project ? decorations : undefined} reviewFile={folder === project ? reviewSaved : undefined} /></div>}
+              </section>) : <DirectoryTree createEntry={(parent, kind) => startCreation(project, parent, kind)} bridge={s.hub} project={project} active={active} openFile={openDoc} revision={directoryRevision} expanded={open} toggle={toggle} loading={opening} hidden={hidden} compact={s.compactFolders} sticky={s.stickyFolders} chains={chains} decorations={decorations} reviewFile={reviewSaved} />
                 : files == null ? <div className="grid place-items-center p-6"><Spinner /></div>
                   : tree.map((node) => <TreeNode key={node.path} n={node} depth={0} open={open} active={active} onOpen={openDoc} toggle={toggle} loading={opening} decorations={decorations} />)}
               {filter.trim() && files && !shown.length && <p className="p-3 text-xs text-muted-foreground">No matching files.</p>}
             </div>
-            <ExplorerOutline path={doc && !doc.binary ? doc.rel : null} text={doc?.text || ''} line={doc ? cursors[doc.rel]?.line || 1 : 1} onSelect={(line, column) => { if (doc) void openDoc(doc.rel, 'pinned', line, column); }} /></>}
+            <ExplorerOutline path={doc && !doc.binary ? doc.rel : null} text={doc?.text || ''} line={doc ? cursors[doc.rel]?.line || 1 : 1} onSelect={(line, column) => { if (doc) void openDoc(doc.rel, 'pinned', line, column); }} /></>
 
           </div>}
         </ResizablePanel>
@@ -543,7 +566,7 @@ function FolderFiles({ project, visible, owner, roots, expandedRoots, toggleRoot
                 {docs.map((item) => <TabsContent key={item.rel} value={item.rel} tabIndex={-1} className="h-full min-h-0">
                   {item.rel === active && (item.binary && !IMAGE.test(item.rel) ? <p className="p-6 text-center text-sm text-muted-foreground">Binary file · {item.size.toLocaleString()} bytes</p>
                     : item.mode === 'preview' && previewable(item.rel) ? <FilePreview doc={item} project={project} />
-                      : <CodeEditor onReview={() => void reviewSaved(item.rel)} onChangeStats={setEditorStats} followChanges={s.following && active === item.rel} onHistoryChange={setEditorHistory} onNavigate={s.pauseFollowing} onDiagnostics={updateLiveDiagnostics} project={project} path={item.rel} value={item.text} line={line} column={column} readOnly={item.truncated} diagnostics={!item.dirty && checkResult && item.mtime <= checkResult.startedAt ? checkResult.diagnostics.filter((d) => d.rel === item.rel) : []} wrap={item.wrap} onToggleWrap={toggleWrap} onCursorChange={(position) => setCursors((all) => all[item.rel]?.line === position.line && all[item.rel]?.column === position.column ? all : { ...all, [item.rel]: position })} onSave={save} onChange={(value) => { s.pauseFollowing(); setDocs((all) => all.map((current) => current.rel === item.rel ? { ...current, text: value, dirty: value !== current.content, pinned: true, recovered: false } : current)); }} />)}
+                      : <CodeEditor active={visible} onReview={() => void reviewSaved(item.rel)} onChangeStats={setEditorStats} followChanges={s.following && active === item.rel} onHistoryChange={setEditorHistory} onNavigate={s.pauseFollowing} onDiagnostics={updateLiveDiagnostics} project={project} path={item.rel} value={item.text} line={line} column={column} readOnly={item.truncated} diagnostics={!item.dirty && checkResult && item.mtime <= checkResult.startedAt ? checkResult.diagnostics.filter((d) => d.rel === item.rel) : []} wrap={item.wrap} onToggleWrap={toggleWrap} onCursorChange={(position) => setCursors((all) => all[item.rel]?.line === position.line && all[item.rel]?.column === position.column ? all : { ...all, [item.rel]: position })} onSave={save} onChange={(value) => { s.pauseFollowing(); setDocs((all) => all.map((current) => current.rel === item.rel ? { ...current, text: value, dirty: value !== current.content, pinned: true, recovered: false } : current)); }} />)}
                 </TabsContent>)}
               </div>
               {debugVisible && <React.Suspense fallback={<p role="status" className="border-t p-2 text-xs">Opening console…</p>}><DebugConsole /></React.Suspense>}
@@ -588,6 +611,14 @@ function FolderFiles({ project, visible, owner, roots, expandedRoots, toggleRoot
       <FormatProjectDialog open={formatAllOpen} onOpenChange={setFormatAllOpen} project={project} getUnsaved={() => docsRef.current.filter((item) => item.dirty).map((item) => item.rel)} onApplied={() => { refreshFiles(); s.refreshGit(project); }} />
       {checksOpen && <div className="h-[min(300px,45%)] min-h-40 shrink-0 border-t"><ProjectChecks visible={visible} staleFiles={docs.filter((d) => d.dirty || (checkResult && d.mtime > checkResult.startedAt)).map((d) => d.rel)} liveDiagnostics={liveDiagnostics.filter((d) => d.rel === active && docs.some((doc) => doc.rel === active && doc.mode === 'edit'))} project={project} onClose={() => setChecksOpen(false)} onResult={setCheckResult} /></div>}
     </Tabs>
+    <Dialog open={!!creation} onOpenChange={(open) => { if (!open && !creationBusy) setCreation(null); }}>
+      <DialogContent className="sm:max-w-sm"><form onSubmit={submitCreation} className="space-y-4">
+        <DialogHeader><DialogTitle>New {creation?.kind}</DialogTitle><DialogDescription>Enter a name or a path inside an existing folder.</DialogDescription></DialogHeader>
+        <Input autoFocus aria-label="File or folder name" value={creation?.name || ''} onChange={(event) => { setCreationError(''); setCreation((old) => old && { ...old, name: event.target.value }); }} disabled={creationBusy} />
+        {creationError && <p role="alert" className="text-sm text-destructive">{creationError}</p>}
+        <DialogFooter><Button type="button" variant="outline" disabled={creationBusy} onClick={() => setCreation(null)}>Cancel</Button><Button type="submit" disabled={creationBusy || !creation?.name.trim()}>{creationBusy ? 'Creating…' : 'Create'}</Button></DialogFooter>
+      </form></DialogContent>
+    </Dialog>
     <AlertDialog open={!!confirmation} onOpenChange={(isOpen) => { if (!isOpen) setConfirmation(null); }}>
       <AlertDialogContent className="max-w-[calc(100vw-32px)] max-sm:[&_button]:min-h-11" onCloseAutoFocus={returnFocus}>
         <AlertDialogHeader><AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle><AlertDialogDescription className="break-words">{confirmation?.paths.filter((path) => docs.find((doc) => doc.rel === path)?.dirty).join(', ')}<br />Your edits will be lost.</AlertDialogDescription></AlertDialogHeader>

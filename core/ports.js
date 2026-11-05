@@ -4,7 +4,7 @@
 const { spawn } = require('child_process');
 const { EventEmitter } = require('events');
 const net = require('net');
-const { killTree } = require('./proc');
+const { killTree, streamTail } = require('./proc');
 const ssh = require('./ssh');
 
 // Parse `ss -ltnp` output. Only sockets that name a process are kept: ss shows process details for
@@ -55,17 +55,24 @@ function freePort(preferred) {
 // Resolves once the local end accepts connections; rejects if ssh exits first.
 function whenListening(port, child, timeoutMs = 20000) {
   return new Promise((resolve, reject) => {
-    let stderr = ''; let over = false;
-    child.stderr.on('data', (d) => { stderr += d; });
-    const fail = (msg) => { if (!over) { over = true; reject(new Error(msg)); } };
-    child.once('exit', (code) => fail(stderr.trim().split('\n').filter(Boolean).pop() || `ssh exited with code ${code}`));
-    child.once('error', (e) => fail(e.code === 'ENOENT' ? 'ssh is not installed or not on PATH' : e.message));
-    const end = Date.now() + timeoutMs;
+    let stderr = ''; let over = false; let retry; let socket;
+    const stopTail = streamTail(child.stderr, 8192, (tail) => { stderr = tail; });
+    const cleanup = () => {
+      clearTimeout(retry); clearTimeout(deadline); socket?.destroy(); stopTail(); stderr = '';
+      child.off('exit', exited); child.off('error', errored);
+      // An established forward can still log. Keep draining without collecting it.
+      child.stderr.resume();
+    };
+    const fail = (msg) => { if (!over) { over = true; cleanup(); reject(new Error(msg)); } };
+    const exited = (code) => fail(stderr.trim().split('\n').filter(Boolean).pop() || `ssh exited with code ${code}`);
+    const errored = (e) => fail(e.code === 'ENOENT' ? 'ssh is not installed or not on PATH' : e.message);
+    child.once('exit', exited); child.once('error', errored);
+    const deadline = setTimeout(() => { killTree(child); fail(`Port forward to ${port} did not start`); }, timeoutMs);
     const attempt = () => {
       if (over) return;
-      const s = net.connect(port, '127.0.0.1');
-      s.once('connect', () => { s.destroy(); if (!over) { over = true; resolve(); } });
-      s.once('error', () => { s.destroy(); if (Date.now() > end) { killTree(child); fail(`Port forward to ${port} did not start`); } else setTimeout(attempt, 100); });
+      const s = socket = net.connect(port, '127.0.0.1');
+      s.once('connect', () => { if (!over) { over = true; cleanup(); resolve(); } });
+      s.once('error', () => { s.destroy(); if (!over) retry = setTimeout(attempt, 100); });
     };
     attempt();
   });
@@ -117,4 +124,4 @@ class PortForwards extends EventEmitter {
   }
 }
 
-module.exports = { listPorts, parseListening, forwardPort, PortForwards };
+module.exports = { listPorts, parseListening, forwardPort, PortForwards, whenListening };

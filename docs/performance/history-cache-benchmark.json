@@ -1,0 +1,320 @@
+{
+  "date": "2026-11-04T17:15:55.710Z",
+  "runtime": {
+    "node": "v24.21.0",
+    "platform": "linux",
+    "arch": "x64"
+  },
+  "fixture": "32 saved chats, 64 long replies and tool logs each; one actual read-only Hub turn per chat through a deterministic local stand-in CLI; coalesced delivery and 1.9 s idle settlement; three alternating process pairs.",
+  "boundaries": [
+    "No external providers or model inference",
+    "Main Node process only, not the full Electron tree or GPU",
+    "Forced GC only at explicit diagnostic sample boundaries",
+    "Compatibility mode keeps mutable histories; managed mode uses the desktop ownership policy",
+    "Read latency includes JSON hashing in both cases; not an isolated SQLite or UI-render latency"
+  ],
+  "sourceHashes": {
+    "core/history-cache.js": "48e335347d75ce157e069825d333f4a06cd61e334ed092dc683a5694d37e04e1",
+    "core/store.js": "19de81c44725851415c19379888dce1e87f337ebaa636053a82dd9766e5aac20",
+    "core/hub.js": "ffc3d54bd4a69221f6c523c2333bc5e0f9ec2b430d77d793995a21bee3ca876e",
+    "core/activity.js": "0e119e7067175561bbca99926d336be29bcff566b986fcfce2bb4e31775b26bd",
+    "core/message-delivery.js": "4f13873d9e351d521aefdfff39ceae80a39d7b56d11da33c26520a147b563537",
+    "scripts/performance/history-cache.cjs": "6e44e1e45ead4e763029648c9da73693785f000a22313e3b3bcb4269eb254890"
+  },
+  "cases": [
+    {
+      "round": 0,
+      "mode": "compatibility",
+      "chats": 32,
+      "realHubTurns": 32,
+      "loadedWriterHistories": 32,
+      "deliveries": 96,
+      "baseline": {
+        "rss": 60641280,
+        "heapTotal": 11755520,
+        "heapUsed": 6205248,
+        "external": 2389055,
+        "arrayBuffers": 143787,
+        "pssKiB": 20066,
+        "physicalHeapBytes": 9658368
+      },
+      "naturalIdle": {
+        "rss": 536625152,
+        "heapTotal": 356474880,
+        "heapUsed": 237210872,
+        "external": 2444990,
+        "arrayBuffers": 209406,
+        "pssKiB": 481108,
+        "physicalHeapBytes": 356700160
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 536625152,
+        "heapTotal": 225140736,
+        "heapUsed": 83464440,
+        "external": 2444907,
+        "arrayBuffers": 209323,
+        "pssKiB": 481108,
+        "physicalHeapBytes": 225366016
+      },
+      "heapDeltaBytes": 77259192,
+      "pssDeltaKiB": 461042,
+      "elapsedMs": 8372.491479,
+      "turnLatencyMs": {
+        "median": 226.22468700000013,
+        "p95": 364.76642100000026
+      },
+      "transportReadLatencyMs": {
+        "median": 7.499609000000419,
+        "p95": 11.438426000000618
+      },
+      "exactReopenParity": true,
+      "fullSaveAfterReleaseParity": true,
+      "productionForcedGc": false
+    },
+    {
+      "round": 0,
+      "mode": "managed",
+      "chats": 32,
+      "realHubTurns": 32,
+      "loadedWriterHistories": 0,
+      "deliveries": 96,
+      "baseline": {
+        "rss": 60899328,
+        "heapTotal": 11755520,
+        "heapUsed": 6241712,
+        "external": 2391411,
+        "arrayBuffers": 143787,
+        "pssKiB": 20885,
+        "physicalHeapBytes": 9658368
+      },
+      "naturalIdle": {
+        "rss": 290414592,
+        "heapTotal": 218062848,
+        "heapUsed": 113879632,
+        "external": 2447598,
+        "arrayBuffers": 209448,
+        "pssKiB": 240986,
+        "physicalHeapBytes": 218288128
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 290529280,
+        "heapTotal": 143613952,
+        "heapUsed": 7519192,
+        "external": 2447263,
+        "arrayBuffers": 209323,
+        "pssKiB": 240862,
+        "physicalHeapBytes": 143839232
+      },
+      "heapDeltaBytes": 1277480,
+      "pssDeltaKiB": 219977,
+      "elapsedMs": 5137.445548,
+      "turnLatencyMs": {
+        "median": 145.49312400000053,
+        "p95": 206.60025599999972
+      },
+      "transportReadLatencyMs": {
+        "median": 13.977068000000145,
+        "p95": 21.441302999999607
+      },
+      "exactReopenParity": true,
+      "fullSaveAfterReleaseParity": true,
+      "productionForcedGc": false
+    },
+    {
+      "round": 1,
+      "mode": "managed",
+      "chats": 32,
+      "realHubTurns": 32,
+      "loadedWriterHistories": 0,
+      "deliveries": 96,
+      "baseline": {
+        "rss": 60641280,
+        "heapTotal": 11755520,
+        "heapUsed": 6241784,
+        "external": 2391411,
+        "arrayBuffers": 143787,
+        "pssKiB": 20906,
+        "physicalHeapBytes": 9658368
+      },
+      "naturalIdle": {
+        "rss": 283250688,
+        "heapTotal": 211509248,
+        "heapUsed": 116476160,
+        "external": 2447619,
+        "arrayBuffers": 209400,
+        "pssKiB": 233578,
+        "physicalHeapBytes": 210186240
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 283283456,
+        "heapTotal": 143351808,
+        "heapUsed": 7519888,
+        "external": 2447263,
+        "arrayBuffers": 209323,
+        "pssKiB": 233610,
+        "physicalHeapBytes": 142028800
+      },
+      "heapDeltaBytes": 1278104,
+      "pssDeltaKiB": 212704,
+      "elapsedMs": 5024.300172,
+      "turnLatencyMs": {
+        "median": 147.49534399999993,
+        "p95": 259.49493299999995
+      },
+      "transportReadLatencyMs": {
+        "median": 15.537104,
+        "p95": 21.89067299999988
+      },
+      "exactReopenParity": true,
+      "fullSaveAfterReleaseParity": true,
+      "productionForcedGc": false
+    },
+    {
+      "round": 1,
+      "mode": "compatibility",
+      "chats": 32,
+      "realHubTurns": 32,
+      "loadedWriterHistories": 32,
+      "deliveries": 96,
+      "baseline": {
+        "rss": 61005824,
+        "heapTotal": 11493376,
+        "heapUsed": 6205248,
+        "external": 2389055,
+        "arrayBuffers": 143787,
+        "pssKiB": 20794,
+        "physicalHeapBytes": 9396224
+      },
+      "naturalIdle": {
+        "rss": 538943488,
+        "heapTotal": 358834176,
+        "heapUsed": 238509552,
+        "external": 2442391,
+        "arrayBuffers": 209406,
+        "pssKiB": 483394,
+        "physicalHeapBytes": 359059456
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 538943488,
+        "heapTotal": 225140736,
+        "heapUsed": 82413656,
+        "external": 2442308,
+        "arrayBuffers": 209323,
+        "pssKiB": 483402,
+        "physicalHeapBytes": 225366016
+      },
+      "heapDeltaBytes": 76208408,
+      "pssDeltaKiB": 462608,
+      "elapsedMs": 5732.723862000001,
+      "turnLatencyMs": {
+        "median": 166.12763499999983,
+        "p95": 256.96186600000055
+      },
+      "transportReadLatencyMs": {
+        "median": 8.963126999999986,
+        "p95": 11.769741000000067
+      },
+      "exactReopenParity": true,
+      "fullSaveAfterReleaseParity": true,
+      "productionForcedGc": false
+    },
+    {
+      "round": 2,
+      "mode": "compatibility",
+      "chats": 32,
+      "realHubTurns": 32,
+      "loadedWriterHistories": 32,
+      "deliveries": 96,
+      "baseline": {
+        "rss": 60493824,
+        "heapTotal": 11755520,
+        "heapUsed": 6205272,
+        "external": 2389055,
+        "arrayBuffers": 143787,
+        "pssKiB": 20728,
+        "physicalHeapBytes": 9658368
+      },
+      "naturalIdle": {
+        "rss": 531312640,
+        "heapTotal": 417030144,
+        "heapUsed": 311264480,
+        "external": 2445004,
+        "arrayBuffers": 209420,
+        "pssKiB": 476163,
+        "physicalHeapBytes": 417255424
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 531312640,
+        "heapTotal": 225927168,
+        "heapUsed": 83474880,
+        "external": 2444907,
+        "arrayBuffers": 209323,
+        "pssKiB": 476195,
+        "physicalHeapBytes": 226152448
+      },
+      "heapDeltaBytes": 77269608,
+      "pssDeltaKiB": 455467,
+      "elapsedMs": 6199.808945,
+      "turnLatencyMs": {
+        "median": 159.8841500000001,
+        "p95": 325.69155800000044
+      },
+      "transportReadLatencyMs": {
+        "median": 7.689201999999568,
+        "p95": 11.856171999999788
+      },
+      "exactReopenParity": true,
+      "fullSaveAfterReleaseParity": true,
+      "productionForcedGc": false
+    },
+    {
+      "round": 2,
+      "mode": "managed",
+      "chats": 32,
+      "realHubTurns": 32,
+      "loadedWriterHistories": 0,
+      "deliveries": 96,
+      "baseline": {
+        "rss": 60780544,
+        "heapTotal": 11755520,
+        "heapUsed": 6241920,
+        "external": 2391411,
+        "arrayBuffers": 143787,
+        "pssKiB": 20900,
+        "physicalHeapBytes": 9658368
+      },
+      "naturalIdle": {
+        "rss": 276295680,
+        "heapTotal": 187392000,
+        "heapUsed": 56518920,
+        "external": 2447375,
+        "arrayBuffers": 209435,
+        "pssKiB": 226680,
+        "physicalHeapBytes": 187617280
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 276295680,
+        "heapTotal": 143351808,
+        "heapUsed": 7516568,
+        "external": 2447263,
+        "arrayBuffers": 209323,
+        "pssKiB": 226664,
+        "physicalHeapBytes": 143577088
+      },
+      "heapDeltaBytes": 1274648,
+      "pssDeltaKiB": 205764,
+      "elapsedMs": 5362.924208,
+      "turnLatencyMs": {
+        "median": 156.3179829999999,
+        "p95": 277.559268
+      },
+      "transportReadLatencyMs": {
+        "median": 14.742817999999716,
+        "p95": 18.884979999999814
+      },
+      "exactReopenParity": true,
+      "fullSaveAfterReleaseParity": true,
+      "productionForcedGc": false
+    }
+  ]
+}

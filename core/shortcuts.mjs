@@ -1,4 +1,7 @@
 export const SHORTCUTS = [
+  { id: 'find-file', label: 'Find a project file', group: 'Navigation', keys: ['Mod', 'P'] },
+  { id: 'split-terminal', label: 'Split terminal', group: 'Navigation', keys: ['Mod', 'Shift', '5'] },
+  { id: 'new-terminal', label: 'New terminal', group: 'Navigation', keys: ['Mod', 'Shift', '`'] },
   { id: 'new', label: 'New chat', group: 'Chat', keys: ['Mod', 'Shift', 'O'], aliases: [['Mod', 'N']] },
   { id: 'search', label: 'Search chats and commands', group: 'Chat', keys: ['Mod', 'K'] },
   { id: 'attention', label: 'Next chat that needs you', group: 'Chat', keys: ['Mod', 'Shift', 'J'] },
@@ -69,7 +72,7 @@ export function readShortcutPreferences(storage = globalThis.localStorage) {
 export function bindingFromEvent(event, platform) {
   if (event.isComposing || event.repeat || event.getModifierState?.('AltGraph') || ['Control', 'Meta', 'Alt', 'Shift', 'Dead', 'Unidentified'].includes(event.key)) return null;
   if (platform === 'mac' ? event.ctrlKey : event.metaKey) return null;
-  let key = event.altKey && /^Key[A-Z]$/.test(event.code || '') ? event.code.slice(3) : event.key.length === 1 ? event.key.toUpperCase() : event.key;
+  let key = event.code === 'Backquote' ? '`' : event.shiftKey && /^Digit[0-9]$/.test(event.code || '') ? event.code.slice(5) : event.altKey && /^Key[A-Z]$/.test(event.code || '') ? event.code.slice(3) : event.key.length === 1 ? event.key.toUpperCase() : event.key;
   if (key === ' ') key = 'Space';
   const keys = [...((platform === 'mac' ? event.metaKey : event.ctrlKey) ? ['Mod'] : []), ...(event.altKey ? ['Alt'] : []), ...(event.shiftKey ? ['Shift'] : []), key];
   return validBinding(keys) ? keys : null;
@@ -81,7 +84,7 @@ export function shortcutAction(event, options = {}) {
   for (const item of shortcutBindings(options.overrides)) {
     for (const binding of [item.keys, ...(item.aliases || [])]) {
       if (!binding.length || !!mod !== binding.includes('Mod') || !!event.shiftKey !== binding.includes('Shift') || !!event.altKey !== binding.includes('Alt')) continue;
-      const key = event.altKey && /^Key[A-Z]$/.test(event.code || '') ? event.code.slice(3) : event.key === ' ' ? 'Space' : event.key;
+      const key = event.code === 'Backquote' ? '`' : event.shiftKey && /^Digit[0-9]$/.test(event.code || '') ? event.code.slice(5) : event.altKey && /^Key[A-Z]$/.test(event.code || '') ? event.code.slice(3) : event.key === ' ' ? 'Space' : event.key;
       if (key.toLowerCase() === binding.at(-1).toLowerCase()) return item.id;
     }
   }

@@ -31,3 +31,65 @@ test('VSIX import rejects traversal, active SVG resources, duplicate entries and
   const file = path.join(root, 'duplicate.vsix'); fs.writeFileSync(file, zip([['extension/package.json', '{}'], ['extension/package.json', '{}']])); await assert.rejects(packs.install(file), /Duplicate/);
 });
 module.exports = { zip, fixture };
+
+const { OpenVSX, registryURL } = require('../core/extension-registry');
+const crypto = require('node:crypto');
+function registry(body, overrides = {}) {
+  const calls = [];
+  const metadata = { namespace: 'fixture', name: 'studio', version: '1.0.0', files: { download: 'https://open-vsx.org/api/fixture/studio/1.0.0/file/fixture.vsix', sha256: 'https://open-vsx.org/api/fixture/studio/1.0.0/file/fixture.sha256' }, ...overrides };
+  const fetcher = async (url) => {
+    calls.push(String(url));
+    if (String(url).endsWith('/latest')) return Response.json(metadata);
+    if (String(url).endsWith('.sha256')) return new Response(crypto.createHash('sha256').update(body).digest('hex') + '  fixture.vsix');
+    if (String(url).endsWith('.vsix')) return new Response(body);
+    throw new Error('Unexpected URL');
+  };
+  return { fetcher, calls };
+}
+test('direct registry install checks package identity and checksum, imports appearance and removes the download', async () => {
+  const root = mkdtemp('extension-registry'); const body = fs.readFileSync(fixture(root)); const remote = registry(body); const catalog = new OpenVSX(remote.fetcher); const packs = new ExtensionPacks(root); let downloaded;
+  const result = await catalog.install('fixture.studio', (file, expected) => { downloaded = file; return packs.install(file, expected); });
+  assert.equal(result.id, 'fixture.studio'); assert.equal((await packs.list()).length, 1); assert.equal(fs.existsSync(downloaded), false);
+  assert.equal(remote.calls.length, 3); assert.equal((await packs.appearance(result.themes[0].id)).theme.colors['editor.background'], '#112233');
+});
+test('registry search is bounded, filters deprecated results and sends a theme category query', async () => {
+  let requested;
+  const catalog = new OpenVSX(async (url) => { requested = new URL(url); return Response.json({ extensions: [{ namespace: 'fixture', name: 'studio', displayName: 'Studio', description: 'Theme' }, { namespace: 'old', name: 'theme', deprecated: true }, { namespace: '../private', name: 'theme' }] }); });
+  assert.deepEqual((await catalog.search('studio')).map((item) => item.id), ['fixture.studio']);
+  assert.equal(requested.searchParams.get('category'), 'Themes'); assert.equal(requested.searchParams.get('size'), '24');
+  await assert.rejects(catalog.search('x'.repeat(161)), /160/);
+});
+test('registry rejects untrusted download redirects, oversized content, and invalid checksums before import', async () => {
+  for (const url of ['http://open-vsx.org/api/file', 'https://user:pass@open-vsx.org/api/file', 'https://open-vsx.org:444/api/file', 'https://127.0.0.1/file', 'https://open-vsx.org.attacker.test/file']) assert.throws(() => registryURL(url), /Untrusted/);
+  const redirected = new OpenVSX(async () => new Response(null, { status: 302, headers: { location: 'https://localhost/private' } }));
+  await assert.rejects(redirected.text('https://open-vsx.org/api/file', 1024, AbortSignal.timeout(1000)), /Untrusted/);
+  const oversized = new OpenVSX(async () => new Response('abc', { headers: { 'content-length': '4096' } }));
+  await assert.rejects(oversized.text('https://open-vsx.org/api/file', 16, AbortSignal.timeout(1000)), /size limit/);
+  const chunked = new OpenVSX(async () => new Response('x'.repeat(20)));
+  await assert.rejects(chunked.text('https://open-vsx.org/api/file', 16, AbortSignal.timeout(1000)), /size limit/);
+  const body = Buffer.from('zip'); const remote = registry(body); const tampered = new OpenVSX((url, options) => String(url).endsWith('.vsix') ? Promise.resolve(new Response('different zip')) : remote.fetcher(url, options));
+  let imported = false; await assert.rejects(tampered.install('fixture.studio', () => { imported = true; }), /checksum does not match/); assert.equal(imported, false); assert.equal(tampered.installing, false);
+});
+test('registry package mismatch preserves installed appearance and failed imports clean temporary files', async () => {
+  const root = mkdtemp('extension-registry-mismatch'); const packs = new ExtensionPacks(root); const file = fixture(root); await packs.install(file);
+  const body = fs.readFileSync(file); const remote = registry(body, { version: '2.0.0' }); const catalog = new OpenVSX(remote.fetcher); let downloaded;
+  await assert.rejects(catalog.install('fixture.studio', (file, expected) => { downloaded = file; return packs.install(file, expected); }), /identity/);
+  assert.equal(fs.existsSync(downloaded), false); assert.equal((await packs.list())[0].version, '1.0.0');
+  await assert.rejects(catalog.install('../bad', () => {}), /extension ID/);
+});
+test('a newer catalog search cancels obsolete work and only one install can run at a time', async () => {
+  let firstSignal;
+  const catalog = new OpenVSX(async (url, { signal }) => {
+    if (new URL(url).searchParams.get('query') === 'first') { firstSignal = signal; return new Promise((_, reject) => signal.addEventListener('abort', () => reject(signal.reason), { once: true })); }
+    return Response.json({ extensions: [] });
+  });
+  const first = catalog.search('first'); const rejected = assert.rejects(first);
+  await catalog.search('second'); await rejected; assert.equal(firstSignal.aborted, true); assert.equal(catalog.searchController, null);
+  let finish;
+  const remote = registry(Buffer.from('archive'));
+  const installing = new OpenVSX(remote.fetcher);
+  const pending = installing.install('fixture.studio', () => new Promise((resolve) => { finish = resolve; }));
+  await assert.rejects(installing.install('fixture.studio', () => {}), /current extension/);
+  while (!finish) await new Promise((resolve) => setImmediate(resolve));
+  finish('installed'); assert.equal(await pending, 'installed'); assert.equal(installing.installing, false);
+});

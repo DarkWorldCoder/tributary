@@ -18,7 +18,7 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-const { start, lines } = require('./proc');
+const { start, lines, streamTail } = require('./proc');
 const { clip, EDIT_TOOLS } = require('./parsers');
 const { localHost } = require('./host');
 const { normalizeAcpTool } = require('./acp-tools');
@@ -84,7 +84,7 @@ class AcpConnection {
     this.nextId = 1; this.pending = new Map(); this.handlers = new Map(); this.sessions = new Set();
     this.alive = true; this.busy = 0; this.stderrTail = ''; this.caps = {};
     lines(this.child.stdout, (l) => this.onLine(l));
-    lines(this.child.stderr, (l) => { this.stderrTail = `${this.stderrTail}${l}\n`.slice(-2000); });
+    streamTail(this.child.stderr, 2000, (tail) => { this.stderrTail = tail; });
     this.child.on('error', (e) => this.onExit(`Could not start the agent: ${e.message}`));
     this.child.on('exit', (code) => this.onExit(`Agent exited (${code}). ${this.stderrTail.trim().split('\n').slice(-3).join(' ')}`.trim()));
     this.ready = this.request('initialize', {

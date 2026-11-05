@@ -7,6 +7,7 @@ import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Markdown } from '@/components/markdown';
 import { useStore } from '@/store';
+import { documentDirty, retainDocumentDrafts } from '@/lib/document-cache.mjs';
 import type { SavedDocument } from '@/types';
 
 type Entry = { saved: SavedDocument; title: string; content: string };
@@ -21,7 +22,8 @@ export function DocumentPanel() {
   const [status, setStatus] = React.useState('');
   const [discard, setDiscard] = React.useState(false);
   const entry = entries[key];
-  const dirty = !!entry && (entry.title !== entry.saved.title || entry.content !== entry.saved.content);
+  const dirty = documentDirty(entry);
+  React.useEffect(() => { setEntries((all) => retainDocumentDrafts(all, key)); }, [key, entries]);
   React.useEffect(() => {
     if (!selection) return;
     let active = true; setError(''); setStatus('');

@@ -21,15 +21,17 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { findFileLinks, projectRelative } from "@/lib/terminal-links.mjs";
 import { hub } from "@/store";
+import { terminalConsumer } from '@/lib/terminal-consumer.mjs';
 
 // One listener per event type, routed to the terminal that owns the output.
-const sinks = new Map<string, (d: string) => void>();
+type Output = { data: string; owner?: string; seq?: number };
+const sinks = new Map<string, (packet: Output) => void>();
 const exits = new Map<string, (code: number) => void>();
 let wired = false;
 export function wire() {
   if (wired) return;
   wired = true;
-  hub.on("term-data", ({ id, data }) => sinks.get(id)?.(data));
+  hub.on("term-data", ({ id, ...packet }) => sinks.get(id)?.(packet));
   hub.on("term-exit", ({ id, code }) => exits.get(id)?.(code));
 }
 
@@ -289,11 +291,14 @@ export function XtermView({
       return true;
     });
 
-    sinks.set(id, (d) => term.write(d));
+    const owner = crypto.randomUUID();
+    const consumer = terminalConsumer({ owner, write: (data, done) => term.write(data, done), acknowledge: (lease, seq) => { void hub.call('termAck', id, lease, seq).catch(() => {}); } });
+    sinks.set(id, (packet) => { if (packet.owner != null && packet.seq != null) consumer.receive({ data: packet.data, owner: packet.owner, seq: packet.seq }); else term.write(packet.data); });
     exits.set(id, (code) => {
       term.write(`\r\n\x1b[2m[process exited with code ${code}]\x1b[0m\r\n`);
       callbacks.current.onExit(code);
     });
+    void hub.call('termAttach', id, owner).catch(() => {});
     const subs = [
       term.onData((d) => hub.call("termWrite", id, d).catch(() => {})),
       term.onTitleChange((t) => callbacks.current.onTitle?.(t)),
@@ -367,10 +372,14 @@ export function XtermView({
       clearTimeout(webglTimer);
       for (const s of subs) s.dispose();
       links.dispose();
+      consumer.dispose();
+      void hub.call('termDetach', id, owner).catch(() => {});
       sinks.delete(id);
       exits.delete(id);
       term.dispose();
       termRef.current = null;
+      fitRef.current = null;
+      searchRef.current = null;
     };
   }, [id, openSearch]);
 

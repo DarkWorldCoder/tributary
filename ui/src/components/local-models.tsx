@@ -28,6 +28,7 @@ export function LocalModelsSetup({ open, onOpenChange }: { open: boolean; onOpen
   const [verifiedAddress, setVerifiedAddress] = React.useState('');
   const [localAgent, setLocalAgent] = React.useState(false);
   const [historyBudget, setHistoryBudget] = React.useState(4000);
+  const [localConcurrency, setLocalConcurrency] = React.useState(1);
   const choose = (row: Service) => {
     setService(row); setAddress(row.baseUrl); setVerifiedAddress(row.baseUrl); setKey(''); setSearch('');
     setModel((row.models.find((model) => model.loaded) || row.models[0])?.id || ''); setError('');
@@ -55,7 +56,7 @@ export function LocalModelsSetup({ open, onOpenChange }: { open: boolean; onOpen
     if (!service || !model) return;
     setBusy(true); setError('');
     try {
-      const id = await s.hub.call<string>('connectLocalModel', { service: service.id, baseUrl: address, apiKey: key, model, historyBudget, localAgent });
+      const id = await s.hub.call<string>('connectLocalModel', { service: service.id, baseUrl: address, apiKey: key, model, historyBudget, localConcurrency, localAgent });
       const root = s.project || await s.hub.call<string>('personalWorkspace');
       const thread = await s.hub.call<import('@/types').Thread>('createThread', root);
       await s.refreshState(); await s.loadThreads(root); await s.openThread(thread.id);
@@ -79,6 +80,7 @@ export function LocalModelsSetup({ open, onOpenChange }: { open: boolean; onOpen
         <p className="text-xs text-muted-foreground">Model size and context need extra memory. RAM alone does not confirm GPU compatibility.</p>
         <div className="flex items-start justify-between gap-4 rounded-lg border p-3"><div><label htmlFor="local-coding-agent" className="text-sm font-medium">Local coding agent</label><p className="mt-1 text-xs text-muted-foreground">Read and edit project files, run approved commands, and delegate background tasks. Requires a model with tool calling.</p></div><Switch id="local-coding-agent" checked={localAgent} disabled={busy} onCheckedChange={setLocalAgent} /></div>
         <Field><FieldLabel htmlFor="local-history-budget">Chat history budget</FieldLabel><NativeSelect id="local-history-budget" value={historyBudget} disabled={busy} onChange={(event) => setHistoryBudget(Number(event.target.value))}><NativeSelectOption value={4000}>Compact · 4,000 characters</NativeSelectOption><NativeSelectOption value={8000}>Balanced · 8,000 characters</NativeSelectOption><NativeSelectOption value={12000}>Extended · 12,000 characters</NativeSelectOption></NativeSelect><FieldDescription>Compact uses less model context and includes up to 2,000 characters of enabled project memory. Your current message is additional; saved history is kept.</FieldDescription></Field>
+        <Field><FieldLabel htmlFor="local-parallel-requests">Parallel local requests</FieldLabel><NativeSelect id="local-parallel-requests" value={localConcurrency} disabled={busy} onChange={(event) => setLocalConcurrency(Number(event.target.value))}><NativeSelectOption value={1}>1 · Lower memory</NativeSelectOption><NativeSelectOption value={2}>2 requests</NativeSelectOption><NativeSelectOption value={4}>4 requests</NativeSelectOption></NativeSelect><FieldDescription>Local chats and Tributary’s built-in local agents share this limit. More simultaneous generations can use more model memory.</FieldDescription></Field>
       </div>}
     </>}
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}

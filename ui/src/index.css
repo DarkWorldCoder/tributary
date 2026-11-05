@@ -613,6 +613,18 @@
 @media (prefers-reduced-motion: reduce) { .reply-activity [data-slot="trace-title"] { animation: none; } }
 .reply-activity [data-slot="trace-title"] { max-width: 15rem; }
 
+/* The coding sidebar keeps prose and tools on the same chronological rail. */
+.sidebar-reply-timeline { position: relative; gap: 20px; padding-left: 20px; }
+.sidebar-reply-timeline::before { content: ''; position: absolute; left: 3px; top: 8px; bottom: 12px; width: 1px; background: var(--border); }
+.sidebar-timeline-item { position: relative; min-width: 0; }
+.sidebar-timeline-item::before { content: ''; position: absolute; left: -20px; top: 8px; width: 7px; height: 7px; border-radius: 50%; background: var(--muted-foreground); }
+.sidebar-timeline-item[data-status="done"]::before { background: var(--success); }
+.sidebar-timeline-item[data-status="error"]::before { background: var(--destructive); }
+.sidebar-timeline-item[data-status="running"]::before,
+.sidebar-timeline-item[data-status="pending"]::before { background: var(--brand); }
+.sidebar-timeline-item[data-status="thought"]::before { opacity: .6; }
+.sidebar-reply-timeline .prose-reply > :last-child { margin-bottom: 0; }
+
 /* Status information remains fixed while source code scrolls horizontally. */
 .workspace-file-footer { container-name: editor-status; min-height: 28px; overflow: hidden; }
 .editor-status-info { height: 26px; }
@@ -700,4 +712,23 @@
 }
 :root.dark[data-workbench-palette="ocean"]:not(.vscode):not([data-extension-theme]) .cm-activeLine {
   box-shadow: inset 2px 0 #61b8ff;
+}
+
+/* One source-control navigator, with the selected comparison alongside it. */
+.source-control-layout { display: grid; grid-template-columns: 260px minmax(0, 1fr); }
+.source-control-sidebar { background: var(--sidebar); }
+@container (max-width: 600px) {
+  .source-control-layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(220px, 42%) minmax(0, 1fr); }
+  .source-control-sidebar { border-right: 0; border-bottom: 1px solid var(--border); }
+}
+/* Reserve Send its own column; secondary controls wrap together below it. */
+.composer-toolbar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; flex-wrap: nowrap; }
+.composer-send { margin-left: auto; }
+.composer-agent-controls { justify-content: flex-end; }
+@container (max-width: 420px) {
+  .composer-toolbar { grid-template-columns: minmax(0, 1fr) auto; row-gap: 2px; }
+  .composer-toolbar .composer-primary { grid-column: 1; grid-row: 1; }
+  .composer-toolbar .composer-send { grid-column: 2; grid-row: 1; }
+  .composer-toolbar .composer-agent-controls { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; flex-wrap: wrap; }
+  .composer-toolbar .composer-agent-controls .composer-selector-label { max-width: 90px; }
 }

@@ -1,0 +1,79 @@
+{
+  "date": "2026-11-04T16:52:48.742Z",
+  "scope": "Unified source control, responsive composer, direct Open VSX appearance installs",
+  "sourceHashes": {
+    "core/extension-registry.js": "d01c6e65267ded7f2b5fea2f56a36dc6025a2c88deb0e1a396929902357808a3",
+    "core/extension-packs.js": "7e04f949f9f8280ac9680f8461d932df07488fc94fcd7d4c8f1b3b08bf08558e",
+    "core/hub.js": "49a20711fe811501b0dcf7840c7c9c212f9a1657596396e30046abb65bd367a3",
+    "desktop/main.js": "1e07d981b3681ccb0612c28bd1a14609adc18fca4b99f74a2a1af7751638dd3e",
+    "ui/src/components/extension-packs.tsx": "dd4aeab541ddb48b81a44b962f684fda2962c84be4045464157dff6a188a2e91",
+    "ui/src/components/review-panel.tsx": "3d71f168bcd39c68e9268ce879fe3cb4561e9dc1a82090a264d0b0eac3774fab",
+    "ui/src/components/workspace-changes.tsx": "750f380b8fd5c0e3df91939fdd525b70cd0dde689e4689f1f711f3246056c1fa",
+    "ui/src/components/workspace-files.tsx": "f5cdf433792be2f319fc06578dfa8f4783a2bb76c20e58dabca0a1258cc124e7",
+    "ui/src/components/composer.tsx": "cac3c0f7562ff9a2b93a07f15f1b88d2db06dd6d91bfeb4211b10663178e33c5",
+    "ui/src/index.css": "97513f05f18b6d133bee6e77a617bb4e430b8aaedf71d506b225b2d2394eda1a",
+    "test/extension-packs.test.js": "634db808e33f99b95085fb79e83db445128a5a386edabb148b5c86516822a471"
+  },
+  "checks": {
+    "typeScript": "passed on final UI source",
+    "build": "passed on final UI source",
+    "fullRegression": {
+      "passed": 469,
+      "failed": 0,
+      "log": "/tmp/tributary-ui-catalog-tests.log",
+      "note": "Before final registry search-cancellation case and unused UI list removal; final targeted and UI checks passed separately."
+    },
+    "finalRegistryRegression": {
+      "passed": 7,
+      "failed": 0
+    },
+    "diffCheck": "passed"
+  },
+  "native": {
+    "platform": "Linux Electron under Xvfb, disposable profile, no provider requests",
+    "changes": {
+      "topTab": true,
+      "explorerShortcut": true,
+      "sourceControlCount": 1,
+      "obsoleteLists": 0,
+      "diffAndCommentControls": true
+    },
+    "composer": {
+      "desktopPaneWidth": 360,
+      "wideViewport": 1920,
+      "phoneViewport": 360,
+      "horizontalOverflow": false,
+      "phoneTargetsPx": 44,
+      "wideToolbarOneRow": true
+    },
+    "appearance": {
+      "githubTheme": {
+        "id": "github.github-vscode-theme",
+        "version": "6.3.5",
+        "themes": 9,
+        "installedByUIButton": true,
+        "applied": true,
+        "persistedAcrossReload": true
+      },
+      "materialIcons": {
+        "id": "pkief.material-icon-theme",
+        "version": "5.40.0",
+        "iconPacks": 1,
+        "installedByUIButton": true,
+        "applied": true
+      }
+    },
+    "screenshots": [
+      "/tmp/tributary-changes-final.png",
+      "/tmp/tributary-extensions-browser.png",
+      "/tmp/tributary-composer-wide.png",
+      "/tmp/tributary-composer-final-mobile.png"
+    ],
+    "limitations": [
+      "No general VS Code extension-host runtime",
+      "No Windows or macOS native run",
+      "The first standalone registry fetch failed transiently; retry and native app installations succeeded"
+    ]
+  },
+  "status": "Local changes only; not committed or published"
+}

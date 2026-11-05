@@ -256,3 +256,13 @@ Local packaging: `npm ci`, `npm ci --prefix ui`, then `npm run dist:mac`,
 See [preview release notes](docs/releases/preview.md) for formats, requirements
 and the current signing limitations. These are preview builds, not notarized
 or developer-signed production installers.
+
+### Themes and file icons
+
+Open **Settings → Extensions**, search Open VSX, then select **Install**. Choose an installed **Color theme** or **File icons** from the selectors below the results. Downloads, checksum checks and installation happen inside Tributary; no manual VSIX upload is needed. **From file…** remains available for offline packages.
+
+Tributary imports compatible theme and icon contributions. Extensions that require the VS Code extension host do not run inside Tributary. Configure supported language servers and formatters in **Settings → Language tools**.
+
+### Reviewing changes
+
+**Changes** opens one source-control view: changed files and the commit box on the left, with the selected comparison beside them. The explorer's **Changes** button opens that same view. **Conversation activity** shows which agent changed each file; **Review saved changes** in the editor compares a single file.

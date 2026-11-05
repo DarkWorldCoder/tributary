@@ -1,0 +1,21 @@
+{
+  "checkedOn": "2026-11-04",
+  "platform": "linux-x64",
+  "benchmark": "proc-stream-benchmark.json",
+  "benchmarkFingerprintMatchesCurrentSource": true,
+  "executionOrder": "Final benchmark completed before the full regression suite started.",
+  "regressionTests": { "total": 406, "passed": 406, "failed": 0, "durationMs": 69223.945959 },
+  "typescript": "passed",
+  "productionUiBuild": "passed",
+  "diffWhitespace": "passed",
+  "coverage": [
+    "Complete fragmented long frames, final partial frames, CRLF and byte-fragmented UTF-8",
+    "Parser/tail disposal, including disposal from inside a frame callback",
+    "Continuously bounded newline-free diagnostics",
+    "30 local TCP readiness cycles with startup listeners removed and stderr still draining",
+    "Startup failure diagnostics and real child termination on timeout",
+    "Offline SSH exact-limit output, independent stdout/stderr byte overflow and Unicode output",
+    "Native ACP, Claude and Codex fixture approvals, cancellation and session behavior"
+  ],
+  "limits": "Synthetic framing and retained-heap measurements plus local offline integration tests. No whole-app Electron RAM, packaged-platform, real SSH deployment or model/VRAM performance claim. Protocol stdout retains a complete incomplete frame until its delimiter or stream disposal; broader queue backpressure remains open."
+}

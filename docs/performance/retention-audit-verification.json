@@ -1,0 +1,48 @@
+{
+  "checkedOn": "2026-11-04",
+  "checks": {
+    "fullRegressionTests": {
+      "passed": 465,
+      "failed": 0
+    },
+    "typescript": "passed",
+    "productionUiBuild": "passed",
+    "benchmarkSyntax": "passed",
+    "diffWhitespace": "passed"
+  },
+  "terminalBenchmark": {
+    "artifact": "docs/performance/terminal-flow-benchmark.json",
+    "realPtyCodeUnitsPerRun": 8388608,
+    "alternatingRounds": 3,
+    "outputChecksumParity": true,
+    "medianReceiverBacklogCodeUnits": {
+      "legacy": 7782399,
+      "controlled": 131072
+    },
+    "scope": "Fixed-budget stand-in consumer, no Electron IPC or xterm RAM claim; completion-time tradeoff is recorded."
+  },
+  "writerBaseline": {
+    "artifact": "docs/performance/writer-working-set-baseline.json",
+    "cases": 9,
+    "allPayloadAndPersistenceChecks": true,
+    "writer32PostGcHeapDeltaBytes": 76049264,
+    "readOnly32LoadedHistories": 0,
+    "evictionImplemented": false,
+    "scope": "Current-policy standalone Node working set; actual measured V8 heap commitment differs from live objects and PSS. Diagnostic-only SQLite shrink and idle phases, no production GC policy."
+  },
+  "previewCleanup": {
+    "sourceReviewed": "Closed tab revision key is removed; pending-start target is cleared when that tab closes; open page rendering/history behavior is untouched.",
+    "nativeMeasurement": "No new native preview-retention measurement in this pass."
+  },
+  "sourceSha256": {
+    "core/store.js": "6bc99bf09ae6f98682d4ab259aae48f955a064fc3317ab6e2467e9e968670316",
+    "core/hub.js": "0b60932c3b75fdcf69c4839fb4580046c2386adeabb382835f152485ed8c0941",
+    "core/manager.js": "a3de12dbfce2c667c355ce48023acf634d54c7f455c89cab052649a3acb96c3d",
+    "core/message-patch.js": "848b65e36b9722e3c1ad7b7076af6e5ee5261e85748396f8a3f486adb4827076",
+    "ui/src/components/project-preview.tsx": "af1ff5e1cccd03c34877fed2db7aa7b86045143573343685677dc409aa9089d8",
+    "scripts/performance/terminal-flow.cjs": "d294c63a9976fbe770a91c7bc346b5209f0aa7eff013fc6c9a4f01c7db7dd3aa",
+    "scripts/performance/writer-working-set.cjs": "47fb4ec8f7410e6de92d80efb58a787016c7667b30a34df18e763d8ee2647fdf",
+    "package.json": "3bcbe1a099cc86d53a227f8ce942fc1db84cdf31e3c01d65abbb1fb7be3dc439"
+  },
+  "remaining": "Implement and verify balanced writer-operation ownership before any history eviction. Continue native main-process, terminal GPU/scrollback, preview iframe, local runtime and packaged/cross-platform measurements."
+}

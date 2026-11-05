@@ -67,7 +67,7 @@ function watchActivity(hub, ms = 250) {
   let timer = null; let last = '[]';
   const flush = () => {
     timer = null;
-    const now = activityOf(hub); const key = JSON.stringify(now);
+    const now = hub.withHistoryOperation ? hub.withHistoryOperation(() => activityOf(hub)) : activityOf(hub); const key = JSON.stringify(now);
     if (key !== last) { last = key; hub.emit('activity', now); }
   };
   const poke = () => { if (!timer) timer = setTimeout(flush, ms); };

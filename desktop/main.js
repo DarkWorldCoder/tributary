@@ -4,7 +4,6 @@ const { app, BrowserWindow, ipcMain, dialog, shell, safeStorage, Menu, nativeIma
 const fs = require('fs');
 const path = require('path');
 const { Hub } = require('../core');
-const { createPatcher } = require('../core/message-patch');
 const { inside } = require('../core/acp');
 const { TerminalManager } = require('../core/terminal');
 const { PreviewServers } = require('../core/preview-server');
@@ -28,22 +27,10 @@ const getLanHost = () => lanHost ||= require('../server/lan-host').createLanHost
 
 function send(name, data) { if (win && !win.isDestroyed()) win.webContents.send('hub-event', name, data); }
 
-// Streaming updates send only what changed (core/message-patch.js).
-const patcher = createPatcher();
-
+// Streaming delivery owns histories while its coalescing timer is pending.
+let disposeMessages;
 function wireEvents() {
-  const pending = new Map();
-  // Streaming events update a message many times a second; coalesce to ~12 updates/s per message.
-  hub.on('event', ({ threadId, message }) => {
-    if (pending.has(message.id)) return;
-    pending.set(message.id, setTimeout(() => {
-      pending.delete(message.id);
-      // Only what changed since the window's last update; the whole message the first time it sees it.
-      const patch = patcher.patch(message);
-      if (!patch) { patcher.full(message); send('message', { threadId, message }); } else if (Object.keys(patch).length) send('message-patch', { threadId, id: message.id, patch });
-    }, 80));
-  });
-  hub.on('message', (d) => { const t = pending.get(d.message.id); if (t) { clearTimeout(t); pending.delete(d.message.id); } patcher.full(d.message); send('message', d); });
+  disposeMessages = require('../core/message-delivery').bindMessageDelivery(hub, send);
   for (const n of ['state', 'threads', 'running', 'notification', 'collaboration', 'language-diagnostics', 'files-changed', 'debugger']) hub.on(n, (d) => send(n, d));
   hub.on('activity', (d) => send('activity', d)); // the live view
   // System notification when something finishes while the window is in the background.
@@ -63,7 +50,7 @@ const previewServers = new PreviewServers();
 previewServers.on('state', (state) => send('preview-server', state));
 let stoppingPreviews = false;
 app.on('before-quit', (event) => {
-  if (!stoppingPreviews && [...previewServers.jobs.values()].some((job) => job.child)) {
+  if (!stoppingPreviews && (previewServers.pending.size || [...previewServers.jobs.values()].some((job) => job.child))) {
     event.preventDefault(); stoppingPreviews = true;
     void previewServers.stopAll().finally(() => app.quit());
   }
@@ -117,6 +104,8 @@ const API = {
   collaborationCommand: (action, input, commandId) => hub.collaborationCommand(action, input, commandId),
   state: () => ({ ...hub.state(), credentialStorage: storageKind(safeStorage) }),
   extensionPacks: () => hub.listExtensionPacks(),
+  searchExtensionPacks: (query) => hub.searchExtensionPacks(query),
+  installExtensionPack: (id) => hub.installExtensionPack(id),
   extensionAppearance: (theme, icons) => hub.extensionAppearance(theme, icons),
   removeExtensionPack: (id) => hub.removeExtensionPack(id),
   async importExtensionPack() { const result = await dialog.showOpenDialog(win, { title: 'Import theme or file-icon pack', filters: [{ name: 'VS Code extension', extensions: ['vsix'] }], properties: ['openFile'] }); if (result.canceled || !result.filePaths[0]) return null; return hub.importExtensionPack(result.filePaths[0]); },
@@ -148,7 +137,7 @@ const API = {
   },
   rescan: () => hub.rescan(),
   threads: (p) => hub.threads(p),
-  thread: (id) => hub.thread(id),
+  thread: (id) => hub.readThread(id),
   createThread: (p) => hub.createThread(p),
   renameThread: (id, t) => hub.renameThread(id, t),
   deleteThread: (id) => hub.deleteThread(id),
@@ -220,11 +209,12 @@ const API = {
   runProjectCheck: (p, id) => hub.runProjectCheck(p, id),
   languageToolCatalog: () => hub.languageToolCatalog(),
   configureLanguageTools: (input) => hub.configureLanguageTools(input),
-  languageDocument: (p, rel, text) => hub.languageDocument(p, rel, text),
-  languageComplete: (p, rel, text, position) => hub.languageComplete(p, rel, text, position),
-  languageFormat: (p, rel, text, options) => hub.languageFormat(p, rel, text, options),
-  languageLocations: (p, rel, text, position, kind) => hub.languageLocations(p, rel, text, position, kind),
-  languageClose: (p, rel) => hub.languageClose(p, rel),
+  languageAcquire: (p, rel) => hub.languageAcquire(p, rel),
+  languageDocument: (p, rel, text, owner) => hub.languageDocument(p, rel, text, owner),
+  languageComplete: (p, rel, text, position, owner) => hub.languageComplete(p, rel, text, position, owner),
+  languageFormat: (p, rel, text, options, owner) => hub.languageFormat(p, rel, text, options, owner),
+  languageLocations: (p, rel, text, position, kind, owner) => hub.languageLocations(p, rel, text, position, kind, owner),
+  languageClose: (p, rel, owner) => hub.languageClose(p, rel, owner),
   formatSource: (p, rel, text, automatic) => hub.formatSource(p, rel, text, automatic),
   previewFormat: (p, exclude) => hub.previewFormat(p, exclude),
   formatDiff: (p, token, rel) => hub.formatDiff(p, token, rel),
@@ -242,6 +232,8 @@ const API = {
   addAttachments: (files) => hub.addAttachments(files),
   readAttachment: (id) => hub.readAttachment(id),
   readFile: (p, rel) => hub.readFile(p, rel),
+  createEntry: (p, rel, kind) => hub.createEntry(p, rel, kind),
+  findFiles: (p, query, options) => hub.findFiles(p, query, options),
   readDirectory: (p, rel, options) => hub.readDirectory(p, rel, options),
   writeFile: (p, rel, content, mtime) => hub.writeFile(p, rel, content, mtime),
   // Unsaved text kept across a crash or restart
@@ -314,9 +306,9 @@ const API = {
   removeRegistryAgent: (id) => hub.removeRegistryAgent(id),
   // Editors and terminals
   previewServerState: (p) => previewServers.state(knownProject(p)),
-  async startPreviewServer(p) { const root = knownProject(p); return previewServers.launch(root, { ...await hub.teamEnvFor(root), ...hub.workspaceEnvFor(root) }); },
+  startPreviewServer(p) { const root = knownProject(p); return previewServers.launch(root, async () => ({ ...await hub.teamEnvFor(root), ...hub.workspaceEnvFor(root) })); },
   stopPreviewServer: (p) => previewServers.stop(knownProject(p)),
-  async restartPreviewServer(p) { const root = knownProject(p); return previewServers.restart(root, { ...await hub.teamEnvFor(root), ...hub.workspaceEnvFor(root) }); },
+  restartPreviewServer(p) { const root = knownProject(p); return previewServers.restart(root, async () => ({ ...await hub.teamEnvFor(root), ...hub.workspaceEnvFor(root) })); },
   editors: () => (editors = detectEditors()).map(({ id, name }) => ({ id, name })),
   openInEditor(editorId, p, rel, line) {
     const e = (editors.length ? editors : (editors = detectEditors())).find((x) => x.id === editorId); if (!e) throw new Error('Editor not found');
@@ -324,9 +316,9 @@ const API = {
     if (!inside(p, target)) throw new Error('Path outside project');
     openInEditor(e, { path: target, line }); return true;
   },
-  async createTerminal({ cwd, cols, rows, command } = {}) {
+  async createTerminal({ cwd, project, cols, rows, command } = {}) {
     const dir = cwd && hub.project(cwd) ? cwd : (cwd && fs.existsSync(cwd) ? cwd : app.getPath('home'));
-    const id = terminals.create({ cwd: dir, cols, rows, env: { ...await hub.teamEnvFor(dir), ...hub.workspaceEnvFor(dir) } }); // team secrets, a copy's own ports
+    const id = await terminals.createPrepared({ cwd: dir, project, cols, rows, flowControl: true }, async () => ({ ...await hub.teamEnvFor(dir), ...hub.workspaceEnvFor(dir) })); // team secrets, a copy's own ports
     // Type the command once the shell has printed its prompt (or after 2 s), not after a fixed guess.
     if (command) {
       let sent = false; let timer = null;
@@ -339,12 +331,16 @@ const API = {
   termWrite: (id, data) => terminals.write(id, data),
   termResize: (id, cols, rows) => terminals.resize(id, cols, rows),
   termKill: (id) => terminals.kill(id),
+  termList: () => terminals.list(),
+  termAttach: (id, owner) => terminals.attach(id, owner),
+  termDetach: (id, owner) => terminals.detach(id, owner),
+  termAck: (id, owner, seq) => terminals.acknowledge(id, owner, seq),
 };
 
 ipcMain.handle('hub', async (e, method, args) => {
   if (!win || e.sender !== win.webContents) throw new Error('Unknown sender');
   if (!Object.prototype.hasOwnProperty.call(API, method)) throw new Error(`Unknown method ${method}`);
-  return API[method](...(Array.isArray(args) ? args : []));
+  return hub.withHistoryOperation(() => API[method](...(Array.isArray(args) ? args : [])));
 });
 
 function createWindow() {
@@ -357,6 +353,10 @@ function createWindow() {
   for (const event of ['maximize', 'unmaximize', 'enter-full-screen', 'leave-full-screen']) win.on(event, () => send('window-state', { maximized: win.isMaximized(), fullscreen: win.isFullScreen(), platform: process.platform }));
   win.webContents.setWindowOpenHandler(({ url }) => { if (/^https?:\/\//.test(url)) shell.openExternal(url); return { action: 'deny' }; });
   win.webContents.on('will-navigate', (ev) => ev.preventDefault());
+  // A replaced/crashed renderer cannot release its pane leases itself. The
+  // desktop's single application renderer owns all of this host's LSP leases.
+  win.webContents.on('did-start-navigation', (details) => { if (details.isMainFrame && !details.isSameDocument) { hub?._languageTools?.stopAll(); terminals.detachAll(); } });
+  for (const event of ['render-process-gone', 'destroyed']) win.webContents.on(event, () => { hub?._languageTools?.stopAll(); terminals.detachAll(); });
   // Smoke runs stay hidden so they never take keyboard focus from whatever you are typing in.
   win.once('ready-to-show', () => { if (!SMOKE) win.show(); });
   win.loadFile(path.join(__dirname, '..', 'ui', 'dist', 'index.html'));
@@ -365,7 +365,7 @@ function createWindow() {
 app.whenReady().then(async () => {
   Menu.setApplicationMenu(process.platform === 'darwin' ? Menu.buildFromTemplate([{ role: 'appMenu', submenu: [{ role: 'about' }, { label: 'Check for Updates…', click: () => send('show-updates') }, { type: 'separator' }, { role: 'services' }, { type: 'separator' }, { role: 'hide' }, { role: 'hideOthers' }, { role: 'unhide' }, { type: 'separator' }, { role: 'quit' }] }, { role: 'editMenu' }, { role: 'viewMenu' }, { role: 'windowMenu' }]) : null);
   const dataDir = app.getPath('userData');
-  hub = new Hub({ dataDir, secrets: new DesktopSecrets(path.join(dataDir, 'secrets.json'), safeStorage), approvals: true });
+  hub = new Hub({ dataDir, secrets: new DesktopSecrets(path.join(dataDir, 'secrets.json'), safeStorage), approvals: true, historyCache: true });
   updates = new (require('./updates').AppUpdates)({ app, secrets: hub.secrets, fetch: net.fetch.bind(net), shell,
     beforeInstall: () => {
       if (hub.running.size || [...hub.projectChecks.jobs.values()].some((job) => job.child) || [...(hub.debugger?.sessions?.values() || [])].some((session) => ['starting', 'running', 'paused'].includes(session.status)) || [...previewServers.jobs.values()].some((job) => job.child)) throw new Error('Stop agents, checks, debugging and preview servers before opening the installer.');
@@ -490,5 +490,5 @@ app.on('before-quit', (event) => {
   event.preventDefault();
   lanHost.stop().catch((e) => console.error(`Could not stop hosting: ${e.message}`)).finally(() => { stoppedHostingForQuit = true; app.quit(); });
 });
-app.on('will-quit', () => { updates?.dispose(); hub?._qaResults?.stopAll(); hub?._languageTools?.stopAll(); hub?.debugger?.stopAll(); hub?.projectChecks.stopAll(); try { hub?.store.close(); } catch (e) { console.error(`Could not save on quit: ${e.message}`); } });
+app.on('will-quit', () => { disposeMessages?.(); updates?.dispose(); hub?._qaResults?.stopAll(); hub?._languageTools?.stopAll(); hub?.debugger?.stopAll(); hub?.projectChecks.stopAll(); try { hub?.store.close(); } catch (e) { console.error(`Could not save on quit: ${e.message}`); } });
 app.on('window-all-closed', () => { if (hub) { hub._qaResults?.stopAll(); hub._languageTools?.stopAll(); hub.debugger?.stopAll(); hub.projectChecks.stopAll(); for (const id of hub.running.keys()) hub.stop(id); hub.collaborationClient?.disconnect(); hub.fileWatches.close(); } previewServers.stopAll(); terminals.killAll(); if (process.platform !== 'darwin' || SMOKE) app.quit(); });

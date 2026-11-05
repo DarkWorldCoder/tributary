@@ -12,6 +12,25 @@ const { createPatcher } = require('../core/message-patch');
 const { parseNumstat } = require('../core/change-stats');
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
+test('activity timings measure observed thinking and keep a tool at its original timestamp', () => {
+  const { recordReplyActivity } = require('../core/reply-trace');
+  const message = { text: '', tools: [], thinking: '', trace: [] };
+  recordReplyActivity(message, { kind: 'thinking', text: 'First' }, 1000);
+  recordReplyActivity(message, { kind: 'thinking', text: ' more' }, 2000);
+  recordReplyActivity(message, { kind: 'text', text: 'Reply' }, 2500);
+  assert.equal(message.trace.length, 1);
+  assert.equal(message.trace[0].ts, 1000);
+  assert.equal(message.trace[0].endedAt, 2500);
+  recordReplyActivity(message, { kind: 'tool', id: 'one' }, 3000);
+  message.tools.push({ id: 'one' });
+  recordReplyActivity(message, { kind: 'tool', id: 'one', status: 'done' }, 4000);
+  assert.equal(message.trace.length, 2);
+  assert.equal(message.trace[1].ts, 3000);
+  recordReplyActivity(message, { kind: 'thinking', text: 'Again' }, 5000);
+  recordReplyActivity(message, { kind: 'done' }, 6000);
+  assert.equal(message.trace[2].endedAt, 6000);
+});
+
 function fixture(t) {
   const root = mkdtemp('reply-position');
   const hub = new Hub({ dataDir: mkdtemp('reply-store'), home: root, secrets: new MemorySecrets() });

@@ -8,9 +8,9 @@ const { execFile } = require('child_process');
 
 const DIST = path.join(__dirname, 'dist');
 const { Hub } = require(path.join(DIST, 'core'));
-const { createPatcher } = require(path.join(DIST, 'core', 'message-patch'));
+const { bindMessageDelivery } = require(path.join(DIST, 'core', 'message-delivery'));
 // Streaming updates send only what changed (core/message-patch.js).
-const patcher = createPatcher();
+let disposeMessages;
 const { inside } = require(path.join(DIST, 'core', 'acp'));
 
 let hub = null;
@@ -24,7 +24,7 @@ class Secrets {
   async delete(k) { await this.store.delete(`tributary:${k}`); }
 }
 
-function post(name, data) { for (const w of webviews) w.postMessage({ type: 'event', name, data }); }
+function post(name, data) { return Promise.allSettled([...webviews].map((w) => w.postMessage({ type: 'event', name, data }))); }
 
 function syncWorkspaceProjects() {
   for (const f of vscode.workspace.workspaceFolders || []) { try { hub.addProject(f.uri.fsPath); } catch { /* not a folder */ } }
@@ -64,7 +64,7 @@ const API = {
   },
   rescan: () => hub.rescan(),
   threads: (p) => hub.threads(p),
-  thread: (id) => hub.thread(id),
+  thread: (id) => hub.readThread(id),
   createThread: (p) => hub.createThread(p),
   renameThread: (id, t) => hub.renameThread(id, t),
   deleteThread: (id) => hub.deleteThread(id),
@@ -111,11 +111,12 @@ const API = {
   runProjectCheck: (p, id) => hub.runProjectCheck(p, id),
   languageToolCatalog: () => hub.languageToolCatalog(),
   configureLanguageTools: (input) => hub.configureLanguageTools(input),
-  languageDocument: (p, rel, text) => hub.languageDocument(p, rel, text),
-  languageComplete: (p, rel, text, position) => hub.languageComplete(p, rel, text, position),
-  languageFormat: (p, rel, text, options) => hub.languageFormat(p, rel, text, options),
-  languageLocations: (p, rel, text, position, kind) => hub.languageLocations(p, rel, text, position, kind),
-  languageClose: (p, rel) => hub.languageClose(p, rel),
+  languageAcquire: (p, rel) => hub.languageAcquire(p, rel),
+  languageDocument: (p, rel, text, owner) => hub.languageDocument(p, rel, text, owner),
+  languageComplete: (p, rel, text, position, owner) => hub.languageComplete(p, rel, text, position, owner),
+  languageFormat: (p, rel, text, options, owner) => hub.languageFormat(p, rel, text, options, owner),
+  languageLocations: (p, rel, text, position, kind, owner) => hub.languageLocations(p, rel, text, position, kind, owner),
+  languageClose: (p, rel, owner) => hub.languageClose(p, rel, owner),
   formatSource: (p, rel, text, automatic) => hub.formatSource(p, rel, text, automatic),
   previewFormat: (p, exclude) => hub.previewFormat(p, exclude),
   formatDiff: (p, token, rel) => hub.formatDiff(p, token, rel),
@@ -133,6 +134,8 @@ const API = {
   addAttachments: (files) => hub.addAttachments(files),
   readAttachment: (id) => hub.readAttachment(id),
   readFile: (p, rel) => hub.readFile(p, rel),
+  createEntry: (p, rel, kind) => hub.createEntry(p, rel, kind),
+  findFiles: (p, query, options) => hub.findFiles(p, query, options),
   readDirectory: (p, rel, options) => hub.readDirectory(p, rel, options),
   writeFile: (p, rel, c, m) => hub.writeFile(p, rel, c, m),
   draft: (key) => hub.draft(key), saveDraft: (key, data) => hub.saveDraft(key, data), compareDraft: (p, rel, text) => hub.compareDraft(p, rel, text),
@@ -213,21 +216,25 @@ function html(webview, extUri) {
 }
 
 function attach(webview, extUri) {
-  const fileWatches = new Set(); let disposed = false;
+  const fileWatches = new Set(); const languageOwners = new Set(); let disposed = false;
   webview.options = { enableScripts: true, localResourceRoots: [vscode.Uri.joinPath(extUri, 'dist')] };
   webview.html = html(webview, extUri);
   webviews.add(webview);
   webview.onDidReceiveMessage(async (msg) => {
-    if (!msg || msg.type !== 'call') return;
+    if (disposed || !msg || msg.type !== 'call') return;
     try {
+      await hub.withHistoryOperation(async () => {
       if (!Object.prototype.hasOwnProperty.call(API, msg.method)) throw new Error(`Unknown method ${msg.method}`);
       const result = await API[msg.method](...(msg.args || []));
       if (msg.method === 'watchFiles') { if (disposed) hub.unwatchFiles(result); else fileWatches.add(result); }
       if (msg.method === 'unwatchFiles') fileWatches.delete(msg.args?.[0]);
-      webview.postMessage({ type: 'result', id: msg.id, result: result === undefined ? null : result });
+      if (msg.method === 'languageAcquire') { if (disposed) hub._languageTools?.release(result); else languageOwners.add(result); }
+      if (msg.method === 'languageClose') languageOwners.delete(msg.args?.[2]);
+      await webview.postMessage({ type: 'result', id: msg.id, result: result === undefined ? null : result });
+      });
     } catch (e) { webview.postMessage({ type: 'result', id: msg.id, error: e.message || String(e) }); }
   });
-  return () => { disposed = true; webviews.delete(webview); for (const id of fileWatches) hub.unwatchFiles(id); fileWatches.clear(); };
+  return () => { disposed = true; webviews.delete(webview); for (const id of fileWatches) hub.unwatchFiles(id); fileWatches.clear(); for (const owner of languageOwners) hub._languageTools?.release(owner); languageOwners.clear(); };
 }
 
 class ChatView {
@@ -244,22 +251,12 @@ function currentProject() {
 async function activate(context) {
   const dataDir = context.globalStorageUri.fsPath;
   fs.mkdirSync(dataDir, { recursive: true });
-  hub = new Hub({ dataDir, secrets: new Secrets(context.secrets), approvals: true });
+  hub = new Hub({ dataDir, secrets: new Secrets(context.secrets), approvals: true, historyCache: true });
   hub.init().catch((e) => vscode.window.showWarningMessage(`Tributary could not finish finding agents: ${e.message}`));
   syncWorkspaceProjects();
 
   // Stream updates to the UI, coalesced so long replies do not flood the webview.
-  const pending = new Map();
-  hub.on('event', ({ threadId, message }) => {
-    if (pending.has(message.id)) return;
-    pending.set(message.id, setTimeout(() => {
-      pending.delete(message.id);
-      // Only what changed since the window's last update; the whole message the first time it sees it.
-      const patch = patcher.patch(message);
-      if (!patch) { patcher.full(message); post('message', { threadId, message }); } else if (Object.keys(patch).length) post('message-patch', { threadId, id: message.id, patch });
-    }, 80));
-  });
-  hub.on('message', (d) => { const t = pending.get(d.message.id); if (t) { clearTimeout(t); pending.delete(d.message.id); } patcher.full(d.message); post('message', d); });
+  disposeMessages = bindMessageDelivery(hub, post);
   for (const n of ['state', 'threads', 'running', 'notification', 'collaboration', 'language-diagnostics', 'files-changed', 'debugger']) hub.on(n, (d) => post(n, d));
   hub.on('activity', (d) => post('activity', d)); // the live view
 
@@ -318,6 +315,6 @@ async function activate(context) {
   );
 }
 
-function deactivate() { if (hub) { hub._qaResults?.stopAll(); hub._languageTools?.stopAll(); hub.debugger?.stopAll(); hub.projectChecks.stopAll(); for (const id of hub.running.keys()) hub.stop(id); hub.collaborationClient?.disconnect(); hub.fileWatches.close(); try { hub.store.close(); } catch {} } }
+function deactivate() { disposeMessages?.(); if (hub) { hub._qaResults?.stopAll(); hub._languageTools?.stopAll(); hub.debugger?.stopAll(); hub.projectChecks.stopAll(); for (const id of hub.running.keys()) hub.stop(id); hub.collaborationClient?.disconnect(); hub.fileWatches.close(); try { hub.store.close(); } catch {} } }
 
 module.exports = { activate, deactivate };

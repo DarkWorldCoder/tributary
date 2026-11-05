@@ -64,3 +64,32 @@ test('image reads keep complete bounded payloads separate from text and binary f
   fs.writeFileSync(path.join(root, 'vector.svg'), '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30"/>');
   const vector = await hub.readFile(root, 'vector.svg'); assert.equal(vector.binary, false); assert.match(vector.content, /<svg/);
 });
+
+test('explorer creates files and folders without overwrites or symlink escapes', async (t) => {
+  const base = mkTmp('create-entry'); const root = path.join(base, 'project'); const outside = path.join(base, 'outside'); fs.mkdirSync(root); fs.mkdirSync(outside);
+  const hub = new Hub({ dataDir: path.join(base, 'data'), secrets: new MemorySecrets() }); hub.addProject(root);
+  t.after(() => { hub.store.close(); fs.rmSync(base, { recursive: true, force: true }); });
+  assert.deepEqual(await hub.createEntry(root, 'src', 'folder'), { rel: 'src', kind: 'folder' });
+  assert.equal((await hub.createEntry(root, 'src/.env', 'file')).rel, 'src/.env');
+  fs.writeFileSync(path.join(root, 'src/.env'), 'PRIVATE=value');
+  await assert.rejects(hub.createEntry(root, 'src/.env', 'file'), /EEXIST/);
+  assert.equal(fs.readFileSync(path.join(root, 'src/.env'), 'utf8'), 'PRIVATE=value');
+  await assert.rejects(hub.createEntry(root, 'src', 'folder'), /EEXIST/);
+  for (const name of ['../escape', '.git/config', '', 'src/../escape']) await assert.rejects(hub.createEntry(root, name, 'file'));
+  await assert.rejects(hub.createEntry(outside, 'file', 'file'), /Unknown project/);
+  fs.symlinkSync(outside, path.join(root, 'escape'), 'dir');
+  await assert.rejects(hub.createEntry(root, 'escape/new', 'file'), /outside project/i);
+  await assert.rejects(hub.createEntry(root, 'escape/new', 'folder'), /outside project/i);
+  assert.deepEqual(fs.readdirSync(outside), []);
+});
+
+test('project file search finds ignored env files without reading contents or following links', async (t) => {
+  const root = mkTmp('search-files'); t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const { findFiles } = require('../core/files');
+  fs.writeFileSync(path.join(root, '.env'), 'PRIVATE=value'); fs.mkdirSync(path.join(root, '.config')); fs.writeFileSync(path.join(root, '.config/env.json'), '{}');
+  fs.mkdirSync(path.join(root, 'node_modules')); fs.writeFileSync(path.join(root, 'node_modules/env.js'), '');
+  fs.symlinkSync(root, path.join(root, 'loop'), 'dir');
+  assert.deepEqual(await findFiles(root, 'env'), ['.config/env.json', '.env']);
+  assert.deepEqual(await findFiles(root, 'env', { showHidden: false }), []);
+  assert.deepEqual(await findFiles(root, ''), []);
+});

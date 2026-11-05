@@ -12,12 +12,13 @@ import { toast } from 'sonner';
 type Location = { rel: string; line: number; column: number };
 type Navigation = 'definition' | 'typeDefinition' | 'implementation' | 'references';
 
-export function EditorContextMenu({ children, editor, project, path, format, canFormat, hasServer, wrap, toggleWrap }: {
+export function EditorContextMenu({ children, editor, project, path, languageOwner, format, canFormat, hasServer, wrap, toggleWrap }: {
   children: React.ReactElement; editor: React.RefObject<EditorView | null>; project: string | null;
-  path: string; format: () => void; canFormat: boolean; hasServer: boolean; wrap: boolean; toggleWrap?: () => void;
+  path: string; languageOwner: string | null; format: () => void; canFormat: boolean; hasServer: boolean; wrap: boolean; toggleWrap?: () => void;
 }) {
   const s = useStore(); const { platform } = useShortcutPreferences();
   const currentProject = React.useRef(s.workdir); currentProject.current = s.workdir;
+  const currentOwner = React.useRef(languageOwner); currentOwner.current = languageOwner;
   const returnFocus = React.useRef(true); const alive = React.useRef(true);
   React.useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   const [state, setState] = React.useState({ selection: false, undo: false, redo: false, readOnly: false });
@@ -54,18 +55,18 @@ export function EditorContextMenu({ children, editor, project, path, format, can
     } catch (error) { toast.error((error as Error).message || 'Clipboard unavailable. Use the keyboard shortcut.'); }
   };
   const navigate = async (kind: Navigation, title: string) => {
-    const view = editor.current; if (!view || !project || busy) return;
+    const view = editor.current; if (!view || !project || !languageOwner || busy) return;
     const doc = view.state.doc; const head = view.state.selection.main.head; const row = doc.lineAt(head);
     returnFocus.current = false; setBusy(true);
     try {
-      const result = await s.hub.call<{ supported: boolean; locations: Location[]; omitted: number }>('languageLocations', project, path, doc.toString(), { line: row.number - 1, character: head - row.from }, kind);
-      if (!alive.current || editor.current !== view || currentProject.current !== project) return;
+      const result = await s.hub.call<{ supported: boolean; locations: Location[]; omitted: number }>('languageLocations', project, path, doc.toString(), { line: row.number - 1, character: head - row.from }, kind, languageOwner);
+      if (!alive.current || currentOwner.current !== languageOwner || editor.current !== view || currentProject.current !== project) return;
       if (view.state.doc !== doc) { toast.message('Document changed. Try navigation again.'); return; }
       if (!result.supported) { toast.message('This language server does not support this action.'); return; }
       if (result.locations.length === 1 && kind !== 'references') s.editFile(result.locations[0].rel, result.locations[0].line, result.locations[0].column, project || undefined);
       else if (result.locations.length) setLocations({ title, items: result.locations, omitted: result.omitted });
       else toast.message(result.omitted ? 'Locations outside this project were omitted.' : 'No locations found.');
-    } catch (error) { if (alive.current) toast.error((error as Error).message.replace(/^Error invoking remote method '[^']*': (Error: )?/, '')); }
+    } catch (error) { if (alive.current && currentOwner.current === languageOwner) toast.error((error as Error).message.replace(/^Error invoking remote method '[^']*': (Error: )?/, '')); }
     finally { if (alive.current) setBusy(false); }
   };
   const command = (fn: (view: EditorView) => unknown) => { returnFocus.current = false; requestAnimationFrame(() => { const view = editor.current; if (view) { view.focus(); fn(view); } }); };
@@ -80,10 +81,10 @@ export function EditorContextMenu({ children, editor, project, path, format, can
         }
       }}>{children}</ContextMenuTrigger>
       <ContextMenuContent aria-label="Editor context menu" collisionPadding={8} style={{ minWidth: 0, maxWidth: 'min(calc(100vw - 16px), var(--radix-context-menu-content-available-width, 288px))' }} className="w-72 max-w-[calc(100vw-16px)] rounded-md border [&_[role=menuitem]]:min-h-7 [&_[role=menuitem]]:gap-5 [&_[role=menuitem]]:px-2.5 [&_[role=menuitem]]:text-[13px] max-sm:[&_[role=menuitem]]:min-h-11" onCloseAutoFocus={(event) => { event.preventDefault(); if (returnFocus.current) editor.current?.focus(); }}>
-        {item('Go to definition', () => void navigate('definition', 'Definitions'), ['F12'], !hasServer || busy)}
-        {item('Go to type definition', () => void navigate('typeDefinition', 'Type definitions'), undefined, !hasServer || busy)}
-        {item('Go to implementation', () => void navigate('implementation', 'Implementations'), undefined, !hasServer || busy)}
-        {item('Find references', () => void navigate('references', 'References'), undefined, !hasServer || busy)}
+        {item('Go to definition', () => void navigate('definition', 'Definitions'), ['F12'], !hasServer || !languageOwner || busy)}
+        {item('Go to type definition', () => void navigate('typeDefinition', 'Type definitions'), undefined, !hasServer || !languageOwner || busy)}
+        {item('Go to implementation', () => void navigate('implementation', 'Implementations'), undefined, !hasServer || !languageOwner || busy)}
+        {item('Find references', () => void navigate('references', 'References'), undefined, !hasServer || !languageOwner || busy)}
         {!hasServer && item('Set up language tools…', () => { returnFocus.current = false; s.openSettings('language-tools'); })}
         <ContextMenuSeparator />
         {item('Format document', format, ['Shift', 'Alt', 'F'], !canFormat || state.readOnly)}

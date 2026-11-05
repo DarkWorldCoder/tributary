@@ -1,0 +1,25 @@
+{
+  "checkedOn": "2026-11-04",
+  "platform": "linux-x64",
+  "application": "Source-run Electron 44.7.2 with production UI, isolated user-data directory and project on an Xvfb virtual display",
+  "instrumentation": "Temporary external launcher wrapped Hub.readThread only to log loaded-history and message-fingerprint counts. No diagnostic endpoint was added to production code.",
+  "checks": [
+    {
+      "name": "Real desktop transport does not retain read-only chat bodies",
+      "result": "passed",
+      "observed": "Called the desktop thread and markThreadSeen RPCs for 12 disposable chats over three cycles. All 36 reads preserved the saved reply. Including startup, the first 37 instrumented reads covered all 12 chats and observed a maximum of 0 loaded writer histories and 0 message fingerprints. Measurements precede creating saved documents, which legitimately uses a writer history."
+    },
+    {
+      "name": "Dirty document stays pinned across a different chat and document",
+      "result": "passed",
+      "observed": "Entered 'Keep this unsaved draft while opening another document.' in chat 0's document. Switched to chat 1 through search, opened and closed its saved document, switched back to chat 0 and reopened its document. The original unsaved text was unchanged, then saved as Version 2."
+    },
+    {
+      "name": "Closing a clean document releases stale panel state",
+      "result": "passed",
+      "observed": "Closed the clean Version 2 document, updated its saved content through the native host API to Version 3, then reopened it through Save as document. The panel displayed 'A newer saved version from the host.' instead of the cached Version 2 text."
+    }
+  ],
+  "relatedChecks": { "regressionTests": { "total": 394, "passed": 394, "failed": 0 }, "typescript": "passed", "productionUiBuild": "passed", "diffWhitespace": "passed" },
+  "limits": "Functional native transport and UI checks, not whole-app RSS, renderer heap retention, packaged installer, Windows/macOS or model/VRAM measurements. Read-only tests did not run coding agents; saved-document creation intentionally loads the source chat for writing."
+}

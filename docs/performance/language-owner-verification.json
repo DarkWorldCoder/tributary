@@ -1,0 +1,442 @@
+{
+  "checkedOn": "2026-11-04",
+  "application": "Source-run Electron 44.7.2 with production UI on Linux/Xvfb; disposable profiles and two project folders",
+  "sourceSha256": {
+    "core/language-tools.js": "63bd9b6ecc5de83fbb16a7e1f350009c4a882ae463ba380cb2cd9c238311db3c",
+    "core/hub.js": "0b60932c3b75fdcf69c4839fb4580046c2386adeabb382835f152485ed8c0941",
+    "desktop/main.js": "93b18378028b342f23820f66827969cab0bde2c75f22fbf87531786bb25d9d5a",
+    "vscode/extension.js": "b4266d7984c135a9805faf1f18e8ac6f9efdceb69c07ec0694274545ba9e99ce",
+    "ui/src/hooks/use-language-owner.ts": "ac4445bed06f02b96ecec4cdc766deb53a0d5d21bbd43eb8d4f40e43eb77ed8f",
+    "ui/src/components/code-editor.tsx": "1d45d17cd4706f4f4a1381fbe8597fd43573aefaee47260c9c9609d26d55f622",
+    "ui/src/components/editor-context-menu.tsx": "70855d2a48771b73f448824acf1b17805ad9439b0eaa1e274457b7d465d964bf",
+    "ui/src/components/workspace-files.tsx": "090d8720b62482e8ce1b171892da2d01570368666b22535da44fb126705d2c47",
+    "ui/src/lib/language-tools.ts": "4b143686b059ed363398ea5023cca00956df20b6c405416ce8cc8f3196a38f8b",
+    "test/language-tools.test.js": "617e018b2b28f21be547a35f05fd7d7d74e691281b16eecb3be1f275bf8b445a",
+    "test/vscode.test.js": "b55f8ea315d7bc4a5cf6639b166cd2d4359a402c2e9f6496a6a4f60eb829ee63",
+    "test/fake-language-server.cjs": "65fa711c61f35732c577a26a7397cda96f3a49ec0664032c7d54bb7725294acb"
+  },
+  "checks": {
+    "sharedDocument": "Two owners share one LSP document; releasing the first keeps the second alive. Released tokens cannot reopen. Integration test covers incorrect path/token pairing.",
+    "startup": "Closing during initialization cannot close a newer owner or another initializing document. stopAll invalidates old requests before a replacement session starts.",
+    "pendingWork": "A real delayed LSP formatting request keeps its document and server alive after its pane lease releases; cleanup follows response settlement and the source file is unchanged.",
+    "boundedMetadata": "1000 acquire/release and unknown-close cycles plus 30 disabled opens leave zero owner, document and session entries. No generation tombstone map remains.",
+    "nativeHide": "A visible TypeScript draft containing // BAD had one real fixture diagnostic. Selecting Memory removed the language-server process while one EditorView and its exact unsaved text remained mounted.",
+    "nativeReturn": "Returning to Files started a new process with the same dirty text and diagnostic. Undo restored original text and removed both the dirty flag and error.",
+    "projectSwitch": "Switching to another project preview left zero servers; opening its TypeScript file started only that project server. Returning stopped it and restarted the first project server; both EditorViews remained, and the first draft/undo history survived.",
+    "rendererReload": "Before reload one server was running. During renderer replacement no server remained; after restored editor initialization one different server was running. Prior PID was no longer the test server.",
+    "vscode": "Stand-in VS Code host integration creates two webviews owning the same document, disposes one without stopping the other, rejects calls from the disposed view, then closes the last owner and observes no running server.",
+    "fullRegression": {
+      "passed": 434,
+      "failed": 0
+    },
+    "focusedLanguageAndVscode": {
+      "passed": 15,
+      "failed": 0
+    },
+    "typescript": "passed",
+    "productionUiBuild": "passed",
+    "whitespace": "passed",
+    "sharedResolvedUri": "Two in-project symlink paths share one LSP URI; releasing the direct-path owner preserves the alias owner and its completion response. The final owner releases the server."
+  },
+  "samples": {
+    "visible": {
+      "sampleAt": 1793801591595,
+      "processes": [
+        {
+          "pid": 555910,
+          "project": "one",
+          "event": "start",
+          "at": 1793801578904,
+          "alive": true,
+          "rssKiB": 47428
+        }
+      ],
+      "active": 1
+    },
+    "hidden": {
+      "sampleAt": 1793801609467,
+      "processes": [
+        {
+          "pid": 555910,
+          "project": "one",
+          "event": "start",
+          "at": 1793801578904,
+          "alive": false,
+          "rssKiB": null
+        }
+      ],
+      "active": 0
+    },
+    "returned": {
+      "sampleAt": 1793801610596,
+      "processes": [
+        {
+          "pid": 555910,
+          "project": "one",
+          "event": "start",
+          "at": 1793801578904,
+          "alive": false,
+          "rssKiB": null
+        },
+        {
+          "pid": 558159,
+          "project": "one",
+          "event": "start",
+          "at": 1793801609918,
+          "alive": true,
+          "rssKiB": 47400
+        }
+      ],
+      "active": 1
+    },
+    "other-project": {
+      "sampleAt": 1793801766963,
+      "processes": [
+        {
+          "pid": 555910,
+          "project": "one",
+          "event": "start",
+          "at": 1793801578904,
+          "alive": false,
+          "rssKiB": null
+        },
+        {
+          "pid": 558159,
+          "project": "one",
+          "event": "start",
+          "at": 1793801609918,
+          "alive": false,
+          "rssKiB": null
+        }
+      ],
+      "active": 0
+    },
+    "second-project": {
+      "sampleAt": 1793801768051,
+      "processes": [
+        {
+          "pid": 555910,
+          "project": "one",
+          "event": "start",
+          "at": 1793801578904,
+          "alive": false,
+          "rssKiB": null
+        },
+        {
+          "pid": 558159,
+          "project": "one",
+          "event": "start",
+          "at": 1793801609918,
+          "alive": false,
+          "rssKiB": null
+        },
+        {
+          "pid": 565194,
+          "project": "two",
+          "event": "start",
+          "at": 1793801767534,
+          "alive": true,
+          "rssKiB": 47448
+        }
+      ],
+      "active": 1
+    },
+    "project-return": {
+      "sampleAt": 1793801769137,
+      "processes": [
+        {
+          "pid": 555910,
+          "project": "one",
+          "event": "start",
+          "at": 1793801578904,
+          "alive": false,
+          "rssKiB": null
+        },
+        {
+          "pid": 558159,
+          "project": "one",
+          "event": "start",
+          "at": 1793801609918,
+          "alive": false,
+          "rssKiB": null
+        },
+        {
+          "pid": 565194,
+          "project": "two",
+          "event": "start",
+          "at": 1793801767534,
+          "alive": false,
+          "rssKiB": null
+        },
+        {
+          "pid": 565268,
+          "project": "one",
+          "event": "start",
+          "at": 1793801768544,
+          "alive": true,
+          "rssKiB": 47408
+        }
+      ],
+      "active": 1
+    },
+    "closed": {
+      "sampleAt": 1793801885484,
+      "processes": [
+        {
+          "pid": 555910,
+          "project": "one",
+          "event": "start",
+          "at": 1793801578904,
+          "alive": false,
+          "rssKiB": null
+        },
+        {
+          "pid": 558159,
+          "project": "one",
+          "event": "start",
+          "at": 1793801609918,
+          "alive": false,
+          "rssKiB": null
+        },
+        {
+          "pid": 565194,
+          "project": "two",
+          "event": "start",
+          "at": 1793801767534,
+          "alive": false,
+          "rssKiB": null
+        },
+        {
+          "pid": 565268,
+          "project": "one",
+          "event": "start",
+          "at": 1793801768544,
+          "alive": false,
+          "rssKiB": null
+        }
+      ],
+      "active": 0
+    },
+    "before-reload": {
+      "sampleAt": 1793801947480,
+      "processes": [
+        {
+          "pid": 555910,
+          "project": "one",
+          "event": "start",
+          "at": 1793801578904,
+          "alive": false,
+          "rssKiB": null
+        },
+        {
+          "pid": 558159,
+          "project": "one",
+          "event": "start",
+          "at": 1793801609918,
+          "alive": false,
+          "rssKiB": null
+        },
+        {
+          "pid": 565194,
+          "project": "two",
+          "event": "start",
+          "at": 1793801767534,
+          "alive": false,
+          "rssKiB": null
+        },
+        {
+          "pid": 565268,
+          "project": "one",
+          "event": "start",
+          "at": 1793801768544,
+          "alive": false,
+          "rssKiB": null
+        },
+        {
+          "pid": 572446,
+          "project": "one",
+          "event": "start",
+          "at": 1793801892746,
+          "alive": true,
+          "rssKiB": 47456
+        }
+      ],
+      "active": 1
+    },
+    "after-reload": {
+      "sampleAt": 1793801950553,
+      "processes": [
+        {
+          "pid": 555910,
+          "project": "one",
+          "event": "start",
+          "at": 1793801578904,
+          "alive": false,
+          "rssKiB": null
+        },
+        {
+          "pid": 558159,
+          "project": "one",
+          "event": "start",
+          "at": 1793801609918,
+          "alive": false,
+          "rssKiB": null
+        },
+        {
+          "pid": 565194,
+          "project": "two",
+          "event": "start",
+          "at": 1793801767534,
+          "alive": false,
+          "rssKiB": null
+        },
+        {
+          "pid": 565268,
+          "project": "one",
+          "event": "start",
+          "at": 1793801768544,
+          "alive": false,
+          "rssKiB": null
+        },
+        {
+          "pid": 572446,
+          "project": "one",
+          "event": "start",
+          "at": 1793801892746,
+          "alive": false,
+          "rssKiB": null
+        }
+      ],
+      "active": 0
+    },
+    "reload-reacquired": {
+      "sampleAt": 1793801989439,
+      "processes": [
+        {
+          "pid": 555910,
+          "project": "one",
+          "event": "start",
+          "at": 1793801578904,
+          "alive": false,
+          "rssKiB": null
+        },
+        {
+          "pid": 558159,
+          "project": "one",
+          "event": "start",
+          "at": 1793801609918,
+          "alive": false,
+          "rssKiB": null
+        },
+        {
+          "pid": 565194,
+          "project": "two",
+          "event": "start",
+          "at": 1793801767534,
+          "alive": false,
+          "rssKiB": null
+        },
+        {
+          "pid": 565268,
+          "project": "one",
+          "event": "start",
+          "at": 1793801768544,
+          "alive": false,
+          "rssKiB": null
+        },
+        {
+          "pid": 572446,
+          "project": "one",
+          "event": "start",
+          "at": 1793801892746,
+          "alive": false,
+          "rssKiB": null
+        },
+        {
+          "pid": 579750,
+          "project": "one",
+          "event": "start",
+          "at": 1793801952102,
+          "alive": true,
+          "rssKiB": 47448
+        }
+      ],
+      "active": 1
+    },
+    "final-closed": {
+      "sampleAt": 1793802089522,
+      "processes": [
+        {
+          "pid": 555910,
+          "project": "one",
+          "event": "start",
+          "at": 1793801578904,
+          "alive": false,
+          "rssKiB": null
+        },
+        {
+          "pid": 558159,
+          "project": "one",
+          "event": "start",
+          "at": 1793801609918,
+          "alive": false,
+          "rssKiB": null
+        },
+        {
+          "pid": 565194,
+          "project": "two",
+          "event": "start",
+          "at": 1793801767534,
+          "alive": false,
+          "rssKiB": null
+        },
+        {
+          "pid": 565268,
+          "project": "one",
+          "event": "start",
+          "at": 1793801768544,
+          "alive": false,
+          "rssKiB": null
+        },
+        {
+          "pid": 572446,
+          "project": "one",
+          "event": "start",
+          "at": 1793801892746,
+          "alive": false,
+          "rssKiB": null
+        },
+        {
+          "pid": 579750,
+          "project": "one",
+          "event": "start",
+          "at": 1793801952102,
+          "alive": false,
+          "rssKiB": null
+        }
+      ],
+      "active": 0
+    }
+  },
+  "limits": [
+    "Native server is a deterministic Node stdio LSP fixture, not the actual TypeScript language server, rust-analyzer or gopls. Its child RSS cannot establish whole-app RAM savings or real project indexing cost.",
+    "Editor document and undo objects intentionally remain mounted. This change releases language-server ownership and background validation, not all visited-pane state.",
+    "Immediate release can trade memory for cold server initialization/reindexing; hardware/project-specific latency and an evidence-based grace policy remain open.",
+    "VS Code disposal is covered by its stand-in integration, not a live installed VS Code runtime. Webview reload without disposal and renderer crash were not separately exercised. Packaged and cross-platform runs remain open.",
+    "Native snapshots predate the final resolved-URI alias refinement. nativeSourceSha256 records their exact sources; sourceSha256 records the final unit/integration-verified sources."
+  ],
+  "nativeSourceSha256": {
+    "core/language-tools.js": "5ec6b2e57a321cd4a38008661b373a5cca5f703ee9d38cc4f97b4cec23562dff",
+    "core/hub.js": "0b60932c3b75fdcf69c4839fb4580046c2386adeabb382835f152485ed8c0941",
+    "desktop/main.js": "93b18378028b342f23820f66827969cab0bde2c75f22fbf87531786bb25d9d5a",
+    "vscode/extension.js": "b4266d7984c135a9805faf1f18e8ac6f9efdceb69c07ec0694274545ba9e99ce",
+    "ui/src/hooks/use-language-owner.ts": "ac4445bed06f02b96ecec4cdc766deb53a0d5d21bbd43eb8d4f40e43eb77ed8f",
+    "ui/src/components/code-editor.tsx": "1d45d17cd4706f4f4a1381fbe8597fd43573aefaee47260c9c9609d26d55f622",
+    "ui/src/components/editor-context-menu.tsx": "70855d2a48771b73f448824acf1b17805ad9439b0eaa1e274457b7d465d964bf",
+    "ui/src/components/workspace-files.tsx": "090d8720b62482e8ce1b171892da2d01570368666b22535da44fb126705d2c47",
+    "ui/src/lib/language-tools.ts": "4b143686b059ed363398ea5023cca00956df20b6c405416ce8cc8f3196a38f8b",
+    "test/language-tools.test.js": "f1e28fac72f058264aca170052185e25ca06b7a3c153e6c1a690dee3094b54d3",
+    "test/vscode.test.js": "b55f8ea315d7bc4a5cf6639b166cd2d4359a402c2e9f6496a6a4f60eb829ee63",
+    "test/fake-language-server.cjs": "65fa711c61f35732c577a26a7397cda96f3a49ec0664032c7d54bb7725294acb"
+  }
+}

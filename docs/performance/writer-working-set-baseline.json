@@ -1,0 +1,890 @@
+{
+  "checkedOn": "2026-11-04T16:25:22.209Z",
+  "runtime": {
+    "node": "v24.21.0",
+    "platform": "linux",
+    "arch": "x64"
+  },
+  "fixture": "32 saved chats, each with 64 long replies and tool logs; each case copies the seed SQLite database into its own disposable directory. Writer mode hydrates and persists one completed synthetic turn per visited chat. View mode reads transport snapshots only.",
+  "scope": "Current-policy working-set baseline, not an old/new improvement. Isolated Node processes: view/writer cases run a tight burst rather than realistic UI pacing; view-yielded additionally yields to the event loop between each snapshot. Explicit diagnostic GC before/after visits, original payload and persisted-turn checks. Heap/PSS sampled before result serialization and reopened parity validation. Diagnostic PRAGMA shrink_memory runs only after the ordinary held sample, with writer objects unchanged, to explore SQLite attribution; it is not a production setting or a precise decomposition of PSS. The 32-chat cases then wait 1500 ms without forced GC before an idle sample. PSS is this standalone process, not Electron or local-model RAM. No claim that these synthetic Store operations reproduce full real-agent lifetimes, and no automatic eviction is implemented by this benchmark.",
+  "sourceSha256": {
+    "core/store.js": "6bc99bf09ae6f98682d4ab259aae48f955a064fc3317ab6e2467e9e968670316",
+    "core/hub.js": "0b60932c3b75fdcf69c4839fb4580046c2386adeabb382835f152485ed8c0941",
+    "scripts/performance/writer-working-set.cjs": "47fb4ec8f7410e6de92d80efb58a787016c7667b30a34df18e763d8ee2647fdf"
+  },
+  "cases": [
+    {
+      "mode": "view",
+      "visited": 0,
+      "loadedConversations": 0,
+      "savedTurns": 0,
+      "checksum": 0,
+      "elapsedMs": 0.199,
+      "baselineHeapBytes": 5475112,
+      "retainedHeapBytes": 5063176,
+      "postGcHeapDeltaBytes": -411936,
+      "baselinePssKiB": 17406,
+      "retainedPssKiB": 17559,
+      "pssDeltaKiB": 153,
+      "v8TotalHeapBytes": {
+        "baseline": 7905280,
+        "held": 7905280,
+        "afterSqliteShrink": 7905280
+      },
+      "v8PhysicalHeapBytes": {
+        "baseline": 7356416,
+        "held": 7356416,
+        "afterSqliteShrink": 7356416
+      },
+      "diagnosticAfterSqliteShrinkPssKiB": 17587,
+      "heldHeapSpaces": {
+        "read_only_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "new_space": {
+          "usedBytes": 12480,
+          "physicalBytes": 1323008,
+          "sizeBytes": 2097152
+        },
+        "old_space": {
+          "usedBytes": 3647896,
+          "physicalBytes": 3932160,
+          "sizeBytes": 3842048
+        },
+        "code_space": {
+          "usedBytes": 66432,
+          "physicalBytes": 262144,
+          "sizeBytes": 262144
+        },
+        "shared_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "trusted_space": {
+          "usedBytes": 1087928,
+          "physicalBytes": 1572864,
+          "sizeBytes": 1437696
+        },
+        "shared_trusted_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "new_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "large_object_space": {
+          "usedBytes": 262160,
+          "physicalBytes": 266240,
+          "sizeBytes": 266240
+        },
+        "code_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "shared_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "shared_trusted_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "trusted_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        }
+      },
+      "idle": null,
+      "retainedMessageJsonBytes": 0,
+      "persistenceParity": true
+    },
+    {
+      "mode": "writer",
+      "visited": 0,
+      "loadedConversations": 0,
+      "savedTurns": 0,
+      "checksum": 0,
+      "elapsedMs": 0.155,
+      "baselineHeapBytes": 4977768,
+      "retainedHeapBytes": 5063032,
+      "postGcHeapDeltaBytes": 85264,
+      "baselinePssKiB": 17438,
+      "retainedPssKiB": 17583,
+      "pssDeltaKiB": 145,
+      "v8TotalHeapBytes": {
+        "baseline": 8167424,
+        "held": 8167424,
+        "afterSqliteShrink": 8167424
+      },
+      "v8PhysicalHeapBytes": {
+        "baseline": 7618560,
+        "held": 7618560,
+        "afterSqliteShrink": 7618560
+      },
+      "diagnosticAfterSqliteShrinkPssKiB": 17603,
+      "heldHeapSpaces": {
+        "read_only_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "new_space": {
+          "usedBytes": 12480,
+          "physicalBytes": 1323008,
+          "sizeBytes": 2097152
+        },
+        "old_space": {
+          "usedBytes": 3647752,
+          "physicalBytes": 4194304,
+          "sizeBytes": 4104192
+        },
+        "code_space": {
+          "usedBytes": 66432,
+          "physicalBytes": 262144,
+          "sizeBytes": 262144
+        },
+        "shared_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "trusted_space": {
+          "usedBytes": 1087928,
+          "physicalBytes": 1572864,
+          "sizeBytes": 1437696
+        },
+        "shared_trusted_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "new_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "large_object_space": {
+          "usedBytes": 262160,
+          "physicalBytes": 266240,
+          "sizeBytes": 266240
+        },
+        "code_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "shared_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "shared_trusted_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "trusted_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        }
+      },
+      "idle": null,
+      "retainedMessageJsonBytes": 0,
+      "persistenceParity": true
+    },
+    {
+      "mode": "view",
+      "visited": 4,
+      "loadedConversations": 0,
+      "savedTurns": 0,
+      "checksum": 132264,
+      "elapsedMs": 51.56,
+      "baselineHeapBytes": 4978048,
+      "retainedHeapBytes": 5067408,
+      "postGcHeapDeltaBytes": 89360,
+      "baselinePssKiB": 17409,
+      "retainedPssKiB": 38045,
+      "pssDeltaKiB": 20636,
+      "v8TotalHeapBytes": {
+        "baseline": 7905280,
+        "held": 22585344,
+        "afterSqliteShrink": 22585344
+      },
+      "v8PhysicalHeapBytes": {
+        "baseline": 7356416,
+        "held": 20746240,
+        "afterSqliteShrink": 20746240
+      },
+      "diagnosticAfterSqliteShrinkPssKiB": 38061,
+      "heldHeapSpaces": {
+        "read_only_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "new_space": {
+          "usedBytes": 12480,
+          "physicalBytes": 14712832,
+          "sizeBytes": 16777216
+        },
+        "old_space": {
+          "usedBytes": 3651408,
+          "physicalBytes": 4194304,
+          "sizeBytes": 4104192
+        },
+        "code_space": {
+          "usedBytes": 66624,
+          "physicalBytes": 262144,
+          "sizeBytes": 262144
+        },
+        "shared_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "trusted_space": {
+          "usedBytes": 1088768,
+          "physicalBytes": 1310720,
+          "sizeBytes": 1175552
+        },
+        "shared_trusted_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "new_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "large_object_space": {
+          "usedBytes": 262160,
+          "physicalBytes": 266240,
+          "sizeBytes": 266240
+        },
+        "code_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "shared_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "shared_trusted_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "trusted_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        }
+      },
+      "idle": null,
+      "retainedMessageJsonBytes": 0,
+      "persistenceParity": true
+    },
+    {
+      "mode": "writer",
+      "visited": 4,
+      "loadedConversations": 4,
+      "savedTurns": 4,
+      "checksum": 132264,
+      "elapsedMs": 74.817,
+      "baselineHeapBytes": 4977912,
+      "retainedHeapBytes": 14611528,
+      "postGcHeapDeltaBytes": 9633616,
+      "baselinePssKiB": 17366,
+      "retainedPssKiB": 40507,
+      "pssDeltaKiB": 23141,
+      "v8TotalHeapBytes": {
+        "baseline": 7905280,
+        "held": 50110464,
+        "afterSqliteShrink": 50110464
+      },
+      "v8PhysicalHeapBytes": {
+        "baseline": 7356416,
+        "held": 28602368,
+        "afterSqliteShrink": 28602368
+      },
+      "diagnosticAfterSqliteShrinkPssKiB": 40535,
+      "heldHeapSpaces": {
+        "read_only_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "new_space": {
+          "usedBytes": 12480,
+          "physicalBytes": 11821056,
+          "sizeBytes": 33554432
+        },
+        "old_space": {
+          "usedBytes": 13142960,
+          "physicalBytes": 14680064,
+          "sizeBytes": 14589952
+        },
+        "code_space": {
+          "usedBytes": 98688,
+          "physicalBytes": 262144,
+          "sizeBytes": 262144
+        },
+        "shared_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "trusted_space": {
+          "usedBytes": 1109304,
+          "physicalBytes": 1572864,
+          "sizeBytes": 1437696
+        },
+        "shared_trusted_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "new_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "large_object_space": {
+          "usedBytes": 262160,
+          "physicalBytes": 266240,
+          "sizeBytes": 266240
+        },
+        "code_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "shared_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "shared_trusted_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "trusted_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        }
+      },
+      "idle": null,
+      "retainedMessageJsonBytes": 9391424,
+      "persistenceParity": true
+    },
+    {
+      "mode": "view",
+      "visited": 16,
+      "loadedConversations": 0,
+      "savedTurns": 0,
+      "checksum": 529056,
+      "elapsedMs": 188.083,
+      "baselineHeapBytes": 4977792,
+      "retainedHeapBytes": 5074352,
+      "postGcHeapDeltaBytes": 96560,
+      "baselinePssKiB": 17442,
+      "retainedPssKiB": 61434,
+      "pssDeltaKiB": 43992,
+      "v8TotalHeapBytes": {
+        "baseline": 8167424,
+        "held": 39886848,
+        "afterSqliteShrink": 39886848
+      },
+      "v8PhysicalHeapBytes": {
+        "baseline": 7618560,
+        "held": 40112128,
+        "afterSqliteShrink": 40112128
+      },
+      "diagnosticAfterSqliteShrinkPssKiB": 61438,
+      "heldHeapSpaces": {
+        "read_only_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "new_space": {
+          "usedBytes": 12480,
+          "physicalBytes": 33554432,
+          "sizeBytes": 33554432
+        },
+        "old_space": {
+          "usedBytes": 3652024,
+          "physicalBytes": 4456448,
+          "sizeBytes": 4366336
+        },
+        "code_space": {
+          "usedBytes": 71808,
+          "physicalBytes": 262144,
+          "sizeBytes": 262144
+        },
+        "shared_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "trusted_space": {
+          "usedBytes": 1089912,
+          "physicalBytes": 1572864,
+          "sizeBytes": 1437696
+        },
+        "shared_trusted_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "new_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "large_object_space": {
+          "usedBytes": 262160,
+          "physicalBytes": 266240,
+          "sizeBytes": 266240
+        },
+        "code_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "shared_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "shared_trusted_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "trusted_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        }
+      },
+      "idle": null,
+      "retainedMessageJsonBytes": 0,
+      "persistenceParity": true
+    },
+    {
+      "mode": "writer",
+      "visited": 16,
+      "loadedConversations": 16,
+      "savedTurns": 16,
+      "checksum": 529056,
+      "elapsedMs": 322.187,
+      "baselineHeapBytes": 4977792,
+      "retainedHeapBytes": 43114064,
+      "postGcHeapDeltaBytes": 38136272,
+      "baselinePssKiB": 17352,
+      "retainedPssKiB": 102558,
+      "pssDeltaKiB": 85206,
+      "v8TotalHeapBytes": {
+        "baseline": 7905280,
+        "held": 181968896,
+        "afterSqliteShrink": 182231040
+      },
+      "v8PhysicalHeapBytes": {
+        "baseline": 7356416,
+        "held": 89038848,
+        "afterSqliteShrink": 89300992
+      },
+      "diagnosticAfterSqliteShrinkPssKiB": 102562,
+      "heldHeapSpaces": {
+        "read_only_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "new_space": {
+          "usedBytes": 12480,
+          "physicalBytes": 41062400,
+          "sizeBytes": 134217728
+        },
+        "old_space": {
+          "usedBytes": 41577624,
+          "physicalBytes": 45613056,
+          "sizeBytes": 45522944
+        },
+        "code_space": {
+          "usedBytes": 141184,
+          "physicalBytes": 524288,
+          "sizeBytes": 524288
+        },
+        "shared_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "trusted_space": {
+          "usedBytes": 1134680,
+          "physicalBytes": 1572864,
+          "sizeBytes": 1437696
+        },
+        "shared_trusted_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "new_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "large_object_space": {
+          "usedBytes": 262160,
+          "physicalBytes": 266240,
+          "sizeBytes": 266240
+        },
+        "code_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "shared_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "shared_trusted_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "trusted_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        }
+      },
+      "idle": null,
+      "retainedMessageJsonBytes": 37566470,
+      "persistenceParity": true
+    },
+    {
+      "mode": "view",
+      "visited": 32,
+      "loadedConversations": 0,
+      "savedTurns": 0,
+      "checksum": 1058112,
+      "elapsedMs": 351.968,
+      "baselineHeapBytes": 4977928,
+      "retainedHeapBytes": 5074488,
+      "postGcHeapDeltaBytes": 96560,
+      "baselinePssKiB": 17354,
+      "retainedPssKiB": 94726,
+      "pssDeltaKiB": 77372,
+      "v8TotalHeapBytes": {
+        "baseline": 7643136,
+        "held": 72916992,
+        "afterSqliteShrink": 72916992
+      },
+      "v8PhysicalHeapBytes": {
+        "baseline": 7094272,
+        "held": 73142272,
+        "afterSqliteShrink": 73142272
+      },
+      "diagnosticAfterSqliteShrinkPssKiB": 94738,
+      "heldHeapSpaces": {
+        "read_only_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "new_space": {
+          "usedBytes": 12480,
+          "physicalBytes": 67108864,
+          "sizeBytes": 67108864
+        },
+        "old_space": {
+          "usedBytes": 3652024,
+          "physicalBytes": 4194304,
+          "sizeBytes": 4104192
+        },
+        "code_space": {
+          "usedBytes": 72000,
+          "physicalBytes": 262144,
+          "sizeBytes": 262144
+        },
+        "shared_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "trusted_space": {
+          "usedBytes": 1089856,
+          "physicalBytes": 1310720,
+          "sizeBytes": 1175552
+        },
+        "shared_trusted_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "new_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "large_object_space": {
+          "usedBytes": 262160,
+          "physicalBytes": 266240,
+          "sizeBytes": 266240
+        },
+        "code_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "shared_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "shared_trusted_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "trusted_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        }
+      },
+      "idle": {
+        "waitedMs": 1500,
+        "pssKiB": 94742,
+        "usedHeapBytes": 5106600,
+        "physicalHeapBytes": 73142272,
+        "forcedGcDuringWait": false
+      },
+      "retainedMessageJsonBytes": 0,
+      "persistenceParity": true
+    },
+    {
+      "mode": "writer",
+      "visited": 32,
+      "loadedConversations": 32,
+      "savedTurns": 32,
+      "checksum": 1058112,
+      "elapsedMs": 652.301,
+      "baselineHeapBytes": 4977792,
+      "retainedHeapBytes": 81027056,
+      "postGcHeapDeltaBytes": 76049264,
+      "baselinePssKiB": 17410,
+      "retainedPssKiB": 191655,
+      "pssDeltaKiB": 174245,
+      "v8TotalHeapBytes": {
+        "baseline": 8167424,
+        "held": 223387648,
+        "afterSqliteShrink": 223387648
+      },
+      "v8PhysicalHeapBytes": {
+        "baseline": 7618560,
+        "held": 179974144,
+        "afterSqliteShrink": 179974144
+      },
+      "diagnosticAfterSqliteShrinkPssKiB": 191691,
+      "heldHeapSpaces": {
+        "read_only_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "new_space": {
+          "usedBytes": 12480,
+          "physicalBytes": 90578944,
+          "sizeBytes": 134217728
+        },
+        "old_space": {
+          "usedBytes": 79481800,
+          "physicalBytes": 87031808,
+          "sizeBytes": 86941696
+        },
+        "code_space": {
+          "usedBytes": 145344,
+          "physicalBytes": 524288,
+          "sizeBytes": 524288
+        },
+        "shared_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "trusted_space": {
+          "usedBytes": 1139336,
+          "physicalBytes": 1572864,
+          "sizeBytes": 1437696
+        },
+        "shared_trusted_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "new_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "large_object_space": {
+          "usedBytes": 262160,
+          "physicalBytes": 266240,
+          "sizeBytes": 266240
+        },
+        "code_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "shared_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "shared_trusted_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "trusted_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        }
+      },
+      "idle": {
+        "waitedMs": 1500,
+        "pssKiB": 191691,
+        "usedHeapBytes": 81020928,
+        "physicalHeapBytes": 179974144,
+        "forcedGcDuringWait": false
+      },
+      "retainedMessageJsonBytes": 75134230,
+      "persistenceParity": true
+    },
+    {
+      "mode": "view-yielded",
+      "visited": 32,
+      "loadedConversations": 0,
+      "savedTurns": 0,
+      "checksum": 1058112,
+      "elapsedMs": 451.814,
+      "baselineHeapBytes": 4977800,
+      "retainedHeapBytes": 5095960,
+      "postGcHeapDeltaBytes": 118160,
+      "baselinePssKiB": 17366,
+      "retainedPssKiB": 86370,
+      "pssDeltaKiB": 69004,
+      "v8TotalHeapBytes": {
+        "baseline": 7643136,
+        "held": 72916992,
+        "afterSqliteShrink": 72916992
+      },
+      "v8PhysicalHeapBytes": {
+        "baseline": 7094272,
+        "held": 66949120,
+        "afterSqliteShrink": 66949120
+      },
+      "diagnosticAfterSqliteShrinkPssKiB": 86370,
+      "heldHeapSpaces": {
+        "read_only_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "new_space": {
+          "usedBytes": 12824,
+          "physicalBytes": 60915712,
+          "sizeBytes": 67108864
+        },
+        "old_space": {
+          "usedBytes": 3656392,
+          "physicalBytes": 4194304,
+          "sizeBytes": 4104192
+        },
+        "code_space": {
+          "usedBytes": 84288,
+          "physicalBytes": 262144,
+          "sizeBytes": 262144
+        },
+        "shared_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "trusted_space": {
+          "usedBytes": 1094328,
+          "physicalBytes": 1310720,
+          "sizeBytes": 1175552
+        },
+        "shared_trusted_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "new_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "large_object_space": {
+          "usedBytes": 262160,
+          "physicalBytes": 266240,
+          "sizeBytes": 266240
+        },
+        "code_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "shared_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "shared_trusted_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        },
+        "trusted_large_object_space": {
+          "usedBytes": 0,
+          "physicalBytes": 0,
+          "sizeBytes": 0
+        }
+      },
+      "idle": {
+        "waitedMs": 1500,
+        "pssKiB": 86370,
+        "usedHeapBytes": 5119616,
+        "physicalHeapBytes": 66949120,
+        "forcedGcDuringWait": false
+      },
+      "retainedMessageJsonBytes": 0,
+      "persistenceParity": true
+    }
+  ]
+}

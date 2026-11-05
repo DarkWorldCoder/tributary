@@ -58,6 +58,22 @@ test('ssh host: bad targets are refused before ssh runs, and connection errors a
   await connect({ target: 'dev@buildbox' });
 });
 
+test('ssh host: stdout and stderr obey independent byte limits, including newline-free output', { skip, timeout: 15000 }, async () => {
+  const host = sshHost(box(tmp()));
+  const exact = await host.exec(process.execPath, ['-e', "process.stdout.write('a'.repeat(4096));process.stderr.write('b'.repeat(4096))"], { maxBuffer: 4096 });
+  assert.equal(exact.code, 0, exact.stderr);
+  assert.equal(exact.stdout.length, 4096); assert.equal(exact.stderr.length, 4096);
+  for (const name of ['stdout', 'stderr']) {
+    const result = await host.exec(process.execPath, ['-e', `process.${name}.write('x'.repeat(2 * 1024 * 1024))`], { maxBuffer: 4096 });
+    assert.notEqual(result.code, 0);
+    assert.match(result.stderr, new RegExp(`${name} maxBuffer length exceeded`));
+    assert.ok(Buffer.byteLength(result.stdout) <= 4096);
+    assert.ok(Buffer.byteLength(result.stderr) <= 4096 + 50);
+  }
+  const unicode = await host.exec(process.execPath, ['-e', "process.stderr.write('🙂'.repeat(4096))"], { maxBuffer: 4096 });
+  assert.notEqual(unicode.code, 0); assert.match(unicode.stderr, /stderr maxBuffer/);
+});
+
 const { runTurn } = require('../core/runner');
 const FAKE = path.join(__dirname, 'fake-agent.js');
 

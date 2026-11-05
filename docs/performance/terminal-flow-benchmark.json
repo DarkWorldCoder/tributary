@@ -1,0 +1,154 @@
+{
+  "checkedOn": "2026-11-04T16:13:07.877Z",
+  "runtime": {
+    "node": "v24.21.0",
+    "platform": "linux",
+    "arch": "x64",
+    "cpu": "12th Gen Intel(R) Core(TM) i5-1235U"
+  },
+  "sourceSha256": {
+    "core/terminal.js": "2934ae6e474ea1b9546e12880dd785a89b37d4ab031e36ffcf365525975281db",
+    "core/terminal-output.js": "72c85bec51951db280d216d8e9ac41816aeac7031c73db5a903030514afd752c",
+    "ui/src/lib/terminal-consumer.mjs": "0b52740b2ba6518aa0c0349737413a477ca81d2b51aa09c16b4e83c6a33e6776",
+    "scripts/performance/terminal-flow.cjs": "d294c63a9976fbe770a91c7bc346b5209f0aa7eff013fc6c9a4f01c7db7dd3aa"
+  },
+  "scope": "Actual local PTY produces 8 MiB ASCII via synchronous writes, with fixed-budget paced stand-in parsing. Separate processes, three alternating-order rounds. Legacy=current event-only TerminalManager contract; controlled=current desktop credit protocol. This is not complete before/after releases, actual xterm parsing, Electron IPC, inference, peak RAM or a typing-latency benchmark. Host/receiver queue counts overlap logically and are not summed as physical memory. No forced GC. Throughput is deliberately limited by the stand-in parser budget; OS scheduling is uncontrolled.",
+  "medians": {
+    "legacy": {
+      "maximumReceiverQueuedCodeUnits": 7782399,
+      "elapsedMs": 1115.823
+    },
+    "controlled": {
+      "maximumReceiverQueuedCodeUnits": 131072,
+      "elapsedMs": 1460.716
+    }
+  },
+  "rounds": [
+    {
+      "legacy": {
+        "mode": "legacy",
+        "elapsedMs": 1115.823,
+        "deliveredCodeUnits": 8388608,
+        "parsedCodeUnits": 8388608,
+        "packetCount": 119,
+        "acknowledgments": 0,
+        "parserBudgetCodeUnits": 32768,
+        "parserIntervalMs": 4,
+        "maximumReceiverQueuedCodeUnits": 7743488,
+        "maximumReceiverRecords": 110,
+        "maximumHostRetainedCodeUnits": 0,
+        "maximumOutstandingCodeUnits": 0,
+        "maximumNativeReadCodeUnits": 60095,
+        "nativeReads": 1688,
+        "checksum": "9343ca2c14fa88c511cc084fd569d5d444cdaae082bee8d0ed8efaf3a372b7b3",
+        "outputParity": true,
+        "receiverQueuedAfterEnd": 0,
+        "managerEntriesAfterEnd": 0
+      },
+      "controlled": {
+        "mode": "controlled",
+        "elapsedMs": 1406.436,
+        "deliveredCodeUnits": 8388608,
+        "parsedCodeUnits": 8388608,
+        "packetCount": 820,
+        "acknowledgments": 141,
+        "parserBudgetCodeUnits": 32768,
+        "parserIntervalMs": 4,
+        "maximumReceiverQueuedCodeUnits": 131072,
+        "maximumReceiverRecords": 14,
+        "maximumHostRetainedCodeUnits": 155648,
+        "maximumOutstandingCodeUnits": 131072,
+        "maximumNativeReadCodeUnits": 65536,
+        "nativeReads": 1469,
+        "checksum": "9343ca2c14fa88c511cc084fd569d5d444cdaae082bee8d0ed8efaf3a372b7b3",
+        "outputParity": true,
+        "receiverQueuedAfterEnd": 0,
+        "managerEntriesAfterEnd": 0
+      }
+    },
+    {
+      "controlled": {
+        "mode": "controlled",
+        "elapsedMs": 1472.061,
+        "deliveredCodeUnits": 8388608,
+        "parsedCodeUnits": 8388608,
+        "packetCount": 784,
+        "acknowledgments": 143,
+        "parserBudgetCodeUnits": 32768,
+        "parserIntervalMs": 4,
+        "maximumReceiverQueuedCodeUnits": 131072,
+        "maximumReceiverRecords": 13,
+        "maximumHostRetainedCodeUnits": 158017,
+        "maximumOutstandingCodeUnits": 131072,
+        "maximumNativeReadCodeUnits": 63489,
+        "nativeReads": 1515,
+        "checksum": "9343ca2c14fa88c511cc084fd569d5d444cdaae082bee8d0ed8efaf3a372b7b3",
+        "outputParity": true,
+        "receiverQueuedAfterEnd": 0,
+        "managerEntriesAfterEnd": 0
+      },
+      "legacy": {
+        "mode": "legacy",
+        "elapsedMs": 1119.749,
+        "deliveredCodeUnits": 8388608,
+        "parsedCodeUnits": 8388608,
+        "packetCount": 113,
+        "acknowledgments": 0,
+        "parserBudgetCodeUnits": 32768,
+        "parserIntervalMs": 4,
+        "maximumReceiverQueuedCodeUnits": 7782399,
+        "maximumReceiverRecords": 104,
+        "maximumHostRetainedCodeUnits": 0,
+        "maximumOutstandingCodeUnits": 0,
+        "maximumNativeReadCodeUnits": 65536,
+        "nativeReads": 1049,
+        "checksum": "9343ca2c14fa88c511cc084fd569d5d444cdaae082bee8d0ed8efaf3a372b7b3",
+        "outputParity": true,
+        "receiverQueuedAfterEnd": 0,
+        "managerEntriesAfterEnd": 0
+      }
+    },
+    {
+      "legacy": {
+        "mode": "legacy",
+        "elapsedMs": 1106.462,
+        "deliveredCodeUnits": 8388608,
+        "parsedCodeUnits": 8388608,
+        "packetCount": 121,
+        "acknowledgments": 0,
+        "parserBudgetCodeUnits": 32768,
+        "parserIntervalMs": 4,
+        "maximumReceiverQueuedCodeUnits": 7847933,
+        "maximumReceiverRecords": 113,
+        "maximumHostRetainedCodeUnits": 0,
+        "maximumOutstandingCodeUnits": 0,
+        "maximumNativeReadCodeUnits": 65536,
+        "nativeReads": 1727,
+        "checksum": "9343ca2c14fa88c511cc084fd569d5d444cdaae082bee8d0ed8efaf3a372b7b3",
+        "outputParity": true,
+        "receiverQueuedAfterEnd": 0,
+        "managerEntriesAfterEnd": 0
+      },
+      "controlled": {
+        "mode": "controlled",
+        "elapsedMs": 1460.716,
+        "deliveredCodeUnits": 8388608,
+        "parsedCodeUnits": 8388608,
+        "packetCount": 804,
+        "acknowledgments": 142,
+        "parserBudgetCodeUnits": 32768,
+        "parserIntervalMs": 4,
+        "maximumReceiverQueuedCodeUnits": 131072,
+        "maximumReceiverRecords": 14,
+        "maximumHostRetainedCodeUnits": 184665,
+        "maximumOutstandingCodeUnits": 131072,
+        "maximumNativeReadCodeUnits": 57344,
+        "nativeReads": 1495,
+        "checksum": "9343ca2c14fa88c511cc084fd569d5d444cdaae082bee8d0ed8efaf3a372b7b3",
+        "outputParity": true,
+        "receiverQueuedAfterEnd": 0,
+        "managerEntriesAfterEnd": 0
+      }
+    }
+  ]
+}

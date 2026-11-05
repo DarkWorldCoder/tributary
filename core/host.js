@@ -91,9 +91,15 @@ function sshHost(remote) {
         const empty = encoding === 'buffer' ? Buffer.alloc(0) : '';
         let child;
         try { child = launch(cmd, args, { cwd, env }); } catch (e) { finish({ code: 1, stdout: empty, stderr: e.message }); return; }
-        const out = []; const err = []; let size = 0; let failure = '';
-        child.stdout.on('data', (d) => { size += d.length; if (size > maxBuffer) { failure = 'stdout maxBuffer length exceeded'; killTree(child); } else out.push(d); });
-        child.stderr.on('data', (d) => err.push(d));
+        const out = []; const err = []; const sizes = { stdout: 0, stderr: 0 }; let failure = '';
+        const take = (name, chunks) => (data) => {
+          if (failure) return; // Drain pipes after termination without retaining more output.
+          const remaining = Math.max(0, maxBuffer - sizes[name]);
+          if (remaining) { chunks.push(data.length <= remaining ? data : Buffer.from(data.subarray(0, remaining))); sizes[name] += Math.min(remaining, data.length); }
+          if (data.length > remaining) { failure = `${name} maxBuffer length exceeded`; killTree(child); }
+        };
+        child.stdout.on('data', take('stdout', out));
+        child.stderr.on('data', take('stderr', err));
         const timer = timeout ? setTimeout(() => { failure = `Timed out after ${timeout} ms`; killTree(child); }, timeout) : null;
         child.on('error', (e) => { if (timer) clearTimeout(timer); finish({ code: 127, stdout: empty, stderr: e.code === 'ENOENT' ? 'ssh is not installed or not on PATH' : e.message }); });
         child.on('close', (code) => {

@@ -13,6 +13,7 @@ import { EditorView, keymap } from '@codemirror/view';
 import { lintGutter, lintKeymap, setDiagnostics } from '@codemirror/lint';
 import { autocompletion } from '@codemirror/autocomplete';
 import { liveValidation, languageCompletions } from '@/lib/language-assistance';
+import { useLanguageOwner } from '@/hooks/use-language-owner';
 import { documentLanguage } from '@/lib/document-language-support.mjs';
 import { formatInWorker } from '@/lib/formatter';
 import { formatParser, nativeFormatTool } from '@/lib/format-document.mjs';
@@ -73,8 +74,8 @@ const undoKey = typeof navigator !== 'undefined' && /Mac/.test(navigator.platfor
 export type EditorHistory = { path: string; canUndo: boolean; canRedo: boolean; undo: () => void; redo: () => void; format: (automatic?: boolean) => Promise<string | null>; text: () => string | null };
 
 /** A real code editor (CodeMirror 6): multi-cursor, search, folding, bracket matching, undo history. */
-export function CodeEditor({ project: documentProject, path, value, onChange, onSave, readOnly, line, column, wrap = false, onCursorChange, onToggleWrap, diagnostics = [], onDiagnostics, onNavigate, onHistoryChange, onChangeStats, followChanges = false, onReview }: {
-  onReview?: () => void; project?: string; onChangeStats?: (stats: { rel: string; added?: number; removed?: number; binary?: boolean } | null) => void; followChanges?: boolean; path: string; value: string; onChange?: (v: string) => void; onSave?: () => void; readOnly?: boolean; line?: number; column?: number; wrap?: boolean; onCursorChange?: (position: { line: number; column: number }) => void; onToggleWrap?: () => void; diagnostics?: ProjectDiagnostic[]; onDiagnostics?: (diagnostics: ProjectDiagnostic[]) => void; onNavigate?: () => void; onHistoryChange?: (history: EditorHistory | null) => void;
+export function CodeEditor({ project: documentProject, active = true, path, value, onChange, onSave, readOnly, line, column, wrap = false, onCursorChange, onToggleWrap, diagnostics = [], onDiagnostics, onNavigate, onHistoryChange, onChangeStats, followChanges = false, onReview }: {
+  active?: boolean; onReview?: () => void; project?: string; onChangeStats?: (stats: { rel: string; added?: number; removed?: number; binary?: boolean } | null) => void; followChanges?: boolean; path: string; value: string; onChange?: (v: string) => void; onSave?: () => void; readOnly?: boolean; line?: number; column?: number; wrap?: boolean; onCursorChange?: (position: { line: number; column: number }) => void; onToggleWrap?: () => void; diagnostics?: ProjectDiagnostic[]; onDiagnostics?: (diagnostics: ProjectDiagnostic[]) => void; onNavigate?: () => void; onHistoryChange?: (history: EditorHistory | null) => void;
 }) {
   const host = React.useRef<HTMLDivElement>(null);
   const view = React.useRef<EditorView | null>(null);
@@ -85,6 +86,11 @@ export function CodeEditor({ project: documentProject, path, value, onChange, on
   const [liveDiagnostics, setLiveDiagnostics] = React.useState<{ path: string; text: string; items: ProjectDiagnostic[] } | null>(null);
   // Agent-aware editing: who wrote each line (Alt+B toggles it), agent edits highlighted, a selection handed to an agent.
   const s = useStore(); const workspace = documentProject ?? s.workdir; const store = React.useRef(s); store.current = s;
+  const hasServer = configuredLanguage(s.st?.settings.languageServers, path);
+  const serverRevision = JSON.stringify(s.st?.settings.languageServers || []);
+  const { owner: languageOwner, error: ownerError } = useLanguageOwner(s.hub, workspace, path, serverRevision, active && hasServer);
+  const currentOwner = React.useRef(languageOwner); currentOwner.current = languageOwner;
+  const isActive = React.useRef(active); isActive.current = active;
   const debug = useDebugger(workspace); const debugRef = React.useRef(debug); debugRef.current = debug;
   const toggleBreakpoint = React.useRef((line: number) => {});
   toggleBreakpoint.current = (line) => { const exists = debugRef.current.breakpoints.some((b) => b.rel === path && b.line === line); void store.current.hub.call('debugBreakpoint', workspace, path, line, !exists).catch((e) => toast.error(e.message)); };
@@ -101,13 +107,13 @@ export function CodeEditor({ project: documentProject, path, value, onChange, on
       const configured = configuredLanguage(store.current.st?.settings.languageServers, path);
       // Web languages use the bundled formatter consistently, even when an LSP
       // also offers whitespace edits that leave compact blocks on one line.
-      const serverEdits = !formatParser(path) && configured ? await store.current.hub.call<LspEdit[] | null>('languageFormat', workspace, path, original, { tabSize: editorSpacing(path, original).tabSize, insertSpaces: !editorSpacing(path, original).useTabs }) : null;
+      const serverEdits = !formatParser(path) && configured && languageOwner ? await store.current.hub.call<LspEdit[] | null>('languageFormat', workspace, path, original, { tabSize: editorSpacing(path, original).tabSize, insertSpaces: !editorSpacing(path, original).useTabs }, languageOwner) : null;
       const text = serverEdits ? applyLspEdits(original, serverEdits) : formatParser(path) && store.current.hub.platform === 'mock' ? await formatInWorker(path, original) : await store.current.hub.call<string>('formatSource', workspace, path, original, automatic);
       if (view.current !== v) return null;
       if (v.state.doc.toString() !== original) { toast.message('Draft changed while formatting. Try again.'); return null; }
       const change = minimalChange(original, text);
       if (change) v.dispatch({ changes: change, annotations: [Transaction.userEvent.of('input.format'), isolateHistory.of('full')] });
-      v.focus();
+      if (isActive.current) v.focus();
       return text;
     } catch (error) { if (view.current === v) toast.error('Could not format document', { description: (error as Error).message.slice(0, 220) }); return null; }
     finally { formatBusy.current = false; if (view.current === v) setFormatting(false); }
@@ -181,23 +187,21 @@ export function CodeEditor({ project: documentProject, path, value, onChange, on
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path, workspace]);
 
-  const hasServer = configuredLanguage(s.st?.settings.languageServers, path);
-  const serverRevision = JSON.stringify(s.st?.settings.languageServers || []);
-  React.useEffect(() => { const editor = view.current; if (editor && workspace) editor.dispatch({ effects: serverCompletion.current.reconfigure(hasServer ? autocompletion({ override: [serverCompletions(s.hub, workspace, path)] }) : []) }); }, [workspace, path, serverRevision, hasServer, s.hub]);
+  React.useEffect(() => { const editor = view.current; if (editor && workspace) editor.dispatch({ effects: serverCompletion.current.reconfigure(languageOwner ? autocompletion({ override: [serverCompletions(s.hub, workspace, path, languageOwner, () => currentOwner.current === languageOwner)] }) : []) }); }, [workspace, path, languageOwner, s.hub]);
   const [serverDiagnostics, setServerDiagnostics] = React.useState<{ text: string; items: ProjectDiagnostic[] } | null>(null);
   const [serverError, setServerError] = React.useState('');
   const currentText = React.useRef(value); currentText.current = value;
   React.useEffect(() => {
-    if (!hasServer || !workspace) { setServerDiagnostics(null); setServerError(''); return; }
+    if (!languageOwner || !workspace) { setServerDiagnostics(null); setServerError(''); return; }
     const off = s.hub.on('language-diagnostics', (event) => { if (event.project === workspace && event.rel === path && event.text === currentText.current) setServerDiagnostics({ text: event.text, items: event.diagnostics }); });
-    return () => { if (typeof off === 'function') off(); void s.hub.call('languageClose', workspace, path).catch(() => {}); };
-  }, [workspace, path, hasServer, serverRevision, s.hub]);
+    return () => { if (typeof off === 'function') off(); };
+  }, [workspace, path, languageOwner, s.hub]);
   React.useEffect(() => {
-    if (!hasServer || !workspace) return;
+    if (!languageOwner || !workspace) return;
     let current = true;
-    const timer = setTimeout(() => { s.hub.call<{ active: boolean; diagnostics: ProjectDiagnostic[] }>('languageDocument', workspace, path, value).then((result) => { if (current) { setServerDiagnostics({ text: value, items: result.diagnostics }); setServerError(''); } }).catch((error) => { if (current) setServerError(error.message.replace(/^Error invoking remote method '[^']*': (Error: )?/, '')); }); }, 300);
+    const timer = setTimeout(() => { s.hub.call<{ active: boolean; diagnostics: ProjectDiagnostic[] }>('languageDocument', workspace, path, value, languageOwner).then((result) => { if (current) { setServerDiagnostics({ text: value, items: result.diagnostics }); setServerError(''); } }).catch((error) => { if (current) setServerError(error.message.replace(/^Error invoking remote method '[^']*': (Error: )?/, '')); }); }, 300);
     return () => { current = false; clearTimeout(timer); };
-  }, [workspace, path, value, hasServer, serverRevision, s.hub]);
+  }, [workspace, path, value, languageOwner, s.hub]);
 
   const sourceId = sourceLanguage(path, value).id;
   React.useEffect(() => {
@@ -234,12 +238,13 @@ export function CodeEditor({ project: documentProject, path, value, onChange, on
   }, [workspace, path, diskChanged, s.git?.stat, s.git?.branch, s.hub]);
   React.useEffect(() => {
     let current = true;
-    if (readOnly || !(documentLanguage(path) || sourceSyntaxSupported(path, value))) return;
+    if (!active || readOnly || !(documentLanguage(path) || sourceSyntaxSupported(path, value))) return;
+    const controller = new AbortController();
     const timer = setTimeout(() => {
-      liveValidation(path, value).then((items) => { if (current) { setLiveDiagnostics({ path, text: value, items }); } }).catch(() => { if (current) setLiveDiagnostics(null); });
+      liveValidation(path, value, controller.signal).then((items) => { if (current) { setLiveDiagnostics({ path, text: value, items }); } }).catch(() => { if (current) setLiveDiagnostics(null); });
     }, 300);
-    return () => { current = false; clearTimeout(timer); };
-  }, [path, value, readOnly]);
+    return () => { current = false; clearTimeout(timer); controller.abort(); };
+  }, [path, value, readOnly, active]);
   const allDiagnostics = [...diagnostics, ...(serverDiagnostics?.text === value ? serverDiagnostics.items : []), ...(liveDiagnostics?.path === path && liveDiagnostics.text === value ? liveDiagnostics.items : [])];
   const diagnosticKey = JSON.stringify(allDiagnostics);
   React.useEffect(() => {
@@ -286,8 +291,8 @@ export function CodeEditor({ project: documentProject, path, value, onChange, on
 
   return (
     <div className="relative h-full min-h-0 overflow-hidden">
-      <EditorContextMenu editor={view} project={workspace} path={path} format={() => void format.current()} canFormat={!!(formatParser(path) || nativeFormatTool(path) || hasServer)} hasServer={hasServer} wrap={wrap} toggleWrap={onToggleWrap}><div ref={host} className="h-full min-h-0" /></EditorContextMenu>
-      {serverError && <button type="button" className="absolute right-3 bottom-3 max-w-[calc(100%-24px)] truncate rounded border bg-popover px-2 py-1 text-left text-xs text-muted-foreground" title={serverError} onClick={() => s.openSettings('language-tools')}>Language server unavailable · Settings</button>}
+      <EditorContextMenu editor={view} project={workspace} path={path} languageOwner={languageOwner} format={() => void format.current()} canFormat={!!(formatParser(path) || nativeFormatTool(path) || hasServer)} hasServer={hasServer} wrap={wrap} toggleWrap={onToggleWrap}><div ref={host} className="h-full min-h-0" /></EditorContextMenu>
+      {(serverError || ownerError) && <button type="button" className="absolute right-3 bottom-3 max-w-[calc(100%-24px)] truncate rounded border bg-popover px-2 py-1 text-left text-xs text-muted-foreground" title={serverError || ownerError} onClick={() => s.openSettings('language-tools')}>Language server unavailable · Settings</button>}
       {formatting && <span role="status" className="pointer-events-none absolute right-3 bottom-3 rounded bg-popover px-2 py-1 text-xs text-muted-foreground">Formatting…</span>}
       {editing.length > 0 && (
         <div role="status" className="pointer-events-none absolute top-2 right-4 z-10 flex items-center gap-1.5 rounded-full border bg-popover/95 px-2.5 py-1 text-xs text-popover-foreground shadow-sm">
