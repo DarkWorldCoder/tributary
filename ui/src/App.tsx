@@ -99,16 +99,18 @@ function WorkbenchApp() {
         <KeyboardShortcuts />
         <SidebarInset className="min-h-0 overflow-hidden">
           {!studio && <div className={workspaceVisible ? "contents max-md:hidden" : "contents"}><ThreadHeader /></div>}
-          <div className={`relative flex min-h-0 min-w-0 flex-1 ${s.terminalDock === 'left' || s.terminalDock === 'right' ? 'flex-row' : 'flex-col'}`}>
+          <div className="relative flex min-h-0 min-w-0 flex-1">
             <div className="flex min-h-0 min-w-0 flex-1">
             <WorkspaceLayout project={s.workdir} visible={workspaceVisible} expanded={s.workspaceExpanded} editorFirst={studio}
               chat={<>{studio && <ThreadHeader compact />}<section aria-label="Chat" className="flex min-h-0 flex-1 flex-col"><Main /></section></>}
-              workspace={(workspaceOpened || s.panel.open) && <React.Suspense fallback={<p role="status" className="p-5 text-sm text-muted-foreground">Opening workspace…</p>}><WorkspacePanel /></React.Suspense>}
+              workspace={<div data-slot="editor-terminal-area" className={`${s.workspaceExpanded && workspaceVisible ? 'fixed inset-0 z-40' : 'relative'} flex h-full min-h-0 min-w-0 ${s.terminalDock === 'left' || s.terminalDock === 'right' ? 'flex-row' : 'flex-col'}`}>
+                <div className="flex min-h-0 min-w-0 flex-1 flex-col">{(workspaceOpened || s.panel.open) && <React.Suspense fallback={<p role="status" className="p-5 text-sm text-muted-foreground">Opening workspace…</p>}><WorkspacePanel /></React.Suspense>}</div>
+                {s.project && (s.terminalOpen || terminalKept) && <TerminalHost hidden={!s.terminalOpen || !workspaceVisible} close={() => s.setTerminalOpen(false)} />}
+              </div>}
             />
             <DeferredSurface active={!!s.document} name="Document"><DocumentPanel /></DeferredSurface>
             {conversationLayout && !workspaceVisible && !s.document && <ProjectContext />}
             </div>
-            {s.project && (s.terminalOpen || terminalKept) && <TerminalHost hidden={!s.terminalOpen} close={() => s.setTerminalOpen(false)} />}
           </div>
         </SidebarInset>
       </SidebarProvider>

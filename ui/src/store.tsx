@@ -242,7 +242,12 @@ function useStoreValue() {
       .catch((e: Error) => toast.error(e.message || String(e)));
   }, [st, thread, queue, mode, gatewayId]);
 
-  const setPanel = React.useCallback((p: { open: boolean; tab: PanelTab }) => { if (!p.open || p.tab !== 'files') pauseFollowing(); updateView({ panel: p }); }, [updateView, pauseFollowing]);
+  const setPanel = React.useCallback((p: { open: boolean; tab: PanelTab }) => { if (!p.open || p.tab !== 'files') pauseFollowing(); if (!p.open) setTerminalOpenRaw(false); updateView({ panel: p }); }, [updateView, pauseFollowing, setTerminalOpenRaw]);
+  const setTerminalOpen = React.useCallback((open: boolean) => {
+    setTerminalOpenRaw(open);
+    if (open) { setHome(false); setDocument(null); setPanel({ open: true, tab: panel.tab }); }
+  }, [setTerminalOpenRaw, setPanel, panel.tab]);
+  React.useEffect(() => { if (home || activeDocument) setTerminalOpenRaw(false); }, [home, activeDocument, setTerminalOpenRaw]);
   const openPanel = React.useCallback((tab: PanelTab) => { setPanel({ open: true, tab }); }, [setPanel]);
   const fileIntentId = React.useRef(0);
   const openChecks = React.useCallback(() => { const project = workdirRef.current; if (!project) return; setChecksIntent({ project, n: ++fileIntentId.current }); setPanel({ open: true, tab: 'files' }); }, [setPanel]);
@@ -298,7 +303,7 @@ function useStoreValue() {
     queued: (thread && queue[thread.id]) || [], clearQueue: () => { if (thread) setQueue((q) => ({ ...q, [thread.id]: [] })); },
     editQueued: (id: string, text: string) => { if (thread && text.trim()) setQueue((q) => ({ ...q, [thread.id]: (q[thread.id] || []).map((m) => m.id === id ? { ...m, text: text.trim() } : m) })); },
     removeQueued: (id: string) => { if (thread) setQueue((q) => ({ ...q, [thread.id]: (q[thread.id] || []).filter((m) => m.id !== id) })); },
-    setTerminalOpen: setTerminalOpenRaw, terminalPosition, setTerminalPosition, terminalDock,
+    setTerminalOpen, terminalPosition, setTerminalPosition, terminalDock,
     agentOf, refreshState, loadThreads, refreshGit, openThread, newThread, send, openReview,
     setAgentId, setMode, setGatewayId, setTheme, setReview, setSettings, setPalette, setDraft, setThread,
     stop: () => { if (threadRef.current) hub.call('stop', threadRef.current.id); },

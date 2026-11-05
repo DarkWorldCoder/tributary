@@ -350,7 +350,8 @@ export function XtermView({
       const detail = (event as CustomEvent<{ id: string; action: string }>)
         .detail;
       if (detail?.id !== id) return;
-      if (detail.action === "find") openSearch();
+      if (detail.action === "focus") term.focus();
+      else if (detail.action === "find") openSearch();
       else if (detail.action === "clear") {
         term.clear();
         term.focus();

@@ -245,8 +245,12 @@ export function TerminalPanel({ hidden = false }: { hidden?: boolean } = {}) {
     window.addEventListener("pointerup", up);
     window.addEventListener("pointercancel", up);
   };
+  const selectTerminal = (id: string) => {
+    setActive(id);
+    requestAnimationFrame(() => window.dispatchEvent(new CustomEvent('tributary:terminal-command', { detail: { id, action: 'focus' } })));
+  };
   return (
-    <Tabs.Root asChild value={active ?? ""} onValueChange={setActive}>
+    <Tabs.Root asChild value={active ?? ""} onValueChange={selectTerminal}>
       <section
         ref={section}
         aria-label="Terminal"
@@ -447,7 +451,7 @@ export function TerminalPanel({ hidden = false }: { hidden?: boolean } = {}) {
                     {visible.map((t) => (
                       <DropdownMenuItem
                         key={t.id}
-                        onSelect={() => setActive(t.id)}
+                        onSelect={() => selectTerminal(t.id)}
                       >
                         <TerminalIcon
                           name={t.done ? "circle-slash" : "terminal"}

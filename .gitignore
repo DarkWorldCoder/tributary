@@ -14,3 +14,6 @@ coverage/
 *.AppImage
 *.deb
 .vscode-test/
+
+# TypeScript incremental build cache
+*.tsbuildinfo

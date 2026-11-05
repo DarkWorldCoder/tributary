@@ -134,7 +134,7 @@ export function WorkspacePanel() {
     let child: HTMLElement = surface.current;
     while (child.parentElement) {
       const parent = child.parentElement;
-      for (const element of parent.children) if (element !== child && element instanceof HTMLElement && !element.classList.contains('activity-rail') && element.dataset.slot !== 'project-navigation') {
+      for (const element of parent.children) if (element !== child && element instanceof HTMLElement && !element.classList.contains('activity-rail') && !element.classList.contains('terminal-panel') && element.dataset.slot !== 'project-navigation') {
         siblings.push({ element, inert: element.inert }); element.inert = true;
       }
       if (parent.classList.contains('app-frame')) break;
@@ -171,7 +171,7 @@ export function WorkspacePanel() {
   const changed = s.git?.changed.length ?? 0;
   const selectedTab = s.panel.tab === 'changes' ? 'review' : s.panel.tab;
   return (
-    <aside ref={surface} aria-label="Workspace" data-focused={s.workspaceExpanded || undefined} className={cn('workspace-surface flex h-full min-w-0 flex-col bg-card max-md:pt-[env(safe-area-inset-top)] max-md:pb-[env(safe-area-inset-bottom)] max-sm:[&_button[data-slot=button]]:min-h-11 max-sm:[&_input]:min-h-11 max-sm:[&_button[data-size^=icon]]:min-w-11', s.workspaceExpanded && 'fixed inset-0 z-40')}>
+    <aside ref={surface} aria-label="Workspace" data-focused={s.workspaceExpanded || undefined} className={cn('workspace-surface flex h-full min-w-0 flex-col bg-card max-md:pt-[env(safe-area-inset-top)] max-md:pb-[env(safe-area-inset-bottom)] max-sm:[&_button[data-slot=button]]:min-h-11 max-sm:[&_input]:min-h-11 max-sm:[&_button[data-size^=icon]]:min-w-11')}>
       <Tabs value={selectedTab} onValueChange={(value) => s.setPanel({ open: true, tab: value as PanelTab })} className="flex h-full min-h-0 flex-col gap-0">
         <header className="workbench-toolbar @container border-b bg-background/60 pr-2">
           <Heading className="sr-only">Workspace</Heading>

@@ -1,0 +1,54 @@
+{
+  "date": "2026-11-05T05:47:06.126308+00:00",
+  "scope": "Explorer hidden files, creation, filename search and independent terminal splits",
+  "checks": {
+    "mergedMainTests": 498,
+    "failures": 0,
+    "typeCheck": "passed",
+    "productionUiBuild": "passed",
+    "diffWhitespaceCheck": "passed",
+    "focusedWorkspaceAndTerminalRegressionTests": 35
+  },
+  "nativeDesktop": {
+    "runtime": "Electron 44.7.2 on Linux under Xvfb",
+    "profile": "Disposable test profile; no external agent calls",
+    "hiddenEnvFileVisibleByDefault": true,
+    "envFileRenderedInEditor": true,
+    "folderCreatedFromUi": true,
+    "nestedFileCreatedFromUiAndOpened": true,
+    "findFileShortcut": "Control+P tested",
+    "hiddenEnvFilenameSearch": true,
+    "splitButtonTwoVisiblePanes": true,
+    "splitShortcutThreeVisiblePanes": true,
+    "sameThreeShellIdsAfterHideAndReopen": true,
+    "terminalTabFocusesCorrespondingPane": true,
+    "editorRemainedVisible": true,
+    "horizontalPageOverflow": false,
+    "terminalDockedOnlyWithinEditor": true,
+    "normalEditorWidthPx": 869,
+    "normalTerminalWidthPx": 869,
+    "chatFullWindowHeight": true,
+    "focusedWorkspaceTerminalVisibleAndInteractive": true,
+    "sameTwoShellIdsAfterWorkspaceCloseAndReopen": true
+  },
+  "limits": [
+    "Splits are limited to four shells per group; separate terminal tabs remain available.",
+    "File search bounds traversal and skips bulky dependency/build folders and symlinks; explorer still lists these folders.",
+    "Native behavior verified on Linux; macOS and Windows were not run in this environment."
+  ],
+  "sourceHashes": {
+    "core/files.js": "cc21be7876af19fdba9ba888fb74fa7d074b84ff09d161df8c587ae36f235dff",
+    "core/shortcuts.mjs": "7dc89ca13c4c8bcb4366a289284619044433839b9ff86d8b9b1ad18da68f9fa9",
+    "core/hub.js": "7318d4c2d5be27193f24a2f65c32ffc7fde287acbeff1018ec05aeb633dbfc30",
+    "desktop/main.js": "f650b86fe05ea1f749b947344b67b15feb3b0694ffde72a4cfcaca03bdebcdd6",
+    "vscode/extension.js": "a5ab363ddf1e2984cdbf52baa07df5965f27b8c43c2db7a01ef1d0eebecf35f0",
+    "ui/src/components/directory-tree.tsx": "36e5ac1c56ee9ffba8a0a8f6433bd0097e20fe1de17ddb465531fd75a8961a58",
+    "ui/src/components/workspace-files.tsx": "c3f3e11d1779eb3c9e4ba7107d95040654cd2ab68149345327bcf822fa863025",
+    "ui/src/components/terminal-panel.tsx": "5d9f6067a5f4588fa26a5d4f0c6f270b660259fa16c0472a3de30cd11fecd3b2",
+    "ui/src/components/terminal-view.tsx": "735fea502d7ec2cc732d02611f7a8493bf88a7697ad8a5c0208aa7760eeb7b8b",
+    "ui/src/components/keyboard-shortcuts.tsx": "34fd8b8a6720dfdea61a7c3e3734fdc95bd53fdd424f3d47ad1a75e2d9e7c817",
+    "ui/src/App.tsx": "59e00c3903d5f2863fd4bf5d808f4294634d991f5085a8ad89a02590310a1130",
+    "ui/src/store.tsx": "7f0371c6fa04a43396aca62fe56dc79494efa66908a81d09453ee4bcd830e380",
+    "ui/src/components/workspace-panel.tsx": "d80514bf5706b5616e9094a092b3100d8cb533ff208491c5cebc224de4b011d6"
+  }
+}
