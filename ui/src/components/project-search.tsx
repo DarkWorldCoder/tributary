@@ -27,7 +27,7 @@ export function ProjectSearch() {
     catch (cause) { if (request === revision.current) setError((cause as Error).message.replace(/^Error invoking remote method '[^']*': (Error: )?/, '')); }
     finally { if (request === revision.current) setBusy(false); }
   };
-  return <Dialog open={open} onOpenChange={setOpen}><DialogContent className="flex max-h-[85dvh] flex-col sm:max-w-2xl">
+  return <Dialog open={open} onOpenChange={setOpen}><DialogContent overlayClassName="bg-transparent! backdrop-filter-none!" className="top-10 flex max-h-[calc(100dvh-56px)] translate-y-0 flex-col rounded-md sm:max-w-2xl">
     <DialogHeader><DialogTitle>Search in files</DialogTitle><DialogDescription>Find text in this project. Case-insensitive; skips dependencies, build output, binary files and symbolic links.</DialogDescription></DialogHeader>
     <form className="flex gap-2" onSubmit={(event) => { event.preventDefault(); void search(); }}><Input autoFocus aria-label="Search project text" placeholder="Search project text…" maxLength={512} value={query} onChange={(event) => setQuery(event.target.value)} /><Button disabled={busy || !project || !query.trim()} type="submit"><Search />{busy ? 'Searching…' : 'Search'}</Button></form>
     {!project && <p className="text-sm text-muted-foreground">Open a project folder to search its files.</p>}

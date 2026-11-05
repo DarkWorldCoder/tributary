@@ -31,7 +31,7 @@ export function KeyboardShortcuts() {
       if (action) {
         event.preventDefault(); event.stopPropagation();
         if (s.workspaceExpanded && ['sidebar', 'terminal', 'debug', 'new', 'recent'].includes(action)) s.setWorkspaceExpanded(false);
-        if (action === 'find-file') { s.openPanel('files'); s.setWorkspaceExpanded(false); requestAnimationFrame(() => window.dispatchEvent(new Event('tributary:find-file'))); }
+        if (action === 'find-file') window.dispatchEvent(new Event('tributary:quick-open'));
         else if (action === 'split-terminal' || action === 'new-terminal') { s.setTerminalOpen(true); requestAnimationFrame(() => window.dispatchEvent(new Event(`tributary:${action}`))); }
         else if (action === 'help') s.setShortcutsOpen(true);
         else if (action === 'search') s.setPalette(true);

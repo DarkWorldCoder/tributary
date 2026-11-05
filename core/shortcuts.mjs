@@ -3,7 +3,7 @@ export const SHORTCUTS = [
   { id: 'split-terminal', label: 'Split terminal', group: 'Navigation', keys: ['Mod', 'Shift', '5'] },
   { id: 'new-terminal', label: 'New terminal', group: 'Navigation', keys: ['Mod', 'Shift', '`'] },
   { id: 'new', label: 'New chat', group: 'Chat', keys: ['Mod', 'Shift', 'O'], aliases: [['Mod', 'N']] },
-  { id: 'search', label: 'Command palette', group: 'App', keys: ['Mod', 'Shift', 'P'], aliases: [['Mod', 'K']] },
+  { id: 'search', label: 'Command palette', group: 'App', keys: ['Mod', 'Shift', 'P'], aliases: [['Mod', 'K'], ['F1']] },
   { id: 'search-project', label: 'Search in project files', group: 'Navigation', keys: ['Mod', 'Shift', 'F'] },
   { id: 'attention', label: 'Next chat that needs you', group: 'Chat', keys: ['Mod', 'Shift', 'J'] },
   { id: 'focus', label: 'Focus message', group: 'Chat', keys: ['Shift', 'Escape'] },

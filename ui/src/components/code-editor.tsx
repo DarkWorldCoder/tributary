@@ -214,7 +214,7 @@ export function CodeEditor({ project: documentProject, active = true, path, valu
   }, [path, workspace, sourceId]);
 
   React.useEffect(() => {
-    const run = (event: Event) => { const v = view.current; if (!v?.hasFocus) return; const action = (event as CustomEvent).detail; if (action === 'undo') undoEdit(v); else if (action === 'redo') redoEdit(v); else if (action === 'selectAll') selectAll(v); else document.execCommand(action); };
+    const run = (event: Event) => { const v = view.current; if (!v?.hasFocus) return; const action = (event as CustomEvent).detail; if (action === 'find' || action === 'replace') openEditorFind(v, action === 'replace'); else if (action === 'undo') undoEdit(v); else if (action === 'redo') redoEdit(v); else if (action === 'selectAll') selectAll(v); else document.execCommand(action); };
     window.addEventListener('tributary:editor-command', run); return () => window.removeEventListener('tributary:editor-command', run);
   }, []);
 

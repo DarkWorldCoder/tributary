@@ -326,8 +326,16 @@
 .feature-finder [data-slot="command"] { border-radius: 6px !important; }
 .feature-finder [cmdk-list] { max-height: min(490px, calc(100dvh - 116px)); }
 .feature-finder [cmdk-item] { min-height: 26px; padding: 3px 8px; font-size: 13px; line-height: 20px; border-radius: 3px !important; }
+.feature-finder [cmdk-item][data-selected="true"] { background: var(--accent); color: var(--accent-foreground); outline: 1px solid color-mix(in oklch, var(--ring) 45%, transparent); outline-offset: -1px; }
 .feature-finder [cmdk-group-heading] { padding-block: 4px; font-size: 11px; }
 .feature-finder [data-slot="command-input-wrapper"] { padding: 4px; }
+.feature-finder [data-slot="command-input-wrapper"] { flex: 1; min-width: 0; }
+.feature-finder [data-slot="command-shortcut"] { flex-shrink: 0; letter-spacing: normal; }
+.feature-finder [cmdk-item] > svg:last-child:not(:first-child) { display: none; }
+@media (max-width: 639px), (pointer: coarse) {
+  .feature-finder [cmdk-item] { min-height: 44px; }
+  .feature-finder [data-slot="input-group"] { min-height: 44px; }
+}
 
 /* One row rhythm keeps labels, tab actions and neighboring panes on the same centerline. */
 :root, .developer-shell, .workspace-surface { --workbench-row-height: 32px; --workbench-action-size: 28px; --explorer-row-height: 24px; }
@@ -519,7 +527,9 @@
 .titlebar-window-button:last-child:hover { background: var(--destructive); color: white; }
 
 .desktop-titlebar { position: relative; }
-.desktop-titlebar > span { position: absolute; left: 50%; transform: translateX(-50%); max-width: calc(100% - 640px); }
+.titlebar-command-center { width: min(38vw, 480px); margin-inline: auto; }
+@media (max-width: 1000px) { .titlebar-command-shortcut { display: none; } }
+@media (max-width: 639px) { .titlebar-command-center { width: auto; flex: 1; margin-inline: 6px; } }
 .conversation-shell [data-slot="message-scroller-content"], .conversation-shell .chat-composer-host { margin-inline: auto; min-width: 0; max-width: 48rem; }
 
 .app-frame:has(> .desktop-titlebar) [data-slot="sidebar-container"] { top: 32px; height: calc(100svh - 32px); }
