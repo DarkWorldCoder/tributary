@@ -338,19 +338,36 @@
 .cm-vscode-search input[aria-invalid="true"] { color: var(--destructive); }
 @media (max-width: 639px) { .cm-vscode-search .cm-find-count { min-width: 0; max-width: 50px; font-size: 10px; } }
 
-/* Quick commands stay near the title bar, with room for more results. */
-.feature-finder [data-slot="command"] { border-radius: 6px !important; }
-.feature-finder [cmdk-list] { max-height: min(490px, calc(100dvh - 116px)); }
-.feature-finder [cmdk-item] { min-height: 26px; padding: 3px 8px; font-size: 13px; line-height: 20px; border-radius: 3px !important; }
+/* Adapted from VS Code quickInput.css: 600px cap, 22px rows, 6px insets.
+   Keep touch targets larger on narrow/coarse-pointer devices. */
+.feature-finder[data-slot="dialog-content"] {
+  top: 40px; width: min(62vw, 600px); max-width: calc(100vw - 32px);
+  max-height: calc(100dvh - 56px); translate: -50% 0;
+  gap: 0; padding: 0; border-radius: 6px !important;
+  box-shadow: var(--shadow-xl); animation: none;
+}
+.feature-finder [data-slot="command"] { border-radius: 6px !important; padding: 0; }
+.feature-finder [cmdk-list] { max-height: min(440px, 40dvh); padding: 0 6px 7px; scrollbar-width: thin; }
+.feature-finder [cmdk-item] { min-height: 22px; padding: 0 6px; font-size: 13px; line-height: 22px; border-radius: 3px !important; gap: 6px; }
 .feature-finder [cmdk-item][data-selected="true"] { background: var(--accent); color: var(--accent-foreground); outline: 1px solid color-mix(in oklch, var(--ring) 45%, transparent); outline-offset: -1px; }
-.feature-finder [cmdk-group-heading] { padding-block: 4px; font-size: 11px; }
-.feature-finder [data-slot="command-input-wrapper"] { padding: 4px; }
-.feature-finder [data-slot="command-input-wrapper"] { flex: 1; min-width: 0; }
+.feature-finder [cmdk-group] { padding: 0; }
+.feature-finder [cmdk-group-heading] { padding: 4px 6px; font-size: 11px; }
+.feature-finder [data-slot="command-input-wrapper"] { flex: 1; min-width: 0; padding: 6px 0 4px 6px; }
+.feature-finder [data-slot="input-group"] { height: 26px !important; border-radius: 3px !important; background: var(--input); }
+.feature-finder [data-slot="input-group"]:focus-within { outline: 1px solid var(--ring); outline-offset: -1px; }
+.feature-finder [cmdk-input] { height: 24px; font-size: 13px; }
+.command-picker [data-slot="input-group-addon"] { display: none; }
+.command-picker [cmdk-input] { padding-inline: 6px; }
 .feature-finder [data-slot="command-shortcut"] { flex-shrink: 0; letter-spacing: normal; }
+.feature-finder [data-slot="command-shortcut"] > span { flex-wrap: nowrap; gap: 2px; }
+.feature-finder [data-slot="kbd"] { height: 16px; min-width: 16px; padding: 0 3px; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 3px; background: transparent; font-size: 10px; font-weight: 400; }
+.feature-finder .command-section-label { margin-left: auto; flex-shrink: 0; font-size: 11px; color: var(--muted-foreground); }
 .feature-finder [cmdk-item] > svg:last-child:not(:first-child) { display: none; }
 @media (max-width: 639px), (pointer: coarse) {
+  .feature-finder[data-slot="dialog-content"] { width: calc(100vw - 32px); }
   .feature-finder [cmdk-item] { min-height: 44px; }
   .feature-finder [data-slot="input-group"] { min-height: 44px; }
+  .feature-finder .command-section-label { display: none; }
 }
 
 /* One row rhythm keeps labels, tab actions and neighboring panes on the same centerline. */

@@ -57,3 +57,27 @@ The editor has a floating top-right Find widget: case/word/regex controls, match
 [Desktop screenshot](performance/search-ui-desktop.png) · [Narrow screenshot](performance/search-ui-narrow.png).
 
 Windows/macOS native windows, older VS Code extension hosts and new installer releases were not exercised. Actual provider/model requests were not invoked. Temporary profiles and fixtures were isolated from user projects.
+
+
+## Quick Input source alignment, 5 November 2026
+
+Read the upstream source directly through GitHub's file API:
+
+- [quickInput.css](https://github.com/microsoft/vscode/blob/main/src/vs/platform/quickinput/browser/media/quickInput.css), blob `4dcc37b522e3da3ace08111d46e64d2c3e2121ac`: 22 px row rhythm, 6 px list/header insets, compact key bindings and inline section labels.
+- [quickInputController.ts](https://github.com/microsoft/vscode/blob/main/src/vs/platform/quickinput/browser/quickInputController.ts), blob `bafd7f1a050998b63eba02bf9b3a746f68057bee`: width capped at 600 px or 62% of the viewport, result list height based on 40% of the viewport.
+- [commandsQuickAccess.ts](https://github.com/microsoft/vscode/blob/main/src/vs/workbench/contrib/quickaccess/browser/commandsQuickAccess.ts), blob `e05b71bd72c6c365ada6e0095b621c2f399a0b3b`: command provider integration and command-history action.
+
+The desktop palette now uses those dimensions, square-edged compact inputs and rows, an editable `>` query, right-aligned shortcut badges, and inline recently-used/other-command labels. Quick Open uses the same geometry. Shared primitive radius/height classes no longer force important overrides over the feature's layout. Keyboard instructions remain available to screen readers without a persistent footer.
+
+This adapts the MIT-licensed layout to Tributary's existing Radix/cmdk controls; it does not import the full VS Code runtime, advertise unsupported commands, or replace the existing search engine. The top offset remains below Tributary's title bar. Phones and coarse pointers retain 44 px targets rather than desktop density.
+
+Verified in a disposable Linux Electron 44.7.2 profile with temporary files and no agent/provider invoked:
+
+- Ctrl+Shift+P and F1 open the palette. `> memory` then Enter opens actual project memory. Reopening clears the query back to `>` and puts the executed command first in recent history.
+- ArrowDown moves selection to the next command; Escape dismisses the palette.
+- Ctrl+P, `helper`, Enter opens the actual `src/helper.ts` contents in the code editor.
+- Desktop 1280×850: palette at x=340/y=40, width 600 px, rows 22 px; container radius 6 px and row/input radius 3 px.
+- Narrow 375×812: x=16/y=40, width 343 px, rows 44 px, no document overflow.
+- TypeScript, production UI build, and 23 focused shortcut/navigation/usability checks pass.
+
+[Desktop](performance/quick-input-desktop.png) · [Narrow](performance/quick-input-narrow.png). Native Windows/macOS and installer distribution were not exercised. Unfinished file-tree memory work remains separate.

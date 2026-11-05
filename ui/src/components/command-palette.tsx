@@ -21,6 +21,8 @@ type Action = { id: string; label: string; icon: LucideIcon; run: () => unknown;
 export function CommandPalette() {
   const s = useStore(); const fullscreen = useFullscreen();
   const [recent, setRecent] = React.useState(readHistory);
+  const [query, setQuery] = React.useState('>');
+  React.useEffect(() => { if (s.palette) setQuery('>'); }, [s.palette]);
   const close = () => s.setPalette(false);
   const run = (fn: () => unknown) => () => { close(); void Promise.resolve().then(fn).catch((error: Error) => toast.error(error.message || 'Could not run command')); };
   const actions: Action[] = [
@@ -57,17 +59,17 @@ export function CommandPalette() {
     setRecent(next); try { localStorage.setItem(historyKey, JSON.stringify(next)); } catch { /* optional history */ }
     return action.run();
   });
-  const row = (action: Action) => <CommandItem key={action.id} value={action.label} keywords={action.keywords} disabled={action.disabled} onSelect={choose(action)}><action.icon /><span className="min-w-0 flex-1 truncate">{action.label}</span>{action.shortcut && <CommandShortcut><ShortcutLabel action={action.shortcut} /></CommandShortcut>}</CommandItem>;
+  const row = (action: Action, section?: string) => <CommandItem key={action.id} value={action.label} keywords={action.keywords} disabled={action.disabled} onSelect={choose(action)}><span className="min-w-0 flex-1 truncate">{action.label}</span>{action.shortcut && <CommandShortcut><ShortcutLabel action={action.shortcut} /></CommandShortcut>}{section && <span className="command-section-label">{section}</span>}</CommandItem>;
   const threads = (s.st?.projects ?? []).flatMap((p) => (s.threadsBy[p.path] || []).map((t) => ({ ...t, project: p })));
-  return <CommandDialog open={s.palette} onOpenChange={s.setPalette} title="Command palette" description="Search commands, agents and chats. Use arrow keys to choose and Enter to run." className="feature-finder top-10 max-h-[calc(100dvh-56px)] translate-y-0 gap-0 rounded-md! shadow-2xl sm:max-w-[600px]" commandProps={{ filter: (value, query, keywords) => defaultFilter(value, query.replace(/^\s*>\s*/, ''), keywords) }}>
-    <div className="flex items-center gap-1 pr-1"><CommandInput className="pr-2" leading={<span aria-hidden="true" className="font-mono text-sm text-muted-foreground">&gt;</span>} placeholder="Type a command or search chats…" aria-label="Search commands and chats" /><button aria-label="Close command palette" onClick={close} className="grid size-8 shrink-0 place-items-center rounded text-muted-foreground max-sm:size-11 hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"><X className="size-4" /></button></div>
+  return <CommandDialog open={s.palette} onOpenChange={s.setPalette} title="Command palette" description="Search commands, agents and chats. Use arrow keys to choose and Enter to run." className="feature-finder command-picker" commandProps={{ filter: (value, query, keywords) => defaultFilter(value, query.replace(/^\s*>\s*/, ''), keywords) }}>
+    <div className="flex items-center gap-1 pr-1"><CommandInput className="pr-2" leading={<></>} value={query} onValueChange={setQuery} placeholder="Type a command or search chats…" aria-label="Search commands and chats" /><button aria-label="Close command palette" onClick={close} className="grid size-8 shrink-0 place-items-center rounded text-muted-foreground max-sm:size-11 hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"><X className="size-4" /></button></div>
     <CommandList>
       <CommandEmpty>No matching commands or chats.</CommandEmpty>
-      {!!recentActions.length && <CommandGroup heading="Recently used">{recentActions.map(row)}</CommandGroup>}
-      <CommandGroup heading={recentActions.length ? 'Other commands' : 'Commands'}>{actions.filter((action) => !recentActions.includes(action)).map(row)}</CommandGroup>
+      {!!recentActions.length && <CommandGroup aria-label="Recently used">{recentActions.map((action, index) => row(action, index === 0 ? 'recently used' : undefined))}</CommandGroup>}
+      <CommandGroup aria-label="Other commands">{actions.filter((action) => !recentActions.includes(action)).map((action, index) => row(action, index === 0 && recentActions.length ? 'other commands' : undefined))}</CommandGroup>
       {!!s.ready.length && <><CommandSeparator /><CommandGroup heading="Switch agent">{s.ready.map((a) => <CommandItem key={a.id} value={`agent ${a.name}`} onSelect={run(() => s.setAgentId(a.id))}><AgentAvatar agent={a} size="xs" /><span className="truncate">{a.name}</span></CommandItem>)}</CommandGroup></>}
       {!!threads.length && <><CommandSeparator /><CommandGroup heading="Chats">{threads.slice(0, 200).map((t) => <CommandItem key={t.id} value={`${t.title} ${t.project.name} ${t.id}`} onSelect={run(() => s.openThread(t.id))}><MessageSquare /><span className="min-w-0 flex-1 truncate">{t.title}</span><span className="max-w-40 truncate text-xs text-muted-foreground">{t.project.name} · {ago(t.updatedAt)}</span></CommandItem>)}</CommandGroup></>}
     </CommandList>
-    <div className="flex items-center justify-between gap-2 border-t px-3 py-1.5 text-[11px] text-muted-foreground"><span>↑ ↓ to navigate · Enter to run</span><span>Esc to close</span></div>
+    <div className="sr-only"><span>↑ ↓ to navigate · Enter to run</span><span>Esc to close</span></div>
   </CommandDialog>;
 }
