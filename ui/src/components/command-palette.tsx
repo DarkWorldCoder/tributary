@@ -7,6 +7,7 @@ import { BookOpen, Bug, Download, Maximize, Scan, FileImage, FolderPlus, Globe, 
 import type { LucideIcon } from 'lucide-react';
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator, CommandShortcut } from '@/components/ui/command';
 import { AgentAvatar } from '@/components/agent-avatar';
+import { SearchLabel } from '@/components/search-label';
 import { ago } from '@/lib/format';
 import { useStore } from '@/store';
 import { useFullscreen } from '@/hooks/use-fullscreen';
@@ -22,6 +23,7 @@ export function CommandPalette() {
   const s = useStore(); const fullscreen = useFullscreen();
   const [recent, setRecent] = React.useState(readHistory);
   const [query, setQuery] = React.useState('>');
+  const labelQuery = query.replace(/^\s*>\s*/, '');
   React.useEffect(() => { if (s.palette) setQuery('>'); }, [s.palette]);
   const close = () => s.setPalette(false);
   const run = (fn: () => unknown) => () => { close(); void Promise.resolve().then(fn).catch((error: Error) => toast.error(error.message || 'Could not run command')); };
@@ -59,7 +61,7 @@ export function CommandPalette() {
     setRecent(next); try { localStorage.setItem(historyKey, JSON.stringify(next)); } catch { /* optional history */ }
     return action.run();
   });
-  const row = (action: Action, section?: string) => <CommandItem key={action.id} value={action.label} keywords={action.keywords} disabled={action.disabled} onSelect={choose(action)}><span className="min-w-0 flex-1 truncate">{action.label}</span>{action.shortcut && <CommandShortcut><ShortcutLabel action={action.shortcut} /></CommandShortcut>}{section && <span className="command-section-label">{section}</span>}</CommandItem>;
+  const row = (action: Action, section?: string) => <CommandItem key={action.id} value={action.label} keywords={action.keywords} disabled={action.disabled} onSelect={choose(action)}><span className="min-w-0 flex-1 truncate"><SearchLabel text={action.label} query={labelQuery} /></span>{action.shortcut && <CommandShortcut><ShortcutLabel action={action.shortcut} /></CommandShortcut>}{section && <span className="command-section-label">{section}</span>}</CommandItem>;
   const threads = (s.st?.projects ?? []).flatMap((p) => (s.threadsBy[p.path] || []).map((t) => ({ ...t, project: p })));
   return <CommandDialog open={s.palette} onOpenChange={s.setPalette} title="Command palette" description="Search commands, agents and chats. Use arrow keys to choose and Enter to run." className="feature-finder command-picker" commandProps={{ filter: (value, query, keywords) => defaultFilter(value, query.replace(/^\s*>\s*/, ''), keywords) }}>
     <div className="flex items-center gap-1 pr-1"><CommandInput className="pr-2" leading={<></>} value={query} onValueChange={setQuery} placeholder="Type a command or search chats…" aria-label="Search commands and chats" /><button aria-label="Close command palette" onClick={close} className="grid size-8 shrink-0 place-items-center rounded text-muted-foreground max-sm:size-11 hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring"><X className="size-4" /></button></div>
@@ -67,8 +69,8 @@ export function CommandPalette() {
       <CommandEmpty>No matching commands or chats.</CommandEmpty>
       {!!recentActions.length && <CommandGroup aria-label="Recently used">{recentActions.map((action, index) => row(action, index === 0 ? 'recently used' : undefined))}</CommandGroup>}
       <CommandGroup aria-label="Other commands">{actions.filter((action) => !recentActions.includes(action)).map((action, index) => row(action, index === 0 && recentActions.length ? 'other commands' : undefined))}</CommandGroup>
-      {!!s.ready.length && <><CommandSeparator /><CommandGroup heading="Switch agent">{s.ready.map((a) => <CommandItem key={a.id} value={`agent ${a.name}`} onSelect={run(() => s.setAgentId(a.id))}><AgentAvatar agent={a} size="xs" /><span className="truncate">{a.name}</span></CommandItem>)}</CommandGroup></>}
-      {!!threads.length && <><CommandSeparator /><CommandGroup heading="Chats">{threads.slice(0, 200).map((t) => <CommandItem key={t.id} value={`${t.title} ${t.project.name} ${t.id}`} onSelect={run(() => s.openThread(t.id))}><MessageSquare /><span className="min-w-0 flex-1 truncate">{t.title}</span><span className="max-w-40 truncate text-xs text-muted-foreground">{t.project.name} · {ago(t.updatedAt)}</span></CommandItem>)}</CommandGroup></>}
+      {!!s.ready.length && <><CommandSeparator /><CommandGroup heading="Switch agent">{s.ready.map((a) => <CommandItem key={a.id} value={`agent ${a.name}`} onSelect={run(() => s.setAgentId(a.id))}><AgentAvatar agent={a} size="xs" /><span className="truncate"><SearchLabel text={a.name} query={labelQuery} /></span></CommandItem>)}</CommandGroup></>}
+      {!!threads.length && <><CommandSeparator /><CommandGroup heading="Chats">{threads.slice(0, 200).map((t) => <CommandItem key={t.id} value={`${t.title} ${t.project.name} ${t.id}`} onSelect={run(() => s.openThread(t.id))}><MessageSquare /><span className="min-w-0 flex-1 truncate"><SearchLabel text={t.title} query={labelQuery} /></span><span className="max-w-40 truncate text-xs text-muted-foreground"><SearchLabel text={t.project.name} query={labelQuery} /> · {ago(t.updatedAt)}</span></CommandItem>)}</CommandGroup></>}
     </CommandList>
     <div className="sr-only"><span>↑ ↓ to navigate · Enter to run</span><span>Esc to close</span></div>
   </CommandDialog>;

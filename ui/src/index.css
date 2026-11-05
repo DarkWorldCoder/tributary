@@ -359,6 +359,8 @@ body:has(.feature-finder[data-state="open"]) [data-slot="tooltip-content"] { vis
 .feature-finder [cmdk-list] { max-height: min(440px, 40dvh); padding: 0 6px 7px; scrollbar-width: thin; }
 .feature-finder [cmdk-item] { min-height: 22px; padding: 0 6px; font-size: 13px; line-height: 22px; border-radius: 3px !important; gap: 6px; }
 .feature-finder [cmdk-item][data-selected="true"] { background: var(--accent); color: var(--accent-foreground); outline: 1px solid color-mix(in oklch, var(--ring) 45%, transparent); outline-offset: -1px; }
+.feature-finder .search-label-match { font-weight: 600; color: var(--search-match-foreground, currentColor); }
+.feature-finder [cmdk-item][data-selected="true"] .search-label-match { color: var(--search-focus-match-foreground, currentColor); }
 .feature-finder [cmdk-group] { padding: 0; }
 .feature-finder [cmdk-group-heading] { padding: 4px 6px; font-size: 11px; }
 .feature-finder [data-slot="command-input-wrapper"] { flex: 1; min-width: 0; padding: 6px 0 4px 6px; }

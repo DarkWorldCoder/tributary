@@ -6,6 +6,8 @@ const COLOR_KEYS = {
   '--muted-foreground': ['descriptionForeground', 'editorLineNumber.foreground'],
   '--accent': ['list.activeSelectionBackground'],
   '--accent-foreground': ['list.activeSelectionForeground', 'editor.foreground'],
+  '--search-match-foreground': ['list.highlightForeground'],
+  '--search-focus-match-foreground': ['quickInputList.focusHighlightForeground'],
   '--brand': ['button.background', 'focusBorder'],
   '--primary': ['button.background'],
   '--primary-foreground': ['button.foreground'],

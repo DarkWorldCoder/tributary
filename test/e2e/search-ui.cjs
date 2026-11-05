@@ -114,10 +114,25 @@ app.on('browser-window-created', (_event, win) => {
       await key('Escape');
     }
     check('top command picker fits 1280, 900, 390 and 320 pixel windows');
+    win.setSize(1280, 850); await key('p', ['control', 'shift']);
+    await until(() => run(`!!document.querySelector('.command-picker')`), 'command label match');
+    await text('[aria-label="Search commands and chats"][cmdk-input]', '> memory');
+    await until(() => run(`[...document.querySelectorAll('.command-picker [cmdk-item]:not([hidden]) .search-label-match')].some(e=>e.textContent==='Memory')`), 'highlighted command');
+    await shot('.highlighted-command'); await key('Escape');
     win.setSize(1280, 850); await key('p', ['control']); await until(() => run(`!!document.querySelector('.file-picker')`), 'Quick Open');
     await text('[aria-label="Search project filenames"]', 'helper'); await until(() => run(`document.querySelector('.file-picker [cmdk-item]')?.textContent.includes('helper.ts')`), 'filename match');
+    assert.equal(await run(`document.querySelector('.file-picker .search-label-match')?.textContent`), 'helper');
+    assert.equal(await run(`document.querySelector('.file-picker [role="status"]')?.textContent`), '1 file');
+    await shot('.highlighted-file');
+    await text('[aria-label="Search project filenames"]', 'src/help');
+    await until(() => run(`document.querySelector('.file-picker [cmdk-item]')?.textContent.includes('helper.ts')`), 'path match');
+    assert.deepEqual(await run(`[...document.querySelectorAll('.file-picker [cmdk-item] .search-label-match')].map(e=>e.textContent)`), ['help', 'src']);
+    await text('[aria-label="Search project filenames"]', 'main');
+    await until(() => run(`document.querySelector('.file-picker [cmdk-item]')?.textContent.includes('main.ts')`), 'root filename match');
+    assert.deepEqual(await run(`[...document.querySelectorAll('.file-picker [cmdk-item] .search-label-match')].map(e=>e.textContent)`), ['main']);
+    check('command and filename labels highlight matches without changing their text or filtering');
     check('Ctrl+P Quick Open uses real filename search'); await key('Escape');
-    const sources = ['ui/src/components/project-search.tsx', 'ui/src/lib/editor-search.ts', 'ui/src/index.css', 'test/e2e/search-ui.cjs'];
+    const sources = ['ui/src/components/project-search.tsx', 'ui/src/lib/editor-search.ts', 'ui/src/components/command-palette.tsx', 'ui/src/components/quick-open.tsx', 'ui/src/components/search-label.tsx', 'ui/src/lib/search-label.mjs', 'ui/src/lib/extension-theme-variables.mjs', 'ui/src/index.css', 'test/e2e/search-ui.cjs'];
     const sourceHashes = Object.fromEntries(sources.map(file => [file, crypto.createHash('sha256').update(fs.readFileSync(path.join(repo, file))).digest('hex')]));
     fs.writeFileSync(output, JSON.stringify({ date: new Date().toISOString(), passed: true, checks, layouts, maxConcurrentSearches: maxRunning, requests: calls, sourceHashes, scope: 'Linux Electron source build; isolated real files and actual search worker. Agent discovery disabled; two search replies deliberately held to exercise races. Native minimum width reduced only in this fixture for 390/320 pixel renderer checks. No live provider or installer claim.' }, null, 2) + '\n');
     console.log(JSON.stringify({ passed: true, checks })); clearTimeout(deadline); app.quit();
