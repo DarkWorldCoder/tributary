@@ -9,6 +9,60 @@ const { createPatcher } = require('../core/message-patch');
 const loadApply = () => import(path.join(__dirname, '..', 'ui', 'src', 'lib', 'message-patch.mjs'));
 const clone = (v) => JSON.parse(JSON.stringify(v)); // what crosses IPC
 
+test('comparison bases evict least recently used entries and misses preserve complete messages', async () => {
+  const { applyPatch } = await loadApply(); const patcher = createPatcher({ maxEntries: 2 });
+  const messages = ['a', 'b', 'c'].map(id => ({ id, role: 'assistant', text: id, ok: null }));
+  patcher.full(messages[0]); patcher.full(messages[1]);
+  messages[0].text += ' touched'; assert.ok(patcher.patch(messages[0]).text);
+  patcher.full(messages[2]); assert.equal(patcher.stats().entries, 2);
+  assert.equal(patcher.patch(messages[1]), null, 'b was older than the recently used a');
+  const windowCopies = new Map(messages.map(m => [m.id, clone(m)]));
+  for (let i = 0; i < 24; i++) {
+    const m = messages[i % messages.length]; m.text += ` ${i}`; m.tools = [{ id: 'tool', output: String(i) }];
+    const patch = patcher.patch(m);
+    if (patch === null) { patcher.full(m); windowCopies.set(m.id, clone(m)); }
+    else windowCopies.set(m.id, applyPatch(windowCopies.get(m.id), clone(patch)));
+    assert.deepEqual(windowCopies.get(m.id), clone(m)); assert.equal(patcher.stats().entries, 2);
+  }
+  for (const m of messages) { m.ok = true; patcher.full(m); }
+  assert.equal(patcher.stats().entries, 0); assert.equal(patcher.stats().accountedBytes, 0);
+});
+
+test('cache accounting bounds retained strings and structural entries without evicting for an oversized base', () => {
+  const message = { id: 'a', role: 'assistant', text: 'small', tools: [], ok: null };
+  const probe = createPatcher(); probe.full(message); const one = probe.stats().accountedBytes;
+  const patcher = createPatcher({ maxEntries: Infinity, maxBytes: one * 2 });
+  patcher.full(message); patcher.full({ ...message, id: 'b' }); patcher.full({ ...message, id: 'c' });
+  assert.equal(patcher.stats().entries, 2); assert.equal(patcher.patch(message), null);
+  const large = { ...message, id: 'large', text: 'x'.repeat(one * 2) };
+  patcher.full(large); assert.equal(patcher.stats().entries, 2, 'one oversized reply does not evict unrelated useful bases');
+  const growing = { ...message, id: 'c' }; growing.tools = Array.from({ length: one }, () => undefined);
+  assert.ok(patcher.patch(growing).tools); assert.equal(patcher.patch(growing), null, 'structural slots count even when JSON values are undefined');
+  assert.ok(patcher.stats().accountedBytes <= one * 2);
+  patcher.forget('b'); assert.equal(patcher.stats().accountedBytes, 0);
+});
+
+test('zero budgets disable comparison retention and invalid budgets fail clearly', () => {
+  const message = { id: 'a', role: 'assistant', text: 'content', ok: null };
+  for (const options of [{ maxEntries: 0 }, { maxBytes: 0 }]) { const p = createPatcher(options); p.full(message); assert.equal(p.patch(message), null); assert.equal(p.stats().accountedBytes, 0); }
+  for (const value of [-1, NaN, 0.5, '64']) for (const key of ['maxEntries', 'maxBytes']) assert.throws(() => createPatcher({ [key]: value }), /limits/);
+});
+
+test('large tool and metadata values use compact comparison signatures while patches carry actual values', async () => {
+  const { applyPatch } = await loadApply(); const patcher = createPatcher();
+  const m = { id: 'large', role: 'assistant', text: 'start', ok: null, tools: [{ id: 'tool', output: 'a'.repeat(1024 * 1024) }], details: { output: 'b'.repeat(1024 * 1024) } };
+  patcher.full(m); let received = clone(m);
+  assert.ok(patcher.stats().accountedBytes < 4096, 'multi-megabyte serialized comparison copies are not retained');
+  assert.deepEqual(patcher.patch(m), {});
+  m.text += ' more'; m.tools[0].output += '\ud800'; m.details.output += '\ud801';
+  let patch = patcher.patch(m); assert.equal(patch.tools.set[0].output, m.tools[0].output); assert.deepEqual(patch.set.details, m.details);
+  received = applyPatch(received, clone(patch)); assert.deepEqual(received, clone(m));
+  m.tools[0].output = m.tools[0].output.slice(0, -1) + '\ud801';
+  patch = patcher.patch(m); assert.ok(patch.tools); received = applyPatch(received, clone(patch)); assert.deepEqual(received, clone(m));
+  delete m.details; m.tools = []; m.ok = true;
+  patch = patcher.patch(m); received = applyPatch(received, clone(patch)); assert.deepEqual(received, clone(m)); assert.equal(patcher.stats().entries, 0);
+});
+
 test('user and system messages never retain streaming snapshots or serialize their fields for patch bookkeeping', () => {
   const patcher = createPatcher();
   for (const role of ['user', 'system']) {

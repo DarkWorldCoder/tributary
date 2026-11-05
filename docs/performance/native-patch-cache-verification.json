@@ -1,0 +1,1511 @@
+{
+  "date": "2026-11-05T09:16:28.619Z",
+  "replyCount": 80,
+  "initialCache": {
+    "entries": 64,
+    "accountedBytes": 53760,
+    "maxEntries": 64,
+    "maxBytes": 8388608
+  },
+  "finalCache": {
+    "entries": 0,
+    "accountedBytes": 0,
+    "maxEntries": 64,
+    "maxBytes": 8388608
+  },
+  "everyPhaseExact": true,
+  "hotDeltaUsed": true,
+  "finalDigest": "1fa69c4b616cfbc25e759dedf65b94a472cb33a30dc668f4f3c864087e6ae387",
+  "historyPins": 0,
+  "transportActive": 0,
+  "packets": [
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-0",
+      "bytes": 65938
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-1",
+      "bytes": 65938
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-2",
+      "bytes": 65938
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-3",
+      "bytes": 65938
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-4",
+      "bytes": 65938
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-5",
+      "bytes": 65938
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-6",
+      "bytes": 65938
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-7",
+      "bytes": 65938
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-8",
+      "bytes": 65938
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-9",
+      "bytes": 65938
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-10",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-11",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-12",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-13",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-14",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-15",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-16",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-17",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-18",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-19",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-20",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-21",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-22",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-23",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-24",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-25",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-26",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-27",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-28",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-29",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-30",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-31",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-32",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-33",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-34",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-35",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-36",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-37",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-38",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-39",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-40",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-41",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-42",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-43",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-44",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-45",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-46",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-47",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-48",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-49",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-50",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-51",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-52",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-53",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-54",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-55",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-56",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-57",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-58",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-59",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-60",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-61",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-62",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-63",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-64",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-65",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-66",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-67",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-68",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-69",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-70",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-71",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-72",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-73",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-74",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-75",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-76",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-77",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-78",
+      "bytes": 65941
+    },
+    {
+      "phase": "initial",
+      "name": "message",
+      "id": "cache-79",
+      "bytes": 65941
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-0",
+      "bytes": 65973
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-1",
+      "bytes": 65973
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-2",
+      "bytes": 65973
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-3",
+      "bytes": 65973
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-4",
+      "bytes": 65973
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-5",
+      "bytes": 65973
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-6",
+      "bytes": 65973
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-7",
+      "bytes": 65973
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-8",
+      "bytes": 65973
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-9",
+      "bytes": 65973
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-10",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-11",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-12",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-13",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-14",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-15",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-16",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-17",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-18",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-19",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-20",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-21",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-22",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-23",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-24",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-25",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-26",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-27",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-28",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-29",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-30",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-31",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-32",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-33",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-34",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-35",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-36",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-37",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-38",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-39",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-40",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-41",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-42",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-43",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-44",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-45",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-46",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-47",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-48",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-49",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-50",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-51",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-52",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-53",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-54",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-55",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-56",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-57",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-58",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-59",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-60",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-61",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-62",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-63",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-64",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-65",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-66",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-67",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-68",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-69",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-70",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-71",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-72",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-73",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-74",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-75",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-76",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-77",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-78",
+      "bytes": 65976
+    },
+    {
+      "phase": "pressure",
+      "name": "message",
+      "id": "cache-79",
+      "bytes": 65976
+    },
+    {
+      "phase": "hot",
+      "name": "message-patch",
+      "id": "cache-79",
+      "bytes": 115
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-0",
+      "bytes": 65993
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-1",
+      "bytes": 65993
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-2",
+      "bytes": 65993
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-3",
+      "bytes": 65993
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-4",
+      "bytes": 65993
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-5",
+      "bytes": 65993
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-6",
+      "bytes": 65993
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-7",
+      "bytes": 65993
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-8",
+      "bytes": 65993
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-9",
+      "bytes": 65993
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-10",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-11",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-12",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-13",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-14",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-15",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-16",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-17",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-18",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-19",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-20",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-21",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-22",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-23",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-24",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-25",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-26",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-27",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-28",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-29",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-30",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-31",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-32",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-33",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-34",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-35",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-36",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-37",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-38",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-39",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-40",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-41",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-42",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-43",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-44",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-45",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-46",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-47",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-48",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-49",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-50",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-51",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-52",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-53",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-54",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-55",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-56",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-57",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-58",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-59",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-60",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-61",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-62",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-63",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-64",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-65",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-66",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-67",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-68",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-69",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-70",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-71",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-72",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-73",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-74",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-75",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-76",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-77",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-78",
+      "bytes": 65997
+    },
+    {
+      "phase": "final",
+      "name": "message",
+      "id": "cache-79",
+      "bytes": 66007
+    }
+  ],
+  "runtime": {
+    "node": "24.21.0",
+    "acorn": "8.18.0",
+    "ada": "4.0.0",
+    "amaro": "1.1.11",
+    "ares": "1.34.8",
+    "brotli": "1.2.0",
+    "cldr": "48.0",
+    "icu": "78.2",
+    "llhttp": "9.4.3",
+    "merve": "1.2.2",
+    "modules": "149",
+    "napi": "10",
+    "nbytes": "0.1.4",
+    "ncrypto": "0.0.1",
+    "nghttp2": "1.70.0",
+    "nghttp3": "",
+    "ngtcp2": "",
+    "openssl": "0.0.0",
+    "simdjson": "4.6.7",
+    "simdutf": "7.7.0",
+    "sqlite": "3.53.4",
+    "tz": "2026d",
+    "undici": "7.29.1",
+    "unicode": "17.0",
+    "uv": "1.52.1",
+    "uvwasi": "0.0.23",
+    "v8": "15.2.124.37-electron.0",
+    "zlib": "1.3.2.1-motley",
+    "zstd": "1.6.0",
+    "electron": "44.7.2",
+    "chrome": "152.0.7977.149"
+  },
+  "scope": "Synthetic 80-reply cache pressure through actual desktop/preload/renderer. Exact live/final reconstruction, full fallback and hot deltas; no provider requests or app-RAM measurement.",
+  "sourceHashes": {
+    "core/message-patch.js": "14f876ccee082b800e79fcea1e3d4b5127c20d01431c8eef71dc15a92a1faffe",
+    "core/message-delivery.js": "b2b14a66dcc657d6bdcc7287b233ebc9ee3464dc94d46092a5f8544cea19aa6c",
+    "desktop/main.js": "a892ebc678d516f02d77d091290927a87d4184c290cc46b0db42b592dc9ca910",
+    "desktop/preload.js": "70476719b310de3e99c8bd1f9c670136a9556e7ec84e3652ca4a029cf03a404f",
+    "ui/dist/assets/app.js": "58fd7eaab11364087acdb2e615cd48e1ec7c36e0e63d1a3c9a129dbab7445104",
+    "scripts/performance/native-patch-cache.cjs": "c1b633003b3378e14b65d2165197437ce193f7514973f57beda6f1a9361403ff"
+  }
+}

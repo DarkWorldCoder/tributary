@@ -1,0 +1,29 @@
+{
+  "date": "2026-11-05T09:18:38.738Z",
+  "checks": {
+    "fullRegressions": {
+      "tests": 543,
+      "passed": 543,
+      "failed": 0
+    },
+    "focusedRegressions": {
+      "tests": 27,
+      "passed": 27,
+      "failed": 0
+    },
+    "vscodeBuild": "Passed by npm pretest hook",
+    "sourceSyntax": true,
+    "diffCheck": true
+  },
+  "benchmark": "patch-cache-benchmark.json",
+  "native": "native-patch-cache-verification.json",
+  "sourceHashes": {
+    "core/message-patch.js": "14f876ccee082b800e79fcea1e3d4b5127c20d01431c8eef71dc15a92a1faffe",
+    "test/message-patch.test.js": "9a11dd585670789e915a707abde1635df0c4f39152e18a91713f575df6ee8df0"
+  },
+  "limits": [
+    "Cache accounting is not a whole-app heap ceiling.",
+    "Signatures add hashing CPU; overflow may increase full-message delivery.",
+    "Native proof is Linux desktop with synthetic replies, not named model providers or other platforms."
+  ]
+}
