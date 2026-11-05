@@ -33,7 +33,8 @@ const profiles = [
   ["lua", "Lua", "lua"],
   ["perl", "Perl", "pl pm"],
   ["cmake", "CMake", "cmake"],
-  ["properties", "Properties", "ini cfg properties conf env"],
+  ["properties", "Properties", "ini cfg properties conf"],
+  ["dotenv", "Environment Variables", "env"],
   ["diff", "Diff", "diff patch"],
   ["scala", "Scala", "scala sc"],
   ["dart", "Dart", "dart"],
@@ -71,7 +72,7 @@ export function sourceLanguage(path, text = "") {
     )
   )
     return byId.get("shell");
-  if (/^\.env(?:\.|$)/.test(name)) return byId.get("properties");
+  if (/^\.env(?:\.|$)/.test(name)) return byId.get("dotenv");
   if (
     /^(?:tsconfig|jsconfig)(?:\..+)?\.json$/.test(name) ||
     /^\.(?:eslintrc|babelrc|jshintrc)$/.test(name)

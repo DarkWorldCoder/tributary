@@ -18,7 +18,17 @@ async function readDirectory(root, rel = '', { showHidden = false, offset = 0, l
   const entries = await fs.readdir(dir, { withFileTypes: true });
   if (entries.length > 100000) throw new Error('This folder is too large to list. Open a smaller folder in your external editor.');
   const visible = entries.filter((e) => showHidden || !e.name.startsWith('.')).sort((a, b) => Number(b.isDirectory()) - Number(a.isDirectory()) || a.name.localeCompare(b.name) || (a.name < b.name ? -1 : 1));
-  return { entries: visible.slice(offset, offset + limit).map((e) => ({ name: e.name, rel: path.join(rel, e.name).split(path.sep).join('/'), directory: e.isDirectory(), symlink: e.isSymbolicLink() })), next: offset + limit < visible.length ? offset + limit : null, total: visible.length };
+  const page = await Promise.all(visible.slice(offset, offset + limit).map(async (e) => {
+    const entry = { name: e.name, rel: path.join(rel, e.name).split(path.sep).join('/'), directory: e.isDirectory(), symlink: e.isSymbolicLink() };
+    // pnpm and other package managers expose dependencies as directory links.
+    // Resolve only this bounded page and keep the project containment checks.
+    if (entry.symlink) {
+      try { entry.directory = (await fs.stat(await projectPath(root, entry.rel))).isDirectory(); }
+      catch { /* Broken or external links stay visible; opening reports the cause. */ }
+    }
+    return entry;
+  }));
+  return { entries: page, next: offset + limit < visible.length ? offset + limit : null, total: visible.length };
 }
 async function createEntry(root, rel, kind) {
   if (!['file', 'folder'].includes(kind) || typeof rel !== 'string' || !rel.trim() || rel.split(/[\\/]/).some((part) => !part || part === '.' || part === '..' || part.toLowerCase() === '.git')) throw new Error('Choose a file or folder name inside the project.');
@@ -47,4 +57,43 @@ async function findFiles(root, query, { showHidden = true } = {}) {
   }
   return found.sort();
 }
-module.exports = { readDirectory, projectPath, createEntry, findFiles };
+async function searchProject(root, query) {
+  if (typeof query !== 'string' || !query.trim() || query.length > 512) throw new Error('Enter search text of up to 512 characters.');
+  const base = await fs.realpath(root); const pending = ['']; const matches = []; let scanned = 0; let bytes = 0; let truncated = false;
+  const skip = new Set(['.git', 'node_modules', '.venv', 'venv', 'target', 'dist', 'build', '.next', 'vendor', '__pycache__']);
+  const needle = query.toLowerCase();
+  while (pending.length && !truncated) {
+    const folder = pending.pop();
+    let directory;
+    try { directory = await fs.opendir(path.join(base, folder)); } catch { continue; }
+    for await (const entry of directory) {
+      if (++scanned > 20000) { truncated = true; break; }
+      const rel = folder ? `${folder}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) { if (!skip.has(entry.name) && rel.split('/').length < 20) pending.push(rel); continue; }
+      if (!entry.isFile()) continue;
+      try {
+        // Recheck containment at read time, and bound both individual reads and the scan.
+        const handle = await fs.open(await projectPath(base, rel), 'r');
+        let buffer;
+        try {
+          const stat = await handle.stat();
+          if (!stat.isFile() || stat.size > 1024 * 1024) continue;
+          if (bytes + stat.size > 16 * 1024 * 1024) { truncated = true; break; }
+          buffer = Buffer.alloc(stat.size); const read = await handle.read(buffer, 0, buffer.length, 0); buffer = buffer.subarray(0, read.bytesRead); bytes += read.bytesRead;
+        } finally { await handle.close(); }
+        if (buffer.subarray(0, 8000).includes(0)) continue;
+        const lines = buffer.toString('utf8').split(/\r?\n/);
+        for (let i = 0; i < lines.length; i++) {
+          const column = lines[i].toLowerCase().indexOf(needle);
+          if (column < 0) continue;
+          const start = Math.max(0, column - 80);
+          matches.push({ rel, line: i + 1, column: column + 1, text: (start ? '…' : '') + lines[i].slice(start, start + 300) });
+          if (matches.length >= 200) { truncated = true; break; }
+        }
+      } catch { /* Deleted, inaccessible or escaped entries do not stop other results. */ }
+      if (truncated) break;
+    }
+  }
+  return { matches, truncated };
+}
+module.exports = { readDirectory, projectPath, createEntry, findFiles, searchProject };

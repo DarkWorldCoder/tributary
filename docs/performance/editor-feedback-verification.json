@@ -1,0 +1,68 @@
+{
+  "date": "2026-11-05",
+  "status": "local working tree; not included in published v0.1.4",
+  "nativePlatform": "Linux Electron disposable profile under Xvfb",
+  "fixture": "Synthetic .env values and representative purple theme with yellow panel/focus colors; not the downloaded Shades of Purple package",
+  "checks": {
+    "dotenvDistinctTokenColors": true,
+    "commandPaletteFromEditorCtrlShiftP": true,
+    "projectSearchFromEditorCtrlShiftF": true,
+    "projectSearchSubmission": "Search button; native Return-only injection did not submit",
+    "projectSearchMatchDisplayed": true,
+    "findInFileCtrlF": "matching text highlighted",
+    "replaceInFileCtrlH": "replacement input focused",
+    "themeFocusAccentRetained": true,
+    "themeNormalBordersSubdued": true,
+    "composerSurfaceDistinct": true,
+    "commandPaletteTopAligned": true,
+    "commandPaletteCompactRows": true,
+    "findReplaceAtEditorTop": true
+  },
+  "proof": {
+    "themeProof": {
+      "border": "color-mix(in srgb, #ffffff 18%, #2d2b55)",
+      "focus": "#fad000",
+      "composer": "oklab(0.451422 0.0155212 -0.053663 / 0.8)",
+      "background": "color(srgb 0.225882 0.21851 0.373333)"
+    },
+    "shortcuts": {
+      "commandPaletteFromEditor": true,
+      "searchFromEditor": true,
+      "projectResults": true
+    }
+  },
+  "validation": {
+    "fullRegression": "515 passed, 0 failed; before final Find/Replace UI additions",
+    "finalTypeScript": "passed",
+    "finalProductionUIBuild": "passed",
+    "finalFindReplace": "native UI passed after top-position and command-prefix changes"
+  },
+  "sourceHashes": {
+    "core/files.js": "479414660c1998aeae103ac946ececa1f368ff7c0b924ccdebf4fbbbcbdd0739",
+    "core/hub.js": "a08f02f4a00370ab9f9aebbcf664bf6c9699afcfeea2cc114ea10f0668b00b39",
+    "core/shortcuts.mjs": "7b1663488da2f6d746a19fce4f4d79b42cb38c59f1b0d5e8dd28d4bc1d27d598",
+    "desktop/main.js": "6faee60dac16daed2f38a82c60a0927bbbf9855fae53edfc0fd597a1e427708e",
+    "vscode/extension.js": "87208f82b53fceda804321d6ec198dd783b59c012648f2d8aedab290197d1602",
+    "ui/src/components/project-search.tsx": "67a22467a0024ffea92eefce0a2b751a8cf5f51cc274637550a68a092130185d",
+    "ui/src/components/keyboard-shortcuts.tsx": "82ab6d50273097c0443fb68ee5ae3484821b1184453944f01f0f5e8b3bc560e3",
+    "ui/src/lib/dotenv-language.mjs": "283d84de8499b569d9de667045e5fdcfd95dbaf3feaafbce6ef0661dd75fe8a8",
+    "ui/src/lib/source-language.mjs": "613e8937666f0647376d1d644ecfefffe562bf708aa8a8696de3ee5a3e09c46c",
+    "ui/src/lib/source-grammar.mjs": "fca03b04376778848c288c6255e3528db01b9349f098278e24138936f8ec04f6",
+    "ui/src/lib/extension-theme-variables.mjs": "407da625cbe14a3446730770888438a6b61d2a82469b41893b9aa7bea6bcb031",
+    "ui/src/lib/extension-appearance.tsx": "6c43624888beeb52fee8f18210aadae2c1d8ee44a8600f23e9d3b24b084ea929",
+    "ui/src/components/code-editor.tsx": "30e2b531991558ef8c0f144d4cc7968c6da9d59f76bc896c1998a0099238ee40",
+    "ui/src/components/editor-context-menu.tsx": "e308b8b53fc73acceab47f5a36edcc7a9e8c0e1c9f16af90d57fcf4f19f2e8da",
+    "ui/src/lib/editor-search.ts": "01e651014b12c3a7ed01a3af78a07415dcf68f10b97cb23ec9e93e814ca0e00f",
+    "ui/src/index.css": "0a1c25f6a3639ad4eafd51b71a67a3ff79621d7a0b18676c4a1ec5a9c6614237",
+    "ui/src/components/ui/command.tsx": "a186da5ceaa8a0df4fc0e9a74f71d018bd3ddf89fc35cab70e1f32969dd93424"
+  },
+  "references": [
+    "https://code.visualstudio.com/docs/editing/getting-started/userinterface#_command-palette"
+  ],
+  "paletteGeometryDuringOpenAnimation": {
+    "top": 49.70496368408203,
+    "width": 587.275146484375,
+    "rowHeight": 25.448593139648438,
+    "windowHeight": 840
+  }
+}

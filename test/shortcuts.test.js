@@ -12,7 +12,7 @@ test('keyboard commands match Ctrl and Command, keep legacy aliases, and reject 
         assert.equal(shortcutAction(input), shortcut.id, `${shortcut.id}: ${modifier}`);
         assert.equal(shortcutAction({ ...input, repeat: true }), null);
         assert.equal(shortcutAction({ ...input, isComposing: true }), null);
-        assert.equal(shortcutAction({ ...input, altKey: !input.altKey }), null);
+        assert.notEqual(shortcutAction({ ...input, altKey: !input.altKey }), shortcut.id);
       }
     }
   }
@@ -61,4 +61,17 @@ test('terminal shortcuts recognize shifted digit and backquote keys', async () =
   assert.equal(shortcutAction({ ...event, key: '%', code: 'Digit5' }, { platform: 'pc' }), 'split-terminal');
   assert.equal(shortcutAction({ ...event, key: '~', code: 'Backquote' }, { platform: 'pc' }), 'new-terminal');
   assert.equal(shortcutAction({ ...event, shiftKey: false, key: 'p', code: 'KeyP' }, { platform: 'pc' }), 'find-file');
+});
+
+test('VS Code workspace shortcuts do not collide with preview and work on Ctrl or Command', async () => {
+  const { shortcutAction, bindingConflict } = await import('../core/shortcuts.mjs');
+  for (const platform of ['pc', 'mac']) {
+    const event = { ctrlKey: platform === 'pc', metaKey: platform === 'mac', shiftKey: true, altKey: false };
+    for (const [key, action] of [['p', 'search'], ['f', 'search-project'], ['e', 'files'], ['g', 'changes'], ['d', 'debug']]) {
+      assert.equal(shortcutAction({ ...event, key }, { platform }), action);
+    }
+    assert.equal(shortcutAction({ ...event, shiftKey: false, key: 'p' }, { platform }), 'find-file');
+    assert.equal(shortcutAction({ ...event, shiftKey: false, altKey: true, key: 'p' }, { platform }), 'preview');
+  }
+  assert.equal(bindingConflict('search', ['Mod', 'Shift', 'P']), null);
 });

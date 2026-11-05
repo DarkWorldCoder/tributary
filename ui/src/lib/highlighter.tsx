@@ -6,6 +6,7 @@ const languages = {
   bash: () => import("shiki/langs/shellscript.mjs"),
   css: () => import("shiki/langs/css.mjs"),
   diff: () => import("shiki/langs/diff.mjs"),
+  dotenv: () => import("shiki/langs/dotenv.mjs"),
   html: () => import("shiki/langs/html.mjs"),
   javascript: () => import("shiki/langs/javascript.mjs"),
   json: () => import("shiki/langs/json.mjs"),
@@ -20,6 +21,7 @@ const languages = {
 
 const aliases: Record<string, keyof typeof languages> = {
   js: "javascript",
+  env: "dotenv",
   md: "markdown",
   py: "python",
   sh: "bash",

@@ -168,7 +168,7 @@ function FolderFiles({ project, visible, owner, roots, expandedRoots, toggleRoot
   const [column, setColumn] = React.useState<number | undefined>();
   const [switcherOpen, setSwitcherOpen] = React.useState(false);
   const [editors, setEditors] = React.useState<{ id: string; name: string }[]>([]);
-  const [error, setError] = React.useState<{ rel: string; intent: OpenIntent; line?: number; reload?: boolean } | null>(null);
+  const [error, setError] = React.useState<{ rel: string; intent: OpenIntent; line?: number; reload?: boolean; message: string } | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [opening, setOpening] = React.useState<string | null>(null);
   const [showOpening, setShowOpening] = React.useState(false);
@@ -283,7 +283,7 @@ function FolderFiles({ project, visible, owner, roots, expandedRoots, toggleRoot
       setDocs((all) => openFileTab(all, next, intent));
       setActive(rel); setLine(ln); setBrowse(false);
       setOpen((folders) => { const next = new Set(folders); const parts = rel.split('/'); parts.slice(0, -1).forEach((_, i) => next.add(parts.slice(0, i + 1).join('/'))); return next; });
-    } catch { if (id === sequence.current) setError({ rel, intent, line: ln }); }
+    } catch (cause) { if (id === sequence.current) setError({ rel, intent, line: ln, message: (cause as Error).message.replace(/^Error invoking remote method '[^']*': (Error: )?/, '') }); }
     finally { if (id === sequence.current) { setBusy(false); setOpening(null); } }
   }, [read]);
   React.useEffect(() => {
@@ -393,7 +393,7 @@ function FolderFiles({ project, visible, owner, roots, expandedRoots, toggleRoot
     try {
       const file = await read(rel);
       setDocs((all) => all.map((item) => item.rel === rel ? { ...item, ...file, text: file.content, dirty: false, diskChanged: false, diskError: false } : item));
-    } catch { setError({ rel, intent: 'pinned', reload: true }); }
+    } catch (cause) { setError({ rel, intent: 'pinned', reload: true, message: (cause as Error).message.replace(/^Error invoking remote method '[^']*': (Error: )?/, '') }); }
   };
   const forget = (rel: string) => setDocs((all) => all.map((item) => item.rel === rel ? { ...item, recovered: false } : item));
   // The file on disk now against the unsaved text; nothing is written until the person picks a version.
@@ -506,7 +506,7 @@ function FolderFiles({ project, visible, owner, roots, expandedRoots, toggleRoot
     <Tabs value={active ?? ''} onValueChange={(rel) => { setComparison(null); s.pauseFollowing(); ++sequence.current; setBusy(false); setOpening(null); setError(null); setActive(rel); setLine(undefined); setColumn(undefined); setBrowse(false); }} className="min-h-0 flex-1 gap-0">
       {(!s.codeLayout || small) && fileNavigation}
       {busy && <span role="status" className="sr-only">Opening file…</span>}
-      {error && <div role="alert" className="absolute inset-x-0 top-10 z-20 flex items-center gap-1 border-b bg-popover px-3 py-1 text-xs max-sm:top-11"><span className="min-w-0 flex-1 truncate" title={error.rel}>Couldn’t read {error.rel.split('/').pop()}.</span><Button variant="ghost" size="sm" onClick={() => { if (error.reload) { setError(null); void reload(error.rel); } else void openDoc(error.rel, error.intent, error.line); }}>Retry</Button><Button variant="ghost" size="icon-sm" aria-label="Dismiss file error" onClick={() => setError(null)}><X /></Button></div>}
+      {error && <div role="alert" className="absolute inset-x-0 top-10 z-20 flex items-center gap-1 border-b bg-popover px-3 py-1 text-xs max-sm:top-11"><span className="min-w-0 flex-1 truncate" title={`${error.rel}: ${error.message}`}>Couldn’t open {error.rel.split('/').pop()}. {error.message}</span><Button variant="ghost" size="sm" onClick={() => { if (error.reload) { setError(null); void reload(error.rel); } else void openDoc(error.rel, error.intent, error.line); }}>Retry</Button><Button variant="ghost" size="icon-sm" aria-label="Dismiss file error" onClick={() => setError(null)}><X /></Button></div>}
       <ResizablePanelGroup id={`files-${project}`} elementRef={fileGroup} className="min-h-0 flex-1" disabled={small || collapsed} onLayoutChanged={(layout, meta) => { if (meta.isUserInteraction && !small && !collapsed && fileGroup.current) (debugVisible ? debuggerWidth : explorerWidth).current = Math.min(360, Math.max(debugVisible ? 224 : 176, layout[`explorer-${project}`] * (fileGroup.current.clientWidth - 1) / 100)); }}>
         <ResizablePanel id={`explorer-${project}`} panelRef={explorer} defaultSize={small ? browse ? '100%' : 0 : debugVisible ? 280 : 224} minSize={small ? browse ? '100%' : 0 : collapsed ? 0 : debugVisible ? 224 : 176} maxSize={small ? browse ? '100%' : 0 : collapsed ? 0 : 360} groupResizeBehavior="preserve-pixel-size" className="h-full">
           {debugVisible ? <div className={cn('h-full min-h-0', (small ? !browse : collapsed) && 'hidden')}><DebugSidebar compact={small} onShowConsole={() => { if (small) setBrowse(false); }} /></div> : <div className={cn('workspace-explorer flex h-full min-h-0 flex-col bg-background/50', (small ? !browse : collapsed) && 'hidden')}>

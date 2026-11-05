@@ -39,6 +39,8 @@ async function load(id) {
   if (id === "sql") return (await import("@codemirror/lang-sql")).sql();
   if (id === "yaml") return (await import("@codemirror/lang-yaml")).yaml();
   const { StreamLanguage } = await import("@codemirror/language");
+  if (id === "dotenv")
+    return StreamLanguage.define((await import("./dotenv-language.mjs")).dotenv);
   let parser;
   if (id === "jsonc")
     parser = (await import("@codemirror/legacy-modes/mode/javascript")).json;

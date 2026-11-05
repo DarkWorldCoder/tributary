@@ -1,6 +1,25 @@
 'use strict';
 const test = require('node:test'); const assert = require('node:assert/strict'); const fs = require('node:fs'); const path = require('node:path'); const zlib = require('node:zlib'); const { mkdtemp } = require('./helpers/tmp');
 const { ExtensionPacks, safePath } = require('../core/extension-packs');
+test('imported themes keep focus accents separate from control borders and composer surfaces', async () => {
+  const { extensionThemeVariables } = await import('../ui/src/lib/extension-theme-variables.mjs');
+  const variables = extensionThemeVariables({ dark: true, colors: {
+    'editor.background': '#2d2b55', 'editor.foreground': '#ffffff',
+    'panel.border': '#fad000', 'editorWidget.border': '#fad000', 'focusBorder': '#fad000',
+    'input.background': '#2d2b55', 'button.background': '#6c40ff', 'button.foreground': '#ffffff',
+  }, tokenColors: [{ scope: 'string', foreground: '#a5ff90' }] });
+  assert.equal(variables['--ring'], '#fad000');
+  assert.equal(variables['--brand'], '#6c40ff');
+  assert.equal(variables['--primary-foreground'], '#ffffff');
+  assert.doesNotMatch(variables['--border'], /fad000/);
+  assert.equal(variables['--input'], variables['--border']);
+  assert.notEqual(variables['--card'], '#2d2b55');
+  assert.match(variables['--card'], /color-mix/);
+  assert.equal(variables['--syn-string'], '#a5ff90');
+  const light = extensionThemeVariables({ dark: false, colors: {}, tokenColors: [] });
+  assert.match(light['--card'], /#ffffff/);
+  assert.equal(light['--card-foreground'], '#222222');
+});
 // Small stored ZIPs keep the parser tests independent of external zip programs.
 function zip(files) {
   const chunks = []; const directory = []; let offset = 0;

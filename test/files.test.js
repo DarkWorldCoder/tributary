@@ -46,6 +46,48 @@ test('host file APIs refuse symlink escapes for directory reads, file reads and 
   assert.equal(fs.existsSync(path.join(outside, 'new.txt')), false);
 });
 
+test('package directory links expand as folders while linked files remain readable', async (t) => {
+  const root = mkTmp('package-links');
+  const hub = new Hub({ dataDir: path.join(root, 'data'), secrets: new MemorySecrets() }); hub.addProject(root);
+  t.after(() => { hub.store.close(); fs.rmSync(root, { recursive: true, force: true }); });
+  fs.mkdirSync(path.join(root, 'node_modules', '.pnpm', 'better-auth'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'node_modules', '.pnpm', 'better-auth', 'index.js'), 'export {};');
+  fs.symlinkSync('.pnpm/better-auth', path.join(root, 'node_modules', 'better-auth'), 'dir');
+  fs.symlinkSync('.pnpm/better-auth/index.js', path.join(root, 'node_modules', 'entry.js'), 'file');
+  fs.symlinkSync('missing', path.join(root, 'node_modules', 'broken'), 'file');
+  const listing = await hub.readDirectory(root, 'node_modules', { showHidden: true });
+  assert.equal(listing.entries.find(e => e.name === 'better-auth').directory, true);
+  assert.equal(listing.entries.find(e => e.name === 'entry.js').directory, false);
+  assert.equal(listing.entries.find(e => e.name === 'broken').symlink, true);
+  assert.equal((await hub.readDirectory(root, 'node_modules/better-auth')).entries[0].name, 'index.js');
+  assert.equal((await hub.readFile(root, 'node_modules/better-auth/index.js')).content, 'export {};');
+  assert.equal((await hub.readFile(root, 'node_modules/entry.js')).content, 'export {};');
+  await assert.rejects(hub.readFile(root, 'node_modules/better-auth'), /This is a folder/);
+});
+
+test('project text search reports exact positions and skips binary, dependency and external linked files', async (t) => {
+  const root = mkTmp('project-search'); const outside = mkTmp('outside-search');
+  t.after(() => { fs.rmSync(root, { recursive: true, force: true }); fs.rmSync(outside, { recursive: true, force: true }); });
+  fs.mkdirSync(path.join(root, 'src')); fs.mkdirSync(path.join(root, 'node_modules'));
+  fs.writeFileSync(path.join(root, 'src', 'main.ts'), 'const value = 1;\r\n  SearchNeedle();\r\n');
+  fs.writeFileSync(path.join(root, '.env'), 'EXAMPLE=SearchNeedle');
+  fs.writeFileSync(path.join(root, 'binary'), Buffer.from('SearchNeedle\0'));
+  fs.writeFileSync(path.join(root, 'node_modules', 'dependency.js'), 'SearchNeedle');
+  fs.writeFileSync(path.join(outside, 'private.txt'), 'SearchNeedle');
+  fs.symlinkSync(path.join(outside, 'private.txt'), path.join(root, 'linked.txt'), 'file');
+  const { searchProject } = require('../core/files');
+  const result = await searchProject(root, 'searchneedle');
+  assert.equal(result.truncated, false);
+  assert.deepEqual(result.matches.sort((a, b) => a.rel.localeCompare(b.rel)), [
+    { rel: '.env', line: 1, column: 9, text: 'EXAMPLE=SearchNeedle' },
+    { rel: 'src/main.ts', line: 2, column: 3, text: '  SearchNeedle();' },
+  ]);
+  fs.writeFileSync(path.join(root, 'many.txt'), 'SearchNeedle\n'.repeat(210));
+  const limited = await searchProject(root, 'SearchNeedle');
+  assert.equal(limited.truncated, true); assert.equal(limited.matches.length, 200);
+  await assert.rejects(searchProject(root, ''), /Enter search text/);
+});
+
 test('image reads keep complete bounded payloads separate from text and binary fallbacks', async (t) => {
   const root = mkTmp('images');
   const hub = new Hub({ dataDir: path.join(root, 'data'), secrets: new MemorySecrets() }); hub.addProject(root);

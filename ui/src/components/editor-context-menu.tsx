@@ -2,6 +2,7 @@ import * as React from 'react';
 import type { EditorView } from '@codemirror/view';
 import { redo, redoDepth, selectAll, undo, undoDepth } from '@codemirror/commands';
 import { gotoLine, openSearchPanel } from '@codemirror/search';
+import { openEditorFind } from '@/lib/editor-search';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ShortcutKeys } from '@/components/shortcut-settings';
@@ -90,6 +91,7 @@ export function EditorContextMenu({ children, editor, project, path, languageOwn
         {item('Format document', format, ['Shift', 'Alt', 'F'], !canFormat || state.readOnly)}
         {item(wrap ? 'Turn off line wrapping' : 'Wrap lines', () => toggleWrap?.(), ['Alt', 'Z'], !toggleWrap)}
         {item('Find in file', () => command(openSearchPanel), ['Mod', 'F'])}
+        {item('Replace in file', () => command((view) => openEditorFind(view, true)), platform === 'mac' ? ['Mod', 'Alt', 'F'] : ['Mod', 'H'], state.readOnly)}
         {item('Go to line…', () => command(gotoLine), ['Alt', 'G'])}
         <ContextMenuSeparator />
         {item('Undo', () => command(undo), ['Mod', 'Z'], !state.undo || state.readOnly)}

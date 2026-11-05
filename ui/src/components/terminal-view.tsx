@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { findFileLinks, projectRelative } from "@/lib/terminal-links.mjs";
 import { hub } from "@/store";
 import { terminalConsumer } from '@/lib/terminal-consumer.mjs';
+import { visibleRenderer, webglResource, type VisibleRenderer } from '@/lib/terminal-renderer.mjs';
 
 // One listener per event type, routed to the terminal that owns the output.
 type Output = { data: string; owner?: string; seq?: number };
@@ -160,6 +161,8 @@ export function XtermView({
   const termRef = React.useRef<Terminal | null>(null);
   const fitRef = React.useRef<FitAddon | null>(null);
   const searchRef = React.useRef<SearchAddon | null>(null);
+  const rendererRef = React.useRef<VisibleRenderer | null>(null);
+  const activeRef = React.useRef(active); activeRef.current = active;
   const callbacks = React.useRef({ onExit, onTitle, onOpenFile, project });
   callbacks.current = { onExit, onTitle, onOpenFile, project };
   const [search, setSearch] = React.useState<{
@@ -202,22 +205,11 @@ export function XtermView({
     );
     term.open(host.current!);
 
-    // GPU rendering; after a lost context, fall back to the DOM renderer and try the GPU again a little later.
-    let webglTries = 0;
-    let webglTimer = 0;
-    const webgl = () => {
-      try {
-        const gl = new WebglAddon();
-        gl.onContextLoss(() => {
-          gl.dispose();
-          if (++webglTries < 3) webglTimer = window.setTimeout(webgl, 1000);
-        });
-        term.loadAddon(gl);
-      } catch {
-        /* DOM renderer */
-      }
-    };
-    webgl();
+    const renderer = visibleRenderer({ create: (lost) => webglResource(term, () => new WebglAddon(), lost) });
+    rendererRef.current = renderer;
+    const updateVisibility = () => renderer.setVisible(activeRef.current && !document.hidden);
+    document.addEventListener('visibilitychange', updateVisibility);
+    updateVisibility();
 
     // Paths such as src/app.ts:12:4 in compiler output and stack traces open in the editor.
     const links = term.registerLinkProvider({
@@ -370,7 +362,9 @@ export function XtermView({
       window.removeEventListener("tributary:terminal-command", onCommand);
       window.removeEventListener("tributary:terminal-font", onFont);
       cancelAnimationFrame(frame);
-      clearTimeout(webglTimer);
+      document.removeEventListener('visibilitychange', updateVisibility);
+      renderer.dispose();
+      if (rendererRef.current === renderer) rendererRef.current = null;
       for (const s of subs) s.dispose();
       links.dispose();
       consumer.dispose();
@@ -385,6 +379,7 @@ export function XtermView({
   }, [id, openSearch]);
 
   React.useEffect(() => {
+    rendererRef.current?.setVisible(active && !document.hidden);
     if (!active) return;
     const timer = setTimeout(() => {
       try {

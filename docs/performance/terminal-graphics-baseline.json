@@ -1,0 +1,623 @@
+{
+  "date": "2026-11-05T06:06:16.844Z",
+  "runtime": {
+    "electron": "44.7.2",
+    "node": "24.21.0",
+    "platform": "linux"
+  },
+  "instrumentation": "WebGL create/delete counters and weak context/canvas references injected before page startup; no resource handles retained by the probe; no forced GC",
+  "scope": [
+    "Software ANGLE/SwiftShader under Xvfb, not physical GPU VRAM",
+    "Diagnostic wrapper and CDP add overhead; counts are actual API calls, not byte allocation",
+    "Eight real PTY tabs, one visible at a time; hidden shells remain alive"
+  ],
+  "sourceHashes": {
+    "ui/src/components/terminal-view.tsx": "735fea502d7ec2cc732d02611f7a8493bf88a7697ad8a5c0208aa7760eeb7b8b",
+    "ui/src/components/terminal-panel.tsx": "5d9f6067a5f4588fa26a5d4f0c6f270b660259fa16c0472a3de30cd11fecd3b2",
+    "core/terminal.js": "2934ae6e474ea1b9546e12880dd785a89b37d4ab031e36ffcf365525975281db"
+  },
+  "samples": [
+    {
+      "label": "one-visible",
+      "at": "2026-11-05T06:05:19.149Z",
+      "contexts": [
+        {
+          "alive": true,
+          "lost": false,
+          "attached": true,
+          "visible": true,
+          "lossEvents": 0,
+          "created": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          },
+          "deleted": {},
+          "liveHandles": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          }
+        }
+      ],
+      "shells": 1,
+      "heap": {
+        "backingStorageSize": 3627829,
+        "embedderHeapUsedSize": 18743504,
+        "totalSize": 25427968,
+        "usedSize": 13390900
+      }
+    },
+    {
+      "label": "eight-tabs-one-visible",
+      "at": "2026-11-05T06:06:16.509Z",
+      "contexts": [
+        {
+          "alive": true,
+          "lost": false,
+          "attached": true,
+          "visible": false,
+          "lossEvents": 0,
+          "created": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          },
+          "deleted": {},
+          "liveHandles": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          }
+        },
+        {
+          "alive": true,
+          "lost": false,
+          "attached": true,
+          "visible": false,
+          "lossEvents": 0,
+          "created": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          },
+          "deleted": {},
+          "liveHandles": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          }
+        },
+        {
+          "alive": true,
+          "lost": false,
+          "attached": true,
+          "visible": false,
+          "lossEvents": 0,
+          "created": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          },
+          "deleted": {},
+          "liveHandles": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          }
+        },
+        {
+          "alive": true,
+          "lost": false,
+          "attached": true,
+          "visible": false,
+          "lossEvents": 0,
+          "created": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          },
+          "deleted": {},
+          "liveHandles": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          }
+        },
+        {
+          "alive": true,
+          "lost": false,
+          "attached": true,
+          "visible": false,
+          "lossEvents": 0,
+          "created": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          },
+          "deleted": {},
+          "liveHandles": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          }
+        },
+        {
+          "alive": true,
+          "lost": false,
+          "attached": true,
+          "visible": false,
+          "lossEvents": 0,
+          "created": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          },
+          "deleted": {},
+          "liveHandles": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          }
+        },
+        {
+          "alive": true,
+          "lost": false,
+          "attached": true,
+          "visible": false,
+          "lossEvents": 0,
+          "created": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          },
+          "deleted": {},
+          "liveHandles": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          }
+        },
+        {
+          "alive": true,
+          "lost": false,
+          "attached": true,
+          "visible": true,
+          "lossEvents": 0,
+          "created": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          },
+          "deleted": {},
+          "liveHandles": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          }
+        }
+      ],
+      "shells": 8,
+      "heap": {
+        "backingStorageSize": 5363613,
+        "embedderHeapUsedSize": 18363744,
+        "totalSize": 29806592,
+        "usedSize": 18515244
+      }
+    },
+    {
+      "label": "eight-tabs-panel-hidden",
+      "at": "2026-11-05T06:06:16.701Z",
+      "contexts": [
+        {
+          "alive": true,
+          "lost": false,
+          "attached": true,
+          "visible": false,
+          "lossEvents": 0,
+          "created": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          },
+          "deleted": {},
+          "liveHandles": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          }
+        },
+        {
+          "alive": true,
+          "lost": false,
+          "attached": true,
+          "visible": false,
+          "lossEvents": 0,
+          "created": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          },
+          "deleted": {},
+          "liveHandles": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          }
+        },
+        {
+          "alive": true,
+          "lost": false,
+          "attached": true,
+          "visible": false,
+          "lossEvents": 0,
+          "created": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          },
+          "deleted": {},
+          "liveHandles": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          }
+        },
+        {
+          "alive": true,
+          "lost": false,
+          "attached": true,
+          "visible": false,
+          "lossEvents": 0,
+          "created": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          },
+          "deleted": {},
+          "liveHandles": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          }
+        },
+        {
+          "alive": true,
+          "lost": false,
+          "attached": true,
+          "visible": false,
+          "lossEvents": 0,
+          "created": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          },
+          "deleted": {},
+          "liveHandles": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          }
+        },
+        {
+          "alive": true,
+          "lost": false,
+          "attached": true,
+          "visible": false,
+          "lossEvents": 0,
+          "created": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          },
+          "deleted": {},
+          "liveHandles": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          }
+        },
+        {
+          "alive": true,
+          "lost": false,
+          "attached": true,
+          "visible": false,
+          "lossEvents": 0,
+          "created": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          },
+          "deleted": {},
+          "liveHandles": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          }
+        },
+        {
+          "alive": true,
+          "lost": false,
+          "attached": true,
+          "visible": false,
+          "lossEvents": 0,
+          "created": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          },
+          "deleted": {},
+          "liveHandles": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          }
+        }
+      ],
+      "shells": 8,
+      "heap": {
+        "backingStorageSize": 5363962,
+        "embedderHeapUsedSize": 18373912,
+        "totalSize": 30068736,
+        "usedSize": 15689128
+      }
+    },
+    {
+      "label": "reopened",
+      "at": "2026-11-05T06:06:16.842Z",
+      "contexts": [
+        {
+          "alive": true,
+          "lost": false,
+          "attached": true,
+          "visible": false,
+          "lossEvents": 0,
+          "created": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          },
+          "deleted": {},
+          "liveHandles": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          }
+        },
+        {
+          "alive": true,
+          "lost": false,
+          "attached": true,
+          "visible": false,
+          "lossEvents": 0,
+          "created": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          },
+          "deleted": {},
+          "liveHandles": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          }
+        },
+        {
+          "alive": true,
+          "lost": false,
+          "attached": true,
+          "visible": false,
+          "lossEvents": 0,
+          "created": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          },
+          "deleted": {},
+          "liveHandles": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          }
+        },
+        {
+          "alive": true,
+          "lost": false,
+          "attached": true,
+          "visible": false,
+          "lossEvents": 0,
+          "created": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          },
+          "deleted": {},
+          "liveHandles": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          }
+        },
+        {
+          "alive": true,
+          "lost": false,
+          "attached": true,
+          "visible": false,
+          "lossEvents": 0,
+          "created": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          },
+          "deleted": {},
+          "liveHandles": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          }
+        },
+        {
+          "alive": true,
+          "lost": false,
+          "attached": true,
+          "visible": false,
+          "lossEvents": 0,
+          "created": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          },
+          "deleted": {},
+          "liveHandles": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          }
+        },
+        {
+          "alive": true,
+          "lost": false,
+          "attached": true,
+          "visible": false,
+          "lossEvents": 0,
+          "created": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          },
+          "deleted": {},
+          "liveHandles": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          }
+        },
+        {
+          "alive": true,
+          "lost": false,
+          "attached": true,
+          "visible": true,
+          "lossEvents": 0,
+          "created": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          },
+          "deleted": {},
+          "liveHandles": {
+            "Program": 2,
+            "Shader": 4,
+            "VertexArray": 2,
+            "Buffer": 6,
+            "Texture": 32
+          }
+        }
+      ],
+      "shells": 8,
+      "heap": {
+        "backingStorageSize": 4951821,
+        "embedderHeapUsedSize": 18938264,
+        "totalSize": 30068736,
+        "usedSize": 18610936
+      }
+    }
+  ]
+}

@@ -27,7 +27,7 @@ export function KeyboardShortcuts() {
       }
       const action = shortcutAction(event, { platform, overrides });
       // Editors and terminals own their key bindings, including saving and commands.
-      if ((event.target as HTMLElement)?.closest?.('.cm-editor, .xterm, [contenteditable="true"]') && !['find-file', 'split-terminal', 'new-terminal', 'debug', 'terminal', 'workspace', 'zoom-workspace', 'fullscreen'].includes(action || '')) return;
+      if ((event.target as HTMLElement)?.closest?.('.cm-editor, .xterm, [contenteditable="true"]') && !['search', 'search-project', 'files', 'changes', 'settings', 'sidebar', 'find-file', 'split-terminal', 'new-terminal', 'debug', 'terminal', 'workspace', 'zoom-workspace', 'fullscreen'].includes(action || '')) return;
       if (action) {
         event.preventDefault(); event.stopPropagation();
         if (s.workspaceExpanded && ['sidebar', 'terminal', 'debug', 'new', 'recent'].includes(action)) s.setWorkspaceExpanded(false);
@@ -35,6 +35,7 @@ export function KeyboardShortcuts() {
         else if (action === 'split-terminal' || action === 'new-terminal') { s.setTerminalOpen(true); requestAnimationFrame(() => window.dispatchEvent(new Event(`tributary:${action}`))); }
         else if (action === 'help') s.setShortcutsOpen(true);
         else if (action === 'search') s.setPalette(true);
+        else if (action === 'search-project') window.dispatchEvent(new Event('tributary:search-project'));
         else if (action === 'attention') window.dispatchEvent(new Event('tributary:next-attention'));
         else if (action === 'new') { if (s.project) s.newThread(); else s.goHome(); }
         else if (action === 'sidebar') toggleSidebar();
@@ -56,7 +57,7 @@ export function KeyboardShortcuts() {
     };
     window.addEventListener('keydown', onKey, true); return () => window.removeEventListener('keydown', onKey, true);
   }, [s, toggleSidebar, platform, overrides, fullscreen.toggle, fullscreen.active]);
-  const editorShortcuts = [{ id: 'editor-menu', label: 'Editor context menu', group: 'Editor', keys: ['Shift', 'F10'] }, { id: 'definition', label: 'Go to definition (language server)', group: 'Editor', keys: ['F12'] }, { id: 'find-in-file', label: 'Find in file', group: 'Editor', keys: ['Mod', 'F'] }, { id: 'goto-line', label: 'Go to line', group: 'Editor', keys: ['Alt', 'G'] }, { id: 'format', label: 'Format document', group: 'Editor', keys: ['Shift', 'Alt', 'F'] }, { id: 'wrap', label: 'Wrap lines', group: 'Editor', keys: ['Alt', 'Z'] }, { id: 'breakpoint', label: 'Toggle breakpoint', group: 'Editor', keys: ['F9'] }];
+  const editorShortcuts = [{ id: 'editor-menu', label: 'Editor context menu', group: 'Editor', keys: ['Shift', 'F10'] }, { id: 'definition', label: 'Go to definition (language server)', group: 'Editor', keys: ['F12'] }, { id: 'find-in-file', label: 'Find in file', group: 'Editor', keys: ['Mod', 'F'] }, { id: 'replace-in-file', label: 'Replace in file', group: 'Editor', keys: platform === 'mac' ? ['Mod', 'Alt', 'F'] : ['Mod', 'H'] }, { id: 'goto-line', label: 'Go to line', group: 'Editor', keys: ['Alt', 'G'] }, { id: 'format', label: 'Format document', group: 'Editor', keys: ['Shift', 'Alt', 'F'] }, { id: 'wrap', label: 'Wrap lines', group: 'Editor', keys: ['Alt', 'Z'] }, { id: 'breakpoint', label: 'Toggle breakpoint', group: 'Editor', keys: ['F9'] }];
   const debugShortcuts = [{ id: 'debug-continue', label: 'Start / Continue / Pause', group: 'Debugging', keys: ['F5'] }, { id: 'debug-over', label: 'Step over', group: 'Debugging', keys: ['F10'] }, { id: 'debug-into', label: 'Step into', group: 'Debugging', keys: ['F11'] }, { id: 'debug-out', label: 'Step out', group: 'Debugging', keys: ['Shift', 'F11'] }, { id: 'debug-restart', label: 'Restart debugging', group: 'Debugging', keys: ['Mod', 'Shift', 'F5'] }, { id: 'debug-stop', label: 'Stop debugging', group: 'Debugging', keys: ['Shift', 'F5'] }];
   const rows = [...shortcutBindings(overrides), ...editorShortcuts, ...debugShortcuts].filter((item) => `${item.label} ${item.group}`.toLowerCase().includes(query.toLowerCase()));
   return <Dialog open={s.shortcutsOpen} onOpenChange={s.setShortcutsOpen}>

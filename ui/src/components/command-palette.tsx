@@ -12,11 +12,12 @@ export function CommandPalette() {
   const run = (fn: () => void) => () => { close(); fn(); };
   const threads = (s.st?.projects ?? []).flatMap((p) => (s.threadsBy[p.path] || []).map((t) => ({ ...t, project: p })));
   return (
-    <CommandDialog open={s.palette} onOpenChange={s.setPalette} title="Search and features" description="Find tools, workspace actions, agents and chats." className="feature-finder top-1/2 max-h-[calc(100dvh-32px)] -translate-y-1/2 max-sm:[&_[cmdk-item]]:min-h-11 max-sm:[&_[cmdk-input]]:min-h-11 max-sm:[&_[data-slot=input-group]]:min-h-11">
-      <CommandInput placeholder="Search features, agents and chats…" />
+    <CommandDialog open={s.palette} onOpenChange={s.setPalette} title="Command palette" description="Find tools, workspace actions, agents and chats." className="feature-finder top-11 max-h-[min(560px,calc(100dvh-64px))] -translate-y-0 gap-0 rounded-md! shadow-2xl sm:max-w-[600px] max-sm:[&_[cmdk-item]]:min-h-11 max-sm:[&_[cmdk-input]]:min-h-11 max-sm:[&_[data-slot=input-group]]:min-h-11">
+      <CommandInput leading={<span aria-hidden="true" className="font-mono text-sm text-muted-foreground">&gt;</span>} placeholder="Type a command or search chats…" />
       <CommandList>
         <CommandEmpty>No results.</CommandEmpty>
         <CommandGroup heading="Actions">
+          <CommandItem disabled={!s.project} keywords={['grep', 'find', 'text', 'search']} onSelect={run(() => window.dispatchEvent(new Event('tributary:search-project')))}><FileImage />Search in project files<CommandShortcut><ShortcutLabel action="search-project" /></CommandShortcut></CommandItem>
           <CommandItem disabled={!s.project} keywords={['zoom', 'expand', 'zen', 'editor', 'restore']} onSelect={run(() => { s.setWorkspaceExpanded(!s.panel.open || !s.workspaceExpanded); s.openPanel(s.panel.tab); })}><Scan />{s.workspaceExpanded ? 'Restore layout' : 'Focus workspace'}<CommandShortcut><ShortcutLabel action="zoom-workspace" /></CommandShortcut></CommandItem>
           {fullscreen.supported && <CommandItem keywords={['window', 'fullscreen', 'screen']} onSelect={run(() => void fullscreen.toggle())}><Maximize />{fullscreen.active ? 'Exit full screen' : 'Full screen'}<CommandShortcut><ShortcutLabel action="fullscreen" /></CommandShortcut></CommandItem>}
           <CommandItem keywords={['recent', 'files', 'folders', 'workspaces']} onSelect={run(() => s.setRecentOpen(true))}><FolderPlus />Open recent files and folders<CommandShortcut><ShortcutLabel action="recent" /></CommandShortcut></CommandItem>

@@ -316,6 +316,19 @@
 
 .workspace-file-tab[data-state="active"] { background: var(--card); }
 
+.cm-editor .cm-search { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 10px; font: 12px/1.5 var(--font-sans); }
+.cm-editor .cm-search input[type="text"], .cm-editor .cm-search input:not([type]) { min-width: 120px; height: 28px; padding: 3px 7px; border: 1px solid var(--border); border-radius: 4px; background: var(--card); color: var(--foreground); }
+.cm-editor .cm-search button { min-height: 26px; padding: 2px 7px; border: 1px solid var(--border); border-radius: 4px; background: var(--secondary); color: var(--secondary-foreground); cursor: pointer; }
+.cm-editor .cm-search label { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.cm-editor .cm-search input:focus-visible, .cm-editor .cm-search button:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+
+/* Quick commands stay near the title bar, with room for more results. */
+.feature-finder [data-slot="command"] { border-radius: 6px !important; }
+.feature-finder [cmdk-list] { max-height: min(490px, calc(100dvh - 116px)); }
+.feature-finder [cmdk-item] { min-height: 26px; padding: 3px 8px; font-size: 13px; line-height: 20px; border-radius: 3px !important; }
+.feature-finder [cmdk-group-heading] { padding-block: 4px; font-size: 11px; }
+.feature-finder [data-slot="command-input-wrapper"] { padding: 4px; }
+
 /* One row rhythm keeps labels, tab actions and neighboring panes on the same centerline. */
 :root, .developer-shell, .workspace-surface { --workbench-row-height: 32px; --workbench-action-size: 28px; --explorer-row-height: 24px; }
 .workbench-toolbar {

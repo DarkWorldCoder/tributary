@@ -1,15 +1,12 @@
 import * as React from 'react';
 import { useStore } from '@/store';
 import { sourceLanguage } from '@/lib/source-language.mjs';
+import { extensionThemeVariables } from '@/lib/extension-theme-variables.mjs';
 export interface ExtensionPack { id: string; name: string; publisher: string; version: string; hasRuntime: boolean; themes: { id: string; label: string; dark: boolean }[]; iconThemes: { id: string; label: string }[] }
 type Associations = { file?: string; folder?: string; folderExpanded?: string; rootFolder?: string; rootFolderExpanded?: string; fileNames?: Record<string, string>; fileExtensions?: Record<string, string>; folderNames?: Record<string, string>; folderNamesExpanded?: Record<string, string>; languageIds?: Record<string, string> };
 interface Icons { id: string; definitions: Record<string, { image?: string; char?: string; font?: string; color?: string }>; fonts: { id: string; data: string }[]; associations: Associations; light: Associations; highContrast: Associations }
 interface Appearance { theme: { id: string; dark: boolean; colors: Record<string, string>; tokenColors: { scope?: string | string[]; foreground: string }[] } | null; icons: Icons | null }
 const Context = React.createContext<{ icons: Icons | null; light: boolean; fonts: Record<string, string> }>({ icons: null, light: false, fonts: {} });
-const COLOR_KEYS: Record<string, string[]> = {
-  '--background': ['editor.background'], '--card': ['editor.background'], '--popover': ['editorWidget.background', 'editor.background'], '--popover-foreground': ['editorWidget.foreground', 'editor.foreground'], '--foreground': ['editor.foreground'], '--muted-foreground': ['descriptionForeground', 'editorLineNumber.foreground'], '--muted': ['editor.lineHighlightBackground', 'sideBar.background'], '--border': ['panel.border', 'editorWidget.border'], '--accent': ['list.activeSelectionBackground'], '--accent-foreground': ['list.activeSelectionForeground', 'editor.foreground'], '--brand': ['focusBorder', 'button.background'], '--success': ['gitDecoration.addedResourceForeground', 'diffEditor.insertedLineBackground'], '--destructive': ['gitDecoration.deletedResourceForeground', 'errorForeground'], '--sidebar': ['sideBar.background', 'editor.background'], '--sidebar-foreground': ['sideBar.foreground', 'editor.foreground'], '--sidebar-border': ['sideBar.border', 'panel.border'], '--input': ['input.background'], '--ring': ['focusBorder'],
-};
-const SCOPE_KEYS: Record<string, string[]> = { '--syn-keyword': ['keyword', 'storage'], '--syn-string': ['string'], '--syn-number': ['constant.numeric', 'constant.language'], '--syn-comment': ['comment'], '--syn-function': ['entity.name.function', 'support.function'], '--syn-type': ['entity.name.type', 'support.type', 'entity.name.class'], '--syn-property': ['variable.other.property', 'support.type.property-name'] };
 export function ExtensionAppearance({ children }: { children: React.ReactNode }) {
   const s = useStore(); const themeId = String(s.st?.settings.extensionTheme || ''); const iconsId = String(s.st?.settings.extensionIcons || '');
   const [appearance, setAppearance] = React.useState<Appearance>({ theme: null, icons: null });
@@ -20,13 +17,11 @@ export function ExtensionAppearance({ children }: { children: React.ReactNode })
   React.useEffect(() => {
     const root = document.documentElement; const theme = appearance.theme;
     if (!theme) return;
-    const variables: Record<string, string> = {};
-    for (const [key, candidates] of Object.entries(COLOR_KEYS)) { const color = candidates.map((name) => theme.colors[name]).find(Boolean); if (color) variables[key] = color; }
-    for (const [key, scopes] of Object.entries(SCOPE_KEYS)) { const rule = [...theme.tokenColors].reverse().find((rule) => (Array.isArray(rule.scope) ? rule.scope : typeof rule.scope === 'string' ? rule.scope.split(',') : []).some((scope) => scopes.some((prefix) => scope.trim().startsWith(prefix)))); if (rule) variables[key] = rule.foreground; }
+    const variables = extensionThemeVariables(theme);
     const previous = Object.fromEntries(Object.keys(variables).map((key) => [key, root.style.getPropertyValue(key)]));
     for (const [key, value] of Object.entries(variables)) root.style.setProperty(key, value);
     root.dataset.extensionTheme = theme.id;
-    const style = document.createElement('style'); style.textContent = `:root[data-extension-theme] .app-frame, :root[data-extension-theme] .app-frame .workspace-surface { ${Object.entries(variables).map(([key, value]) => `${key}:${value}`).join(';')} }`; document.head.append(style);
+    const style = document.createElement('style'); style.textContent = `:root[data-extension-theme] .app-frame, :root[data-extension-theme] .app-frame .workspace-surface, :root[data-extension-theme] .app-frame .conversation-shell { ${Object.entries(variables).map(([key, value]) => `${key}:${value}`).join(';')} }`; document.head.append(style);
     return () => { style.remove(); delete root.dataset.extensionTheme; for (const [key, value] of Object.entries(previous)) value ? root.style.setProperty(key, value) : root.style.removeProperty(key); };
   }, [appearance.theme]);
   React.useEffect(() => {

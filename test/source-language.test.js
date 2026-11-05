@@ -3,12 +3,35 @@ const test = require('node:test'); const assert = require('node:assert/strict');
 const identity = import('../ui/src/lib/source-language.mjs'); const grammars = import('../ui/src/lib/source-grammar.mjs');
 test('source identity handles TypeScript variants, config names, containers and executable shebangs', async () => {
  const { sourceLanguage } = await identity;
- for (const [path, text, id] of [['src/view.tsx', '', 'tsx'], ['src/app.mts', '', 'typescript'], ['C:\\project\\Dockerfile.dev', '', 'dockerfile'], ['Containerfile', '', 'dockerfile'], ['CMakeLists.txt', '', 'cmake'], ['tsconfig.build.json', '', 'jsonc'], ['.env.local', '', 'properties'], ['.prettierrc', 'semi: true', 'yaml'], ['script', '#!/usr/bin/env -S python3 -u\nprint(1)', 'python'], ['cli', '#!/usr/bin/env node\nconsole.log(1)', 'javascript'], ['unrecognized', 'some text', 'text']]) assert.equal(sourceLanguage(path, text).id, id, path);
+ for (const [path, text, id] of [['src/view.tsx', '', 'tsx'], ['src/app.mts', '', 'typescript'], ['C:\\project\\Dockerfile.dev', '', 'dockerfile'], ['Containerfile', '', 'dockerfile'], ['CMakeLists.txt', '', 'cmake'], ['tsconfig.build.json', '', 'jsonc'], ['.env.local', '', 'dotenv'], ['.env', '', 'dotenv'], ['.env.production', '', 'dotenv'], ['config.env', '', 'dotenv'], ['settings.ini', '', 'properties'], ['.prettierrc', 'semi: true', 'yaml'], ['script', '#!/usr/bin/env -S python3 -u\nprint(1)', 'python'], ['cli', '#!/usr/bin/env node\nconsole.log(1)', 'javascript'], ['unrecognized', 'some text', 'text']]) assert.equal(sourceLanguage(path, text).id, id, path);
 });
 test('all advertised source languages load a real bounded editor grammar', async () => {
  const { SOURCE_LANGUAGES } = await identity; const { sourceGrammar } = await grammars;
  for (const item of SOURCE_LANGUAGES) { const grammar = await sourceGrammar('source.' + item.extensions[0]); assert.ok(grammar, item.id); assert.ok((grammar.language || grammar).parser.parse('example').length >= 0, item.id); }
  assert.equal(await sourceGrammar('unknown.file'), null);
+});
+test('dotenv highlighting distinguishes keys, values, comments, exports and references without evaluating values', async () => {
+ const { sourceGrammar } = await grammars;
+ const { highlightTree, classHighlighter } = await import('../ui/node_modules/@lezer/highlight/dist/index.js');
+ const language = await sourceGrammar('.env.local');
+ const tokens = (text) => {
+  const result = [];
+  highlightTree(language.parser.parse(text), classHighlighter, (from, to, style) => result.push([text.slice(from, to), style]));
+  return result;
+ };
+ assert.deepEqual(tokens('# Local settings\nexport DATABASE_URL="https://${HOST}/db" # note\nEMPTY=\nPORT=3000'), [
+  ['# Local settings', 'tok-comment'], ['export', 'tok-keyword'], ['DATABASE_URL', 'tok-propertyName'], ['=', 'tok-operator'],
+  ['"https://', 'tok-string'], ['${HOST}', 'tok-variableName2'], ['/db"', 'tok-string'], ['# note', 'tok-comment'],
+  ['EMPTY', 'tok-propertyName'], ['=', 'tok-operator'], ['PORT', 'tok-propertyName'], ['=', 'tok-operator'], ['3000', 'tok-string'],
+ ]);
+ assert.deepEqual(tokens("LITERAL='${HOST} # literal'\nMULTILINE=\"first\n# still a value\nlast\"\nNEXT=$HOST"), [
+  ['LITERAL', 'tok-propertyName'], ['=', 'tok-operator'], ["'${HOST} # literal'", 'tok-string'],
+  ['MULTILINE', 'tok-propertyName'], ['=', 'tok-operator'], ['"first', 'tok-string'], ['# still a value', 'tok-string'], ['last"', 'tok-string'],
+  ['NEXT', 'tok-propertyName'], ['=', 'tok-operator'], ['$HOST', 'tok-variableName2'],
+ ]);
+ assert.deepEqual(tokens('ESCAPED="\\${HOST} \\"quoted\\""'), [
+  ['ESCAPED', 'tok-propertyName'], ['=', 'tok-operator'], ['"\\${HOST} \\"quoted\\""', 'tok-string'],
+ ]);
 });
 test('Vue grammar parses embedded TypeScript and template interpolation', async () => {
  const { sourceGrammar } = await grammars;

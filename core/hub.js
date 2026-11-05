@@ -807,11 +807,13 @@ class Hub extends EventEmitter {
   applyFormat(dir, token, selected, exclude, undo) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.projectFormatter.apply(dir, token, selected, exclude, undo === true); }
   async createEntry(dir, rel, kind) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return folderFiles.createEntry(dir, rel, kind); }
   async findFiles(dir, query, options) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return folderFiles.findFiles(dir, query, options); }
+  async searchProject(dir, query) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return folderFiles.searchProject(dir, query); }
   async readDirectory(dir, rel, options) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return folderFiles.readDirectory(dir, rel, options); }
   async readFile(dir, rel) {
     if (!this.isWorkspace(dir)) throw new Error('Unknown project');
     const abs = await folderFiles.projectPath(dir, rel);
     const st = fs.statSync(abs);
+    if (!st.isFile()) throw new Error(st.isDirectory() ? 'This is a folder. Expand it in the Explorer to open a file.' : 'This entry is not a regular file.');
     const raster = /\.(png|jpe?g|gif|webp|bmp|ico|avif)$/i.test(abs);
     const limit = (raster ? 16 : 1) * 1024 * 1024;
     // Oversized images need a metadata fallback, not a partial image payload.

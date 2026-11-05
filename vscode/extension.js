@@ -136,6 +136,7 @@ const API = {
   readFile: (p, rel) => hub.readFile(p, rel),
   createEntry: (p, rel, kind) => hub.createEntry(p, rel, kind),
   findFiles: (p, query, options) => hub.findFiles(p, query, options),
+  searchProject: (p, query) => hub.searchProject(p, query),
   readDirectory: (p, rel, options) => hub.readDirectory(p, rel, options),
   writeFile: (p, rel, c, m) => hub.writeFile(p, rel, c, m),
   draft: (key) => hub.draft(key), saveDraft: (key, data) => hub.saveDraft(key, data), compareDraft: (p, rel, text) => hub.compareDraft(p, rel, text),
