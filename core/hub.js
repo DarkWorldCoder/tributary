@@ -807,7 +807,7 @@ class Hub extends EventEmitter {
   applyFormat(dir, token, selected, exclude, undo) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.projectFormatter.apply(dir, token, selected, exclude, undo === true); }
   async createEntry(dir, rel, kind) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return folderFiles.createEntry(dir, rel, kind); }
   async findFiles(dir, query, options) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return folderFiles.findFiles(dir, query, options); }
-  async searchProject(dir, query) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return folderFiles.searchProject(dir, query); }
+  async searchProject(dir, query, options) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return folderFiles.searchProject(dir, query, options); }
   async readDirectory(dir, rel, options) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return folderFiles.readDirectory(dir, rel, options); }
   async readFile(dir, rel) {
     if (!this.isWorkspace(dir)) throw new Error('Unknown project');

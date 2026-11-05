@@ -14,7 +14,7 @@ for (const file of ['core/index.js', 'server/lan-host.js', 'desktop/main.js', 'u
   if (!entries.has('/' + file)) throw new Error(`Package is missing ${file}`);
 }
 if ([...entries].some((file) => /(?:^|\/)\.env(?:\.|$)/.test(file))) throw new Error('Environment files must never be packaged.');
-for (const file of ['core/format-worker.cjs', `node_modules/@lydell/node-pty-${platform === 'mac' ? 'darwin' : platform === 'win' ? 'win32' : 'linux'}-${arch}/package.json`]) {
+for (const file of ['core/format-worker.cjs', 'core/search-worker.cjs', 'core/files.js', 'core/directory-page.js', `node_modules/@lydell/node-pty-${platform === 'mac' ? 'darwin' : platform === 'win' ? 'win32' : 'linux'}-${arch}/package.json`]) {
   if (!fs.existsSync(path.join(archive + '.unpacked', file))) throw new Error(`Unpacked runtime is missing ${file}`);
 }
 const binary = path.join(base, platform === 'mac' ? 'MacOS/Tributary' : platform === 'win' ? 'Tributary.exe' : 'tributary');
@@ -40,6 +40,8 @@ const code = String.raw`
       fs.writeFileSync(path.join(dir, 'sample.js'), 'const sample={ok:true};');
       const result = await runtime('./core/project-format').formatProjectSource(dir, 'sample.js', 'const sample={ok:true};', true);
       assert.ok(result.includes('const sample ='));
+      const search = await runtime('./core/files').searchProject(dir, 's[a]mple', { regexp: true });
+      assert.equal(search.matches.length, 1);
     } finally { fs.rmSync(dir, { recursive: true, force: true }); }
     // ConPTY keeps a native helper thread alive after its shell exits on Windows.
     // This is a bounded test process: exit only after every assertion and cleanup

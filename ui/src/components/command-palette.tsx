@@ -33,7 +33,7 @@ export function CommandPalette() {
     { id: 'activity', label: 'Agents: Show Live Activity', icon: ListTodo, shortcut: 'activity', keywords: ['background', 'workers', 'running'], run: () => window.dispatchEvent(new Event('tributary:live')) },
     { id: 'help', label: 'Preferences: Keyboard Shortcuts', icon: Keyboard, shortcut: 'help', run: () => s.setShortcutsOpen(true) },
     { id: 'new', label: 'Chat: New Chat', icon: SquarePen, shortcut: 'new', disabled: !s.project, run: () => s.newThread() },
-    { id: 'files', label: 'View: Show Explorer', icon: FileImage, shortcut: 'files', keywords: ['files', 'images', 'preview'], disabled: !s.project, run: () => s.openPanel('files') },
+    { id: 'files', label: 'View: Show Explorer', icon: FileImage, shortcut: 'files', keywords: ['files', 'images', 'preview'], disabled: !s.project, run: () => { s.setSearchFilesOpen(false); s.openPanel('files'); } },
     { id: 'memory', label: 'Project: Open Memory', icon: BookOpen, shortcut: 'memory', disabled: !s.project, run: () => s.openPanel('memory') },
     { id: 'preview', label: 'View: Open App Preview', icon: Globe, shortcut: 'preview', disabled: !s.project, run: () => s.openPanel('preview') },
     { id: 'tests', label: 'Testing: Show Test Results and QA', icon: Bug, keywords: ['Playwright', 'report', 'failure', 'trace', 'bug'], disabled: !s.project, run: () => s.openPanel('tests') },

@@ -80,6 +80,8 @@
     ],
     "asarUnpack": [
       "node_modules/@lydell/**",
+      "core/search-worker.cjs",
+      "core/directory-page.js",
       "core/format-worker.cjs",
       "core/format-source.js",
       "core/proc.js",

@@ -51,7 +51,7 @@ export function KeyboardShortcuts() {
         else if (s.project) {
           if (action === 'workspace') s.setPanel({ ...s.panel, open: !s.panel.open });
           else if (action === 'terminal') s.setTerminalOpen(!s.terminalOpen);
-          else { s.openPanel(action === 'changes' ? 'review' : action); s.setWorkspaceExpanded(false); }
+          else { if (action === 'files') s.setSearchFilesOpen(false); s.openPanel(action === 'changes' ? 'review' : action); s.setWorkspaceExpanded(false); }
         }
       }
     };

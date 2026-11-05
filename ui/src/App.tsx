@@ -10,7 +10,7 @@ import { AppSidebar } from '@/components/app-sidebar';
 import { DeveloperEntry, DeveloperRail } from '@/components/developer-rail';
 import { KeyboardShortcuts } from '@/components/keyboard-shortcuts';
 import { CommandPalette } from '@/components/command-palette';
-import { ProjectSearch } from '@/components/project-search';
+import { ProjectSearchLauncher } from '@/components/project-search';
 import { QuickOpen } from '@/components/quick-open';
 import { LiveActivity } from '@/components/live-activity';
 import { Composer, HandoffHint } from '@/components/composer';
@@ -121,7 +121,7 @@ function WorkbenchApp() {
       <DeferredSurface active={s.teamOpen} name="Agent teams" close={() => s.setTeamOpen(false)}><TeamDialog /></DeferredSurface>
       <DeferredSurface active={s.roomOpen} name="Project room" close={() => s.setRoomOpen(false)}><CollaborationDialog /></DeferredSurface>
       <CommandPalette />
-      <ProjectSearch />
+      <ProjectSearchLauncher />
       <QuickOpen />
       <RecentWork />
       <LiveActivity />

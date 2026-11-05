@@ -66,11 +66,46 @@ async function findFiles(root, query, { showHidden = true } = {}) {
   }
   return found.sort();
 }
-async function searchProject(root, query) {
+async function searchProject(root, query, options = {}) {
+  options = options && typeof options === 'object' ? options : {};
+  const caseSensitive = options.caseSensitive === true; const wholeWord = options.wholeWord === true;
+  const regexp = options.regexp === true; const detail = options.detail === true;
+  const include = typeof options.include === 'string' ? options.include.trim() : '';
+  const exclude = typeof options.exclude === 'string' ? options.exclude.trim() : '';
+  if (include.length > 512 || exclude.length > 512) throw new Error('File filters must be up to 512 characters.');
   if (typeof query !== 'string' || !query.trim() || query.length > 512) throw new Error('Enter search text of up to 512 characters.');
+  let expression;
+  if (regexp) {
+    try { expression = new RegExp(query, caseSensitive ? 'g' : 'gi'); }
+    catch { throw new Error('Invalid regular expression.'); }
+    const { isMainThread, Worker } = require('node:worker_threads');
+    if (isMainThread) return new Promise((resolve, reject) => {
+      const filename = path.join(__dirname, 'search-worker.cjs').replace('app.asar' + path.sep, 'app.asar.unpacked' + path.sep);
+      const worker = new Worker(filename, { workerData: { root, query, options: { caseSensitive, wholeWord, regexp, detail, include, exclude } } });
+      const finish = (error, result) => { clearTimeout(timer); worker.removeAllListeners(); void worker.terminate(); error ? reject(error) : resolve(result); };
+      const timer = setTimeout(() => finish(new Error('Search took too long. Simplify the regular expression.')), 3000);
+      worker.once('message', (message) => finish(message.error ? new Error(message.error) : null, message.result));
+      worker.once('error', (error) => finish(error));
+      worker.once('exit', (code) => finish(new Error(`Search worker stopped (${code}).`)));
+    });
+  }
+  // Comma-separated glob filters, as in VS Code's search details. A bare folder
+  // includes descendants; a bare filename is matched at any depth.
+  const filters = (value) => {
+    const parts = []; let start = 0; let depth = 0;
+    for (let i = 0; i <= value.length; i++) {
+      if (value[i] === '{') depth++;
+      else if (value[i] === '}') depth = Math.max(0, depth - 1);
+      if (i === value.length || value[i] === ',' && !depth) { const part = value.slice(start, i).trim(); if (part) parts.push(part); start = i + 1; }
+    }
+    return parts;
+  };
+  const globMatch = (rel, pattern) => path.matchesGlob(rel, pattern) || path.matchesGlob(rel, `**/${pattern}`) || path.matchesGlob(rel, `${pattern}/**`) || path.matchesGlob(rel, `**/${pattern}/**`);
+  const includes = filters(include); const excludes = filters(exclude);
   const base = await fs.realpath(root); const pending = ['']; const matches = []; let scanned = 0; let bytes = 0; let truncated = false;
   const skip = new Set(['.git', 'node_modules', '.venv', 'venv', 'target', 'dist', 'build', '.next', 'vendor', '__pycache__']);
-  const needle = query.toLowerCase();
+  if (!expression) expression = new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), caseSensitive ? 'g' : 'gi');
+  const word = (char) => !!char && /[\p{L}\p{N}_]/u.test(char);
   while (pending.length && !truncated) {
     const folder = pending.pop();
     let directory;
@@ -79,7 +114,7 @@ async function searchProject(root, query) {
       if (++scanned > 20000) { truncated = true; break; }
       const rel = folder ? `${folder}/${entry.name}` : entry.name;
       if (entry.isDirectory()) { if (!skip.has(entry.name) && rel.split('/').length < 20) pending.push(rel); continue; }
-      if (!entry.isFile()) continue;
+      if (!entry.isFile() || (includes.length && !includes.some((pattern) => globMatch(rel, pattern))) || excludes.some((pattern) => globMatch(rel, pattern))) continue;
       try {
         // Recheck containment at read time, and bound both individual reads and the scan.
         const handle = await fs.open(await projectPath(base, rel), 'r');
@@ -93,11 +128,26 @@ async function searchProject(root, query) {
         if (buffer.subarray(0, 8000).includes(0)) continue;
         const lines = buffer.toString('utf8').split(/\r?\n/);
         for (let i = 0; i < lines.length; i++) {
-          const column = lines[i].toLowerCase().indexOf(needle);
-          if (column < 0) continue;
-          const start = Math.max(0, column - 80);
-          matches.push({ rel, line: i + 1, column: column + 1, text: (start ? '…' : '') + lines[i].slice(start, start + 300) });
-          if (matches.length >= 200) { truncated = true; break; }
+          const line = lines[i];
+          let offset = 0;
+          if (expression) expression.lastIndex = 0;
+          while (offset <= line.length) {
+            const found = expression.exec(line);
+            const column = found?.index ?? -1;
+            if (column < 0) break;
+            const length = found[0].length;
+            const end = column + length;
+            offset = Math.max(end, column + 1);
+            if (expression && !length) expression.lastIndex = offset;
+            if (wholeWord && (word(line[column - 1]) || word(line[end]))) continue;
+            const start = Math.max(0, column - 80);
+            const match = { rel, line: i + 1, column: column + 1, text: (start ? '…' : '') + line.slice(start, start + 300) };
+            if (detail) { match.matchStart = column - start + (start ? 1 : 0); match.matchLength = length; }
+            matches.push(match);
+            if (matches.length >= 200) { truncated = true; break; }
+            if (!detail) break; // Preserve the original one-result-per-line API.
+          }
+          if (truncated) break;
         }
       } catch { /* Deleted, inaccessible or escaped entries do not stop other results. */ }
       if (truncated) break;

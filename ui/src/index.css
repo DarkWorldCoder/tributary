@@ -316,11 +316,27 @@
 
 .workspace-file-tab[data-state="active"] { background: var(--card); }
 
-.cm-editor .cm-search { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 10px; font: 12px/1.5 var(--font-sans); }
-.cm-editor .cm-search input[type="text"], .cm-editor .cm-search input:not([type]) { min-width: 120px; height: 28px; padding: 3px 7px; border: 1px solid var(--border); border-radius: 4px; background: var(--card); color: var(--foreground); }
-.cm-editor .cm-search button { min-height: 26px; padding: 2px 7px; border: 1px solid var(--border); border-radius: 4px; background: var(--secondary); color: var(--secondary-foreground); cursor: pointer; }
-.cm-editor .cm-search label { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
-.cm-editor .cm-search input:focus-visible, .cm-editor .cm-search button:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+/* VS Code find-widget layout, adapted to CodeMirror and Tributary theme tokens. */
+.cm-editor > .cm-panels-top:has(.cm-vscode-search) { position: absolute; inset: 0 12px auto auto; z-index: 10; width: min(419px, calc(100% - 24px)); border: 0; background: transparent; }
+.cm-editor .cm-panel.cm-vscode-search { position: relative; padding: 4px 4px 4px 22px; border: 1px solid var(--border); border-radius: 4px; background: var(--popover); color: var(--popover-foreground); box-shadow: 0 3px 10px #0003; font: 12px/19px var(--font-sans); container-type: inline-size; }
+.cm-vscode-search .cm-find-row, .cm-vscode-search .cm-replace-row { display: flex; align-items: center; gap: 3px; min-height: 26px; }
+.cm-vscode-search .cm-replace-row { margin-top: 4px; }
+.cm-vscode-search .cm-replace-row[hidden] { display: none; }
+.cm-vscode-search .cm-find-input { display: flex; flex: 1; align-items: center; min-width: 0; height: 26px; background: var(--input); border: 1px solid var(--border); border-radius: 2px; padding-right: 2px; }
+.cm-vscode-search .cm-find-input:focus-within { outline: 1px solid var(--ring); outline-offset: -1px; }
+.cm-vscode-search input { min-width: 24px; width: 100%; height: 24px; padding: 2px 5px; font: 13px var(--font-sans); color: inherit; background: transparent; border: 0; outline: none; }
+.cm-vscode-search button { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: 22px; height: 22px; padding: 0 3px; border: 1px solid transparent; border-radius: 3px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.cm-vscode-search button:hover:not(:disabled) { background: var(--accent); }
+.cm-vscode-search button[aria-pressed="true"] { background: var(--accent); border-color: var(--ring); }
+.cm-vscode-search button[name="wholeWord"] { text-decoration: underline; text-underline-offset: 2px; }
+.cm-vscode-search button[name="toggle-replace"] { position: absolute; left: 2px; top: 3px; bottom: 3px; height: auto; min-width: 16px; padding: 0; font-size: 20px; }
+.cm-editor .cm-vscode-search button[name="close"] { position: static !important; font-size: 18px; background: transparent; }
+@container (max-width: 330px) { .cm-vscode-search .cm-find-count { display: none; } }
+.cm-vscode-search button:disabled { opacity: .4; cursor: default; }
+.cm-vscode-search button:focus-visible { outline: 1px solid var(--ring); }
+.cm-vscode-search .cm-find-count { flex-shrink: 0; min-width: 52px; max-width: 80px; text-align: center; font-size: 11px; font-variant-numeric: tabular-nums; }
+.cm-vscode-search input[aria-invalid="true"] { color: var(--destructive); }
+@media (max-width: 639px) { .cm-vscode-search .cm-find-count { min-width: 0; max-width: 50px; font-size: 10px; } }
 
 /* Quick commands stay near the title bar, with room for more results. */
 .feature-finder [data-slot="command"] { border-radius: 6px !important; }

@@ -194,3 +194,39 @@ test('project file search finds ignored env files without reading contents or fo
   assert.deepEqual(await findFiles(root, 'env', { showHidden: false }), []);
   assert.deepEqual(await findFiles(root, ''), []);
 });
+
+
+test('search options keep exact offsets, all line matches and include/exclude glob filters', async (t) => {
+  const root = mkTmp('tributary-search-options-');
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(root, 'src')); fs.mkdirSync(path.join(root, 'src', 'nested'));
+  fs.writeFileSync(path.join(root, 'src', 'main.ts'), 'Needle needle needles _needle needle_\nİ needle needle\n');
+  fs.writeFileSync(path.join(root, 'src', 'main.test.ts'), 'needle');
+  fs.writeFileSync(path.join(root, 'src', 'nested', 'other.js'), 'needle');
+  const { searchProject } = require('../core/files');
+  const detail = await searchProject(root, 'needle', { detail: true, wholeWord: true, caseSensitive: true, include: 'src/**/*.{ts,js}', exclude: '*.test.ts' });
+  assert.equal(detail.matches.length, 4);
+  const main = detail.matches.filter((m) => m.rel === 'src/main.ts');
+  assert.deepEqual(main.map((m) => [m.line, m.column]), [[1, 8], [2, 3], [2, 10]]);
+  for (const match of detail.matches) assert.equal(match.text.slice(match.matchStart, match.matchStart + match.matchLength), 'needle');
+  const regex = await searchProject(root, 'N[e]+dle', { regexp: true, caseSensitive: true, detail: true, include: 'main.ts' });
+  assert.equal(regex.matches.length, 1); assert.equal(regex.matches[0].column, 1);
+  const zero = await searchProject(root, '^', { regexp: true, detail: true, include: 'main.test.ts' });
+  assert.equal(zero.matches.length, 1); assert.equal(zero.matches[0].matchLength, 0);
+  const literal = await searchProject(root, '_needle', { detail: true });
+  assert.equal(literal.matches.length, 1);
+  await assert.rejects(searchProject(root, '[', { regexp: true }), /Invalid regular expression/);
+  await assert.rejects(searchProject(root, 'needle', { include: 'x'.repeat(513) }), /filters/);
+});
+
+test('a pathological search expression times out without blocking the host', async (t) => {
+  const root = mkTmp('tributary-search-timeout-');
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  fs.writeFileSync(path.join(root, 'text.txt'), 'a'.repeat(10000) + '!');
+  const { searchProject } = require('../core/files');
+  let hostResponsive = false; const timer = setTimeout(() => { hostResponsive = true; }, 100);
+  t.after(() => clearTimeout(timer));
+  await assert.rejects(searchProject(root, '(a+)+$', { regexp: true }), /Search took too long/);
+  assert.equal(hostResponsive, true);
+  assert.equal((await searchProject(root, '!')).matches.length, 1);
+});

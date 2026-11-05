@@ -1,0 +1,70 @@
+{
+  "date": "2026-11-05T10:43:38.605984+00:00",
+  "checks": {
+    "replaceAll": true,
+    "undoExact": true,
+    "invalidRegex": true,
+    "narrow": {
+      "viewport": 375,
+      "width": 351,
+      "right": 363,
+      "editorRight": 375,
+      "noPageOverflow": true,
+      "controlsDoNotOverlap": true
+    },
+    "sidebarHighlight": [
+      "greeting",
+      "greeting",
+      "greeting",
+      "greeting"
+    ],
+    "resultNavigation": {
+      "line": 5,
+      "column": 17
+    }
+  },
+  "packagedWorker": {
+    "passed": true,
+    "stdout": "ASAR_SEARCH_OK",
+    "scope": "Real Electron runtime, synthetic ASAR archive and unpacked search worker dependencies; not a complete installer build."
+  },
+  "fullRegressions": {
+    "passed": 551,
+    "failed": 0,
+    "scope": "Before final host-forwarding, packaging and navigation adjustments; final focused checks cover those paths."
+  },
+  "finalFocused": {
+    "passed": 31,
+    "failed": 0
+  },
+  "typecheck": "passed",
+  "uiBuild": "passed",
+  "vscodeBuild": "passed",
+  "sourceHashes": {
+    "core/files.js": "7e3de37f6a978833be07ea46929f61285efe7405cef0c5f4a0795a5edab47c23",
+    "core/hub.js": "2691ad07390247c9f92cbd6d9cfae28a738584b7c8b7cc47e3e332f070cd5f84",
+    "core/search-worker.cjs": "050f3cfd340625d2df7d223cf2c4cb89261219be0db2d4f3c547b43ac9b0ce26",
+    "desktop/main.js": "eba42c961b7ede81e1657ac87a3d1619e9417c302c1b6b5a1d1ae1f9ce70ffde",
+    "vscode/extension.js": "7c0935a0cfb97befea35a48f72a4092884b2dea6fcaf26f9269afc5fc20e5068",
+    "ui/src/lib/editor-search.ts": "4769aa56c7886e6b550cc43c2334b10b4a2134ba682cbe71c8a6c17c9f0283f0",
+    "ui/src/components/project-search.tsx": "00045cfae01f3a0173f10c27ecf53aaf45ee61693693750379c7f8e5146b7abe",
+    "ui/src/components/workspace-files.tsx": "6309e58a8531d880a2d1f26671f5616184165552e9f0ceeba5b6f3ea3b2c1f1b",
+    "ui/src/components/code-editor.tsx": "782133e87ead7bb51a499fac1c0cb20d55d392e0e668f0d07b1436f42916444d",
+    "ui/src/components/keyboard-shortcuts.tsx": "d3adb1932fd88558a0038a206e244c257dfb8612b67ce2e9afc744e288c10101",
+    "ui/src/components/command-palette.tsx": "9de9b93dbf5499c63a61743cb7adb1871e0d8d36848845fba754a6b5fe1c32d8",
+    "ui/src/index.css": "e38b1df8c54a6605723a207733cc856b158c598b9d9ea08080a9da2beba302b6",
+    "test/files.test.js": "b99f7d2a7e34f7fc1eae0ef4e4d48a0bb54c2127e8ce2e155759cab49ad00ba7",
+    "test/distribution.test.js": "3c590e42d19981a72749877a85634c0b9fc4becb182d1068c09e4968ee043804",
+    "scripts/verify-distribution.cjs": "506ad02c1e62ce23d212392820e0f085410af6eb3f94e50f479db51d72073dfe"
+  },
+  "limits": [
+    "Linux disposable desktop profile only, no provider calls.",
+    "ASAR fixture is not a full installer build.",
+    "Search layout adapted from VS Code; no complete workbench or workspace Replace All."
+  ],
+  "finalNavigation": {
+    "markdownTextEditor": true,
+    "searchClosedForDebugger": true,
+    "explorerShortcutRestoresExplorer": true
+  }
+}

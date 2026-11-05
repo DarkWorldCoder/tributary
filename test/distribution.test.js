@@ -22,6 +22,7 @@ test('release publication requires all six platform/architecture builds and hash
 
 test('installer configuration preserves data and includes external formatter and terminal runtime', () => {
   assert.equal(pkg.build.npmRebuild, false); assert.equal(pkg.build.nsis.deleteAppDataOnUninstall, false);
+  for (const file of ['core/search-worker.cjs', 'core/files.js', 'core/directory-page.js']) assert.ok(pkg.build.asarUnpack.includes(file));
   assert.ok(pkg.build.files.includes('LICENSE')); assert.ok(pkg.build.asarUnpack.includes('core/format-worker.cjs')); assert.ok(pkg.build.asarUnpack.includes('node_modules/@lydell/**'));
   assert.deepEqual(pkg.build.mac.target, ['dmg', 'zip']); assert.deepEqual(pkg.build.win.target, ['nsis', 'zip']); assert.deepEqual(pkg.build.linux.target, ['AppImage', 'deb', 'tar.gz']);
 });

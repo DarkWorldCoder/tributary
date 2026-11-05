@@ -29,7 +29,7 @@ import { agentFlash, applyRemoteText, clearAgentFlash, askAboutSelection, blameA
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useStore } from '@/store';
 import { EditorContextMenu } from '@/components/editor-context-menu';
-import { openEditorFind } from '@/lib/editor-search';
+import { createEditorSearchPanel, openEditorFind } from '@/lib/editor-search';
 import { search } from '@codemirror/search';
 import type { ActivityEntry, FileContent, ProjectDiagnostic } from '@/types';
 
@@ -160,7 +160,7 @@ export function CodeEditor({ project: documentProject, active = true, path, valu
       state: EditorState.create({
         doc: value,
         extensions: [
-          basicSetup, search({ top: true }), theme, EditorState.tabSize.of(editorSpacing(path, value).tabSize), indentUnit.of(editorSpacing(path, value).indentUnit), Prec.high(lintGutter()), keymap.of(lintKeymap), syntaxHighlighting(highlight), keymap.of([indentWithTab, { key: 'Mod-h', mac: 'Mod-Alt-f', run: (editor) => openEditorFind(editor, true) }, { key: 'Mod-s', preventDefault: true, run: () => { cb.current.onSave?.(); return true; } }, { key: 'Alt-z', run: () => { if (!cb.current.onToggleWrap) return false; cb.current.onToggleWrap(); return true; } }]),
+          basicSetup, search({ top: true, createPanel: createEditorSearchPanel }), theme, EditorState.tabSize.of(editorSpacing(path, value).tabSize), indentUnit.of(editorSpacing(path, value).indentUnit), Prec.high(lintGutter()), keymap.of(lintKeymap), syntaxHighlighting(highlight), keymap.of([indentWithTab, { key: 'Mod-h', mac: 'Mod-Alt-f', scope: 'editor search-panel', run: (editor) => openEditorFind(editor, true) }, { key: 'Mod-s', preventDefault: true, run: () => { cb.current.onSave?.(); return true; } }, { key: 'Alt-z', run: () => { if (!cb.current.onToggleWrap) return false; cb.current.onToggleWrap(); return true; } }]),
           EditorView.contentAttributes.of({ 'aria-label': `Edit ${path}`, tabindex: '0' }),
           ro.current.of([EditorState.readOnly.of(!!readOnly), EditorView.editable.of(!readOnly)]),
           wrapping.current.of(wrap ? EditorView.lineWrapping : []),

@@ -236,7 +236,7 @@ const API = {
   readFile: (p, rel) => hub.readFile(p, rel),
   createEntry: (p, rel, kind) => hub.createEntry(p, rel, kind),
   findFiles: (p, query, options) => hub.findFiles(p, query, options),
-  searchProject: (p, query) => hub.searchProject(p, query),
+  searchProject: (p, query, options) => hub.searchProject(p, query, options),
   readDirectory: (p, rel, options) => hub.readDirectory(p, rel, options),
   writeFile: (p, rel, content, mtime) => hub.writeFile(p, rel, content, mtime),
   // Unsaved text kept across a crash or restart

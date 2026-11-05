@@ -1,0 +1,9 @@
+The search sidebar and editor Find layout in Tributary were adapted with
+reference to the MIT-licensed Microsoft Visual Studio Code sources:
+
+https://github.com/microsoft/vscode/tree/main/src/vs/workbench/contrib/search/browser
+https://github.com/microsoft/vscode/tree/main/src/vs/editor/contrib/find/browser
+
+Copyright (c) 2015 - present Microsoft Corporation.
+The accompanying vscode-search-LICENSE.txt preserves the upstream license.
+Implementation and verification details are in docs/UI_SEARCH_VERIFICATION.md.

@@ -95,6 +95,7 @@ function useStoreValue() {
   const [queue, setQueue] = React.useState<Record<string, { id: string; text: string; attachments?: string[]; plan?: boolean; research?: boolean; mode?: Mode; agentId: string; model?: string; gatewayId?: string | null }[]>>({});
   const [settings, setSettings] = React.useState<{ open: boolean; tab: SettingsTab }>({ open: false, tab: 'agents' });
   const [palette, setPalette] = React.useState(false);
+  const [searchFilesOpen, setSearchFilesOpen] = React.useState(false);
   const [recentOpen, setRecentOpen] = React.useState(false);
   const [shortcutsOpen, setShortcutsOpen] = React.useState(false);
   const [loaded, setLoaded] = React.useState(false);
@@ -292,7 +293,7 @@ function useStoreValue() {
     hub, loaded, st, threadsBy, project, workdir, thread, git, agentId, agent, mode, gatewayId, theme, review, settings, palette, ready, running,
     get draft() { return getDraft(); },
     home, goHome: () => { setHome(true); pauseFollowing(); }, startTask, document: activeDocument, setDocument, makeDocument,
-    shortcutsOpen, setShortcutsOpen, panel, setPanel, openPanel, fileToOpen, openFile, editFile: (rel: string, line?: number, column?: number, project?: string) => openFile(rel, line, 'pinned', column, true, project), checksIntent, openChecks, debugOpen, setDebugOpen, debugLaunch, openDebugger: (rel?: string) => { if (rel) setDebugLaunch({ project: workdir, rel }); setDebugOpen(true); }, terminalOpen, teamOpen, setTeamOpen, roomOpen, setRoomOpen, recentOpen, setRecentOpen,
+    searchFilesOpen, setSearchFilesOpen, shortcutsOpen, setShortcutsOpen, panel, setPanel, openPanel, fileToOpen, openFile, editFile: (rel: string, line?: number, column?: number, project?: string) => openFile(rel, line, 'pinned', column, true, project), checksIntent, openChecks, debugOpen, setDebugOpen, debugLaunch, openDebugger: (rel?: string) => { if (rel) setDebugLaunch({ project: workdir, rel }); setDebugOpen(true); }, terminalOpen, teamOpen, setTeamOpen, roomOpen, setRoomOpen, recentOpen, setRecentOpen,
     selectedModel, setSelectedModel, modelFor,
     interfaceFont, setInterfaceFont, readingSize, setReadingSize, codingReadingSize, setCodingReadingSize, workbenchPalette, setWorkbenchPalette,
     uiDensity, setUiDensity, compactFolders, setCompactFolders, stickyFolders, setStickyFolders,
