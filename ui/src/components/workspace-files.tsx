@@ -1,3 +1,5 @@
+import { createDirectorySession, type DirectorySession } from '@/lib/directory-session.mjs';
+import { useTreeViewport } from '@/hooks/use-tree-viewport';
 import { ProjectSearch } from '@/components/project-search';
 import { WorkspaceFolderRow } from '@/components/workspace-folder-row';
 import { useWorkspaceGit, WorkspaceFileChange } from '@/components/workspace-changes';
@@ -121,11 +123,11 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
   return <div className="flex h-full min-h-0 flex-col">
     {removedFolder && <div role="status" aria-label="Folder removed" className="flex shrink-0 flex-wrap items-center gap-2 border-b bg-muted/30 px-3 py-2 text-xs"><span className="min-w-0 flex-1 truncate" title={removedFolder.folder}>{removedFolder.folder.split(/[\\/]/).at(-1)} removed. Files and drafts kept.</span><Button size="xs" variant="outline" disabled={undoingRemoval} onClick={async () => { setUndoingRemoval(true); try { await removedFolder.restore(); setRemovedFolder(null); } catch (e) { toast.error((e as Error).message); } finally { setUndoingRemoval(false); } }}>Undo</Button><Button size="icon-xs" variant="ghost" aria-label="Dismiss folder removal" disabled={undoingRemoval} onClick={() => setRemovedFolder(null)}><X /></Button></div>}
     {roots.length > 1 && <div className="flex min-h-8 shrink-0 items-center gap-2 border-b px-2 py-1"><label className="shrink-0 text-xs text-muted-foreground" htmlFor={folderSelectId}>Folder</label><NativeSelect id={folderSelectId} aria-label="Workspace folder" value={selected} className="min-w-0 flex-1" onChange={(event) => choose(event.target.value)}>{roots.map((folder) => <NativeSelectOption key={folder} value={folder}>{folder.split(/[\\/]/).filter(Boolean).at(-1)}{folder === project ? ' (main)' : ''}</NativeSelectOption>)}</NativeSelect><ProjectMenu projectPath={owner?.path || project}><Button size="xs" variant="ghost">Folders</Button></ProjectMenu></div>}
-    <div className="min-h-0 flex-1">{kept.map((folder) => <div key={folder} data-workspace-root={folder} className={folder === selected ? 'h-full min-h-0' : 'hidden'}><FolderFiles project={folder} visible={visible && folder === selected} owner={owner?.path || project} roots={roots} expandedRoots={expandedRoots} toggleRoot={toggleRoot} rootFolders={rootFolders} toggleBranch={toggleBranch} onFolderRemoved={folderRemoved} /></div>)}</div>
+    <div className="min-h-0 flex-1">{kept.map((folder) => <div key={folder} data-workspace-root={folder} className={folder === selected ? 'h-full min-h-0' : 'hidden'}><FolderFiles project={folder} warm={folder === selected && s.workdir === project} visible={visible && folder === selected} owner={owner?.path || project} roots={roots} expandedRoots={expandedRoots} toggleRoot={toggleRoot} rootFolders={rootFolders} toggleBranch={toggleBranch} onFolderRemoved={folderRemoved} /></div>)}</div>
   </div>;
 }
 
-function FolderFiles({ project, visible, owner, roots, expandedRoots, toggleRoot, rootFolders, toggleBranch, onFolderRemoved }: { onFolderRemoved: (folder: string, restore: () => Promise<void>) => void; project: string; visible: boolean; owner: string; roots: string[]; expandedRoots: Set<string>; toggleRoot: (root: string) => void; rootFolders: Record<string, Set<string>>; toggleBranch: (root: string, rel: string) => void }) {
+function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, toggleRoot, rootFolders, toggleBranch, onFolderRemoved }: { onFolderRemoved: (folder: string, restore: () => Promise<void>) => void; project: string; visible: boolean; warm: boolean; owner: string; roots: string[]; expandedRoots: Set<string>; toggleRoot: (root: string) => void; rootFolders: Record<string, Set<string>>; toggleBranch: (root: string, rel: string) => void }) {
   const { platform } = useShortcutPreferences();
   const s = useStore();
   const debugVisible = s.debugOpen && visible && project === s.workdir;
@@ -178,6 +180,9 @@ function FolderFiles({ project, visible, owner, roots, expandedRoots, toggleRoot
   const [comparing, setComparing] = React.useState<{ rel: string; diff: string | null } | null>(null);
   const [restoring, setRestoring] = React.useState(true);
   const [small, setSmall] = React.useState(() => window.innerWidth < 640);
+  const treeSessions = React.useRef(new Map<string, DirectorySession>());
+  const directorySession = (folder: string) => { let session = treeSessions.current.get(folder); if (!session) { session = createDirectorySession(); treeSessions.current.set(folder, session); } return session; };
+  const treeViewport = useTreeViewport(visible && warm && !s.searchFilesOpen && !debugVisible && (small ? browse : !collapsed), `${active || ''}\0${filter}`);
   const explorer = React.useRef<PanelImperativeHandle>(null);
   const fileGroup = React.useRef<HTMLDivElement>(null);
   const explorerWidth = React.useRef(224);
@@ -535,14 +540,16 @@ function FolderFiles({ project, visible, owner, roots, expandedRoots, toggleRoot
               <Input ref={search} value={filter} onChange={(event) => setFilter(event.target.value)} onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeSearch(); } }} placeholder="Find a file…" aria-label="Find a file" className="h-8 min-w-0 bg-transparent text-[13px] shadow-none max-sm:h-11" />
               <Button variant="ghost" size="icon-sm" className={iconButton} aria-label="Close file search" onClick={closeSearch}><X /></Button>
             </div>}
-            <div className="min-h-0 flex-1 overflow-auto px-1 pt-0.5 pb-2" role="region" aria-label="Project files">
+            <div ref={treeViewport} className="min-h-0 flex-1 overflow-auto px-1 pt-0.5 pb-2" role="region" aria-label="Project files">
+              {warm && <>
               {!filter.trim() ? roots.length > 1 ? roots.map((folder) => <section key={folder} aria-label={`Folder ${folder}`}>
                 <WorkspaceFolderRow folder={folder} owner={owner} expanded={expandedRoots.has(folder)} onToggle={() => toggleRoot(folder)} onRemoved={onFolderRemoved} />
-                {expandedRoots.has(folder) && <div className="pl-2"><DirectoryTree createEntry={(parent, kind) => startCreation(folder, parent, kind)} bridge={s.hub} project={folder} active={folder === project ? active : null} openFile={(rel, intent) => { if (folder === project) void openDoc(rel, intent); else s.openFile(rel, undefined, intent, undefined, false, folder); }} revision={directoryRevision} expanded={rootFolders[folder] || EMPTY_BRANCHES} toggle={(rel) => toggleBranch(folder, rel)} loading={folder === project ? opening : null} hidden={hidden} compact={s.compactFolders} sticky={s.stickyFolders} chains={folder === project ? chains : EMPTY_CHAINS} decorations={folder === project ? decorations : undefined} reviewFile={folder === project ? reviewSaved : undefined} /></div>}
-              </section>) : <DirectoryTree createEntry={(parent, kind) => startCreation(project, parent, kind)} bridge={s.hub} project={project} active={active} openFile={openDoc} revision={directoryRevision} expanded={open} toggle={toggle} loading={opening} hidden={hidden} compact={s.compactFolders} sticky={s.stickyFolders} chains={chains} decorations={decorations} reviewFile={reviewSaved} />
+                {expandedRoots.has(folder) && <div className="pl-2"><DirectoryTree session={directorySession(folder)} createEntry={(parent, kind) => startCreation(folder, parent, kind)} bridge={s.hub} project={folder} active={folder === project ? active : null} openFile={(rel, intent) => { if (folder === project) void openDoc(rel, intent); else s.openFile(rel, undefined, intent, undefined, false, folder); }} revision={directoryRevision} expanded={rootFolders[folder] || EMPTY_BRANCHES} toggle={(rel) => toggleBranch(folder, rel)} loading={folder === project ? opening : null} hidden={hidden} compact={s.compactFolders} sticky={s.stickyFolders} chains={folder === project ? chains : EMPTY_CHAINS} decorations={folder === project ? decorations : undefined} reviewFile={folder === project ? reviewSaved : undefined} /></div>}
+              </section>) : <DirectoryTree session={directorySession(project)} createEntry={(parent, kind) => startCreation(project, parent, kind)} bridge={s.hub} project={project} active={active} openFile={openDoc} revision={directoryRevision} expanded={open} toggle={toggle} loading={opening} hidden={hidden} compact={s.compactFolders} sticky={s.stickyFolders} chains={chains} decorations={decorations} reviewFile={reviewSaved} />
                 : files == null ? <div className="grid place-items-center p-6"><Spinner /></div>
                   : tree.map((node) => <TreeNode key={node.path} n={node} depth={0} open={open} active={active} onOpen={openDoc} toggle={toggle} loading={opening} decorations={decorations} />)}
               {filter.trim() && files && !shown.length && <p className="p-3 text-xs text-muted-foreground">No matching files.</p>}
+              </>}
             </div>
             <ExplorerOutline path={doc && !doc.binary ? doc.rel : null} text={doc?.text || ''} line={doc ? cursors[doc.rel]?.line || 1 : 1} onSelect={(line, column) => { if (doc) void openDoc(doc.rel, 'pinned', line, column); }} /></>
 

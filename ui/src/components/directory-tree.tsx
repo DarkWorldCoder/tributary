@@ -1,3 +1,4 @@
+import { createDirectorySession, directoryTarget, rememberDirectoryCount, shouldRevealDirectorySelection, type DirectorySession } from '@/lib/directory-session.mjs';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
 import * as React from 'react';
 import { ChevronRight, Link as LinkIcon } from 'lucide-react';
@@ -19,10 +20,10 @@ interface TreeOptions extends TreeState {
   decorations?: { files: Map<string, FileDecoration>; folders: Set<string> };
   createEntry?: (parent: string, kind: 'file' | 'folder') => void;
   reviewFile?: (rel: string) => void;
-  peek: (rel: string) => Promise<Page>;
+  peek: (rel: string) => Promise<Page>; session: DirectorySession;
 }
 function Directory({ options, rel, name, parent = '', depth = 0 }: { options: TreeOptions; rel: string; name: string; parent?: string; depth?: number }) {
-  const { bridge, project, hidden, active, openFile, expanded: folders, toggle, loading, revision, compact, chains, peek, sticky } = options;
+  const { bridge, project, hidden, active, openFile, expanded: folders, toggle, loading, revision, compact, chains, peek, sticky, session } = options;
   const [chain, setChain] = React.useState<string[]>([rel]);
   const folder = chain.at(-1) || rel;
   const expanded = rel === '' || folders.has(folder) || chain.some((path) => folders.has(path));
@@ -49,21 +50,23 @@ function Directory({ options, rel, name, parent = '', depth = 0 }: { options: Tr
   }, [compact, chains, rel, peek]);
   const load = React.useCallback(async (offset = 0) => {
     const request = ++sequence.current; const previous = current.current?.rel === folder ? current.current : null;
+    const target = directoryTarget(session, folder, hidden, previous?.entries.length || 0, offset);
     if (!previous || offset) setBusy(true); setError('');
     try {
       let result = await bridge.call<Page>('readDirectory', project, folder, { showHidden: hidden, offset, limit: 200 }); let entries = result.entries;
       if (!offset) {
-        const count = previous?.entries.length || 0;
+        const count = target;
         while (result.next != null && entries.length < count && request === sequence.current) {
           result = await bridge.call<Page>('readDirectory', project, folder, { showHidden: hidden, offset: result.next, limit: 200 }); entries = [...entries, ...result.entries];
         }
       } else entries = [...(previous?.entries || []), ...entries];
       if (request !== sequence.current) return;
+      rememberDirectoryCount(session, folder, hidden, entries.length);
       const next = { ...result, entries, rel: folder };
       setPage((old) => old?.rel === folder && old.next === next.next && old.total === next.total && old.entries.length === entries.length && old.entries.every((e, i) => e.rel === entries[i].rel && e.name === entries[i].name && e.directory === entries[i].directory && e.symlink === entries[i].symlink) ? old : next);
     } catch (e) { if (request === sequence.current) setError((e as Error).message); }
     finally { if (request === sequence.current) setBusy(false); }
-  }, [bridge, project, folder, hidden]);
+  }, [bridge, project, folder, hidden, session]);
   React.useEffect(() => { if (expanded) void load(); return () => { sequence.current++; }; }, [expanded, revision, load]);
   const shown = page?.rel === folder ? page : null;
   const toggleFolder = () => { for (const path of chain) if (folders.has(path)) toggle(path); if (!expanded) toggle(folder); };
@@ -81,19 +84,22 @@ function Directory({ options, rel, name, parent = '', depth = 0 }: { options: Tr
     </ul>}
   </li>;
 }
-export function DirectoryTree({ bridge, project, active, openFile, revision, expanded, toggle, loading, hidden = false, compact = true, sticky = true, chains = new Map(), decorations, reviewFile, createEntry }: { createEntry?: (parent: string, kind: 'file' | 'folder') => void; reviewFile?: (rel: string) => void; decorations?: TreeOptions['decorations']; bridge: HubBridge; project: string; active: string | null; openFile: (path: string, intent?: OpenIntent) => void; hidden?: boolean; compact?: boolean; sticky?: boolean; chains?: Map<string, string[]> } & TreeState) {
+export function DirectoryTree({ bridge, project, active, openFile, revision, expanded, toggle, loading, hidden = false, compact = true, sticky = true, chains = new Map(), decorations, reviewFile, createEntry, session: suppliedSession }: { session?: DirectorySession; createEntry?: (parent: string, kind: 'file' | 'folder') => void; reviewFile?: (rel: string) => void; decorations?: TreeOptions['decorations']; bridge: HubBridge; project: string; active: string | null; openFile: (path: string, intent?: OpenIntent) => void; hidden?: boolean; compact?: boolean; sticky?: boolean; chains?: Map<string, string[]> } & TreeState) {
   const tree = React.useRef<HTMLUListElement>(null);
-  const focusPath = React.useRef(''); const typing = React.useRef({ text: '', at: 0 });
+  const localSession = React.useRef<DirectorySession | null>(null);
+  if (!localSession.current) localSession.current = createDirectorySession();
+  const session = suppliedSession || localSession.current;
+  const typing = React.useRef({ text: '', at: 0 });
   const peek = React.useMemo(() => { const cache = new Map<string, Promise<Page>>(); return (rel: string) => { if (!cache.has(rel)) cache.set(rel, bridge.call<Page>('readDirectory', project, rel, { showHidden: hidden, limit: 2 })); return cache.get(rel)!; }; }, [bridge, project, revision, hidden]);
   const rows = () => [...(tree.current?.querySelectorAll<HTMLButtonElement>('[role="treeitem"]') || [])];
   React.useEffect(() => {
-    if (!active || !tree.current) return;
+    if (!shouldRevealDirectorySelection(session, active) || !active || !tree.current) return;
     // Reveal only after navigation, never in response to a directory refresh.
     const reveal = () => { const row = rows().find((row) => row.dataset.treePath === active); if (!row) return false; row.scrollIntoView({ block: 'nearest', inline: 'nearest' }); return true; };
     if (reveal()) return;
     const observer = new MutationObserver(() => { if (reveal()) observer.disconnect(); }); observer.observe(tree.current, { childList: true, subtree: true });
     const timer = setTimeout(() => observer.disconnect(), 2000); return () => { observer.disconnect(); clearTimeout(timer); };
-  }, [active]);
+  }, [active, session]);
   const onKeyDown = (event: React.KeyboardEvent) => {
     if (event.altKey || event.ctrlKey || event.metaKey || event.nativeEvent.isComposing) return;
     const list = rows(); const target = (event.target as HTMLElement).closest<HTMLButtonElement>('[role="treeitem"]'); if (!target) return;
@@ -109,8 +115,8 @@ export function DirectoryTree({ bridge, project, active, openFile, revision, exp
     } else return;
     event.preventDefault(); event.stopPropagation(); next?.focus(); next?.scrollIntoView({ block: 'nearest' });
   };
-  return <nav aria-label="Folder contents"><ul ref={tree} role="tree" aria-label="Project folders" tabIndex={0} className="m-0 list-none p-0 outline-none" onKeyDown={onKeyDown}
-    onFocus={(event) => { if (event.target === event.currentTarget) (rows().find((row) => row.dataset.treePath === focusPath.current) || rows().find((row) => row.dataset.treePath === active) || rows()[0])?.focus(); else focusPath.current = (event.target as HTMLElement).dataset.treePath || ''; }}>
-    <Directory key={project} options={{ bridge, project, active, openFile, revision, expanded, toggle, loading, hidden, compact, sticky, chains, peek, decorations, reviewFile, createEntry }} rel="" name="" />
+  return <nav aria-label="Folder contents" data-tree-project={project}><ul ref={tree} role="tree" aria-label="Project folders" tabIndex={0} className="m-0 list-none p-0 outline-none" onKeyDown={onKeyDown}
+    onFocus={(event) => { if (event.target === event.currentTarget) (rows().find((row) => row.dataset.treePath === session.focusPath) || rows().find((row) => row.dataset.treePath === active) || rows()[0])?.focus(); else session.focusPath = (event.target as HTMLElement).dataset.treePath || ''; }}>
+    <Directory key={project} options={{ bridge, project, active, openFile, revision, expanded, toggle, loading, hidden, compact, sticky, chains, peek, decorations, reviewFile, createEntry, session }} rel="" name="" />
   </ul></nav>;
 }

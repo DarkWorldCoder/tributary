@@ -1,0 +1,159 @@
+{
+  "runtime": {
+    "node": "24.21.0",
+    "acorn": "8.18.0",
+    "ada": "4.0.0",
+    "amaro": "1.1.11",
+    "ares": "1.34.8",
+    "brotli": "1.2.0",
+    "cldr": "48.0",
+    "icu": "78.2",
+    "llhttp": "9.4.3",
+    "merve": "1.2.2",
+    "modules": "149",
+    "napi": "10",
+    "nbytes": "0.1.4",
+    "ncrypto": "0.0.1",
+    "nghttp2": "1.70.0",
+    "nghttp3": "",
+    "ngtcp2": "",
+    "openssl": "0.0.0",
+    "simdjson": "4.6.7",
+    "simdutf": "7.7.0",
+    "sqlite": "3.53.4",
+    "tz": "2026d",
+    "undici": "7.29.1",
+    "unicode": "17.0",
+    "uv": "1.52.1",
+    "uvwasi": "0.0.23",
+    "v8": "15.2.124.37-electron.0",
+    "zlib": "1.3.2.1-motley",
+    "zstd": "1.6.0",
+    "electron": "44.7.2",
+    "chrome": "152.0.7977.149"
+  },
+  "checks": {
+    "fullTests": 557,
+    "failed": 0,
+    "typescript": true,
+    "uiBuild": true,
+    "vscodeBuild": true,
+    "nativeChangedRuns": [
+      {
+        "pagesAndExpandedFoldersPreserved": true,
+        "scrollAnchorPreserved": true,
+        "keyboardFocusPreserved": true,
+        "currentContextTreeStayedWarm": true,
+        "dirtyEditorTextPreserved": true,
+        "latePageCompletionSafe": true,
+        "creationDraftAndPendingOperationPreserved": true,
+        "multiRootExpansionAndScrollPreserved": true,
+        "externalFileAdditionVisible": true
+      },
+      {
+        "pagesAndExpandedFoldersPreserved": true,
+        "scrollAnchorPreserved": true,
+        "keyboardFocusPreserved": true,
+        "currentContextTreeStayedWarm": true,
+        "dirtyEditorTextPreserved": true,
+        "latePageCompletionSafe": true,
+        "creationDraftAndPendingOperationPreserved": true,
+        "multiRootExpansionAndScrollPreserved": true,
+        "externalFileAdditionVisible": true
+      },
+      {
+        "pagesAndExpandedFoldersPreserved": true,
+        "scrollAnchorPreserved": true,
+        "keyboardFocusPreserved": true,
+        "currentContextTreeStayedWarm": true,
+        "dirtyEditorTextPreserved": true,
+        "latePageCompletionSafe": true,
+        "creationDraftAndPendingOperationPreserved": true,
+        "multiRootExpansionAndScrollPreserved": true,
+        "externalFileAdditionVisible": true
+      }
+    ]
+  },
+  "medians": {
+    "six-expanded-projects": {
+      "baseline": {
+        "naturalRendererHeapBytes": 225553768,
+        "naturalProcessTreePssKiB": 702851,
+        "rendererHeapBytes": 120837280,
+        "domNodes": 28944,
+        "processTreePssKiB": 506222,
+        "processTreePrivateKiB": 374000,
+        "treeRows": 3378
+      },
+      "released": {
+        "naturalRendererHeapBytes": 75735212,
+        "naturalProcessTreePssKiB": 582566,
+        "rendererHeapBytes": 35358412,
+        "domNodes": 6389,
+        "processTreePssKiB": 391245,
+        "processTreePrivateKiB": 258344,
+        "treeRows": 563
+      }
+    },
+    "after-one-return-pass": {
+      "baseline": {
+        "naturalRendererHeapBytes": 442160384,
+        "naturalProcessTreePssKiB": 960835,
+        "rendererHeapBytes": 122097584,
+        "domNodes": 29061,
+        "processTreePssKiB": 514515,
+        "processTreePrivateKiB": 384076,
+        "treeRows": 3378
+      },
+      "released": {
+        "naturalRendererHeapBytes": 108101720,
+        "naturalProcessTreePssKiB": 614737,
+        "rendererHeapBytes": 36273728,
+        "domNodes": 6416,
+        "processTreePssKiB": 401997,
+        "processTreePrivateKiB": 266252,
+        "treeRows": 563
+      }
+    },
+    "after-three-return-passes": {
+      "baseline": {
+        "naturalRendererHeapBytes": 436755856,
+        "naturalProcessTreePssKiB": 946923,
+        "rendererHeapBytes": 122589356,
+        "domNodes": 29061,
+        "processTreePssKiB": 508862,
+        "processTreePrivateKiB": 377552,
+        "treeRows": 3378
+      },
+      "released": {
+        "naturalRendererHeapBytes": 48601612,
+        "naturalProcessTreePssKiB": 627484,
+        "rendererHeapBytes": 36853920,
+        "domNodes": 6416,
+        "processTreePssKiB": 405448,
+        "processTreePrivateKiB": 269668,
+        "treeRows": 563
+      }
+    }
+  },
+  "navigation": {
+    "baseline": {
+      "rootVisibleMs": 1362.1418909999993,
+      "restoreDirectoryReads": 90
+    },
+    "released": {
+      "rootVisibleMs": 425.95455800000127,
+      "restoreDirectoryReads": 108
+    }
+  },
+  "sourceHashes": {
+    "ui/src/components/directory-tree.tsx": "34641fb984eab1c603112cbb7dfdcafa063a46e84df2f3e3a1fc366b24a6bf6c",
+    "ui/src/components/workspace-files.tsx": "8f04ca687da2a98e62ff77814f5f39083d1f01bd09122db862898836afacb598",
+    "ui/src/hooks/use-tree-viewport.ts": "24b3362862f5f7e40797ed7281940290de8451405b9f8b8e2eee84ef62bf5d09",
+    "ui/src/lib/directory-session.mjs": "94bf8a41e71bba754ce98bc7fbed602b6e06a1b542d7fae9236c17522ac1125a",
+    "ui/src/lib/tree-viewport.mjs": "922fbf04ab5cf29c3f5a7ebc853eafb02709a7acc36e04e11156016677f0668e",
+    "scripts/performance/native-tree-retention.cjs": "e132a47a593bbe3e453055e99ce0e7d7d31dd4eb71a43e3b4d8e8673fb7bae7b",
+    "scripts/performance/tree-retention.cjs": "51900b18a6c4b6f3c58f9cb95d3a6ff716a7f3deb9057b0f62c7352e6bdaf1eb"
+  },
+  "evidence": "tree-retention-pairs.json"
+}
