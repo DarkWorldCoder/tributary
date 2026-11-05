@@ -46,3 +46,12 @@ test('markdown blocks: rendering block by block gives the same HTML as rendering
     assert.strictEqual(parts.replace(/>\s+</g, '><'), whole.replace(/>\s+</g, '><'), name);
   }
 });
+
+test('streamed Markdown groups keep the rendered HTML after append, reference fallback and edits', async () => {
+  const { createMarkdownStream } = await import(path.join(UI, 'src', 'lib', 'markdown-stream.mjs'));
+  const render = await renderer(), stream = createMarkdownStream();
+  for (const text of [...Object.values(SAMPLES), '[reference][id]\n\n[id]: https://example.com', SAMPLES.mixed.replace('First a paragraph', 'An edited paragraph')]) {
+    for (let n = 0; n < text.length; n += 13) stream.groups(text.slice(0, n), 0);
+    assert.strictEqual(stream.groups(text, 0).flat().map(render).join('').replace(/>\s+</g, '><'), render(text).replace(/>\s+</g, '><'));
+  }
+});

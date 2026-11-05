@@ -3,7 +3,7 @@ import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { CodeBlock, CodeBlockActions, CodeBlockContent, CodeBlockCopyButton, CodeBlockHeader, CodeBlockLine, CodeBlockTitle } from '@/components/ui/code-block';
 import { useHighlightedCode } from '@/hooks/use-highlighted-code';
-import { splitBlocks } from '@/lib/markdown-blocks.mjs';
+import { createMarkdownStream, MARKDOWN_GROUP_SIZE } from '@/lib/markdown-stream.mjs';
 import { hub } from '@/store';
 import { MarkdownImage } from '@/components/markdown-image';
 import { shouldWindowCode, supportsCodeViewport, codeHasInteraction } from '@/lib/code-viewport.mjs';
@@ -80,10 +80,15 @@ const plugins = [remarkGfm];
 const Block = React.memo(function Block({ text }: { text: string }) {
   return <ReactMarkdown remarkPlugins={plugins} components={components}>{text}</ReactMarkdown>;
 });
+const BlockGroup = React.memo(function BlockGroup({ blocks, base }: { blocks: readonly string[]; base: number }) {
+  return <>{blocks.map((text, index) => <Block key={base + index} text={text} />)}</>;
+});
 
-/** Agent replies as GitHub-flavored markdown. Raw HTML is never rendered. A long reply is parsed block by block,
- * so while it streams only the block being written is parsed again (a 9 KB reply: 28 ms per update down to about 1 ms). */
+/** Completed groups keep stable identities while the streamed tail changes.
+ * The derived cache handles rewinds/edits too; raw HTML is never rendered. */
 export const Markdown = React.memo(function Markdown({ text, baseFile, project }: { text: string; baseFile?: string; project?: string }) {
-  const blocks = React.useMemo(() => splitBlocks(text), [text]);
-  return <PreviewFile.Provider value={React.useMemo(() => ({ file: baseFile, project }), [baseFile, project])}><div className="prose-reply">{blocks.map((b, i) => <Block key={i} text={b} />)}</div></PreviewFile.Provider>;
+  const [stream] = React.useState(createMarkdownStream);
+  React.useEffect(() => stream.reset, [stream]);
+  const groups = React.useMemo(() => stream.groups(text), [stream, text]);
+  return <PreviewFile.Provider value={React.useMemo(() => ({ file: baseFile, project }), [baseFile, project])}><div className="prose-reply">{groups.map((blocks, index) => <BlockGroup key={index} base={index * MARKDOWN_GROUP_SIZE} blocks={blocks} />)}</div></PreviewFile.Provider>;
 });

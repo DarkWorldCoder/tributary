@@ -1,0 +1,20 @@
+{
+  "matchingBackingStrings": 3,
+  "selfBytes": 572112,
+  "selfSizeRange": [
+    18452,
+    277292
+  ],
+  "scope": "Strong retainer graph and self sizes for the synthetic paragraph fixture only; not a whole-heap retained-size calculation."
+}
+ONE STRONG PATH TO string:Paragraph 0: steady plain text steady plain text steady plain te#102721
+  synthetic:(Global handles)#23 --internal:285 / V8PerContextData::context_--> native:system / NativeContext / file://#7751
+  native:system / NativeContext / file://#7751 --internal:global_proxy_object--> native:Window / file://#52205
+  native:Window / file://#52205 --element:5--> native:HTMLDocument#124663
+  native:HTMLDocument#124663 --element:36--> native:blink::HeapHashTableBacking<blink::HashTable<cppgc::internal::Ba#94544
+  native:blink::HeapHashTableBacking<blink::HashTable<cppgc::internal::Ba#94544 --element:15--> native:<div class="">#93509
+  native:<div class="">#93509 --property:__reactFiber$tl0mc6fl1gr--> object:Ui#93305
+  object:Ui#93305 --property:child--> object:Ui#93511
+  object:Ui#93511 --property:alternate--> object:Ui#93563
+  object:Ui#93563 --property:pendingProps--> object:Object#186263
+  object:Object#186263 --property:text--> string:Paragraph 0: steady plain text steady plain text steady plain te#102721

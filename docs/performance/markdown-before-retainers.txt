@@ -1,0 +1,27 @@
+{
+  "matchingBackingStrings": 281,
+  "selfBytes": 41535892,
+  "selfSizeRange": [
+    18452,
+    277292
+  ],
+  "scope": "Strong retainer graph and self sizes for the synthetic paragraph fixture only; not a whole-heap retained-size calculation."
+}
+ONE STRONG PATH TO string:Paragraph 0: steady plain text steady plain text steady plain te#328325
+  synthetic:(Global handles)#23 --internal:285 / V8PerContextData::context_--> native:system / NativeContext / file://#7751
+  native:system / NativeContext / file://#7751 --internal:global_proxy_object--> native:Window / file://#112719
+  native:Window / file://#112719 --element:5--> native:HTMLDocument#112717
+  native:HTMLDocument#112717 --element:10--> native:<p>#225765
+  native:<p>#225765 --element:9--> native:<div class="prose-reply">#156337
+  native:<div class="prose-reply">#156337 --element:12--> native:blink::LayoutBlockFlow#62696
+  native:blink::LayoutBlockFlow#62696 --element:3--> native:blink::LayoutResult#62698
+  native:blink::LayoutResult#62698 --element:1--> native:blink::PhysicalBoxFragment#62692
+  native:blink::PhysicalBoxFragment#62692 --element:1--> native:blink::HeapVectorBacking<blink::PhysicalFragmentLink>#62694
+  native:blink::HeapVectorBacking<blink::PhysicalFragmentLink>#62694 --element:160--> native:blink::PhysicalBoxFragment#73048
+  native:blink::PhysicalBoxFragment#73048 --element:4--> native:blink::LayoutBlockFlow#31898
+  native:blink::LayoutBlockFlow#31898 --element:6--> native:<p>#326497
+  native:<p>#326497 --property:__reactFiber$kz4cssa644f--> object:Ui#326271
+  object:Ui#326271 --property:return--> object:Ui#326269
+  object:Ui#326269 --property:pendingProps--> object:Object#326273
+  object:Object#326273 --property:children--> sliced string:(sliced string)#328317
+  sliced string:(sliced string)#328317 --internal:parent--> string:Paragraph 0: steady plain text steady plain text steady plain te#328325

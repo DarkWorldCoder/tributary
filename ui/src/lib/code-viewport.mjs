@@ -30,7 +30,7 @@ export function detachedCodeText(text) {
   for (let start = 0; start < text.length; start += 16384) {
     const units = new Uint16Array(Math.min(16384, text.length - start));
     for (let n = 0; n < units.length; n++) units[n] = text.charCodeAt(start + n);
-    blocks.push(String.fromCharCode(...units));
+    blocks.push(String.fromCharCode.apply(null, units));
   }
   return blocks.join('');
 }
