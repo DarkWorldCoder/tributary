@@ -1,0 +1,85 @@
+{
+  "date": "2026-11-05",
+  "status": "source verification; not installer or production memory evidence",
+  "regression": {
+    "tests": 526,
+    "passed": 526,
+    "failed": 0,
+    "includes": "rebuilt VS Code shared core and stand-in host tests"
+  },
+  "focused": {
+    "tests": 24,
+    "passed": 24,
+    "failed": 0
+  },
+  "nativeDesktop": {
+    "full": 3,
+    "patches": 4,
+    "user": 1,
+    "rendered": true,
+    "remainingHistoryPins": 0,
+    "releasedHistories": 1,
+    "persistedTextMatches": true,
+    "date": "2026-11-05T07:18:45.216Z",
+    "runtime": {
+      "node": "24.21.0",
+      "acorn": "8.18.0",
+      "ada": "4.0.0",
+      "amaro": "1.1.11",
+      "ares": "1.34.8",
+      "brotli": "1.2.0",
+      "cldr": "48.0",
+      "icu": "78.2",
+      "llhttp": "9.4.3",
+      "merve": "1.2.2",
+      "modules": "149",
+      "napi": "10",
+      "nbytes": "0.1.4",
+      "ncrypto": "0.0.1",
+      "nghttp2": "1.70.0",
+      "nghttp3": "",
+      "ngtcp2": "",
+      "openssl": "0.0.0",
+      "simdjson": "4.6.7",
+      "simdutf": "7.7.0",
+      "sqlite": "3.53.4",
+      "tz": "2026d",
+      "undici": "7.29.1",
+      "unicode": "17.0",
+      "uv": "1.52.1",
+      "uvwasi": "0.0.23",
+      "v8": "15.2.124.37-electron.0",
+      "zlib": "1.3.2.1-motley",
+      "zstd": "1.6.0",
+      "electron": "44.7.2",
+      "chrome": "152.0.7977.149"
+    },
+    "platform": "linux",
+    "scope": "Actual desktop IPC and rendering with synthetic Hub events; no provider request or native-memory claim. The blocked async transport is measured separately.",
+    "sourceHashes": {
+      "core/message-patch.js": "2f757e7c41c365c264691c981ff19aaf1731a46c534a53fe84fdd3eba6521334",
+      "core/message-delivery.js": "7fec4a60cadb0ccfa49c75e5894b514a33391e15302f4dabef6602c8fa0676e7",
+      "desktop/main.js": "6faee60dac16daed2f38a82c60a0927bbbf9855fae53edfc0fd597a1e427708e",
+      "ui/src/store.tsx": "7f0371c6fa04a43396aca62fe56dc79494efa66908a81d09453ee4bcd830e380",
+      "ui/dist/assets/app.js": "1ccca2e8f205476b2a93dee54b1cb4fcf07a19858e16c8e4439080b3c0cb1a1d",
+      "scripts/performance/native-message-delivery.cjs": "55062b2cafe92f0dd7e08cf3d3111715d7d075e51e7588c34737d61329c8e328"
+    }
+  },
+  "sourceHashes": {
+    "core/message-patch.js": "2f757e7c41c365c264691c981ff19aaf1731a46c534a53fe84fdd3eba6521334",
+    "core/message-delivery.js": "7fec4a60cadb0ccfa49c75e5894b514a33391e15302f4dabef6602c8fa0676e7",
+    "vscode/extension.js": "f648c28cf866d1fde77446afad003a415777b72102dc5bc4189cb00ab1e98c81",
+    "test/message-patch.test.js": "042609983f64fa53886dd00c312356a89f5a85c40b4bf73fd0aeb76514fa6f16",
+    "test/message-delivery.test.js": "3f2c3a64364fb13ec04ac461e59c34f41a0da7cca5994391b9bc1b1a2c603b9a",
+    "test/history-cache.test.js": "a8095fde25da05d694df644d302ecf2f5df837e8a8e62047c51eaa988e27cf27",
+    "package.json": "94211a6cd37403c551e22cadc0b0df331768ca373e782e81096ff8ce0d0cab38",
+    "scripts/performance/message-delivery.cjs": "351eac96c6469f4cd1bebcdccb7a46a18f0c67cb25873ec4831d48320e6de199",
+    "scripts/performance/native-message-delivery.cjs": "55062b2cafe92f0dd7e08cf3d3111715d7d075e51e7588c34737d61329c8e328"
+  },
+  "boundaries": [
+    "Desktop event smoke uses synthetic Hub events, not a paid or local model request.",
+    "Actual VS Code UI with a stalled webview is not measured. Async delivery counts are from the isolated fixture.",
+    "Synchronous desktop IPC does not yet have consumer acknowledgements; its downstream queue is not bounded by this change.",
+    "Unbounded concurrency across different messages and growing live assistant history remain separate owners."
+  ]
+}

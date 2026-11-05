@@ -9,6 +9,23 @@ const { createPatcher } = require('../core/message-patch');
 const loadApply = () => import(path.join(__dirname, '..', 'ui', 'src', 'lib', 'message-patch.mjs'));
 const clone = (v) => JSON.parse(JSON.stringify(v)); // what crosses IPC
 
+test('user and system messages never retain streaming snapshots or serialize their fields for patch bookkeeping', () => {
+  const patcher = createPatcher();
+  for (const role of ['user', 'system']) {
+    const message = { id: role, role, text: 'saved prompt', metadata: { toJSON() { throw new Error('Non-streaming bookkeeping should not serialize this'); } } };
+    assert.doesNotThrow(() => patcher.full(message));
+    assert.strictEqual(patcher.patch(message), null);
+  }
+  const message = { id: 'owned', role: 'assistant', text: 'stream', ok: null };
+  patcher.full(message); message.text += ' update';
+  assert.ok(patcher.patch(message).text);
+  patcher.forget(message.id); assert.strictEqual(patcher.patch(message), null);
+  patcher.full(message); message.role = 'user'; patcher.full(message);
+  assert.strictEqual(patcher.patch(message), null, 'a full non-streaming replacement releases an earlier snapshot');
+  message.role = 'assistant'; patcher.full(message); message.role = 'user';
+  assert.strictEqual(patcher.patch(message), null, 'an event-only role replacement also releases its base');
+});
+
 function streamingTurn() {
   const m = { id: 'm1', role: 'assistant', agent: 'claude', text: '', thinking: '', tools: [], files: [], notices: [], error: null, ok: null, ts: 1 };
   const steps = [];

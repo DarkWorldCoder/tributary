@@ -24,7 +24,7 @@ class Secrets {
   async delete(k) { await this.store.delete(`tributary:${k}`); }
 }
 
-function post(name, data) { return Promise.allSettled([...webviews].map((w) => w.postMessage({ type: 'event', name, data }))); }
+function post(name, data) { return Promise.allSettled([...webviews].map((w) => w.postMessage({ type: 'event', name, data }))).then(results => results.every(result => result.status === 'fulfilled' && result.value !== false)); }
 
 function syncWorkspaceProjects() {
   for (const f of vscode.workspace.workspaceFolders || []) { try { hub.addProject(f.uri.fsPath); } catch { /* not a folder */ } }

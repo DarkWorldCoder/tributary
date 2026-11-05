@@ -1,0 +1,509 @@
+{
+  "date": "2026-11-05T07:06:35.704Z",
+  "runtime": {
+    "node": "24.21.0",
+    "acorn": "8.18.0",
+    "ada": "4.0.0",
+    "amaro": "1.1.11",
+    "ares": "1.34.8",
+    "brotli": "1.2.0",
+    "cldr": "48.0",
+    "icu": "78.3",
+    "llhttp": "9.4.3",
+    "merve": "1.2.2",
+    "modules": "137",
+    "napi": "10",
+    "nbytes": "0.1.4",
+    "ncrypto": "0.0.1",
+    "nghttp2": "1.70.0",
+    "nghttp3": "",
+    "ngtcp2": "",
+    "openssl": "3.5.8",
+    "simdjson": "4.6.7",
+    "simdutf": "6.4.0",
+    "sqlite": "3.53.4",
+    "tz": "2026c",
+    "undici": "7.29.1",
+    "unicode": "17.0",
+    "uv": "1.52.1",
+    "uvwasi": "0.0.23",
+    "v8": "13.6.233.17-node.53",
+    "zlib": "1.3.2.1-motley-8002e91",
+    "zstd": "1.5.7"
+  },
+  "platform": "linux",
+  "arch": "x64",
+  "baselineRevision": "b3289ae",
+  "previousHashes": {
+    "message-delivery.js": "4f13873d9e351d521aefdfff39ceae80a39d7b56d11da33c26520a147b563537",
+    "message-patch.js": "848b65e36b9722e3c1ad7b7076af6e5ee5261e85748396f8a3f486adb4827076"
+  },
+  "sourceHashes": {
+    "core/message-patch.js": "2f757e7c41c365c264691c981ff19aaf1731a46c534a53fe84fdd3eba6521334",
+    "core/message-delivery.js": "7fec4a60cadb0ccfa49c75e5894b514a33391e15302f4dabef6602c8fa0676e7",
+    "test/message-patch.test.js": "042609983f64fa53886dd00c312356a89f5a85c40b4bf73fd0aeb76514fa6f16",
+    "test/message-delivery.test.js": "3f2c3a64364fb13ec04ac461e59c34f41a0da7cca5994391b9bc1b1a2c603b9a",
+    "scripts/performance/message-delivery.cjs": "351eac96c6469f4cd1bebcdccb7a46a18f0c67cb25873ec4831d48320e6de199"
+  },
+  "results": [
+    {
+      "round": 0,
+      "workload": "non-streaming-prompts",
+      "mode": "baseline",
+      "count": 800,
+      "promptCharacters": 26217490,
+      "populateMs": 36.52181,
+      "trackedAfterFull": 800,
+      "before": {
+        "rss": 52801536,
+        "heapTotal": 7643136,
+        "heapUsed": 4878944,
+        "external": 2257959,
+        "arrayBuffers": 143611
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 96493568,
+        "heapTotal": 70033408,
+        "heapUsed": 31540840,
+        "external": 2257999,
+        "arrayBuffers": 143611
+      },
+      "releasedAfterDiagnosticGc": {
+        "rss": 200040448,
+        "heapTotal": 140288000,
+        "heapUsed": 4994136,
+        "external": 2257999,
+        "arrayBuffers": 143611
+      },
+      "retainedHeapDeltaBytes": 26661896,
+      "releasedHeapDeltaBytes": 115192
+    },
+    {
+      "round": 0,
+      "workload": "non-streaming-prompts",
+      "mode": "current",
+      "count": 800,
+      "promptCharacters": 26217490,
+      "populateMs": 10.848411999999996,
+      "trackedAfterFull": 0,
+      "before": {
+        "rss": 52850688,
+        "heapTotal": 7643136,
+        "heapUsed": 4879360,
+        "external": 2257959,
+        "arrayBuffers": 143611
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 56406016,
+        "heapTotal": 10002432,
+        "heapUsed": 4963912,
+        "external": 2257999,
+        "arrayBuffers": 143611
+      },
+      "releasedAfterDiagnosticGc": {
+        "rss": 56635392,
+        "heapTotal": 10002432,
+        "heapUsed": 4983072,
+        "external": 2257999,
+        "arrayBuffers": 143611
+      },
+      "retainedHeapDeltaBytes": 84552,
+      "releasedHeapDeltaBytes": 103712
+    },
+    {
+      "round": 0,
+      "workload": "blocked-async-delivery",
+      "mode": "baseline",
+      "emittedStreamUpdates": 240,
+      "blockedElapsedMs": 487.556988,
+      "before": {
+        "rss": 53239808,
+        "heapTotal": 7905280,
+        "heapUsed": 4913984,
+        "external": 2257959,
+        "arrayBuffers": 143611
+      },
+      "blockedAfterDiagnosticGc": {
+        "rss": 64200704,
+        "heapTotal": 46669824,
+        "heapUsed": 12014344,
+        "external": 2257999,
+        "arrayBuffers": 143611
+      },
+      "blockedHeapDeltaBytes": 7100360,
+      "atBlocked": {
+        "held": 242,
+        "posts": 242,
+        "queued": 242,
+        "queuedBytes": 5802934
+      },
+      "peakHeld": 242,
+      "peakQueue": 242,
+      "peakQueuedBytes": 5802934,
+      "totalPosts": 242,
+      "finalQueuedBytes": 0,
+      "finalHeld": 0,
+      "finalTextCharacters": 1020850,
+      "finalChecksum": "f97eb19297b8204b2d0a410430e62ed6b357e40dd8d5b6cf8cb7f1c1f8c85436",
+      "finalMatches": true,
+      "listenersAfterDispose": 0
+    },
+    {
+      "round": 0,
+      "workload": "blocked-async-delivery",
+      "mode": "current",
+      "emittedStreamUpdates": 240,
+      "blockedElapsedMs": 272.87722,
+      "before": {
+        "rss": 53354496,
+        "heapTotal": 8167424,
+        "heapUsed": 4917144,
+        "external": 2257959,
+        "arrayBuffers": 143611
+      },
+      "blockedAfterDiagnosticGc": {
+        "rss": 54034432,
+        "heapTotal": 8429568,
+        "heapUsed": 5092448,
+        "external": 2257999,
+        "arrayBuffers": 143611
+      },
+      "blockedHeapDeltaBytes": 175304,
+      "atBlocked": {
+        "held": 2,
+        "posts": 1,
+        "queued": 1,
+        "queuedBytes": 202
+      },
+      "peakHeld": 2,
+      "peakQueue": 1,
+      "peakQueuedBytes": 1036997,
+      "totalPosts": 2,
+      "finalQueuedBytes": 0,
+      "finalHeld": 0,
+      "finalTextCharacters": 1020850,
+      "finalChecksum": "f97eb19297b8204b2d0a410430e62ed6b357e40dd8d5b6cf8cb7f1c1f8c85436",
+      "finalMatches": true,
+      "listenersAfterDispose": 0
+    },
+    {
+      "round": 1,
+      "workload": "non-streaming-prompts",
+      "mode": "current",
+      "count": 800,
+      "promptCharacters": 26217490,
+      "populateMs": 23.61873200000001,
+      "trackedAfterFull": 0,
+      "before": {
+        "rss": 52588544,
+        "heapTotal": 7643136,
+        "heapUsed": 4879360,
+        "external": 2257959,
+        "arrayBuffers": 143611
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 56250368,
+        "heapTotal": 10002432,
+        "heapUsed": 4962600,
+        "external": 2257999,
+        "arrayBuffers": 143611
+      },
+      "releasedAfterDiagnosticGc": {
+        "rss": 56193024,
+        "heapTotal": 10002432,
+        "heapUsed": 4981760,
+        "external": 2257999,
+        "arrayBuffers": 143611
+      },
+      "retainedHeapDeltaBytes": 83240,
+      "releasedHeapDeltaBytes": 102400
+    },
+    {
+      "round": 1,
+      "workload": "non-streaming-prompts",
+      "mode": "baseline",
+      "count": 800,
+      "promptCharacters": 26217490,
+      "populateMs": 50.02628,
+      "trackedAfterFull": 800,
+      "before": {
+        "rss": 52785152,
+        "heapTotal": 7643136,
+        "heapUsed": 4878944,
+        "external": 2257959,
+        "arrayBuffers": 143611
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 90533888,
+        "heapTotal": 69509120,
+        "heapUsed": 31558528,
+        "external": 2257999,
+        "arrayBuffers": 143611
+      },
+      "releasedAfterDiagnosticGc": {
+        "rss": 197619712,
+        "heapTotal": 140550144,
+        "heapUsed": 4993560,
+        "external": 2257999,
+        "arrayBuffers": 143611
+      },
+      "retainedHeapDeltaBytes": 26679584,
+      "releasedHeapDeltaBytes": 114616
+    },
+    {
+      "round": 1,
+      "workload": "blocked-async-delivery",
+      "mode": "current",
+      "emittedStreamUpdates": 240,
+      "blockedElapsedMs": 268.968995,
+      "before": {
+        "rss": 53288960,
+        "heapTotal": 8167424,
+        "heapUsed": 4917144,
+        "external": 2257959,
+        "arrayBuffers": 143611
+      },
+      "blockedAfterDiagnosticGc": {
+        "rss": 53813248,
+        "heapTotal": 8167424,
+        "heapUsed": 5092448,
+        "external": 2257999,
+        "arrayBuffers": 143611
+      },
+      "blockedHeapDeltaBytes": 175304,
+      "atBlocked": {
+        "held": 2,
+        "posts": 1,
+        "queued": 1,
+        "queuedBytes": 202
+      },
+      "peakHeld": 2,
+      "peakQueue": 1,
+      "peakQueuedBytes": 1036997,
+      "totalPosts": 2,
+      "finalQueuedBytes": 0,
+      "finalHeld": 0,
+      "finalTextCharacters": 1020850,
+      "finalChecksum": "f97eb19297b8204b2d0a410430e62ed6b357e40dd8d5b6cf8cb7f1c1f8c85436",
+      "finalMatches": true,
+      "listenersAfterDispose": 0
+    },
+    {
+      "round": 1,
+      "workload": "blocked-async-delivery",
+      "mode": "baseline",
+      "emittedStreamUpdates": 240,
+      "blockedElapsedMs": 456.432058,
+      "before": {
+        "rss": 53325824,
+        "heapTotal": 7905280,
+        "heapUsed": 4913984,
+        "external": 2257959,
+        "arrayBuffers": 143611
+      },
+      "blockedAfterDiagnosticGc": {
+        "rss": 65024000,
+        "heapTotal": 46931968,
+        "heapUsed": 12011912,
+        "external": 2257999,
+        "arrayBuffers": 143611
+      },
+      "blockedHeapDeltaBytes": 7097928,
+      "atBlocked": {
+        "held": 242,
+        "posts": 242,
+        "queued": 242,
+        "queuedBytes": 5802934
+      },
+      "peakHeld": 242,
+      "peakQueue": 242,
+      "peakQueuedBytes": 5802934,
+      "totalPosts": 242,
+      "finalQueuedBytes": 0,
+      "finalHeld": 0,
+      "finalTextCharacters": 1020850,
+      "finalChecksum": "f97eb19297b8204b2d0a410430e62ed6b357e40dd8d5b6cf8cb7f1c1f8c85436",
+      "finalMatches": true,
+      "listenersAfterDispose": 0
+    },
+    {
+      "round": 2,
+      "workload": "non-streaming-prompts",
+      "mode": "baseline",
+      "count": 800,
+      "promptCharacters": 26217490,
+      "populateMs": 35.776504,
+      "trackedAfterFull": 800,
+      "before": {
+        "rss": 52994048,
+        "heapTotal": 7905280,
+        "heapUsed": 4879016,
+        "external": 2257959,
+        "arrayBuffers": 143611
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 94699520,
+        "heapTotal": 69509120,
+        "heapUsed": 31559912,
+        "external": 2257999,
+        "arrayBuffers": 143611
+      },
+      "releasedAfterDiagnosticGc": {
+        "rss": 199819264,
+        "heapTotal": 140288000,
+        "heapUsed": 4994944,
+        "external": 2257999,
+        "arrayBuffers": 143611
+      },
+      "retainedHeapDeltaBytes": 26680896,
+      "releasedHeapDeltaBytes": 115928
+    },
+    {
+      "round": 2,
+      "workload": "non-streaming-prompts",
+      "mode": "current",
+      "count": 800,
+      "promptCharacters": 26217490,
+      "populateMs": 10.069537000000004,
+      "trackedAfterFull": 0,
+      "before": {
+        "rss": 52850688,
+        "heapTotal": 7643136,
+        "heapUsed": 4879360,
+        "external": 2257959,
+        "arrayBuffers": 143611
+      },
+      "retainedAfterDiagnosticGc": {
+        "rss": 56705024,
+        "heapTotal": 10002432,
+        "heapUsed": 4963912,
+        "external": 2257999,
+        "arrayBuffers": 143611
+      },
+      "releasedAfterDiagnosticGc": {
+        "rss": 56668160,
+        "heapTotal": 10002432,
+        "heapUsed": 4983072,
+        "external": 2257999,
+        "arrayBuffers": 143611
+      },
+      "retainedHeapDeltaBytes": 84552,
+      "releasedHeapDeltaBytes": 103712
+    },
+    {
+      "round": 2,
+      "workload": "blocked-async-delivery",
+      "mode": "baseline",
+      "emittedStreamUpdates": 240,
+      "blockedElapsedMs": 454.27260700000005,
+      "before": {
+        "rss": 53379072,
+        "heapTotal": 8167424,
+        "heapUsed": 4914056,
+        "external": 2257959,
+        "arrayBuffers": 143611
+      },
+      "blockedAfterDiagnosticGc": {
+        "rss": 64397312,
+        "heapTotal": 46931968,
+        "heapUsed": 12013664,
+        "external": 2257999,
+        "arrayBuffers": 143611
+      },
+      "blockedHeapDeltaBytes": 7099608,
+      "atBlocked": {
+        "held": 242,
+        "posts": 242,
+        "queued": 242,
+        "queuedBytes": 5802934
+      },
+      "peakHeld": 242,
+      "peakQueue": 242,
+      "peakQueuedBytes": 5802934,
+      "totalPosts": 242,
+      "finalQueuedBytes": 0,
+      "finalHeld": 0,
+      "finalTextCharacters": 1020850,
+      "finalChecksum": "f97eb19297b8204b2d0a410430e62ed6b357e40dd8d5b6cf8cb7f1c1f8c85436",
+      "finalMatches": true,
+      "listenersAfterDispose": 0
+    },
+    {
+      "round": 2,
+      "workload": "blocked-async-delivery",
+      "mode": "current",
+      "emittedStreamUpdates": 240,
+      "blockedElapsedMs": 274.215173,
+      "before": {
+        "rss": 53641216,
+        "heapTotal": 7905280,
+        "heapUsed": 4917144,
+        "external": 2257959,
+        "arrayBuffers": 143611
+      },
+      "blockedAfterDiagnosticGc": {
+        "rss": 54296576,
+        "heapTotal": 8167424,
+        "heapUsed": 5092448,
+        "external": 2257999,
+        "arrayBuffers": 143611
+      },
+      "blockedHeapDeltaBytes": 175304,
+      "atBlocked": {
+        "held": 2,
+        "posts": 1,
+        "queued": 1,
+        "queuedBytes": 202
+      },
+      "peakHeld": 2,
+      "peakQueue": 1,
+      "peakQueuedBytes": 1036997,
+      "totalPosts": 2,
+      "finalQueuedBytes": 0,
+      "finalHeld": 0,
+      "finalTextCharacters": 1020850,
+      "finalChecksum": "f97eb19297b8204b2d0a410430e62ed6b357e40dd8d5b6cf8cb7f1c1f8c85436",
+      "finalMatches": true,
+      "listenersAfterDispose": 0
+    }
+  ],
+  "limitations": [
+    "Isolated Node fixtures, not actual VS Code webview or Electron IPC throughput/total application RAM.",
+    "Memory samples use forced diagnostic GC only; production delivery does not invoke GC.",
+    "Blocked wire bytes count explicitly retained JSON in the fixture transport, not physical IPC/native memory. History leases are owner counts, not separate history copies.",
+    "The bounded queue is per message and applies when deliver returns an unresolved Promise. Desktop webContents.send returns synchronously and needs a separate acknowledgement protocol to bound its downstream IPC queue.",
+    "Coalescing retains the latest complete message state and computes the next patch only when sending. Intermediate UI snapshots can be skipped; final text/tools/trace/permission state are checked exactly."
+  ],
+  "summary": {
+    "non-streaming-prompts": {
+      "baseline": {
+        "retainedHeapDeltaBytes": 26679584,
+        "releasedHeapDeltaBytes": 115192,
+        "trackedAfterFull": 800
+      },
+      "current": {
+        "retainedHeapDeltaBytes": 84552,
+        "releasedHeapDeltaBytes": 103712,
+        "trackedAfterFull": 0
+      }
+    },
+    "blocked-async-delivery": {
+      "baseline": {
+        "peakQueue": 242,
+        "peakHeld": 242,
+        "peakQueuedBytes": 5802934,
+        "blockedHeapDeltaBytes": 7099608,
+        "blockedElapsedMs": 456.432058,
+        "totalPosts": 242
+      },
+      "current": {
+        "peakQueue": 1,
+        "peakHeld": 2,
+        "peakQueuedBytes": 1036997,
+        "blockedHeapDeltaBytes": 175304,
+        "blockedElapsedMs": 272.87722,
+        "totalPosts": 2
+      }
+    }
+  }
+}

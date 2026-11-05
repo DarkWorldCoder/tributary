@@ -3,43 +3,66 @@ const { createPatcher } = require('./message-patch');
 // Coalescing timers and asynchronous webview delivery own their live messages
 // independently of the operation that emitted them.
 function bindMessageDelivery(hub, deliver, ms = 80) {
-  const pending = new Map(); let patcher = createPatcher();
+  const pending = new Map(); const inFlight = new Set(); let patcher = createPatcher(); let closed = false;
+  const report = error => console.error(`Could not deliver chat update: ${String(error?.message || error)}`);
   const keyOf = (threadId, message) => `${threadId}\0${message.id}`;
-  const send = (name, data, release) => {
-    let result;
+  const send = (key, name, data, release) => {
+    let result; let settled = false;
+    inFlight.add(key);
+    const finish = (failed) => {
+      if (settled) return;
+      settled = true;
+      if (failed) patcher?.forget(data.message?.id || data.id);
+      inFlight.delete(key); release();
+      const next = pending.get(key);
+      if (!closed && next?.ready) {
+        try { flush(key, next); } catch (error) { report(error); }
+      }
+    };
     try { result = deliver(name, data); }
-    catch (error) { release(); throw error; }
-    if (result && typeof result.then === 'function') Promise.resolve(result).then(release, (error) => { release(); console.error(`Could not deliver chat update: ${error.message}`); });
-    else release();
+    catch (error) { finish(true); throw error; }
+    try {
+      if (result && typeof result.then === 'function') Promise.resolve(result).then((delivered) => finish(delivered === false), (error) => { finish(true); report(error); });
+      else finish(result === false);
+    } catch (error) { finish(true); throw error; }
   };
-  const event = ({ threadId, message }) => {
-    const key = keyOf(threadId, message);
-    if (pending.has(key)) { pending.get(key).message = message; return; }
-    const release = hub.holdHistory(threadId);
-    const entry = { message, release, timer: null };
-    entry.timer = setTimeout(() => {
-      pending.delete(key);
-      try {
-        const patch = patcher.patch(entry.message);
-        if (!patch) { patcher.full(entry.message); send('message', { threadId, message: entry.message }, release); }
-        else if (Object.keys(patch).length) send('message-patch', { threadId, id: entry.message.id, patch }, release);
-        else release();
-      } catch (error) { release(); throw error; }
-    }, ms);
-    pending.set(key, entry);
+  const flush = (key, entry) => {
+    if (closed || inFlight.has(key) || pending.get(key) !== entry) return;
+    pending.delete(key); clearTimeout(entry.timer);
+    try {
+      if (entry.full) { patcher.full(entry.message); send(key, 'message', entry.full, entry.release); return; }
+      const patch = patcher.patch(entry.message);
+      if (!patch) { patcher.full(entry.message); send(key, 'message', { threadId: entry.threadId, message: entry.message }, entry.release); }
+      else if (Object.keys(patch).length) send(key, 'message-patch', { threadId: entry.threadId, id: entry.message.id, patch }, entry.release);
+      else entry.release();
+    } catch (error) { entry.release(); throw error; }
   };
-  const full = (data) => {
-    const key = keyOf(data.threadId, data.message); const entry = pending.get(key);
-    if (entry) { clearTimeout(entry.timer); pending.delete(key); }
-    const release = entry?.release || hub.holdHistory(data.threadId);
-    try { patcher.full(data.message); send('message', data, release); }
-    catch (error) { release(); throw error; }
+  const enqueue = (data, full) => {
+    if (closed) return;
+    const { threadId, message } = data; const key = keyOf(threadId, message);
+    let entry = pending.get(key);
+    if (!entry) {
+      const release = hub.holdHistory(threadId); let held = true;
+      entry = { threadId, message, release: () => { if (held) { held = false; release(); } }, timer: null, ready: false, full: null };
+      pending.set(key, entry);
+    }
+    entry.message = message;
+    if (entry.full) entry.full = { ...entry.full, message };
+    if (full) {
+      entry.full = data; entry.ready = true; clearTimeout(entry.timer); entry.timer = null; flush(key, entry);
+    } else if (!entry.ready && !entry.timer) {
+      entry.timer = setTimeout(() => { entry.timer = null; entry.ready = true; flush(key, entry); }, ms);
+    }
   };
+  const event = data => enqueue(data, false);
+  const full = data => enqueue(data, true);
   hub.on('event', event); hub.on('message', full);
   return () => {
+    if (closed) return;
+    closed = true;
     hub.off('event', event); hub.off('message', full);
     for (const entry of pending.values()) { clearTimeout(entry.timer); entry.release(); }
-    pending.clear(); patcher = null;
+    pending.clear(); inFlight.clear(); patcher = null;
   };
 }
 module.exports = { bindMessageDelivery };

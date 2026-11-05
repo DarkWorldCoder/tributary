@@ -16,9 +16,11 @@ function createPatcher() {
   const sent = new Map(); // message id -> what the window has
   return {
     // The whole message was sent. Keep track of it while it can still change.
-    full(m) { if (m.ok == null) sent.set(m.id, snapshot(m)); else sent.delete(m.id); },
+    full(m) { if (m.ok == null && m.role !== 'user' && m.role !== 'system') sent.set(m.id, snapshot(m)); else sent.delete(m.id); },
+    forget(id) { sent.delete(id); },
     // What changed since the last send ({} when nothing did), or null when the message should be sent whole.
     patch(m) {
+      if (m.role === 'user' || m.role === 'system') { sent.delete(m.id); return null; }
       const prev = sent.get(m.id);
       if (!prev) return null;
       const next = snapshot(m); const p = {};

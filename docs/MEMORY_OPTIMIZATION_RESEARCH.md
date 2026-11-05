@@ -48,6 +48,8 @@ The scope column is deliberate. A contents page is not a read book; a chapter is
 | Incremental persistence / avoid repeated serialization | Implemented and measured | `core/store.js`: optional message ID dirty scope; Hub, manager and delegation publish only their changed message. Wider saves dominate narrower batches. |
 | Batching/coalescing | Existing | SQLite save debounce and desktop event coalescing. Keep final flush and approval delivery immediate. |
 | Delta transfer / structural sharing | Existing | `core/message-patch.js` and renderer patch reconstruction tests. Missing bases still require a full snapshot. |
+| Non-streaming patch-cache lifetime | Implemented and measured | User/system full messages are delivered normally but never kept as streaming delta bases; explicit role replacement and failed transport forget obsolete bases. Synthetic retained-prompt measurement below. |
+| Async message delivery coalescing | Implemented per message; downstream desktop IPC ownership open | At most one unresolved delivery plus one latest pending state per message. Compute a patch at send time, preserve a queued final full message and independent history leases, and stop after disposal. Synchronous desktop sends do not provide consumer acknowledgement. |
 | Lazy history loading / temporary transport snapshots | Implemented and measured | The desktop/extension read-only thread RPC no longer hydrates SQLite writer state. Review acknowledgement uses bounded status summaries. Internal writers still retain live objects and pending changes. |
 | Compact status projections | Existing and separately measured | Sidebar summaries retain flags, not replies, logs, images or diffs. See `performance/memory-summary-benchmark.json`. |
 | Code splitting / conditional imports | Implemented and measured | Settings, team, room and saved-document surfaces; editor engine deferred separately from read-only file/memory preview. Complete static dependency closures measured, not just the largest chunk. |
@@ -311,3 +313,27 @@ For the large first page, median process-lifetime maximum RSS across the timing 
 The [verification](performance/directory-page-verification.json) records 519 passing regressions and a real desktop Explorer paging from 200 through 400 to all 507 fixture entries, with no pagination button left and the final file opened in the editor. Tests compare against full sorting for ascending, descending and mixed Unicode inputs, cross the hybrid threshold on a real folder, preserve linked-directory behavior, and verify stream cleanup/error precedence. Packaged/macOS/Windows performance remains unmeasured.
 
 Reproduce with `npm run bench:directories -- /absolute/path/report.json`. The benchmark uses diagnostic GC only at measurement boundaries and in the isolated reachability probe; product code does not invoke GC. The [Node directory API](https://nodejs.org/api/fs.html#fspromisesopendirpath-options) defines buffering and directory handles. Installed Node 24's callback/async-iterator source was inspected to explain per-entry callback versus promise overhead, without using private APIs in production. Priority-queue reading is scoped in the book inventory above.
+
+
+## Non-streaming snapshot lifetime and async delivery ownership
+
+The patcher used to cache every full message whose `ok` field was absent/null. User prompts normally have no `ok` field and never receive an assistant-completion update, so their snapshot strings remained reachable for the host session even after writer histories were evicted. User and system messages now always travel as full messages without becoming delta bases. Role replacements clear an earlier base too. Assistant streaming, in-place tool mutations, optional-field removal and final-state reconstruction retain their existing behavior.
+
+The delivery coalescer also previously started a fresh asynchronous send after each timer, even if earlier sends were unresolved. It now owns at most one unresolved send and one latest pending state **per message**. New events update that pending state; patches are computed only when a send can begin. Full/final messages replace pending partial state and are delivered whole after the earlier send settles. Unrelated messages progress independently. History leases remain held through actual transport settlement; disposal releases pending ownership, removes timers/listeners, and prevents late settlement from starting another send. A synchronous throw, rejected Promise, false delivery result or throwing thenable getter releases ownership and invalidates the old patch base. The VS Code broadcast wrapper now propagates unsuccessful post results instead of hiding them inside `allSettled` output.
+
+[Reproducible benchmark](performance/message-delivery-benchmark.json), compared with `b3289ae`, uses three alternating-order pairs of isolated Node subprocesses. It does not invoke a provider or use real chats. Snapshot allocation and explicit fixture transport bytes are different measurements:
+
+| Isolated workload | Previous | Current |
+| --- | ---: | ---: |
+| 800 synthetic user prompts, streaming bases retained | 800 | 0 |
+| Post-diagnostic-GC heap increase after those prompts | 26,679,584 bytes | 84,552 bytes |
+| Stalled transport: peak unresolved sends | 242 | 1 |
+| Stalled transport: peak history-owner leases | 242 | 2 |
+| Peak explicitly queued fixture JSON | 5,802,934 bytes | 1,036,997 bytes |
+| Final reply reconstruction | Exact | Exact |
+
+Each prompt is about 32 KiB; the prompt-cache result is not a prediction for typical short prompts. The async transport fixture generates 240 updates, retains serialized transport JSON until explicitly released, and checks the complete final text, nested tool output, trace and permission history. It sends two messages with coalescing versus 242 before; intermediate presentation snapshots can be skipped, while their accumulated state is kept. Owner counts are not duplicate copies of the chat history. The sender's live message, persistence state and receiver copy have separate costs. Forced GC is used only in these diagnostic subprocesses, never in production.
+
+This does **not** establish backpressure on agent stdout or a bound on Electron's downstream IPC. Desktop `webContents.send` returns synchronously, so the helper cannot infer when the renderer consumed an update. An explicit desktop acknowledgement protocol, queued recovery/reload ownership, aggregate concurrency limits and actual native consumer-memory measurements remain open. VS Code's broadcast delivery still waits for all target webviews; per-view independent pacing needs its own contract and tests. A smaller host-side queue is not a total application RAM or model-memory ceiling.
+
+Tests cover 500 coalesced updates, stalled/unrelated messages, exact patch bases, final full messages, nested mutation, permission history, rejection/false/thenable failures, synchronous reentrancy and disposal before settlement. The source fingerprints, final regression result and desktop transport smoke check are recorded in [verification](performance/message-delivery-verification.json). Reproduce the isolated experiment with `npm run bench:delivery -- /absolute/path/report.json`.
