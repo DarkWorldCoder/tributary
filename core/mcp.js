@@ -153,6 +153,71 @@ function removeArgs(agentId, name) {
 }
 const MCP_AGENTS = ['claude', 'codex', 'gemini', 'antigravity'];
 
+// Gemini's settings.json is JSON with comments (Gemini saves it with comment-json). This reads it and keeps where each
+// value sits in the text, so one string can be swapped without touching another byte: { type, value | keys, start, end }.
+const STRING = /"(?:[^"\\\u0000-\u001f]|\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4}))*"/y;
+const LITERAL = /true|false|null|-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/y;
+function jsonc(text) {
+  let i = 0;
+  const fail = () => { throw new SyntaxError(`Unexpected ${i < text.length ? 'character' : 'end'} at offset ${i}`); };
+  const gap = () => {
+    for (;;) {
+      if (/[\s﻿]/.test(text[i] || '')) i++;
+      else if (text.startsWith('//', i)) { const n = text.indexOf('\n', i); i = n < 0 ? text.length : n; }
+      else if (text.startsWith('/*', i)) { const n = text.indexOf('*/', i + 2); if (n < 0) fail(); i = n + 2; }
+      else return;
+    }
+  };
+  const token = (re) => { re.lastIndex = i; const m = re.exec(text); if (!m) fail(); i = re.lastIndex; return m[0]; };
+  const value = () => {
+    gap(); const start = i;
+    if (text[i] === '"') return { type: 'string', value: JSON.parse(token(STRING)), start, end: i };
+    if (text[i] !== '{' && text[i] !== '[') { token(LITERAL); return { type: 'literal', start, end: i }; }
+    const object = text[i++] === '{'; const close = object ? '}' : ']'; const keys = new Map();
+    for (gap(); text[i] !== close; gap()) {
+      const key = object ? value() : null;
+      if (object) { if (key.type !== 'string') fail(); gap(); if (text[i] !== ':') fail(); i++; }
+      const v = value(); if (object) keys.set(key.value, v);
+      gap(); if (text[i] === ',') i++; else if (text[i] !== close) fail();
+    }
+    i++; return { type: object ? 'object' : 'array', keys, start, end: i };
+  };
+  const root = value(); gap(); if (i < text.length) fail();
+  return root;
+}
+/**
+ * Gemini expands $VAR in its settings when it loads them, and saving mcpServers (`gemini mcp add` or `remove`) writes the
+ * expanded values back. This puts the placeholders back in one settings file: wherever mcpServers.<server>.env or .headers
+ * holds a value from env (the turn's environment) for a server Gemini has in index (store.data.mcpSecrets), that string
+ * becomes $VAR again, "Bearer " kept. Nothing else in the file changes, and it is written only if something did.
+ * Returns how many were put back. Throws when the file can't be read, parsed or written; the message names the file only.
+ */
+function restoreGeminiPlaceholders(file, index, env = {}) {
+  const servers = Object.entries(index || {}).filter(([, e]) => e.agents.includes('gemini') && e.vars.some((v) => env[v.name]));
+  if (!servers.length) return 0;
+  const check = 'check it for MCP secrets Gemini may have saved in it as plain text';
+  let text; try { text = fs.readFileSync(file, 'utf8'); } catch (e) { if (e.code === 'ENOENT') return 0; throw new Error(`Tributary couldn't read ${file} to ${check}.`); }
+  let root; try { root = text.trim() ? jsonc(text) : null; } catch { throw new Error(`${file} isn't valid JSON, so Tributary couldn't ${check}.`); }
+  const at = (node, key) => (node?.type === 'object' ? node.keys.get(key) : undefined);
+  const edits = [];
+  for (const [name, entry] of servers) {
+    const server = at(at(root, 'mcpServers'), name); const headers = at(server, 'headers');
+    for (const v of entry.vars) {
+      const value = env[v.name]; if (!value) continue;
+      const found = v.env ? [at(at(server, 'env'), v.env)] : headers?.type === 'object' ? [...headers.keys].filter(([k]) => k.toLowerCase() === v.header.toLowerCase()).map(([, s]) => s) : [];
+      for (const s of found.filter((x) => x?.type === 'string')) {
+        const bearer = v.header && /^(Bearer\s+)(.*)$/is.exec(s.value);
+        if (s.value === value) edits.push({ ...s, text: JSON.stringify(placeholder('gemini', v.name)) });
+        else if (bearer && bearer[2] === value) edits.push({ ...s, text: JSON.stringify(bearer[1] + placeholder('gemini', v.name)) });
+      }
+    }
+  }
+  if (!edits.length) return 0;
+  for (const e of edits.sort((a, b) => b.start - a.start)) text = text.slice(0, e.start) + e.text + text.slice(e.end);
+  try { fs.writeFileSync(file, text); } catch { throw new Error(`Gemini saved MCP secrets in ${file} as plain text, and Tributary couldn't put the placeholders back. Remove the server from Gemini and add it again in Tributary.`); }
+  return edits.length;
+}
+
 /** Checks a server before anything is stored or run, and returns its secrets (see mcpSecrets). */
 function validServer(server) {
   if (!/^[\w.-]+$/.test(server.name || '')) throw new Error('Server name may only use letters, numbers, dot, dash and underscore');
@@ -183,4 +248,4 @@ async function removeMcp({ agent, name }) {
   return { agent: agent.id, ok: r.ok, message: redact((r.ok ? r.stdout : r.stderr).trim().split('\n').slice(-2).join(' ')) };
 }
 
-module.exports = { listMcp, addMcp, removeMcp, addArgs, removeArgs, redact, MCP_AGENTS, mcpSecrets, validServer, placeholder, turnVar, codexLines, codexConfig };
+module.exports = { listMcp, addMcp, removeMcp, addArgs, removeArgs, redact, MCP_AGENTS, mcpSecrets, validServer, placeholder, turnVar, codexLines, codexConfig, restoreGeminiPlaceholders };

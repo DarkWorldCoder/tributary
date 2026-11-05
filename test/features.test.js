@@ -9,7 +9,7 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const { createCheckpoint, restoreCheckpoint } = require('../core/checkpoint');
 const { listSkills, shareSkill } = require('../core/skills');
-const { addArgs, removeArgs, redact, listMcp, addMcp, placeholder, codexLines, codexConfig } = require('../core/mcp');
+const { addArgs, removeArgs, redact, listMcp, addMcp, placeholder, codexLines, codexConfig, restoreGeminiPlaceholders } = require('../core/mcp');
 const { listFiles, commitAll } = require('../core/git');
 const { Hub } = require('../core/hub');
 const { MemorySecrets } = require('../core/store');
@@ -183,6 +183,41 @@ test('mcp: values go to the secret store, each agent\'s turn gets them in its en
   } finally {
     if (savedCodexHome === undefined) delete process.env.CODEX_HOME; else process.env.CODEX_HOME = savedCodexHome;
   }
+});
+
+test('mcp: after a Gemini turn, secrets Gemini saved over its placeholders in settings.json become placeholders again', async () => {
+  const home = tmp(); const d = repo();
+  const fakeCli = path.join(home, 'fake-cli.js'); fs.writeFileSync(fakeCli, '#!/usr/bin/env node\nconsole.log("Added");'); fs.chmodSync(fakeCli, 0o755);
+  const hub = await new Hub({ dataDir: tmp(), secrets: new MemorySecrets(), home }).init();
+  hub.agents = [{ id: 'gemini', name: 'Gemini', available: true, path: fakeCli }];
+  for (const s of mcpServers()) assert.ok((await hub.addMcp(s)).every((r) => r.ok));
+
+  // What `gemini mcp add` leaves when run with the MCP_* variables set: values under mcpServers, placeholders elsewhere.
+  const settings = (v) => `{\n  // Gemini keeps comments\n  "general": { "note": "$MCP_GH_API_KEY" },\n  "mcpServers": {\n    "gh": {\n      "command": "gh-mcp",\n      "env": {\n        "GITHUB_TOKEN": ${JSON.stringify(v.token)},\n        "API_KEY": ${JSON.stringify(v.key)}\n      }\n    },\n    "docs": {\n      "httpUrl": "https://example.com/mcp",\n      "headers": { "authorization": ${JSON.stringify(`Bearer ${v.bearer}`)}, "X-Api-Key": ${JSON.stringify(v.header)} }\n    },\n    "mine": { "command": "x", "env": { "TOKEN": "my-own-value-123" } }\n  }\n}\n`;
+  const placeholders = settings({ token: '$MCP_GH_GITHUB_TOKEN', key: '$MCP_GH_API_KEY', bearer: '$MCP_DOCS_AUTHORIZATION', header: '$MCP_DOCS_X_API_KEY' });
+  const user = path.join(home, '.gemini', 'settings.json'); const project = path.join(d, '.gemini', 'settings.json');
+  const template = path.join(home, 'template.json');
+  // The fake Gemini fills the template from its turn's environment and saves it as its user and project settings.
+  hub.agents = [{ id: 'gemini', name: 'Gemini', protocol: 'codex-exec', available: true, headless: true, path: process.execPath, stdinPrompt: true,
+    args: () => ['-e', `const fs = require('fs'); const text = fs.readFileSync(${JSON.stringify(template)}, 'utf8').replace(/@(\\w+)@/g, (_, k) => process.env[k]);
+      for (const f of ${JSON.stringify([user, project])}) { fs.mkdirSync(require('path').dirname(f), { recursive: true }); fs.writeFileSync(f, text); }
+      console.log(JSON.stringify({type:'item.completed',item:{id:'i',type:'agent_message',text:'added'}})); console.log(JSON.stringify({type:'turn.completed'}));`] }];
+  fs.writeFileSync(template, settings({ token: '@MCP_GH_GITHUB_TOKEN@', key: '@MCP_GH_API_KEY@', bearer: '@MCP_DOCS_AUTHORIZATION@', header: '@MCP_DOCS_X_API_KEY@' }));
+  const t = hub.createThread(d);
+  const reply = await hub.send({ threadId: t.id, agentId: 'gemini', text: 'add the server', mode: 'read' });
+  assert.strictEqual(fs.readFileSync(user, 'utf8'), placeholders, 'only the values changed, "Bearer " kept, everything else byte for byte');
+  assert.strictEqual(fs.readFileSync(project, 'utf8'), placeholders, 'the project\'s settings too');
+  assert.deepStrictEqual(reply.notices.filter((n) => /Gemini had saved/.test(n)).map((n) => n.includes(user) || n.includes(project)), [true, true]);
+  assert.strictEqual(restoreGeminiPlaceholders(user, hub.store.data.mcpSecrets, await hub.mcpEnv('gemini')), 0, 'nothing left to put back');
+
+  // A file Gemini can't have saved as JSON is left alone, and the notice names it, never a value.
+  fs.writeFileSync(template, `{ "mcpServers": { "gh": { "env": { "GITHUB_TOKEN": "@MCP_GH_GITHUB_TOKEN@" `);
+  const broken = await hub.send({ threadId: t.id, agentId: 'gemini', text: 'again', mode: 'read' });
+  fs.rmSync(project);
+  assert.strictEqual(fs.readFileSync(user, 'utf8'), `{ "mcpServers": { "gh": { "env": { "GITHUB_TOKEN": "${MCP_TOKEN}" `);
+  assert.ok(broken.notices.some((n) => n.includes(user) && /isn't valid JSON/.test(n)), JSON.stringify(broken.notices));
+  const stored = JSON.stringify(hub.thread(t.id).messages);
+  for (const v of [MCP_TOKEN, MCP_KEY, MCP_BEARER, MCP_HEADER]) assert.ok(!stored.includes(v), 'no notice or message holds a value');
 });
 
 test('mcp: lists servers from each agent config with secrets masked, and adds via each CLI', async () => {
