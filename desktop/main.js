@@ -23,6 +23,8 @@ let win = null;
 let hub = null;
 let updates = null;
 let lanHost = null;
+let messageTransport = null;
+const { createMessageTransport, ownsMessageFrame } = require('./message-transport');
 const getLanHost = () => lanHost ||= require('../server/lan-host').createLanHost({ dir: path.join(app.getPath('userData'), 'project-room') });
 
 function send(name, data) { if (win && !win.isDestroyed()) win.webContents.send('hub-event', name, data); }
@@ -30,7 +32,7 @@ function send(name, data) { if (win && !win.isDestroyed()) win.webContents.send(
 // Streaming delivery owns histories while its coalescing timer is pending.
 let disposeMessages;
 function wireEvents() {
-  disposeMessages = require('../core/message-delivery').bindMessageDelivery(hub, send);
+  disposeMessages = require('../core/message-delivery').bindMessageDelivery(hub, (name, data) => messageTransport?.deliver(name, data) ?? false);
   for (const n of ['state', 'threads', 'running', 'notification', 'collaboration', 'language-diagnostics', 'files-changed', 'debugger']) hub.on(n, (d) => send(n, d));
   hub.on('activity', (d) => send('activity', d)); // the live view
   // System notification when something finishes while the window is in the background.
@@ -344,6 +346,13 @@ ipcMain.handle('hub', async (e, method, args) => {
   return hub.withHistoryOperation(() => API[method](...(Array.isArray(args) ? args : [])));
 });
 
+ipcMain.on('hub-message-ready', (event, epoch, listening) => {
+  if (win && !win.isDestroyed() && ownsMessageFrame(event, win.webContents) && typeof listening === 'boolean') messageTransport?.ready(epoch, listening);
+});
+ipcMain.on('hub-message-ack', (event, token, consumed) => {
+  if (win && !win.isDestroyed() && ownsMessageFrame(event, win.webContents)) messageTransport?.ack(token, consumed);
+});
+
 function createWindow() {
   const icon = nativeImage.createFromPath(path.join(__dirname, '..', 'assets', 'icon-512.png'));
   win = new BrowserWindow({
@@ -351,12 +360,22 @@ function createWindow() {
     backgroundColor: '#1c1b1a', autoHideMenuBar: true, frame: process.platform === 'darwin',
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, sandbox: true, nodeIntegration: false, spellcheck: true },
   });
+  messageTransport?.close();
+  const contents = win.webContents;
+  const transport = createMessageTransport({
+    send: (...args) => { if (contents.isDestroyed()) throw new Error('Reply window closed'); contents.send(...args); },
+    onReady: () => disposeMessages?.reset(),
+  });
+  messageTransport = transport;
+  contents.on('did-finish-load', () => transport.handshake());
   for (const event of ['maximize', 'unmaximize', 'enter-full-screen', 'leave-full-screen']) win.on(event, () => send('window-state', { maximized: win.isMaximized(), fullscreen: win.isFullScreen(), platform: process.platform }));
   win.webContents.setWindowOpenHandler(({ url }) => { if (/^https?:\/\//.test(url)) shell.openExternal(url); return { action: 'deny' }; });
   win.webContents.on('will-navigate', (ev) => ev.preventDefault());
   // A replaced/crashed renderer cannot release its pane leases itself. The
   // desktop's single application renderer owns all of this host's LSP leases.
-  win.webContents.on('did-start-navigation', (details) => { if (details.isMainFrame && !details.isSameDocument) { hub?._languageTools?.stopAll(); terminals.detachAll(); } });
+  win.webContents.on('did-start-navigation', (details) => { if (details.isMainFrame && !details.isSameDocument) { transport.reset(); hub?._languageTools?.stopAll(); terminals.detachAll(); } });
+  contents.on('render-process-gone', () => transport.reset());
+  contents.on('destroyed', () => transport.close());
   for (const event of ['render-process-gone', 'destroyed']) win.webContents.on(event, () => { hub?._languageTools?.stopAll(); terminals.detachAll(); });
   // Smoke runs stay hidden so they never take keyboard focus from whatever you are typing in.
   win.once('ready-to-show', () => { if (!SMOKE) win.show(); });
@@ -491,5 +510,5 @@ app.on('before-quit', (event) => {
   event.preventDefault();
   lanHost.stop().catch((e) => console.error(`Could not stop hosting: ${e.message}`)).finally(() => { stoppedHostingForQuit = true; app.quit(); });
 });
-app.on('will-quit', () => { disposeMessages?.(); updates?.dispose(); hub?._qaResults?.stopAll(); hub?._languageTools?.stopAll(); hub?.debugger?.stopAll(); hub?.projectChecks.stopAll(); try { hub?.store.close(); } catch (e) { console.error(`Could not save on quit: ${e.message}`); } });
+app.on('will-quit', () => { disposeMessages?.(); messageTransport?.close(); updates?.dispose(); hub?._qaResults?.stopAll(); hub?._languageTools?.stopAll(); hub?.debugger?.stopAll(); hub?.projectChecks.stopAll(); try { hub?.store.close(); } catch (e) { console.error(`Could not save on quit: ${e.message}`); } });
 app.on('window-all-closed', () => { if (hub) { hub._qaResults?.stopAll(); hub._languageTools?.stopAll(); hub.debugger?.stopAll(); hub.projectChecks.stopAll(); for (const id of hub.running.keys()) hub.stop(id); hub.collaborationClient?.disconnect(); hub.fileWatches.close(); } previewServers.stopAll(); terminals.killAll(); if (process.platform !== 'darwin' || SMOKE) app.quit(); });

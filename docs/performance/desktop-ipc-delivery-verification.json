@@ -1,0 +1,73 @@
+{
+  "tests": {
+    "command": "npm test",
+    "passed": 534,
+    "failed": 0,
+    "logSha256": "086b05274b30435beb5ba26f77ec12e04aad6914dddaf06def6aa1a102d6ccbd"
+  },
+  "focusedTests": {
+    "passed": 18,
+    "failed": 0
+  },
+  "nativeStreaming": {
+    "full": 3,
+    "patches": 4,
+    "user": 1,
+    "rendered": true,
+    "remainingHistoryPins": 0,
+    "releasedHistories": 1,
+    "persistedTextMatches": true,
+    "date": "2026-11-05T08:17:34.399Z",
+    "runtime": {
+      "node": "24.21.0",
+      "acorn": "8.18.0",
+      "ada": "4.0.0",
+      "amaro": "1.1.11",
+      "ares": "1.34.8",
+      "brotli": "1.2.0",
+      "cldr": "48.0",
+      "icu": "78.2",
+      "llhttp": "9.4.3",
+      "merve": "1.2.2",
+      "modules": "149",
+      "napi": "10",
+      "nbytes": "0.1.4",
+      "ncrypto": "0.0.1",
+      "nghttp2": "1.70.0",
+      "nghttp3": "",
+      "ngtcp2": "",
+      "openssl": "0.0.0",
+      "simdjson": "4.6.7",
+      "simdutf": "7.7.0",
+      "sqlite": "3.53.4",
+      "tz": "2026d",
+      "undici": "7.29.1",
+      "unicode": "17.0",
+      "uv": "1.52.1",
+      "uvwasi": "0.0.23",
+      "v8": "15.2.124.37-electron.0",
+      "zlib": "1.3.2.1-motley",
+      "zstd": "1.6.0",
+      "electron": "44.7.2",
+      "chrome": "152.0.7977.149"
+    },
+    "platform": "linux",
+    "scope": "Actual desktop IPC and rendering with synthetic Hub events; no provider request or native-memory claim. The blocked async transport is measured separately.",
+    "sourceHashes": {
+      "core/message-patch.js": "2f757e7c41c365c264691c981ff19aaf1731a46c534a53fe84fdd3eba6521334",
+      "core/message-delivery.js": "ec8574942f7540187bda7a4a03be10882badda3617901503652bd602bf007a03",
+      "desktop/main.js": "4539ff9bd9802dddc1ee43095142336fc0a3f22855cbf24550e169c6376f510d",
+      "ui/src/store.tsx": "7f0371c6fa04a43396aca62fe56dc79494efa66908a81d09453ee4bcd830e380",
+      "ui/dist/assets/app.js": "2dc2e30513dc669b5a79c3af0246885c3a86c5dfb44e051568e08369f92049b1",
+      "scripts/performance/native-message-delivery.cjs": "55062b2cafe92f0dd7e08cf3d3111715d7d075e51e7588c34737d61329c8e328"
+    }
+  },
+  "blockedRendererAndReload": "desktop-ipc-delivery-benchmark.json",
+  "limitations": [
+    "Dispatch acknowledgement is not React commit or paint completion.",
+    "Per-message pacing is not an aggregate packet/byte/concurrency budget.",
+    "Other host events and provider stdout have independent flow-control contracts.",
+    "Thread hydration and view switching can require broader snapshot reconciliation.",
+    "No process-RAM, GPU, local-model, packaged-build, macOS or Windows memory claim."
+  ]
+}
