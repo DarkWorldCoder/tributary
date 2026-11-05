@@ -1,0 +1,51 @@
+{
+  "date": "2026-11-05T11:06:20.666097+00:00",
+  "checks": {
+    "fullRegressions": {
+      "passed": 553,
+      "failed": 0
+    },
+    "focusedRegressions": {
+      "passed": 5,
+      "failed": 0
+    },
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "vscodeBuild": "passed by npm pretest",
+    "nativeDesktopPairs": 3,
+    "processMemorySamplesComplete": 120,
+    "pendingFormatter": "pins hidden view until completion; new text survives recreation",
+    "pendingSave": "real disk save finishes; a newer hidden edit remains dirty",
+    "syntheticCompositionEvents": "view stays pinned through hidden composition end; released after returning visible and hiding again",
+    "visual": "exact text, multi-selection, undo/redo counts, real fold, 18000 px scroll and Find/Replace data preserved",
+    "liveDiagnosticRows": "One actual syntax diagnostic before hide, zero while parked, one after resume"
+  },
+  "sourceHashes": {
+    "ui/src/components/code-editor.tsx": "1096a5e0984a7628290df2c326ef81f9385b6bad711730a88aa9b104c0c17bd0",
+    "ui/src/components/workspace-files.tsx": "469c74923e74931fd0c55c83e5f79cddbd6f77063d9ecb2450ac248630b2bd70",
+    "ui/src/lib/editor-memento.mjs": "46fa4e706d856bab09a99b3570d4c58781b68104f53f0054c923a1b1da565c3e",
+    "test/editor-memento.test.mjs": "5c7feb14b0051f04c0d2f5c7b22e7addee4549e671070e9b788c4d60da136bbd",
+    "scripts/performance/editor-parking.cjs": "4c7f79a31270e269febd77e1d8ed98293c376e2c56aa841e89d9788c4c0b89d3",
+    "scripts/performance/native-editor-parking.cjs": "ab072735d0a39376b44dec34fd7e1c2255d0d805d41f0c3f86af4a00765b02c9"
+  },
+  "reading": [
+    {
+      "url": "https://gameprogrammingpatterns.com/object-pool.html",
+      "words": 3819,
+      "readerSha256": "f785842fb23b6e5b2df7570cdb448032576551f33d085f6761e65c004873c5df"
+    },
+    {
+      "url": "https://gameprogrammingpatterns.com/flyweight.html",
+      "words": 2266,
+      "readerSha256": "29330f9aa262443cb1d5579ce77563ce6949946a1d927e0b94ee4e2921bc02ab"
+    }
+  ],
+  "limits": [
+    "Full public chapter texts and C++ listings read; images not visually inspected, examples not compiled. Not whole books.",
+    "Synthetic composition lifecycle is not an OS IME certification.",
+    "Linux source desktop only; no macOS/Windows, packaged installer, model or native-language bridge measurements.",
+    "PSS sampled after diagnostic renderer GC, excludes external model/runtime and display-server/driver memory; not normal peak RAM.",
+    "Repeated-resume phase can increase process memory; no universal savings, flat heap or general speed claim.",
+    "The final repeat did not reproduce exploratory PSS savings; lower retained DOM is the reproducible result."
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "same": true,
+  "before": {
+    "doc": 82397,
+    "selection": {
+      "ranges": [
+        {
+          "anchor": 3,
+          "head": 3
+        },
+        {
+          "anchor": 20,
+          "head": 25
+        }
+      ],
+      "main": 0
+    },
+    "undo": 1,
+    "redo": 0,
+    "folds": [
+      [
+        12093,
+        12108
+      ],
+      [
+        12093,
+        12108
+      ]
+    ],
+    "scrollTop": 18000,
+    "scrollLeft": 0,
+    "find": "item_900",
+    "replace": "savedReplacement",
+    "expanded": "true",
+    "findSelection": [
+      1,
+      5
+    ]
+  },
+  "after": {
+    "doc": 82397,
+    "selection": {
+      "ranges": [
+        {
+          "anchor": 3,
+          "head": 3
+        },
+        {
+          "anchor": 20,
+          "head": 25
+        }
+      ],
+      "main": 0
+    },
+    "undo": 1,
+    "redo": 0,
+    "folds": [
+      [
+        12093,
+        12108
+      ],
+      [
+        12093,
+        12108
+      ]
+    ],
+    "scrollTop": 18000,
+    "scrollLeft": 0,
+    "find": "item_900",
+    "replace": "savedReplacement",
+    "expanded": "true",
+    "findSelection": [
+      1,
+      5
+    ]
+  }
+}

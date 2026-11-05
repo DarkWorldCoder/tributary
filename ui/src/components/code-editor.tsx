@@ -1,3 +1,4 @@
+import { captureEditorMemento, restoreEditorMemento, updateEditorMemento, updateParkedText, type EditorMemento } from '@/lib/editor-memento.mjs';
 import { configuredLanguage, serverCompletions } from '@/lib/language-tools';
 import { applyLspEdits, type LspEdit } from '@/lib/lsp-edits.mjs';
 import { changeGutter, setFileChanges } from '@/lib/change-gutter';
@@ -78,11 +79,15 @@ const undoKey = typeof navigator !== 'undefined' && /Mac/.test(navigator.platfor
 export type EditorHistory = { path: string; canUndo: boolean; canRedo: boolean; undo: () => void; redo: () => void; format: (automatic?: boolean) => Promise<string | null>; text: () => string | null };
 
 /** A real code editor (CodeMirror 6): multi-cursor, search, folding, bracket matching, undo history. */
-export function CodeEditor({ project: documentProject, active = true, path, value, onChange, onSave, readOnly, line, column, wrap = false, onCursorChange, onToggleWrap, diagnostics = [], onDiagnostics, onNavigate, onHistoryChange, onChangeStats, followChanges = false, onReview }: {
-  active?: boolean; onReview?: () => void; project?: string; onChangeStats?: (stats: { rel: string; added?: number; removed?: number; binary?: boolean } | null) => void; followChanges?: boolean; path: string; value: string; onChange?: (v: string) => void; onSave?: () => void; readOnly?: boolean; line?: number; column?: number; wrap?: boolean; onCursorChange?: (position: { line: number; column: number }) => void; onToggleWrap?: () => void; diagnostics?: ProjectDiagnostic[]; onDiagnostics?: (diagnostics: ProjectDiagnostic[]) => void; onNavigate?: () => void; onHistoryChange?: (history: EditorHistory | null) => void;
+export function CodeEditor({ project: documentProject, active = true, keepAlive = false, path, value, onChange, onSave, readOnly, line, column, wrap = false, onCursorChange, onToggleWrap, diagnostics = [], onDiagnostics, onNavigate, onHistoryChange, onChangeStats, followChanges = false, onReview }: {
+  active?: boolean; keepAlive?: boolean; onReview?: () => void; project?: string; onChangeStats?: (stats: { rel: string; added?: number; removed?: number; binary?: boolean } | null) => void; followChanges?: boolean; path: string; value: string; onChange?: (v: string) => void; onSave?: () => void; readOnly?: boolean; line?: number; column?: number; wrap?: boolean; onCursorChange?: (position: { line: number; column: number }) => void; onToggleWrap?: () => void; diagnostics?: ProjectDiagnostic[]; onDiagnostics?: (diagnostics: ProjectDiagnostic[]) => void; onNavigate?: () => void; onHistoryChange?: (history: EditorHistory | null) => void;
 }) {
   const host = React.useRef<HTMLDivElement>(null);
   const view = React.useRef<EditorView | null>(null);
+  const latestScroll = React.useRef<EditorMemento['scroll']>(undefined);
+  const parked = React.useRef<(EditorMemento & { path: string; workspace: string | null }) | null>(null);
+  const [pendingEdit, setPendingEdit] = React.useState(0);
+  const [composing, setComposing] = React.useState(false);
   const ro = React.useRef(new Compartment());
   const language = React.useRef(new Compartment());
   const wrapping = React.useRef(new Compartment());
@@ -134,6 +139,7 @@ export function CodeEditor({ project: documentProject, active = true, path, valu
   undo.current = async (turn, line) => {
     const v = view.current; const st = store.current; const project = documentProject ?? st.workdir; if (!v || !project || readOnly) return;
     const name = st.agentOf(turn.agent).name;
+    setPendingEdit((count) => count + 1);
     try {
       // Line numbers and the text written back come from the saved file, so unsaved edits would be lost.
       const disk = await st.hub.call<FileContent>('readFile', project, path);
@@ -143,21 +149,30 @@ export function CodeEditor({ project: documentProject, active = true, path, valu
       toast.success(`Undid ${name}'s change`, { description: `${undoKey.replace(/Alt\+|⌥/, '')} brings it back as an unsaved edit.` });
     } catch (e) {
       toast.error(`Couldn't undo ${name}'s change`, { description: String((e as Error).message).replace(/^Error invoking remote method '[^']*': (Error: )?/, '') });
-    }
+    } finally { setPendingEdit((count) => count - 1); }
   };
 
+  const needsView = active || keepAlive || formatting || pendingEdit > 0 || composing;
   React.useEffect(() => {
+    if (parked.current && (parked.current.path !== path || parked.current.workspace !== workspace)) parked.current = null;
+    if (!needsView) return;
     let historyKey = '';
     const reportHistory = (v: EditorView) => {
       const canUndo = !v.state.readOnly && undoDepth(v.state) > 0;
       const canRedo = !v.state.readOnly && redoDepth(v.state) > 0;
       const key = `${canUndo}:${canRedo}`; if (key === historyKey) return; historyKey = key;
       const run = (command: typeof undoEdit) => { if (view.current === v && !v.state.readOnly) { command(v); v.focus(); } };
-      cb.current.onHistoryChange?.({ path, canUndo, canRedo, undo: () => run(undoEdit), redo: () => run(redoEdit), format: (automatic) => format.current(automatic), text: () => view.current === v ? v.state.doc.toString() : null });
+      cb.current.onHistoryChange?.({ path, canUndo, canRedo, undo: () => run(undoEdit), redo: () => run(redoEdit), format: (automatic) => format.current(automatic), text: () => (view.current?.state ?? parked.current?.state)?.doc.toString() ?? null });
     };
-    const v = new EditorView({
+    const memento = parked.current;
+    latestScroll.current = memento?.scroll;
+    if (memento) updateEditorMemento(memento, { effects: [ro.current.reconfigure([EditorState.readOnly.of(!!readOnly), EditorView.editable.of(!readOnly)]), wrapping.current.reconfigure(wrap ? EditorView.lineWrapping : [])] });
+    // Clear this binding in cleanup: retained extension callbacks share its scope.
+    // Keeping the old view in that closure would retain its destroyed DOM.
+    let v: EditorView | null = new EditorView({
       parent: host.current!,
-      state: EditorState.create({
+      scrollTo: memento?.scroll,
+      state: memento?.state ?? EditorState.create({
         doc: value,
         extensions: [
           basicSetup, search({ top: true, createPanel: createEditorSearchPanel }), theme, EditorState.tabSize.of(editorSpacing(path, value).tabSize), indentUnit.of(editorSpacing(path, value).indentUnit), Prec.high(lintGutter()), keymap.of(lintKeymap), syntaxHighlighting(highlight), keymap.of([indentWithTab, { key: 'Mod-h', mac: 'Mod-Alt-f', scope: 'editor search-panel', run: (editor) => openEditorFind(editor, true) }, { key: 'Mod-s', preventDefault: true, run: () => { cb.current.onSave?.(); return true; } }, { key: 'Alt-z', run: () => { if (!cb.current.onToggleWrap) return false; cb.current.onToggleWrap(); return true; } }]),
@@ -165,6 +180,7 @@ export function CodeEditor({ project: documentProject, active = true, path, valu
           ro.current.of([EditorState.readOnly.of(!!readOnly), EditorView.editable.of(!readOnly)]),
           wrapping.current.of(wrap ? EditorView.lineWrapping : []),
           EditorView.updateListener.of((u) => {
+            if (latestScroll.current && u.docChanged) for (const transaction of u.transactions) latestScroll.current = latestScroll.current?.map(transaction.changes);
             reportHistory(u.view);
             if (u.docChanged && u.transactions.some((transaction) => !transaction.annotation(Transaction.remote))) cb.current.onChange?.(u.state.doc.toString());
             if (u.selectionSet && u.transactions.some((transaction) => transaction.isUserEvent('select'))) cb.current.onNavigate?.();
@@ -184,12 +200,40 @@ export function CodeEditor({ project: documentProject, active = true, path, valu
         ],
       }),
     });
-    view.current = v; reportHistory(v);
-    cb.current.onCursorChange?.({ line: 1, column: 1 });
-    return () => { clearAgentFlash(v); v.destroy(); view.current = null; cb.current.onHistoryChange?.(null); };
+    view.current = v; parked.current = null;
+    if (memento) restoreEditorMemento(v, memento);
+    reportHistory(v);
+    const head = v.state.selection.main.head; const row = v.state.doc.lineAt(head);
+    cb.current.onCursorChange?.({ line: row.number, column: head - row.from + 1 });
+    const rememberScroll = () => {
+      const editor = view.current;
+      if (editor && isActive.current && editor.dom.getBoundingClientRect().width) latestScroll.current = editor.scrollSnapshot();
+    };
+    v.scrollDOM.addEventListener('scroll', rememberScroll, { passive: true });
+    const scrollFrame = requestAnimationFrame(rememberScroll);
+    const startComposition = () => setComposing(true);
+    // An ended composition in a hidden pane stays pinned until the pane returns.
+    // The browser/CodeMirror can finish committing its DOM before any parking.
+    const endComposition = () => { if (isActive.current) requestAnimationFrame(() => { if (v && view.current === v && !v.composing) setComposing(false); }); };
+    v.contentDOM.addEventListener('compositionstart', startComposition);
+    v.contentDOM.addEventListener('compositionend', endComposition);
+    return () => {
+      if (!v) return;
+      v.contentDOM.removeEventListener('compositionstart', startComposition); v.contentDOM.removeEventListener('compositionend', endComposition);
+      cancelAnimationFrame(scrollFrame); v.scrollDOM.removeEventListener('scroll', rememberScroll);
+      const snapshot = captureEditorMemento(v);
+      snapshot.scroll = latestScroll.current ?? snapshot.scroll;
+      showBlame(v, null, store.current.agentOf); clearAgentFlash(v);
+      v.dispatch({ effects: [language.current.reconfigure([]), serverCompletion.current.reconfigure([]), setFileChanges.of([]), debugLines.of({ lines: [], paused: null })] });
+      v.dispatch(setDiagnostics(v.state, [])); snapshot.state = v.state;
+      parked.current = { ...snapshot, path, workspace };
+      v.destroy(); v = null; view.current = null; cb.current.onHistoryChange?.(null);
+    };
     // A new path means a new document; the value is synced below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [path, workspace]);
+  }, [path, workspace, needsView]);
+
+  React.useEffect(() => { if (active && view.current && !view.current.composing) setComposing(false); }, [active]);
 
   React.useEffect(() => { const editor = view.current; if (editor && workspace) editor.dispatch({ effects: serverCompletion.current.reconfigure(languageOwner ? autocompletion({ override: [serverCompletions(s.hub, workspace, path, languageOwner, () => currentOwner.current === languageOwner)] }) : []) }); }, [workspace, path, languageOwner, s.hub]);
   const [serverDiagnostics, setServerDiagnostics] = React.useState<{ text: string; items: ProjectDiagnostic[] } | null>(null);
@@ -215,10 +259,12 @@ export function CodeEditor({ project: documentProject, active = true, path, valu
 
   React.useEffect(() => {
     if (active) return;
-    const editor = view.current; if (!editor) return;
-    showBlame(editor, null, store.current.agentOf); clearAgentFlash(editor);
-    editor.dispatch({ effects: [setFileChanges.of([]), debugLines.of({ lines: [], paused: null })] });
-    editor.dispatch(setDiagnostics(editor.state, []));
+    const editor = view.current;
+    if (editor) {
+      showBlame(editor, null, store.current.agentOf); clearAgentFlash(editor);
+      editor.dispatch({ effects: [setFileChanges.of([]), debugLines.of({ lines: [], paused: null })] });
+      editor.dispatch(setDiagnostics(editor.state, []));
+    }
     setLiveDiagnostics(null); setServerDiagnostics(null); setServerError('');
     if (picked) { refocus.current = false; setPicked(null); }
     cb.current.onDiagnostics?.([]); cb.current.onChangeStats?.(null);
@@ -235,7 +281,8 @@ export function CodeEditor({ project: documentProject, active = true, path, valu
 
   // Replace the document when it changes from outside (reload after an agent edit).
   React.useEffect(() => {
-    const v = view.current; if (!v) return;
+    const v = view.current;
+    if (!v) { if (parked.current && updateParkedText(parked.current, value)) { latestScroll.current = parked.current.scroll; setDiskChanged((n) => n + 1); } return; }
     // Only the changed part is replaced, so the cursor and scroll position stay put; the changed lines light up.
     const change = followChanges ? minimalChange(v.state.doc.toString(), value) : null;
     if (applyRemoteText(v, value, undefined, true, active)) {
