@@ -165,6 +165,26 @@
     --sidebar-border: var(--vscode-sideBar-border, var(--vscode-panel-border, #8884));
     --font-sans: var(--vscode-font-family);
     --font-mono: var(--vscode-editor-font-family);
+    --finder-background: var(--vscode-quickInput-background, var(--popover));
+    --finder-foreground: var(--vscode-quickInput-foreground, var(--popover-foreground));
+    --finder-focus-background: var(--vscode-quickInputList-focusBackground, var(--vscode-list-focusBackground, var(--accent)));
+    --finder-focus-foreground: var(--vscode-quickInputList-focusForeground, var(--vscode-list-focusForeground, var(--foreground)));
+    --finder-focus-outline: var(--vscode-list-focusOutline, transparent);
+    --search-match-foreground: var(--vscode-list-highlightForeground, currentColor);
+    --search-focus-match-foreground: var(--vscode-quickInputList-focusHighlightForeground, currentColor);
+    --search-input-background: var(--vscode-input-background, var(--muted));
+    --search-input-foreground: var(--vscode-input-foreground, var(--foreground));
+    --search-input-border: var(--vscode-input-border, var(--border));
+    --search-input-placeholder: var(--vscode-input-placeholderForeground, var(--muted-foreground));
+    --search-option-background: var(--vscode-inputOption-activeBackground, var(--accent));
+    --search-option-foreground: var(--vscode-inputOption-activeForeground, currentColor);
+    --search-option-border: var(--vscode-inputOption-activeBorder, var(--ring));
+    --search-option-hover: var(--vscode-inputOption-hoverBackground, var(--accent));
+    --search-result-match-background: var(--vscode-editor-findMatchHighlightBackground, #e2b34040);
+    --search-result-match-border: var(--vscode-editor-findMatchHighlightBorder, transparent);
+    --search-widget-background: var(--vscode-editorWidget-background, var(--popover));
+    --search-widget-foreground: var(--vscode-editorWidget-foreground, var(--foreground));
+    --search-widget-border: var(--vscode-editorWidget-border, var(--border));
 }
 
 @layer base {
@@ -323,17 +343,25 @@
 .workspace-search .search-summary { padding: 0 22px 8px; overflow-wrap: anywhere; }
 .workspace-search .search-result-line { font-size: 13px; padding-left: 32px; }
 .workspace-search .search-result-line > span:first-child { width: 24px; text-align: right; margin-right: 4px; }
+.workspace-search .search-query-box, .workspace-search .search-widgets label input {
+  background: var(--search-input-background, var(--muted)); color: var(--search-input-foreground, var(--foreground)); border-color: var(--search-input-border, var(--border));
+}
+.workspace-search input::placeholder, .feature-finder input::placeholder, .cm-vscode-search input::placeholder { color: var(--search-input-placeholder, var(--muted-foreground)); opacity: 1; }
+.workspace-search .search-query-box button:hover, .cm-vscode-search .cm-find-input button:hover:not(:disabled) { background: var(--search-option-hover, var(--accent)); }
+.workspace-search .search-query-box button[aria-pressed="true"], .cm-vscode-search .cm-find-input button[aria-pressed="true"] {
+  background: var(--search-option-background, var(--accent)); color: var(--search-option-foreground, inherit); border-color: var(--search-option-border, var(--ring));
+}
+.workspace-search .search-result-line mark { background: var(--search-result-match-background, color-mix(in oklch, var(--warning) 25%, transparent)); outline-color: var(--search-result-match-border, transparent); }
 .cm-editor > .cm-panels-top:has(.cm-vscode-search) { position: absolute; inset: 0 12px auto auto; z-index: 10; width: min(419px, calc(100% - 24px)); border: 0; background: transparent; }
-.cm-editor .cm-panel.cm-vscode-search { position: relative; padding: 4px 4px 4px 22px; border: 1px solid var(--border); border-radius: 4px; background: var(--popover); color: var(--popover-foreground); box-shadow: 0 3px 10px #0003; font: 12px/19px var(--font-sans); container-type: inline-size; }
+.cm-editor .cm-panel.cm-vscode-search { position: relative; padding: 4px 4px 4px 22px; border: 1px solid var(--search-widget-border, var(--border)); border-radius: 4px; background: var(--search-widget-background, var(--popover)); color: var(--search-widget-foreground, var(--popover-foreground)); box-shadow: 0 3px 10px #0003; font: 12px/19px var(--font-sans); container-type: inline-size; }
 .cm-vscode-search .cm-find-row, .cm-vscode-search .cm-replace-row { display: flex; align-items: center; gap: 3px; min-height: 26px; }
 .cm-vscode-search .cm-replace-row { margin-top: 4px; }
 .cm-vscode-search .cm-replace-row[hidden] { display: none; }
-.cm-vscode-search .cm-find-input { display: flex; flex: 1; align-items: center; min-width: 0; height: 26px; background: var(--input); border: 1px solid var(--border); border-radius: 2px; padding-right: 2px; }
+.cm-vscode-search .cm-find-input { display: flex; flex: 1; align-items: center; min-width: 0; height: 26px; background: var(--search-input-background, var(--muted)); color: var(--search-input-foreground, inherit); border: 1px solid var(--search-input-border, var(--border)); border-radius: 2px; padding-right: 2px; }
 .cm-vscode-search .cm-find-input:focus-within { outline: 1px solid var(--ring); outline-offset: -1px; }
 .cm-vscode-search input { min-width: 24px; width: 100%; height: 24px; padding: 2px 5px; font: 13px var(--font-sans); color: inherit; background: transparent; border: 0; outline: none; }
 .cm-vscode-search button { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: 22px; height: 22px; padding: 0 3px; border: 1px solid transparent; border-radius: 3px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
 .cm-vscode-search button:hover:not(:disabled) { background: var(--accent); }
-.cm-vscode-search button[aria-pressed="true"] { background: var(--accent); border-color: var(--ring); }
 .cm-vscode-search button .codicon { font-size: 16px; line-height: 16px; }
 .cm-vscode-search button[name="toggle-replace"] { position: absolute; left: 2px; top: 3px; bottom: 3px; height: auto; min-width: 16px; padding: 0; font-size: 20px; }
 .cm-editor .cm-vscode-search button[name="close"] { position: static !important; font-size: 18px; background: transparent; }
@@ -354,17 +382,20 @@
 }
 /* Finder dialogs have no tooltip controls. Hide lingering workbench tooltips
    while the modal owns focus, including after a narrow-window resize. */
-body:has(.feature-finder[data-state="open"]) [data-slot="tooltip-content"] { visibility: hidden; }
-.feature-finder [data-slot="command"] { border-radius: 6px !important; padding: 0; }
+body:has(.feature-finder[data-state="open"]) [data-slot="tooltip-content"],
+body:has(.feature-finder[data-state="open"]) .cm-ask-agent,
+.cm-editor:has(.cm-vscode-search) .cm-ask-agent { visibility: hidden; }
+.feature-finder [data-slot="command"] { border-radius: 6px !important; padding: 0; background: var(--finder-background, var(--popover)); color: var(--finder-foreground, var(--popover-foreground)); }
 .feature-finder [cmdk-list] { max-height: min(440px, 40dvh); padding: 0 6px 7px; scrollbar-width: thin; }
 .feature-finder [cmdk-item] { min-height: 22px; padding: 0 6px; font-size: 13px; line-height: 22px; border-radius: 3px !important; gap: 6px; }
-.feature-finder [cmdk-item][data-selected="true"] { background: var(--accent); color: var(--accent-foreground); outline: 1px solid color-mix(in oklch, var(--ring) 45%, transparent); outline-offset: -1px; }
+.feature-finder [cmdk-item][data-selected="true"] { background: var(--finder-focus-background, var(--accent)); color: var(--finder-focus-foreground, var(--accent-foreground)); outline: 1px solid var(--finder-focus-outline, color-mix(in oklch, var(--ring) 45%, transparent)); outline-offset: -1px; }
+.feature-finder [cmdk-item][data-selected="true"] [data-slot="command-shortcut"], .feature-finder [cmdk-item][data-selected="true"] .command-section-label { color: inherit; }
 .feature-finder .search-label-match { font-weight: 600; color: var(--search-match-foreground, currentColor); }
 .feature-finder [cmdk-item][data-selected="true"] .search-label-match { color: var(--search-focus-match-foreground, currentColor); }
-.feature-finder [cmdk-group] { padding: 0; }
+.feature-finder [cmdk-group] { padding: 0; color: inherit; }
 .feature-finder [cmdk-group-heading] { padding: 4px 6px; font-size: 11px; }
 .feature-finder [data-slot="command-input-wrapper"] { flex: 1; min-width: 0; padding: 6px 0 4px 6px; }
-.feature-finder [data-slot="input-group"] { height: 26px !important; border-radius: 3px !important; background: var(--input); }
+.feature-finder [data-slot="input-group"] { height: 26px !important; border-radius: 3px !important; background: var(--search-input-background, var(--muted)); color: var(--search-input-foreground, var(--foreground)); border-color: var(--search-input-border, var(--border)); }
 .feature-finder [data-slot="input-group"]:focus-within { outline: 1px solid var(--ring); outline-offset: -1px; }
 .feature-finder [cmdk-input] { height: 24px; font-size: 13px; }
 .command-picker [data-slot="input-group-addon"] { display: none; }
@@ -372,6 +403,7 @@ body:has(.feature-finder[data-state="open"]) [data-slot="tooltip-content"] { vis
 .feature-finder [data-slot="command-shortcut"] { flex-shrink: 0; letter-spacing: normal; }
 .feature-finder [data-slot="command-shortcut"] > span { flex-wrap: nowrap; gap: 2px; }
 .feature-finder [data-slot="kbd"] { height: 16px; min-width: 16px; padding: 0 3px; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 3px; background: transparent; font-size: 10px; font-weight: 400; }
+.feature-finder [cmdk-item][data-selected="true"] [data-slot="kbd"] { color: inherit; border-color: color-mix(in srgb, currentColor 30%, transparent); }
 .feature-finder .command-section-label { margin-left: auto; flex-shrink: 0; font-size: 11px; color: var(--muted-foreground); }
 .feature-finder [cmdk-item] > svg:last-child:not(:first-child) { display: none; }
 @media (max-width: 639px), (pointer: coarse) {

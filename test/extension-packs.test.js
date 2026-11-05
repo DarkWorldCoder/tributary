@@ -20,6 +20,45 @@ test('imported themes keep focus accents separate from control borders and compo
   assert.match(light['--card'], /#ffffff/);
   assert.equal(light['--card-foreground'], '#222222');
 });
+test('search surfaces honor VS Code Quick Input, input, option and match colors independently', async () => {
+  const { extensionThemeVariables } = await import('../ui/src/lib/extension-theme-variables.mjs');
+  const variables = extensionThemeVariables({ dark: true, colors: {
+    'editor.background': '#101820', 'editor.foreground': '#eeeeee',
+    'editorWidget.background': '#182838', 'editorWidget.foreground': '#dddddd', 'editorWidget.border': '#334455',
+    'quickInput.background': '#203040', 'quickInput.foreground': '#ffffff',
+    'quickInputList.focusBackground': '#385078', 'quickInputList.focusForeground': '#ffffcc',
+    'list.activeSelectionBackground': '#999999', 'list.focusOutline': '#abcdef',
+    'input.background': '#283848', 'input.foreground': '#f0f0f0', 'input.border': '#607080', 'input.placeholderForeground': '#aabbcc',
+    'inputOption.activeBackground': '#405060', 'inputOption.activeForeground': '#ffaabb', 'inputOption.activeBorder': '#aa3344', 'inputOption.hoverBackground': '#506070',
+    'editor.findMatchHighlightBackground': '#aabbcc44', 'editor.findMatchHighlightBorder': '#ffee00',
+  }, tokenColors: [] });
+  assert.equal(variables['--finder-background'], '#203040');
+  assert.equal(variables['--finder-foreground'], '#ffffff');
+  assert.equal(variables['--finder-focus-background'], '#385078');
+  assert.equal(variables['--finder-focus-foreground'], '#ffffcc');
+  assert.equal(variables['--finder-focus-outline'], '#abcdef');
+  assert.equal(variables['--search-input-background'], '#283848');
+  assert.equal(variables['--search-input-foreground'], '#f0f0f0');
+  assert.equal(variables['--search-input-border'], '#607080');
+  assert.equal(variables['--search-input-placeholder'], '#aabbcc');
+  assert.equal(variables['--search-option-background'], '#405060');
+  assert.equal(variables['--search-option-foreground'], '#ffaabb');
+  assert.equal(variables['--search-option-border'], '#aa3344');
+  assert.equal(variables['--search-option-hover'], '#506070');
+  assert.equal(variables['--search-result-match-background'], '#aabbcc44');
+  assert.equal(variables['--search-result-match-border'], '#ffee00');
+  assert.equal(variables['--search-widget-background'], '#182838');
+  assert.equal(variables['--search-widget-foreground'], '#dddddd');
+  assert.equal(variables['--search-widget-border'], '#334455');
+  // Minimal themes fall back to their widget/editor colors. Border and input
+  // surface remain separate, and optional tokens do not become stale overrides.
+  const minimal = extensionThemeVariables({ dark: false, colors: { 'editor.background': '#ffffff', 'editor.foreground': '#222222', 'list.focusBackground': '#abcdef' }, tokenColors: [] });
+  assert.equal(minimal['--finder-focus-background'], '#abcdef');
+  assert.equal(minimal['--finder-foreground'], '#222222');
+  assert.equal(minimal['--search-widget-background'], '#ffffff');
+  assert.equal(minimal['--search-input-background'], undefined);
+  assert.equal(minimal['--search-input-border'], undefined);
+});
 // Small stored ZIPs keep the parser tests independent of external zip programs.
 function zip(files) {
   const chunks = []; const directory = []; let offset = 0;
