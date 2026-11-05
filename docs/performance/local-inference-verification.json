@@ -1,0 +1,39 @@
+{
+  "date": "2026-11-05T09:09:38.594Z",
+  "sourceHashes": {
+    "core/direct.js": "3e74e1ff9f0716a540de95ce3065c9bbecede2c6d27f76dbf8384d6a5569dbf5",
+    "core/local-requests.js": "0d942184d40fb77ee53fe1c3c1bef1259783ef8af79652395d549fc0e0aa5eb4",
+    "scripts/performance/local-inference.cjs": "ec0e05173e9c96a0bf9c6966fe03b6f2ccbd917fb43b047d0762730b82e2b7fa"
+  },
+  "inference": {
+    "freshProcesses": 12,
+    "measuredRequests": 48,
+    "warmRequests": 12,
+    "allSucceeded": true,
+    "allOwnedProcessesReaped": true,
+    "sampleReadFailuresOrOverflow": 0
+  },
+  "checks": {
+    "focusedTests": 25,
+    "typescript": true,
+    "productionUiBuild": true,
+    "diffCheck": true
+  },
+  "ui": {
+    "surface": "Disposable Linux Electron desktop, local-model setup",
+    "catalog": "Synthetic loopback model catalog; no model connection saved",
+    "memoryGuidancePresent": true,
+    "horizontalOverflow": false,
+    "requestOptions": [
+      1,
+      2,
+      4
+    ],
+    "screenshotSha256": "a8afe5859d96f7710805c9f137c072ee5d7f917c9002002a909b849b057944bf",
+    "fixtureClosed": true
+  },
+  "limitations": [
+    "Named provider runtimes, GPU, whole-app memory and startup peaks are not measured.",
+    "Context changes are experiment inputs; product context settings are not changed."
+  ]
+}

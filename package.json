@@ -39,7 +39,8 @@
     "bench:lsp": "node scripts/performance/lsp-framing.cjs",
     "bench:terminal": "node scripts/performance/terminal-flow.cjs",
     "bench:history-cache": "node scripts/performance/history-cache.cjs",
-    "bench:writers": "node scripts/performance/writer-working-set.cjs"
+    "bench:writers": "node scripts/performance/writer-working-set.cjs",
+    "bench:inference": "node scripts/performance/local-inference.cjs"
   },
   "devDependencies": {
     "electron": "44.7.2",
