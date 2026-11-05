@@ -3,6 +3,7 @@ import { applyLspEdits, type LspEdit } from '@/lib/lsp-edits.mjs';
 import { changeGutter, setFileChanges } from '@/lib/change-gutter';
 import { editorDiffMarkers, editorDiffStats } from '@/lib/editor-diff.mjs';
 import { sourceGrammar } from '@/lib/source-grammar.mjs';
+import { configureEditorGrammar } from '@/lib/editor-grammar.mjs';
 import { sourceLanguage, sourceSyntaxSupported } from '@/lib/source-language.mjs';
 import { useDebugger } from '@/hooks/use-debugger';
 import { debugGutter, debugLines } from '@/lib/debug-editor';
@@ -24,7 +25,7 @@ import { HighlightStyle, syntaxHighlighting, indentUnit } from '@codemirror/lang
 import { tags as t } from '@lezer/highlight';
 import { MessageSquare, Undo2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { agentFlash, applyRemoteText, askAboutSelection, blameAt, blameGutter, showBlame, type Blame, type BlamePick, type BlameTurn } from '@/lib/agent-editor';
+import { agentFlash, applyRemoteText, clearAgentFlash, askAboutSelection, blameAt, blameGutter, showBlame, type Blame, type BlamePick, type BlameTurn } from '@/lib/agent-editor';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useStore } from '@/store';
 import { EditorContextMenu } from '@/components/editor-context-menu';
@@ -94,7 +95,7 @@ export function CodeEditor({ project: documentProject, active = true, path, valu
   const { owner: languageOwner, error: ownerError } = useLanguageOwner(s.hub, workspace, path, serverRevision, active && hasServer);
   const currentOwner = React.useRef(languageOwner); currentOwner.current = languageOwner;
   const isActive = React.useRef(active); isActive.current = active;
-  const debug = useDebugger(workspace); const debugRef = React.useRef(debug); debugRef.current = debug;
+  const debug = useDebugger(workspace, active); const debugRef = React.useRef(debug); debugRef.current = debug;
   const toggleBreakpoint = React.useRef((line: number) => {});
   toggleBreakpoint.current = (line) => { const exists = debugRef.current.breakpoints.some((b) => b.rel === path && b.line === line); void store.current.hub.call('debugBreakpoint', workspace, path, line, !exists).catch((e) => toast.error(e.message)); };
   const [blameOn, setBlameOn] = React.useState(() => { try { return localStorage.getItem('tributary.blame') !== 'off'; } catch { return true; } });
@@ -138,7 +139,7 @@ export function CodeEditor({ project: documentProject, active = true, path, valu
       const disk = await st.hub.call<FileContent>('readFile', project, path);
       if (disk.content !== v.state.doc.toString()) { toast.error('Save this file first', { description: `Undoing ${name}'s change works on the saved file.` }); return; }
       const r = await st.hub.call<{ text: string }>('revertTurnHunk', project, path, turn.messageId, line);
-      if (view.current === v && applyRemoteText(v, r.text, undefined, true)) setDiskChanged((n) => n + 1);
+      if (view.current === v && applyRemoteText(v, r.text, undefined, true, isActive.current)) setDiskChanged((n) => n + 1);
       toast.success(`Undid ${name}'s change`, { description: `${undoKey.replace(/Alt\+|⌥/, '')} brings it back as an unsaved edit.` });
     } catch (e) {
       toast.error(`Couldn't undo ${name}'s change`, { description: String((e as Error).message).replace(/^Error invoking remote method '[^']*': (Error: )?/, '') });
@@ -185,7 +186,7 @@ export function CodeEditor({ project: documentProject, active = true, path, valu
     });
     view.current = v; reportHistory(v);
     cb.current.onCursorChange?.({ line: 1, column: 1 });
-    return () => { v.destroy(); view.current = null; cb.current.onHistoryChange?.(null); };
+    return () => { clearAgentFlash(v); v.destroy(); view.current = null; cb.current.onHistoryChange?.(null); };
     // A new path means a new document; the value is synced below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path, workspace]);
@@ -208,37 +209,48 @@ export function CodeEditor({ project: documentProject, active = true, path, valu
 
   const sourceId = sourceLanguage(path, value).id;
   React.useEffect(() => {
-    const editor = view.current; if (!editor) return; let alive = true;
-    languageFor(path, value).then((grammar) => { if (alive && view.current === editor) editor.dispatch({ effects: language.current.reconfigure(grammar || []) }); }).catch(() => {});
-    return () => { alive = false; };
-  }, [path, workspace, sourceId]);
+    const editor = view.current; if (!editor) return;
+    return configureEditorGrammar(editor, language.current, active, () => languageFor(path, value));
+  }, [path, workspace, sourceId, active]);
 
   React.useEffect(() => {
+    if (active) return;
+    const editor = view.current; if (!editor) return;
+    showBlame(editor, null, store.current.agentOf); clearAgentFlash(editor);
+    editor.dispatch({ effects: [setFileChanges.of([]), debugLines.of({ lines: [], paused: null })] });
+    editor.dispatch(setDiagnostics(editor.state, []));
+    setLiveDiagnostics(null); setServerDiagnostics(null); setServerError('');
+    if (picked) { refocus.current = false; setPicked(null); }
+    cb.current.onDiagnostics?.([]); cb.current.onChangeStats?.(null);
+  }, [active, workspace, path]);
+
+  React.useEffect(() => {
+    if (!active) return;
     const run = (event: Event) => { const v = view.current; if (!v?.hasFocus) return; const action = (event as CustomEvent).detail; if (action === 'find' || action === 'replace') openEditorFind(v, action === 'replace'); else if (action === 'undo') undoEdit(v); else if (action === 'redo') redoEdit(v); else if (action === 'selectAll') selectAll(v); else document.execCommand(action); };
     window.addEventListener('tributary:editor-command', run); return () => window.removeEventListener('tributary:editor-command', run);
-  }, []);
+  }, [active]);
 
   const debugKey = JSON.stringify([debug.breakpoints.filter((b) => b.rel === path).map((b) => b.line), debug.status, debug.frames.find((f) => f.id === debug.selectedFrame) || debug.frames[0]]);
-  React.useEffect(() => { const v = view.current; if (!v || !/\.(?:[cm]?js|[cm]?ts)$/i.test(path)) return; const frame = debug.frames.find((f) => f.id === debug.selectedFrame) || debug.frames[0]; v.dispatch({ effects: debugLines.of({ lines: debug.breakpoints.filter((b) => b.rel === path).map((b) => b.line), paused: debug.status === 'paused' && frame?.rel === path ? frame.line : null }) }); }, [debugKey, path]);
+  React.useEffect(() => { const v = view.current; if (!active || !v || !/\.(?:[cm]?js|[cm]?ts)$/i.test(path)) return; const frame = debug.frames.find((f) => f.id === debug.selectedFrame) || debug.frames[0]; v.dispatch({ effects: debugLines.of({ lines: debug.breakpoints.filter((b) => b.rel === path).map((b) => b.line), paused: debug.status === 'paused' && frame?.rel === path ? frame.line : null }) }); }, [debugKey, path, active]);
 
   // Replace the document when it changes from outside (reload after an agent edit).
   React.useEffect(() => {
     const v = view.current; if (!v) return;
     // Only the changed part is replaced, so the cursor and scroll position stay put; the changed lines light up.
     const change = followChanges ? minimalChange(v.state.doc.toString(), value) : null;
-    if (applyRemoteText(v, value, undefined, true)) {
+    if (applyRemoteText(v, value, undefined, true, active)) {
       setDiskChanged((n) => n + 1);
-      if (change) v.dispatch({ effects: EditorView.scrollIntoView(Math.min(value.length, change.from), { y: 'center' }) });
+      if (active && change) v.dispatch({ effects: EditorView.scrollIntoView(Math.min(value.length, change.from), { y: 'center' }) });
     }
   }, [value, followChanges]);
   React.useEffect(() => {
-    const editor = view.current; if (!editor || !workspace) return;
+    const editor = view.current; if (!active || !editor || !workspace) return;
     let alive = true;
     const timer = setTimeout(() => {
       s.hub.call<string>('fileDiff', workspace, path).then((diff) => { if (alive && view.current === editor) { editor.dispatch({ effects: setFileChanges.of(editorDiffMarkers(diff)) }); cb.current.onChangeStats?.({ rel: path, ...editorDiffStats(diff) }); } }).catch(() => { if (alive && view.current === editor) { editor.dispatch({ effects: setFileChanges.of([]) }); cb.current.onChangeStats?.(null); } });
     }, 150);
     return () => { alive = false; clearTimeout(timer); };
-  }, [workspace, path, diskChanged, s.git?.stat, s.git?.branch, s.hub]);
+  }, [workspace, path, diskChanged, s.git?.stat, s.git?.branch, s.hub, active]);
   React.useEffect(() => {
     let current = true;
     if (!active || readOnly || !(documentLanguage(path) || sourceSyntaxSupported(path, value))) return;
@@ -248,7 +260,7 @@ export function CodeEditor({ project: documentProject, active = true, path, valu
     }, 300);
     return () => { current = false; clearTimeout(timer); controller.abort(); };
   }, [path, value, readOnly, active]);
-  const allDiagnostics = [...diagnostics, ...(serverDiagnostics?.text === value ? serverDiagnostics.items : []), ...(liveDiagnostics?.path === path && liveDiagnostics.text === value ? liveDiagnostics.items : [])];
+  const allDiagnostics = active ? [...diagnostics, ...(serverDiagnostics?.text === value ? serverDiagnostics.items : []), ...(liveDiagnostics?.path === path && liveDiagnostics.text === value ? liveDiagnostics.items : [])] : [];
   const diagnosticKey = JSON.stringify(allDiagnostics);
   React.useEffect(() => {
     const v = view.current; if (!v) return;
@@ -273,16 +285,18 @@ export function CodeEditor({ project: documentProject, active = true, path, valu
   // Agents changing this file in the project right now (not those working in their own copy).
   const [editing, setEditing] = React.useState<string[]>([]);
   React.useEffect(() => {
-    const pick = (all: ActivityEntry[]) => setEditing([...new Set(all.filter((e) => (e.workdir || e.project) === workspace && (e.kind === 'turn' || e.kind === 'team'))
-      .flatMap((e) => e.workers.filter((w) => w.state === 'working' && w.files.some((f) => f.rel === path)).map((w) => w.agent)))]);
+    if (!active) { setEditing((previous) => previous.length ? [] : previous); return; }
+    let current = true;
+    const pick = (all: ActivityEntry[]) => { if (current) setEditing([...new Set(all.filter((e) => (e.workdir || e.project) === workspace && (e.kind === 'turn' || e.kind === 'team'))
+      .flatMap((e) => e.workers.filter((w) => w.state === 'working' && w.files.some((f) => f.rel === path)).map((w) => w.agent)))]); };
     s.hub.call<ActivityEntry[]>('activity').then(pick).catch(() => {});
     const off = s.hub.on('activity', pick);
-    return () => { if (typeof off === 'function') off(); };
-  }, [s.hub, workspace, path]);
+    return () => { current = false; if (typeof off === 'function') off(); };
+  }, [s.hub, workspace, path, active]);
 
   // Blame for this file, fetched when it opens, after it changes on disk, and when blame is switched on.
   React.useEffect(() => {
-    const v = view.current; const project = workspace; if (!v) return;
+    const v = view.current; const project = workspace; if (!active || !v) return;
     if (!blameOn || !project) { showBlame(v, null, s.agentOf); return; }
     let alive = true;
     const timer = setTimeout(() => {
@@ -290,7 +304,7 @@ export function CodeEditor({ project: documentProject, active = true, path, valu
     }, 300);
     return () => { alive = false; clearTimeout(timer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [path, blameOn, workspace, diskChanged]);
+  }, [path, blameOn, workspace, diskChanged, active]);
 
   return (
     <div className="relative h-full min-h-0 overflow-hidden">

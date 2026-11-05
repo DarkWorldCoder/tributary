@@ -1,0 +1,29 @@
+{
+  "checks": {
+    "fullRegressions": {
+      "tests": 549,
+      "passed": 549,
+      "failed": 0
+    },
+    "focusedTests": 3,
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "vscodeBuild": "passed via pretest"
+  },
+  "sourceHashes": {
+    "ui/src/components/code-editor.tsx": "7b17a8b44d6f0115d7160a8591404781b344bddeefccb573d36339de5a2d6c59",
+    "ui/src/lib/editor-grammar.mjs": "10ed2db8a3b0dc05b44b1be004634ebfed0ebeedbde31016079810dcde0b0dbf",
+    "ui/src/lib/agent-editor.ts": "72564f4694da74697e65535aca5b58f161732af386c9f12767c5beb2e403a5d2",
+    "ui/src/hooks/use-debugger.ts": "81bf888ba706b7ffbb617fe87988ffb0f86e72b4ad1b0841de5e61cdc6599e15",
+    "test/editor-resources.test.mjs": "f393240539d6a5fa3555a083e8b75bf45bd69e5e4de00e7364bca5a9718c2332",
+    "scripts/performance/editor-resources.cjs": "baedeba9627961793c2e7b3f0545c566c60f6f3c8f6ac18e1fee5ab293159874",
+    "scripts/performance/native-editor-resources.cjs": "c431a120012641a729ff9445fe17d707c73420452ccbb4b9e1cbc4e9c57280d0"
+  },
+  "benchmark": "editor-resources-benchmark.json",
+  "visual": "editor-resources-visual-verification.json",
+  "limits": [
+    "Renderer isolate retained heap after diagnostic GC, not total app RAM.",
+    "Pending formatter completion verified; pending disk saves not separately exercised.",
+    "Grammar modules and EditorViews remain owned; reparsing latency not measured."
+  ]
+}

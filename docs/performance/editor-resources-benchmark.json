@@ -1,0 +1,5300 @@
+{
+  "date": "2026-11-05T10:09:15.011Z",
+  "baseline": "d7a97b7 UI frozen before edits; same current core/native fixture in both variants",
+  "method": "Three alternating fresh desktop pairs, five detached CDP post-diagnostic-GC samples per phase; medians within processes, then across three processes. No regression tests or other benchmarks run concurrently.",
+  "scope": "Renderer isolate retained heap and DOM counters for six synthetic 7500-line dirty TypeScript files. Not total app RAM, PSS/RSS, GPU/model memory, startup or general interaction speed. Syntax trees and blame are visibility-owned; EditorViews and document/undo state deliberately remain.",
+  "medians": {
+    "six-visited-one-visible": {
+      "baseline": {
+        "rendererHeapBytes": 37802856,
+        "domNodes": 11336,
+        "parserTrees": 6,
+        "blameMarkers": 45006
+      },
+      "suspended": {
+        "rendererHeapBytes": 26496072,
+        "domNodes": 5697,
+        "parserTrees": 1,
+        "blameMarkers": 7501
+      }
+    },
+    "all-editors-hidden": {
+      "baseline": {
+        "rendererHeapBytes": 38099132,
+        "domNodes": 11376,
+        "parserTrees": 6,
+        "blameMarkers": 45006
+      },
+      "suspended": {
+        "rendererHeapBytes": 24817104,
+        "domNodes": 4609,
+        "parserTrees": 0,
+        "blameMarkers": 0
+      }
+    },
+    "after-repeated-resume": {
+      "baseline": {
+        "rendererHeapBytes": 37904088,
+        "domNodes": 11358,
+        "parserTrees": 6,
+        "blameMarkers": 45006
+      },
+      "suspended": {
+        "rendererHeapBytes": 28396864,
+        "domNodes": 5753,
+        "parserTrees": 1,
+        "blameMarkers": 7501
+      }
+    },
+    "after-extended-resume": {
+      "baseline": {
+        "rendererHeapBytes": 38952460,
+        "domNodes": 11358,
+        "parserTrees": 6,
+        "blameMarkers": 45006
+      },
+      "suspended": {
+        "rendererHeapBytes": 28960248,
+        "domNodes": 5743,
+        "parserTrees": 1,
+        "blameMarkers": 7501
+      }
+    }
+  },
+  "runs": [
+    {
+      "repeat": 0,
+      "baseline": {
+        "date": "2026-11-05T10:06:13.558Z",
+        "mode": "baseline",
+        "baselineRevision": "d7a97b7",
+        "hostUiSha256": "58fd7eaab11364087acdb2e615cd48e1ec7c36e0e63d1a3c9a129dbab7445104",
+        "hardware": {
+          "platform": "linux",
+          "arch": "x64",
+          "cpuModel": "12th Gen Intel(R) Core(TM) i5-1235U",
+          "totalMemoryBytes": 16434552832
+        },
+        "phases": [
+          {
+            "label": "six-visited-one-visible",
+            "resources": [
+              {
+                "project": "/tmp/tributary-editor-resources-7QJpN4/project-0",
+                "visible": false,
+                "treeLength": 229198,
+                "docLength": 229198,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-7QJpN4/project-1",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-7QJpN4/project-2",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-7QJpN4/project-3",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-7QJpN4/project-4",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-7QJpN4/project-5",
+                "visible": true,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              }
+            ],
+            "samples": [
+              {
+                "heap": {
+                  "backingStorageSize": 6186011,
+                  "embedderHeapUsedSize": 8104360,
+                  "totalSize": 40980480,
+                  "usedSize": 37842020
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1324,
+                  "nodes": 11336
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6186018,
+                  "embedderHeapUsedSize": 8079800,
+                  "totalSize": 38883328,
+                  "usedSize": 37835128
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1325,
+                  "nodes": 11336
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6186007,
+                  "embedderHeapUsedSize": 7735536,
+                  "totalSize": 38621184,
+                  "usedSize": 37818240
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1323,
+                  "nodes": 11336
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6186007,
+                  "embedderHeapUsedSize": 7735536,
+                  "totalSize": 38621184,
+                  "usedSize": 37818240
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1323,
+                  "nodes": 11336
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6186007,
+                  "embedderHeapUsedSize": 8199912,
+                  "totalSize": 38621184,
+                  "usedSize": 37818240
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1323,
+                  "nodes": 11336
+                }
+              }
+            ]
+          },
+          {
+            "label": "all-editors-hidden",
+            "resources": [
+              {
+                "project": "/tmp/tributary-editor-resources-7QJpN4/project-0",
+                "visible": false,
+                "treeLength": 229198,
+                "docLength": 229198,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-7QJpN4/project-1",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-7QJpN4/project-2",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-7QJpN4/project-3",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-7QJpN4/project-4",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-7QJpN4/project-5",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              }
+            ],
+            "samples": [
+              {
+                "heap": {
+                  "backingStorageSize": 6189219,
+                  "embedderHeapUsedSize": 6197880,
+                  "totalSize": 38883328,
+                  "usedSize": 38106824
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1635,
+                  "nodes": 11376
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6189219,
+                  "embedderHeapUsedSize": 6197880,
+                  "totalSize": 38883328,
+                  "usedSize": 38106824
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1635,
+                  "nodes": 11376
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6189219,
+                  "embedderHeapUsedSize": 6197880,
+                  "totalSize": 38883328,
+                  "usedSize": 38106824
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1635,
+                  "nodes": 11376
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6189219,
+                  "embedderHeapUsedSize": 6197568,
+                  "totalSize": 38883328,
+                  "usedSize": 38106800
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1635,
+                  "nodes": 11376
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6189219,
+                  "embedderHeapUsedSize": 6197568,
+                  "totalSize": 38883328,
+                  "usedSize": 38106800
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1635,
+                  "nodes": 11376
+                }
+              }
+            ]
+          },
+          {
+            "label": "after-repeated-resume",
+            "resources": [
+              {
+                "project": "/tmp/tributary-editor-resources-7QJpN4/project-0",
+                "visible": false,
+                "treeLength": 229198,
+                "docLength": 229198,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-7QJpN4/project-1",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-7QJpN4/project-2",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-7QJpN4/project-3",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-7QJpN4/project-4",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-7QJpN4/project-5",
+                "visible": true,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              }
+            ],
+            "samples": [
+              {
+                "heap": {
+                  "backingStorageSize": 6204989,
+                  "embedderHeapUsedSize": 8065944,
+                  "totalSize": 39342080,
+                  "usedSize": 37889352
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11358
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6204989,
+                  "embedderHeapUsedSize": 8065944,
+                  "totalSize": 38555648,
+                  "usedSize": 37889352
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11358
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6204989,
+                  "embedderHeapUsedSize": 8065944,
+                  "totalSize": 38555648,
+                  "usedSize": 37889352
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11358
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6205001,
+                  "embedderHeapUsedSize": 8675496,
+                  "totalSize": 38817792,
+                  "usedSize": 37889988
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11358
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6204985,
+                  "embedderHeapUsedSize": 8050808,
+                  "totalSize": 38555648,
+                  "usedSize": 37885516
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11344
+                }
+              }
+            ]
+          },
+          {
+            "label": "after-extended-resume",
+            "resources": [
+              {
+                "project": "/tmp/tributary-editor-resources-7QJpN4/project-0",
+                "visible": false,
+                "treeLength": 229198,
+                "docLength": 229198,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-7QJpN4/project-1",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-7QJpN4/project-2",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-7QJpN4/project-3",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-7QJpN4/project-4",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-7QJpN4/project-5",
+                "visible": true,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              }
+            ],
+            "samples": [
+              {
+                "heap": {
+                  "backingStorageSize": 6204989,
+                  "embedderHeapUsedSize": 8375784,
+                  "totalSize": 40681472,
+                  "usedSize": 38908076
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11358
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6204989,
+                  "embedderHeapUsedSize": 8117336,
+                  "totalSize": 40157184,
+                  "usedSize": 38908076
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11358
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6204989,
+                  "embedderHeapUsedSize": 8117336,
+                  "totalSize": 40157184,
+                  "usedSize": 38908076
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11358
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6204985,
+                  "embedderHeapUsedSize": 8296440,
+                  "totalSize": 40157184,
+                  "usedSize": 38904240
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11344
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6204985,
+                  "embedderHeapUsedSize": 8102400,
+                  "totalSize": 40157184,
+                  "usedSize": 38904240
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11344
+                }
+              }
+            ]
+          }
+        ],
+        "calls": [
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-1"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-1"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-1"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-2"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-2"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-1"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-2"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-3"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-3"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-1"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-2"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-3"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-4"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-4"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-1"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-2"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-3"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-4"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-5"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-5"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-0"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-1"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-2"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-3"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-4"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-1"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-2"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-3"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-4"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "formatSource",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-1"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-2"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-3"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-4"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-1"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-2"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-3"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-4"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-1"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-2"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-3"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-4"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-1"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-2"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-3"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-4"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-1"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-2"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-3"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-4"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-5"
+          }
+        ],
+        "hiddenRefreshCalls": [
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-0"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-1"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-2"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-3"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-4"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-7QJpN4/project-5"
+          }
+        ],
+        "retainedEditorCount": 6,
+        "sameViewsPreserved": true,
+        "dirtyDocumentsPreserved": true,
+        "selectionPreserved": true,
+        "externalEditFlashVerified": true,
+        "pendingFormatCompletedWhileHidden": true,
+        "undoRedoExact": true,
+        "runtime": {
+          "node": "24.21.0",
+          "acorn": "8.18.0",
+          "ada": "4.0.0",
+          "amaro": "1.1.11",
+          "ares": "1.34.8",
+          "brotli": "1.2.0",
+          "cldr": "48.0",
+          "icu": "78.2",
+          "llhttp": "9.4.3",
+          "merve": "1.2.2",
+          "modules": "149",
+          "napi": "10",
+          "nbytes": "0.1.4",
+          "ncrypto": "0.0.1",
+          "nghttp2": "1.70.0",
+          "nghttp3": "",
+          "ngtcp2": "",
+          "openssl": "0.0.0",
+          "simdjson": "4.6.7",
+          "simdutf": "7.7.0",
+          "sqlite": "3.53.4",
+          "tz": "2026d",
+          "undici": "7.29.1",
+          "unicode": "17.0",
+          "uv": "1.52.1",
+          "uvwasi": "0.0.23",
+          "v8": "15.2.124.37-electron.0",
+          "zlib": "1.3.2.1-motley",
+          "zstd": "1.6.0",
+          "electron": "44.7.2",
+          "chrome": "152.0.7977.149"
+        },
+        "scope": "Linux source desktop with six synthetic 7500-line TypeScript editors, synthetic attribution/diff and a controlled formatter over the actual bridge. CDP post-diagnostic-GC renderer heap, not PSS, RSS, GPU/model memory or general app speed. Private cmTile/debug tree getter and own blame-field shape are version-pinned diagnostics only.",
+        "sourceHashes": {
+          "ui/src/components/code-editor.tsx": "7b17a8b44d6f0115d7160a8591404781b344bddeefccb573d36339de5a2d6c59",
+          "ui/src/lib/editor-grammar.mjs": "10ed2db8a3b0dc05b44b1be004634ebfed0ebeedbde31016079810dcde0b0dbf",
+          "ui/src/hooks/use-debugger.ts": "81bf888ba706b7ffbb617fe87988ffb0f86e72b4ad1b0841de5e61cdc6599e15",
+          "ui/src/lib/agent-editor.ts": "72564f4694da74697e65535aca5b58f161732af386c9f12767c5beb2e403a5d2",
+          "scripts/performance/native-editor-resources.cjs": "c431a120012641a729ff9445fe17d707c73420452ccbb4b9e1cbc4e9c57280d0"
+        }
+      },
+      "suspended": {
+        "date": "2026-11-05T10:06:45.027Z",
+        "mode": "suspended",
+        "baselineRevision": "d7a97b7",
+        "hostUiSha256": "0db8f0f7f8aece585143b18ff5aac2f203a91bc0aff05e44731ad333afc19ec3",
+        "hardware": {
+          "platform": "linux",
+          "arch": "x64",
+          "cpuModel": "12th Gen Intel(R) Core(TM) i5-1235U",
+          "totalMemoryBytes": 16434552832
+        },
+        "phases": [
+          {
+            "label": "six-visited-one-visible",
+            "resources": [
+              {
+                "project": "/tmp/tributary-editor-resources-Evh2rj/project-0",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229198,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-Evh2rj/project-1",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-Evh2rj/project-2",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-Evh2rj/project-3",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-Evh2rj/project-4",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-Evh2rj/project-5",
+                "visible": true,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              }
+            ],
+            "samples": [
+              {
+                "heap": {
+                  "backingStorageSize": 3056532,
+                  "embedderHeapUsedSize": 7080144,
+                  "totalSize": 28921856,
+                  "usedSize": 26518944
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1319,
+                  "nodes": 5663
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3056539,
+                  "embedderHeapUsedSize": 7153480,
+                  "totalSize": 27873280,
+                  "usedSize": 26512192
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1320,
+                  "nodes": 5663
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3056528,
+                  "embedderHeapUsedSize": 6664864,
+                  "totalSize": 27611136,
+                  "usedSize": 26495364
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1318,
+                  "nodes": 5663
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3056528,
+                  "embedderHeapUsedSize": 6664864,
+                  "totalSize": 27611136,
+                  "usedSize": 26495364
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1318,
+                  "nodes": 5663
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3056528,
+                  "embedderHeapUsedSize": 6664864,
+                  "totalSize": 27611136,
+                  "usedSize": 26495364
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1318,
+                  "nodes": 5663
+                }
+              }
+            ]
+          },
+          {
+            "label": "all-editors-hidden",
+            "resources": [
+              {
+                "project": "/tmp/tributary-editor-resources-Evh2rj/project-0",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229198,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-Evh2rj/project-1",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-Evh2rj/project-2",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-Evh2rj/project-3",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-Evh2rj/project-4",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-Evh2rj/project-5",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              }
+            ],
+            "samples": [
+              {
+                "heap": {
+                  "backingStorageSize": 2434292,
+                  "embedderHeapUsedSize": 4917896,
+                  "totalSize": 26300416,
+                  "usedSize": 24817104
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1629,
+                  "nodes": 4575
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 2434292,
+                  "embedderHeapUsedSize": 4917896,
+                  "totalSize": 26038272,
+                  "usedSize": 24817104
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1629,
+                  "nodes": 4575
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 2434292,
+                  "embedderHeapUsedSize": 4917896,
+                  "totalSize": 26038272,
+                  "usedSize": 24817104
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1629,
+                  "nodes": 4575
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 2434292,
+                  "embedderHeapUsedSize": 4917896,
+                  "totalSize": 26038272,
+                  "usedSize": 24817544
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1629,
+                  "nodes": 4575
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 2434292,
+                  "embedderHeapUsedSize": 4917584,
+                  "totalSize": 26038272,
+                  "usedSize": 24817080
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1629,
+                  "nodes": 4575
+                }
+              }
+            ]
+          },
+          {
+            "label": "after-repeated-resume",
+            "resources": [
+              {
+                "project": "/tmp/tributary-editor-resources-Evh2rj/project-0",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229198,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-Evh2rj/project-1",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-Evh2rj/project-2",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-Evh2rj/project-3",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-Evh2rj/project-4",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-Evh2rj/project-5",
+                "visible": true,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              }
+            ],
+            "samples": [
+              {
+                "heap": {
+                  "backingStorageSize": 3060245,
+                  "embedderHeapUsedSize": 7329800,
+                  "totalSize": 30167040,
+                  "usedSize": 28397336
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1632,
+                  "nodes": 5753
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3060245,
+                  "embedderHeapUsedSize": 6883120,
+                  "totalSize": 29642752,
+                  "usedSize": 28396864
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1632,
+                  "nodes": 5753
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3060245,
+                  "embedderHeapUsedSize": 6883120,
+                  "totalSize": 29642752,
+                  "usedSize": 28396864
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1632,
+                  "nodes": 5753
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3060257,
+                  "embedderHeapUsedSize": 7460848,
+                  "totalSize": 29904896,
+                  "usedSize": 28397480
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1632,
+                  "nodes": 5753
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3060241,
+                  "embedderHeapUsedSize": 6852840,
+                  "totalSize": 29642752,
+                  "usedSize": 28392980
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1632,
+                  "nodes": 5739
+                }
+              }
+            ]
+          },
+          {
+            "label": "after-extended-resume",
+            "resources": [
+              {
+                "project": "/tmp/tributary-editor-resources-Evh2rj/project-0",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229198,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-Evh2rj/project-1",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-Evh2rj/project-2",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-Evh2rj/project-3",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-Evh2rj/project-4",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-Evh2rj/project-5",
+                "visible": true,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              }
+            ],
+            "samples": [
+              {
+                "heap": {
+                  "backingStorageSize": 3060245,
+                  "embedderHeapUsedSize": 7333688,
+                  "totalSize": 31215616,
+                  "usedSize": 28986760
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1632,
+                  "nodes": 5753
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3060245,
+                  "embedderHeapUsedSize": 6942632,
+                  "totalSize": 29904896,
+                  "usedSize": 28986760
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1632,
+                  "nodes": 5753
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3060245,
+                  "embedderHeapUsedSize": 6942632,
+                  "totalSize": 29904896,
+                  "usedSize": 28986760
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1632,
+                  "nodes": 5753
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3060245,
+                  "embedderHeapUsedSize": 6942632,
+                  "totalSize": 29904896,
+                  "usedSize": 28986760
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1632,
+                  "nodes": 5753
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3060241,
+                  "embedderHeapUsedSize": 6912288,
+                  "totalSize": 29904896,
+                  "usedSize": 28982924
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1632,
+                  "nodes": 5739
+                }
+              }
+            ]
+          }
+        ],
+        "calls": [
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-1"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-1"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-2"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-2"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-3"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-3"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-4"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-4"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-5"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "formatSource",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-1"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-1"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-2"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-2"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-3"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-3"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-4"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-4"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-Evh2rj/project-5"
+          }
+        ],
+        "hiddenRefreshCalls": [],
+        "retainedEditorCount": 6,
+        "sameViewsPreserved": true,
+        "dirtyDocumentsPreserved": true,
+        "selectionPreserved": true,
+        "externalEditFlashVerified": true,
+        "pendingFormatCompletedWhileHidden": true,
+        "undoRedoExact": true,
+        "runtime": {
+          "node": "24.21.0",
+          "acorn": "8.18.0",
+          "ada": "4.0.0",
+          "amaro": "1.1.11",
+          "ares": "1.34.8",
+          "brotli": "1.2.0",
+          "cldr": "48.0",
+          "icu": "78.2",
+          "llhttp": "9.4.3",
+          "merve": "1.2.2",
+          "modules": "149",
+          "napi": "10",
+          "nbytes": "0.1.4",
+          "ncrypto": "0.0.1",
+          "nghttp2": "1.70.0",
+          "nghttp3": "",
+          "ngtcp2": "",
+          "openssl": "0.0.0",
+          "simdjson": "4.6.7",
+          "simdutf": "7.7.0",
+          "sqlite": "3.53.4",
+          "tz": "2026d",
+          "undici": "7.29.1",
+          "unicode": "17.0",
+          "uv": "1.52.1",
+          "uvwasi": "0.0.23",
+          "v8": "15.2.124.37-electron.0",
+          "zlib": "1.3.2.1-motley",
+          "zstd": "1.6.0",
+          "electron": "44.7.2",
+          "chrome": "152.0.7977.149"
+        },
+        "scope": "Linux source desktop with six synthetic 7500-line TypeScript editors, synthetic attribution/diff and a controlled formatter over the actual bridge. CDP post-diagnostic-GC renderer heap, not PSS, RSS, GPU/model memory or general app speed. Private cmTile/debug tree getter and own blame-field shape are version-pinned diagnostics only.",
+        "sourceHashes": {
+          "ui/src/components/code-editor.tsx": "7b17a8b44d6f0115d7160a8591404781b344bddeefccb573d36339de5a2d6c59",
+          "ui/src/lib/editor-grammar.mjs": "10ed2db8a3b0dc05b44b1be004634ebfed0ebeedbde31016079810dcde0b0dbf",
+          "ui/src/hooks/use-debugger.ts": "81bf888ba706b7ffbb617fe87988ffb0f86e72b4ad1b0841de5e61cdc6599e15",
+          "ui/src/lib/agent-editor.ts": "72564f4694da74697e65535aca5b58f161732af386c9f12767c5beb2e403a5d2",
+          "scripts/performance/native-editor-resources.cjs": "c431a120012641a729ff9445fe17d707c73420452ccbb4b9e1cbc4e9c57280d0"
+        }
+      }
+    },
+    {
+      "repeat": 1,
+      "suspended": {
+        "date": "2026-11-05T10:07:18.283Z",
+        "mode": "suspended",
+        "baselineRevision": "d7a97b7",
+        "hostUiSha256": "0db8f0f7f8aece585143b18ff5aac2f203a91bc0aff05e44731ad333afc19ec3",
+        "hardware": {
+          "platform": "linux",
+          "arch": "x64",
+          "cpuModel": "12th Gen Intel(R) Core(TM) i5-1235U",
+          "totalMemoryBytes": 16434552832
+        },
+        "phases": [
+          {
+            "label": "six-visited-one-visible",
+            "resources": [
+              {
+                "project": "/tmp/tributary-editor-resources-SKqnkV/project-0",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229198,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-SKqnkV/project-1",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-SKqnkV/project-2",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-SKqnkV/project-3",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-SKqnkV/project-4",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-SKqnkV/project-5",
+                "visible": true,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              }
+            ],
+            "samples": [
+              {
+                "heap": {
+                  "backingStorageSize": 3061265,
+                  "embedderHeapUsedSize": 7095080,
+                  "totalSize": 28921856,
+                  "usedSize": 26542220
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1319,
+                  "nodes": 5697
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3061314,
+                  "embedderHeapUsedSize": 7171032,
+                  "totalSize": 27611136,
+                  "usedSize": 26583280
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1320,
+                  "nodes": 5697
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3061261,
+                  "embedderHeapUsedSize": 6681088,
+                  "totalSize": 27086848,
+                  "usedSize": 26521708
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1318,
+                  "nodes": 5697
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3061261,
+                  "embedderHeapUsedSize": 6681088,
+                  "totalSize": 27086848,
+                  "usedSize": 26521708
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1318,
+                  "nodes": 5697
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3061261,
+                  "embedderHeapUsedSize": 6681088,
+                  "totalSize": 27086848,
+                  "usedSize": 26521708
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1318,
+                  "nodes": 5697
+                }
+              }
+            ]
+          },
+          {
+            "label": "all-editors-hidden",
+            "resources": [
+              {
+                "project": "/tmp/tributary-editor-resources-SKqnkV/project-0",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229198,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-SKqnkV/project-1",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-SKqnkV/project-2",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-SKqnkV/project-3",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-SKqnkV/project-4",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-SKqnkV/project-5",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              }
+            ],
+            "samples": [
+              {
+                "heap": {
+                  "backingStorageSize": 2439185,
+                  "embedderHeapUsedSize": 4931768,
+                  "totalSize": 26038272,
+                  "usedSize": 24816048
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1629,
+                  "nodes": 4609
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 2439185,
+                  "embedderHeapUsedSize": 4931768,
+                  "totalSize": 26038272,
+                  "usedSize": 24816048
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1629,
+                  "nodes": 4609
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 2439185,
+                  "embedderHeapUsedSize": 4931768,
+                  "totalSize": 26038272,
+                  "usedSize": 24816048
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1629,
+                  "nodes": 4609
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 2439185,
+                  "embedderHeapUsedSize": 4931456,
+                  "totalSize": 26038272,
+                  "usedSize": 24816024
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1629,
+                  "nodes": 4609
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 2439185,
+                  "embedderHeapUsedSize": 4931456,
+                  "totalSize": 26038272,
+                  "usedSize": 24816024
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1629,
+                  "nodes": 4609
+                }
+              }
+            ]
+          },
+          {
+            "label": "after-repeated-resume",
+            "resources": [
+              {
+                "project": "/tmp/tributary-editor-resources-SKqnkV/project-0",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229198,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-SKqnkV/project-1",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-SKqnkV/project-2",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-SKqnkV/project-3",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-SKqnkV/project-4",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-SKqnkV/project-5",
+                "visible": true,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              }
+            ],
+            "samples": [
+              {
+                "heap": {
+                  "backingStorageSize": 3065138,
+                  "embedderHeapUsedSize": 7404600,
+                  "totalSize": 30691328,
+                  "usedSize": 28404884
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1632,
+                  "nodes": 5753
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3065138,
+                  "embedderHeapUsedSize": 6938376,
+                  "totalSize": 29118464,
+                  "usedSize": 28404884
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1632,
+                  "nodes": 5753
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3065138,
+                  "embedderHeapUsedSize": 6938376,
+                  "totalSize": 29118464,
+                  "usedSize": 28404884
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1632,
+                  "nodes": 5753
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3065134,
+                  "embedderHeapUsedSize": 7115432,
+                  "totalSize": 29118464,
+                  "usedSize": 28401064
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1632,
+                  "nodes": 5739
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3065134,
+                  "embedderHeapUsedSize": 6908056,
+                  "totalSize": 29118464,
+                  "usedSize": 28401064
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1632,
+                  "nodes": 5739
+                }
+              }
+            ]
+          },
+          {
+            "label": "after-extended-resume",
+            "resources": [
+              {
+                "project": "/tmp/tributary-editor-resources-SKqnkV/project-0",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229198,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-SKqnkV/project-1",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-SKqnkV/project-2",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-SKqnkV/project-3",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-SKqnkV/project-4",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-SKqnkV/project-5",
+                "visible": true,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              }
+            ],
+            "samples": [
+              {
+                "heap": {
+                  "backingStorageSize": 3065124,
+                  "embedderHeapUsedSize": 7279120,
+                  "totalSize": 30429184,
+                  "usedSize": 28919688
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1587,
+                  "nodes": 5739
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3065124,
+                  "embedderHeapUsedSize": 6895424,
+                  "totalSize": 29904896,
+                  "usedSize": 28919680
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1587,
+                  "nodes": 5739
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3065124,
+                  "embedderHeapUsedSize": 6895424,
+                  "totalSize": 29904896,
+                  "usedSize": 28919680
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1587,
+                  "nodes": 5739
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3065136,
+                  "embedderHeapUsedSize": 7510256,
+                  "totalSize": 30167040,
+                  "usedSize": 28920296
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1587,
+                  "nodes": 5739
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3065120,
+                  "embedderHeapUsedSize": 6865144,
+                  "totalSize": 29904896,
+                  "usedSize": 28915844
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1587,
+                  "nodes": 5725
+                }
+              }
+            ]
+          }
+        ],
+        "calls": [
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-1"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-1"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-2"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-2"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-3"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-3"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-4"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-4"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-5"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "formatSource",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-1"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-1"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-2"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-2"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-3"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-3"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-4"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-4"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-SKqnkV/project-5"
+          }
+        ],
+        "hiddenRefreshCalls": [],
+        "retainedEditorCount": 6,
+        "sameViewsPreserved": true,
+        "dirtyDocumentsPreserved": true,
+        "selectionPreserved": true,
+        "externalEditFlashVerified": true,
+        "pendingFormatCompletedWhileHidden": true,
+        "undoRedoExact": true,
+        "runtime": {
+          "node": "24.21.0",
+          "acorn": "8.18.0",
+          "ada": "4.0.0",
+          "amaro": "1.1.11",
+          "ares": "1.34.8",
+          "brotli": "1.2.0",
+          "cldr": "48.0",
+          "icu": "78.2",
+          "llhttp": "9.4.3",
+          "merve": "1.2.2",
+          "modules": "149",
+          "napi": "10",
+          "nbytes": "0.1.4",
+          "ncrypto": "0.0.1",
+          "nghttp2": "1.70.0",
+          "nghttp3": "",
+          "ngtcp2": "",
+          "openssl": "0.0.0",
+          "simdjson": "4.6.7",
+          "simdutf": "7.7.0",
+          "sqlite": "3.53.4",
+          "tz": "2026d",
+          "undici": "7.29.1",
+          "unicode": "17.0",
+          "uv": "1.52.1",
+          "uvwasi": "0.0.23",
+          "v8": "15.2.124.37-electron.0",
+          "zlib": "1.3.2.1-motley",
+          "zstd": "1.6.0",
+          "electron": "44.7.2",
+          "chrome": "152.0.7977.149"
+        },
+        "scope": "Linux source desktop with six synthetic 7500-line TypeScript editors, synthetic attribution/diff and a controlled formatter over the actual bridge. CDP post-diagnostic-GC renderer heap, not PSS, RSS, GPU/model memory or general app speed. Private cmTile/debug tree getter and own blame-field shape are version-pinned diagnostics only.",
+        "sourceHashes": {
+          "ui/src/components/code-editor.tsx": "7b17a8b44d6f0115d7160a8591404781b344bddeefccb573d36339de5a2d6c59",
+          "ui/src/lib/editor-grammar.mjs": "10ed2db8a3b0dc05b44b1be004634ebfed0ebeedbde31016079810dcde0b0dbf",
+          "ui/src/hooks/use-debugger.ts": "81bf888ba706b7ffbb617fe87988ffb0f86e72b4ad1b0841de5e61cdc6599e15",
+          "ui/src/lib/agent-editor.ts": "72564f4694da74697e65535aca5b58f161732af386c9f12767c5beb2e403a5d2",
+          "scripts/performance/native-editor-resources.cjs": "c431a120012641a729ff9445fe17d707c73420452ccbb4b9e1cbc4e9c57280d0"
+        }
+      },
+      "baseline": {
+        "date": "2026-11-05T10:07:53.519Z",
+        "mode": "baseline",
+        "baselineRevision": "d7a97b7",
+        "hostUiSha256": "58fd7eaab11364087acdb2e615cd48e1ec7c36e0e63d1a3c9a129dbab7445104",
+        "hardware": {
+          "platform": "linux",
+          "arch": "x64",
+          "cpuModel": "12th Gen Intel(R) Core(TM) i5-1235U",
+          "totalMemoryBytes": 16434552832
+        },
+        "phases": [
+          {
+            "label": "six-visited-one-visible",
+            "resources": [
+              {
+                "project": "/tmp/tributary-editor-resources-pt7TOW/project-0",
+                "visible": false,
+                "treeLength": 229198,
+                "docLength": 229198,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-pt7TOW/project-1",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-pt7TOW/project-2",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-pt7TOW/project-3",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-pt7TOW/project-4",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-pt7TOW/project-5",
+                "visible": true,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              }
+            ],
+            "samples": [
+              {
+                "heap": {
+                  "backingStorageSize": 6192721,
+                  "embedderHeapUsedSize": 8047464,
+                  "totalSize": 41242624,
+                  "usedSize": 37826884
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1324,
+                  "nodes": 11336
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6192717,
+                  "embedderHeapUsedSize": 7719280,
+                  "totalSize": 38883328,
+                  "usedSize": 37802856
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1323,
+                  "nodes": 11336
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6192717,
+                  "embedderHeapUsedSize": 7719280,
+                  "totalSize": 38621184,
+                  "usedSize": 37802856
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1323,
+                  "nodes": 11336
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6192717,
+                  "embedderHeapUsedSize": 7717648,
+                  "totalSize": 38621184,
+                  "usedSize": 37802856
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1323,
+                  "nodes": 11336
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6192717,
+                  "embedderHeapUsedSize": 7837968,
+                  "totalSize": 38621184,
+                  "usedSize": 37802856
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1323,
+                  "nodes": 11336
+                }
+              }
+            ]
+          },
+          {
+            "label": "all-editors-hidden",
+            "resources": [
+              {
+                "project": "/tmp/tributary-editor-resources-pt7TOW/project-0",
+                "visible": false,
+                "treeLength": 229198,
+                "docLength": 229198,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-pt7TOW/project-1",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-pt7TOW/project-2",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-pt7TOW/project-3",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-pt7TOW/project-4",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-pt7TOW/project-5",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              }
+            ],
+            "samples": [
+              {
+                "heap": {
+                  "backingStorageSize": 6195929,
+                  "embedderHeapUsedSize": 6178744,
+                  "totalSize": 39145472,
+                  "usedSize": 38099132
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1635,
+                  "nodes": 11376
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6195929,
+                  "embedderHeapUsedSize": 6178744,
+                  "totalSize": 39145472,
+                  "usedSize": 38099132
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1635,
+                  "nodes": 11376
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6195929,
+                  "embedderHeapUsedSize": 6178744,
+                  "totalSize": 39145472,
+                  "usedSize": 38099132
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1635,
+                  "nodes": 11376
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6195929,
+                  "embedderHeapUsedSize": 6178432,
+                  "totalSize": 39145472,
+                  "usedSize": 38099108
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1635,
+                  "nodes": 11376
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6195929,
+                  "embedderHeapUsedSize": 6178432,
+                  "totalSize": 39145472,
+                  "usedSize": 38099108
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1635,
+                  "nodes": 11376
+                }
+              }
+            ]
+          },
+          {
+            "label": "after-repeated-resume",
+            "resources": [
+              {
+                "project": "/tmp/tributary-editor-resources-pt7TOW/project-0",
+                "visible": false,
+                "treeLength": 229198,
+                "docLength": 229198,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-pt7TOW/project-1",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-pt7TOW/project-2",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-pt7TOW/project-3",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-pt7TOW/project-4",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-pt7TOW/project-5",
+                "visible": true,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              }
+            ],
+            "samples": [
+              {
+                "heap": {
+                  "backingStorageSize": 6201290,
+                  "embedderHeapUsedSize": 8347840,
+                  "totalSize": 39604224,
+                  "usedSize": 37904552
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11358
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6201290,
+                  "embedderHeapUsedSize": 8054192,
+                  "totalSize": 39342080,
+                  "usedSize": 37904088
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11358
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6201290,
+                  "embedderHeapUsedSize": 8054192,
+                  "totalSize": 39342080,
+                  "usedSize": 37904088
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11358
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6201286,
+                  "embedderHeapUsedSize": 8039208,
+                  "totalSize": 39342080,
+                  "usedSize": 37900148
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11344
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6201286,
+                  "embedderHeapUsedSize": 8039208,
+                  "totalSize": 39342080,
+                  "usedSize": 37900148
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11344
+                }
+              }
+            ]
+          },
+          {
+            "label": "after-extended-resume",
+            "resources": [
+              {
+                "project": "/tmp/tributary-editor-resources-pt7TOW/project-0",
+                "visible": false,
+                "treeLength": 229198,
+                "docLength": 229198,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-pt7TOW/project-1",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-pt7TOW/project-2",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-pt7TOW/project-3",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-pt7TOW/project-4",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-pt7TOW/project-5",
+                "visible": true,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              }
+            ],
+            "samples": [
+              {
+                "heap": {
+                  "backingStorageSize": 6201341,
+                  "embedderHeapUsedSize": 8699688,
+                  "totalSize": 41975808,
+                  "usedSize": 39255144
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1639,
+                  "nodes": 11358
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6201302,
+                  "embedderHeapUsedSize": 8850728,
+                  "totalSize": 40435712,
+                  "usedSize": 38963968
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11358
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6201286,
+                  "embedderHeapUsedSize": 8125376,
+                  "totalSize": 40173568,
+                  "usedSize": 38959412
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11344
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6201286,
+                  "embedderHeapUsedSize": 8125376,
+                  "totalSize": 40173568,
+                  "usedSize": 38959412
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11344
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6201286,
+                  "embedderHeapUsedSize": 8125376,
+                  "totalSize": 40173568,
+                  "usedSize": 38959412
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11344
+                }
+              }
+            ]
+          }
+        ],
+        "calls": [
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-1"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-1"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-1"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-2"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-2"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-1"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-2"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-3"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-3"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-1"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-2"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-3"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-4"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-4"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-1"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-2"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-3"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-4"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-5"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-5"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-0"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-1"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-2"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-3"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-4"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-1"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-2"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-3"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-4"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "formatSource",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-1"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-2"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-3"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-4"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-1"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-2"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-3"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-4"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-1"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-2"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-3"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-4"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-1"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-2"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-3"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-4"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-1"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-2"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-3"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-4"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-5"
+          }
+        ],
+        "hiddenRefreshCalls": [
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-0"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-1"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-2"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-3"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-4"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-pt7TOW/project-5"
+          }
+        ],
+        "retainedEditorCount": 6,
+        "sameViewsPreserved": true,
+        "dirtyDocumentsPreserved": true,
+        "selectionPreserved": true,
+        "externalEditFlashVerified": true,
+        "pendingFormatCompletedWhileHidden": true,
+        "undoRedoExact": true,
+        "runtime": {
+          "node": "24.21.0",
+          "acorn": "8.18.0",
+          "ada": "4.0.0",
+          "amaro": "1.1.11",
+          "ares": "1.34.8",
+          "brotli": "1.2.0",
+          "cldr": "48.0",
+          "icu": "78.2",
+          "llhttp": "9.4.3",
+          "merve": "1.2.2",
+          "modules": "149",
+          "napi": "10",
+          "nbytes": "0.1.4",
+          "ncrypto": "0.0.1",
+          "nghttp2": "1.70.0",
+          "nghttp3": "",
+          "ngtcp2": "",
+          "openssl": "0.0.0",
+          "simdjson": "4.6.7",
+          "simdutf": "7.7.0",
+          "sqlite": "3.53.4",
+          "tz": "2026d",
+          "undici": "7.29.1",
+          "unicode": "17.0",
+          "uv": "1.52.1",
+          "uvwasi": "0.0.23",
+          "v8": "15.2.124.37-electron.0",
+          "zlib": "1.3.2.1-motley",
+          "zstd": "1.6.0",
+          "electron": "44.7.2",
+          "chrome": "152.0.7977.149"
+        },
+        "scope": "Linux source desktop with six synthetic 7500-line TypeScript editors, synthetic attribution/diff and a controlled formatter over the actual bridge. CDP post-diagnostic-GC renderer heap, not PSS, RSS, GPU/model memory or general app speed. Private cmTile/debug tree getter and own blame-field shape are version-pinned diagnostics only.",
+        "sourceHashes": {
+          "ui/src/components/code-editor.tsx": "7b17a8b44d6f0115d7160a8591404781b344bddeefccb573d36339de5a2d6c59",
+          "ui/src/lib/editor-grammar.mjs": "10ed2db8a3b0dc05b44b1be004634ebfed0ebeedbde31016079810dcde0b0dbf",
+          "ui/src/hooks/use-debugger.ts": "81bf888ba706b7ffbb617fe87988ffb0f86e72b4ad1b0841de5e61cdc6599e15",
+          "ui/src/lib/agent-editor.ts": "72564f4694da74697e65535aca5b58f161732af386c9f12767c5beb2e403a5d2",
+          "scripts/performance/native-editor-resources.cjs": "c431a120012641a729ff9445fe17d707c73420452ccbb4b9e1cbc4e9c57280d0"
+        }
+      }
+    },
+    {
+      "repeat": 2,
+      "baseline": {
+        "date": "2026-11-05T10:08:31.884Z",
+        "mode": "baseline",
+        "baselineRevision": "d7a97b7",
+        "hostUiSha256": "58fd7eaab11364087acdb2e615cd48e1ec7c36e0e63d1a3c9a129dbab7445104",
+        "hardware": {
+          "platform": "linux",
+          "arch": "x64",
+          "cpuModel": "12th Gen Intel(R) Core(TM) i5-1235U",
+          "totalMemoryBytes": 16434552832
+        },
+        "phases": [
+          {
+            "label": "six-visited-one-visible",
+            "resources": [
+              {
+                "project": "/tmp/tributary-editor-resources-xZOzzB/project-0",
+                "visible": false,
+                "treeLength": 229198,
+                "docLength": 229198,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-xZOzzB/project-1",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-xZOzzB/project-2",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-xZOzzB/project-3",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-xZOzzB/project-4",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-xZOzzB/project-5",
+                "visible": true,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              }
+            ],
+            "samples": [
+              {
+                "heap": {
+                  "backingStorageSize": 6206400,
+                  "embedderHeapUsedSize": 8034944,
+                  "totalSize": 40718336,
+                  "usedSize": 37825560
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1324,
+                  "nodes": 11334
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6206407,
+                  "embedderHeapUsedSize": 8073920,
+                  "totalSize": 39145472,
+                  "usedSize": 37818352
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1325,
+                  "nodes": 11334
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6206396,
+                  "embedderHeapUsedSize": 7746184,
+                  "totalSize": 38883328,
+                  "usedSize": 37801244
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1323,
+                  "nodes": 11334
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6206396,
+                  "embedderHeapUsedSize": 7746184,
+                  "totalSize": 38883328,
+                  "usedSize": 37801244
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1323,
+                  "nodes": 11334
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6206396,
+                  "embedderHeapUsedSize": 7728968,
+                  "totalSize": 38883328,
+                  "usedSize": 37801244
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1323,
+                  "nodes": 11334
+                }
+              }
+            ]
+          },
+          {
+            "label": "all-editors-hidden",
+            "resources": [
+              {
+                "project": "/tmp/tributary-editor-resources-xZOzzB/project-0",
+                "visible": false,
+                "treeLength": 229198,
+                "docLength": 229198,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-xZOzzB/project-1",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-xZOzzB/project-2",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-xZOzzB/project-3",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-xZOzzB/project-4",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-xZOzzB/project-5",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              }
+            ],
+            "samples": [
+              {
+                "heap": {
+                  "backingStorageSize": 6209608,
+                  "embedderHeapUsedSize": 6208416,
+                  "totalSize": 39145472,
+                  "usedSize": 38087356
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1635,
+                  "nodes": 11374
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6209608,
+                  "embedderHeapUsedSize": 6208416,
+                  "totalSize": 39145472,
+                  "usedSize": 38087356
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1635,
+                  "nodes": 11374
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6209608,
+                  "embedderHeapUsedSize": 6208416,
+                  "totalSize": 39145472,
+                  "usedSize": 38087356
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1635,
+                  "nodes": 11374
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6209608,
+                  "embedderHeapUsedSize": 6208104,
+                  "totalSize": 39145472,
+                  "usedSize": 38087332
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1635,
+                  "nodes": 11374
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6209608,
+                  "embedderHeapUsedSize": 6208104,
+                  "totalSize": 39145472,
+                  "usedSize": 38087332
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1635,
+                  "nodes": 11374
+                }
+              }
+            ]
+          },
+          {
+            "label": "after-repeated-resume",
+            "resources": [
+              {
+                "project": "/tmp/tributary-editor-resources-xZOzzB/project-0",
+                "visible": false,
+                "treeLength": 229198,
+                "docLength": 229198,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-xZOzzB/project-1",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-xZOzzB/project-2",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-xZOzzB/project-3",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-xZOzzB/project-4",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-xZOzzB/project-5",
+                "visible": true,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              }
+            ],
+            "samples": [
+              {
+                "heap": {
+                  "backingStorageSize": 6214969,
+                  "embedderHeapUsedSize": 8334968,
+                  "totalSize": 39342080,
+                  "usedSize": 37906860
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11358
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6214969,
+                  "embedderHeapUsedSize": 8076616,
+                  "totalSize": 39079936,
+                  "usedSize": 37906860
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11358
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6214969,
+                  "embedderHeapUsedSize": 8076616,
+                  "totalSize": 39079936,
+                  "usedSize": 37906860
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11358
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6214965,
+                  "embedderHeapUsedSize": 8061632,
+                  "totalSize": 39079936,
+                  "usedSize": 37902976
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11344
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6214965,
+                  "embedderHeapUsedSize": 8061632,
+                  "totalSize": 39079936,
+                  "usedSize": 37902976
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11344
+                }
+              }
+            ]
+          },
+          {
+            "label": "after-extended-resume",
+            "resources": [
+              {
+                "project": "/tmp/tributary-editor-resources-xZOzzB/project-0",
+                "visible": false,
+                "treeLength": 229198,
+                "docLength": 229198,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-xZOzzB/project-1",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-xZOzzB/project-2",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-xZOzzB/project-3",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-xZOzzB/project-4",
+                "visible": false,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-xZOzzB/project-5",
+                "visible": true,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              }
+            ],
+            "samples": [
+              {
+                "heap": {
+                  "backingStorageSize": 6214969,
+                  "embedderHeapUsedSize": 8442216,
+                  "totalSize": 41476096,
+                  "usedSize": 38952460
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11358
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6214969,
+                  "embedderHeapUsedSize": 8183768,
+                  "totalSize": 39903232,
+                  "usedSize": 38952460
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11358
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6214981,
+                  "embedderHeapUsedSize": 8928328,
+                  "totalSize": 40165376,
+                  "usedSize": 38953052
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11358
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6214965,
+                  "embedderHeapUsedSize": 8158736,
+                  "totalSize": 39903232,
+                  "usedSize": 38948552
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11344
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 6214965,
+                  "embedderHeapUsedSize": 8158736,
+                  "totalSize": 39903232,
+                  "usedSize": 38948552
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1637,
+                  "nodes": 11344
+                }
+              }
+            ]
+          }
+        ],
+        "calls": [
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-1"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-1"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-1"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-2"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-2"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-1"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-2"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-3"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-3"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-1"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-2"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-3"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-4"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-4"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-1"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-2"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-3"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-4"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-5"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-5"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-0"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-1"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-2"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-3"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-4"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-1"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-2"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-3"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-4"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "formatSource",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-1"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-2"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-3"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-4"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-1"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-2"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-3"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-4"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-1"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-2"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-3"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-4"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-1"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-2"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-3"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-4"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-1"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-2"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-3"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-4"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-5"
+          }
+        ],
+        "hiddenRefreshCalls": [
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-0"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-1"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-2"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-3"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-4"
+          },
+          {
+            "phase": "hidden",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-xZOzzB/project-5"
+          }
+        ],
+        "retainedEditorCount": 6,
+        "sameViewsPreserved": true,
+        "dirtyDocumentsPreserved": true,
+        "selectionPreserved": true,
+        "externalEditFlashVerified": true,
+        "pendingFormatCompletedWhileHidden": true,
+        "undoRedoExact": true,
+        "runtime": {
+          "node": "24.21.0",
+          "acorn": "8.18.0",
+          "ada": "4.0.0",
+          "amaro": "1.1.11",
+          "ares": "1.34.8",
+          "brotli": "1.2.0",
+          "cldr": "48.0",
+          "icu": "78.2",
+          "llhttp": "9.4.3",
+          "merve": "1.2.2",
+          "modules": "149",
+          "napi": "10",
+          "nbytes": "0.1.4",
+          "ncrypto": "0.0.1",
+          "nghttp2": "1.70.0",
+          "nghttp3": "",
+          "ngtcp2": "",
+          "openssl": "0.0.0",
+          "simdjson": "4.6.7",
+          "simdutf": "7.7.0",
+          "sqlite": "3.53.4",
+          "tz": "2026d",
+          "undici": "7.29.1",
+          "unicode": "17.0",
+          "uv": "1.52.1",
+          "uvwasi": "0.0.23",
+          "v8": "15.2.124.37-electron.0",
+          "zlib": "1.3.2.1-motley",
+          "zstd": "1.6.0",
+          "electron": "44.7.2",
+          "chrome": "152.0.7977.149"
+        },
+        "scope": "Linux source desktop with six synthetic 7500-line TypeScript editors, synthetic attribution/diff and a controlled formatter over the actual bridge. CDP post-diagnostic-GC renderer heap, not PSS, RSS, GPU/model memory or general app speed. Private cmTile/debug tree getter and own blame-field shape are version-pinned diagnostics only.",
+        "sourceHashes": {
+          "ui/src/components/code-editor.tsx": "7b17a8b44d6f0115d7160a8591404781b344bddeefccb573d36339de5a2d6c59",
+          "ui/src/lib/editor-grammar.mjs": "10ed2db8a3b0dc05b44b1be004634ebfed0ebeedbde31016079810dcde0b0dbf",
+          "ui/src/hooks/use-debugger.ts": "81bf888ba706b7ffbb617fe87988ffb0f86e72b4ad1b0841de5e61cdc6599e15",
+          "ui/src/lib/agent-editor.ts": "72564f4694da74697e65535aca5b58f161732af386c9f12767c5beb2e403a5d2",
+          "scripts/performance/native-editor-resources.cjs": "c431a120012641a729ff9445fe17d707c73420452ccbb4b9e1cbc4e9c57280d0"
+        }
+      },
+      "suspended": {
+        "date": "2026-11-05T10:09:14.845Z",
+        "mode": "suspended",
+        "baselineRevision": "d7a97b7",
+        "hostUiSha256": "0db8f0f7f8aece585143b18ff5aac2f203a91bc0aff05e44731ad333afc19ec3",
+        "hardware": {
+          "platform": "linux",
+          "arch": "x64",
+          "cpuModel": "12th Gen Intel(R) Core(TM) i5-1235U",
+          "totalMemoryBytes": 16434552832
+        },
+        "phases": [
+          {
+            "label": "six-visited-one-visible",
+            "resources": [
+              {
+                "project": "/tmp/tributary-editor-resources-ThnzPx/project-0",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229198,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-ThnzPx/project-1",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-ThnzPx/project-2",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-ThnzPx/project-3",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-ThnzPx/project-4",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-ThnzPx/project-5",
+                "visible": true,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              }
+            ],
+            "samples": [
+              {
+                "heap": {
+                  "backingStorageSize": 3056524,
+                  "embedderHeapUsedSize": 7040816,
+                  "totalSize": 29184000,
+                  "usedSize": 26520116
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1319,
+                  "nodes": 5697
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3056520,
+                  "embedderHeapUsedSize": 6662952,
+                  "totalSize": 27348992,
+                  "usedSize": 26496072
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1318,
+                  "nodes": 5697
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3056520,
+                  "embedderHeapUsedSize": 6662952,
+                  "totalSize": 27348992,
+                  "usedSize": 26496072
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1318,
+                  "nodes": 5697
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3056520,
+                  "embedderHeapUsedSize": 6662952,
+                  "totalSize": 27348992,
+                  "usedSize": 26496072
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1318,
+                  "nodes": 5697
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3056520,
+                  "embedderHeapUsedSize": 6661320,
+                  "totalSize": 27348992,
+                  "usedSize": 26496072
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1318,
+                  "nodes": 5697
+                }
+              }
+            ]
+          },
+          {
+            "label": "all-editors-hidden",
+            "resources": [
+              {
+                "project": "/tmp/tributary-editor-resources-ThnzPx/project-0",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229198,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-ThnzPx/project-1",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-ThnzPx/project-2",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-ThnzPx/project-3",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-ThnzPx/project-4",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-ThnzPx/project-5",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              }
+            ],
+            "samples": [
+              {
+                "heap": {
+                  "backingStorageSize": 2434284,
+                  "embedderHeapUsedSize": 4923584,
+                  "totalSize": 26038272,
+                  "usedSize": 24817760
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1629,
+                  "nodes": 4609
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 2434284,
+                  "embedderHeapUsedSize": 4923584,
+                  "totalSize": 25513984,
+                  "usedSize": 24817760
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1629,
+                  "nodes": 4609
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 2434284,
+                  "embedderHeapUsedSize": 4923272,
+                  "totalSize": 25513984,
+                  "usedSize": 24817736
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1629,
+                  "nodes": 4609
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 2434284,
+                  "embedderHeapUsedSize": 4923272,
+                  "totalSize": 25513984,
+                  "usedSize": 24817736
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1629,
+                  "nodes": 4609
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 2434284,
+                  "embedderHeapUsedSize": 4923272,
+                  "totalSize": 25513984,
+                  "usedSize": 24817736
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1629,
+                  "nodes": 4609
+                }
+              }
+            ]
+          },
+          {
+            "label": "after-repeated-resume",
+            "resources": [
+              {
+                "project": "/tmp/tributary-editor-resources-ThnzPx/project-0",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229198,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-ThnzPx/project-1",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-ThnzPx/project-2",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-ThnzPx/project-3",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-ThnzPx/project-4",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-ThnzPx/project-5",
+                "visible": true,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              }
+            ],
+            "samples": [
+              {
+                "heap": {
+                  "backingStorageSize": 2443477,
+                  "embedderHeapUsedSize": 7325688,
+                  "totalSize": 35913728,
+                  "usedSize": 32265432
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1634,
+                  "nodes": 4748
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3061916,
+                  "embedderHeapUsedSize": 9801176,
+                  "totalSize": 35950592,
+                  "usedSize": 32295720
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1632,
+                  "nodes": 5769
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3060233,
+                  "embedderHeapUsedSize": 6913024,
+                  "totalSize": 29380608,
+                  "usedSize": 28373308
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1632,
+                  "nodes": 5743
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3060233,
+                  "embedderHeapUsedSize": 6913024,
+                  "totalSize": 29380608,
+                  "usedSize": 28373308
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1632,
+                  "nodes": 5743
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3060233,
+                  "embedderHeapUsedSize": 6913024,
+                  "totalSize": 29380608,
+                  "usedSize": 28373308
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1632,
+                  "nodes": 5743
+                }
+              }
+            ]
+          },
+          {
+            "label": "after-extended-resume",
+            "resources": [
+              {
+                "project": "/tmp/tributary-editor-resources-ThnzPx/project-0",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229198,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-ThnzPx/project-1",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-ThnzPx/project-2",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-ThnzPx/project-3",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-ThnzPx/project-4",
+                "visible": false,
+                "treeLength": 0,
+                "docLength": 229189,
+                "blameMarkers": 0,
+                "blameTurns": 0,
+                "flashLines": 0
+              },
+              {
+                "project": "/tmp/tributary-editor-resources-ThnzPx/project-5",
+                "visible": true,
+                "treeLength": 229189,
+                "docLength": 229189,
+                "blameMarkers": 7501,
+                "blameTurns": 24,
+                "flashLines": 0
+              }
+            ],
+            "samples": [
+              {
+                "heap": {
+                  "backingStorageSize": 2443516,
+                  "embedderHeapUsedSize": 6777352,
+                  "totalSize": 33374208,
+                  "usedSize": 30877748
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1634,
+                  "nodes": 5783
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3060249,
+                  "embedderHeapUsedSize": 7436264,
+                  "totalSize": 30429184,
+                  "usedSize": 28964684
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1632,
+                  "nodes": 5757
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3060233,
+                  "embedderHeapUsedSize": 6924880,
+                  "totalSize": 29904896,
+                  "usedSize": 28960248
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1632,
+                  "nodes": 5743
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3060233,
+                  "embedderHeapUsedSize": 6924880,
+                  "totalSize": 29904896,
+                  "usedSize": 28960248
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1632,
+                  "nodes": 5743
+                }
+              },
+              {
+                "heap": {
+                  "backingStorageSize": 3060233,
+                  "embedderHeapUsedSize": 6924880,
+                  "totalSize": 29904896,
+                  "usedSize": 28960248
+                },
+                "dom": {
+                  "documents": 2,
+                  "jsEventListeners": 1632,
+                  "nodes": 5743
+                }
+              }
+            ]
+          }
+        ],
+        "calls": [
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-0"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-1"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-1"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-2"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-2"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-3"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-3"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-4"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-4"
+          },
+          {
+            "phase": "warm",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-5"
+          },
+          {
+            "phase": "warm",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "formatSource",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-0"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-1"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-1"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-2"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-2"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-3"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-3"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-4"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-4"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "fileDiff",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-5"
+          },
+          {
+            "phase": "correctness",
+            "method": "lineAuthors",
+            "project": "/tmp/tributary-editor-resources-ThnzPx/project-5"
+          }
+        ],
+        "hiddenRefreshCalls": [],
+        "retainedEditorCount": 6,
+        "sameViewsPreserved": true,
+        "dirtyDocumentsPreserved": true,
+        "selectionPreserved": true,
+        "externalEditFlashVerified": true,
+        "pendingFormatCompletedWhileHidden": true,
+        "undoRedoExact": true,
+        "runtime": {
+          "node": "24.21.0",
+          "acorn": "8.18.0",
+          "ada": "4.0.0",
+          "amaro": "1.1.11",
+          "ares": "1.34.8",
+          "brotli": "1.2.0",
+          "cldr": "48.0",
+          "icu": "78.2",
+          "llhttp": "9.4.3",
+          "merve": "1.2.2",
+          "modules": "149",
+          "napi": "10",
+          "nbytes": "0.1.4",
+          "ncrypto": "0.0.1",
+          "nghttp2": "1.70.0",
+          "nghttp3": "",
+          "ngtcp2": "",
+          "openssl": "0.0.0",
+          "simdjson": "4.6.7",
+          "simdutf": "7.7.0",
+          "sqlite": "3.53.4",
+          "tz": "2026d",
+          "undici": "7.29.1",
+          "unicode": "17.0",
+          "uv": "1.52.1",
+          "uvwasi": "0.0.23",
+          "v8": "15.2.124.37-electron.0",
+          "zlib": "1.3.2.1-motley",
+          "zstd": "1.6.0",
+          "electron": "44.7.2",
+          "chrome": "152.0.7977.149"
+        },
+        "scope": "Linux source desktop with six synthetic 7500-line TypeScript editors, synthetic attribution/diff and a controlled formatter over the actual bridge. CDP post-diagnostic-GC renderer heap, not PSS, RSS, GPU/model memory or general app speed. Private cmTile/debug tree getter and own blame-field shape are version-pinned diagnostics only.",
+        "sourceHashes": {
+          "ui/src/components/code-editor.tsx": "7b17a8b44d6f0115d7160a8591404781b344bddeefccb573d36339de5a2d6c59",
+          "ui/src/lib/editor-grammar.mjs": "10ed2db8a3b0dc05b44b1be004634ebfed0ebeedbde31016079810dcde0b0dbf",
+          "ui/src/hooks/use-debugger.ts": "81bf888ba706b7ffbb617fe87988ffb0f86e72b4ad1b0841de5e61cdc6599e15",
+          "ui/src/lib/agent-editor.ts": "72564f4694da74697e65535aca5b58f161732af386c9f12767c5beb2e403a5d2",
+          "scripts/performance/native-editor-resources.cjs": "c431a120012641a729ff9445fe17d707c73420452ccbb4b9e1cbc4e9c57280d0"
+        }
+      }
+    }
+  ],
+  "sourceHashes": {
+    "ui/src/components/code-editor.tsx": "7b17a8b44d6f0115d7160a8591404781b344bddeefccb573d36339de5a2d6c59",
+    "ui/src/lib/editor-grammar.mjs": "10ed2db8a3b0dc05b44b1be004634ebfed0ebeedbde31016079810dcde0b0dbf",
+    "ui/src/hooks/use-debugger.ts": "81bf888ba706b7ffbb617fe87988ffb0f86e72b4ad1b0841de5e61cdc6599e15",
+    "ui/src/lib/agent-editor.ts": "72564f4694da74697e65535aca5b58f161732af386c9f12767c5beb2e403a5d2",
+    "scripts/performance/native-editor-resources.cjs": "c431a120012641a729ff9445fe17d707c73420452ccbb4b9e1cbc4e9c57280d0",
+    "scripts/performance/editor-resources.cjs": "baedeba9627961793c2e7b3f0545c566c60f6f3c8f6ac18e1fee5ab293159874"
+  }
+}

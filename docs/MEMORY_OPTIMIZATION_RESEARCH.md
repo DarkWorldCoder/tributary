@@ -21,6 +21,7 @@ The scope column is deliberate. A contents page is not a read book; a chapter is
 
 | Source | Scope reviewed | Application to Tributary |
 | --- | --- | --- |
+| [Crafting Interpreters: Garbage Collection](https://craftinginterpreters.com/garbage-collection.html) | Full public chapter 26 text and listings read, including challenges and generational design note. Images were not visually inspected; VM code/exercises were not executed. Not the whole book. | Reachable owners keep derived resources alive. Remove inactive parser/subscription references while preserving documents and pending operation owners; do not force production GC. |
 | [The Garbage Collection Handbook, author contents](https://www.gchandbook.org/contents.html) | Public contents: mark/sweep, copying, compaction, reference counting, generations, concurrency, weak references, comparison and experimental methodology. Full book not read. | Organize the algorithm inventory and evaluation criteria. This does not justify replacing V8 or claiming a new collector. |
 | [OSTEP, chapter 17: Free-Space Management](https://pages.cs.wisc.edu/~remzi/OSTEP/vm-freespace.pdf) | Full author-hosted 18-page chapter read, including allocator mechanisms, fit policies, segregated/slab and buddy approaches, references and simulation questions. Simulation exercises were not run; this is not the whole book. | Distinguish live allocations from allocator capacity and fragmentation; evaluate pooling/size classes against actual workloads and retained capacity. This does not justify replacing the runtime allocator. |
 | [OSTEP, chapter 22: Beyond Physical Memory—Policies](https://pages.cs.wisc.edu/~remzi/OSTEP/vm-beyondphys-policy.pdf) | Full author-hosted 18-page chapter read, including OPT/FIFO/random/LRU/clock, locality and scan behavior, dirty pages, prefetch/write grouping, admission control, references and simulation questions. Exercises were not run; this is not the whole book. | Working-set and replacement-policy reasoning. Application-level eviction still requires ownership and dirty-data rules; OS paging examples are not a direct prescription for editor state. |
@@ -475,3 +476,22 @@ The correctness contract was checked against [Node's hashing input-encoding API]
 The [real desktop verification](performance/native-patch-hashing-verification.json) repeats the 80-reply pressure/fallback/hot-delta/final flow with Unicode, embedded NUL, a lone surrogate and a live tool-output mutation. Every phase matches in the renderer, the final marker renders, and cache accounting, active transport and history pins end at zero. [Verification](performance/patch-hashing-verification.json) records 546 passing full-suite tests, 30 focused checks and the VS Code build. Custom serialization, getters and proxies retain their single generic-serialization read behavior.
 
 Reproduce with `npm run bench:patch-hashing -- /absolute/report.json`. The script uses diagnostic GC only outside timed work, preserves raw run/GC observations and source hashes, and compares the same runtime/workload in fresh processes. This is a large-stable-output patcher benchmark, not general app interaction latency, peak process RAM, packaged-build performance or model generation speed. The small metadata guard has not been profiled across every real provider schema; unsupported shapes retain the generic behavior.
+
+
+## Suspending derived editor resources
+
+Hidden visited project editors now detach their language compartment, blame/diff decorations, debugger mirror, activity subscription, diagnostics and transient agent-flash timers. Late grammar imports and requests cannot repopulate an inactive editor. EditorView, document, undo/redo, selection, folds, Find query and dirty drafts deliberately remain owned. Shared grammar modules stay cached. Resuming reparses the document; this latency is not measured here.
+
+The [three-pair native comparison](performance/editor-resources-benchmark.json) uses six dirty synthetic 7,500-line TypeScript documents in fresh disposable Linux desktop profiles. Five detached CDP samples follow diagnostic GC per phase; medians are taken within each process and across three alternating process pairs. This measures renderer isolate retained heap and DOM counters, not application RSS/PSS, GPU/model memory or general interaction speed.
+
+| Renderer heap median | Frozen baseline | Suspended derived resources |
+| --- | ---: | ---: |
+| Six visited editors, one visible | 36.1 MiB | 25.3 MiB |
+| All editors hidden | 36.3 MiB | 23.7 MiB |
+| After extended resume cycles | 37.1 MiB | 27.6 MiB |
+
+Hidden refreshes make zero fileDiff requests versus six in the baseline. One visible parser tree and 7,501 blame markers remain, versus six trees and 45,006 markers. Neither heap trend is flat; this is not evidence of complete leak elimination. Full pane eviction and dirty/pending-save ownership remain separate work.
+
+Native assertions preserve all six dirty documents and exact EditorView identities, selection, formatter completion while hidden, and undo/redo. [Visual verification](performance/editor-resources-visual-verification.json) additionally checks a real gutter fold, multiple selections, scroll position and Find query before/after hiding the pane; [screenshot](performance/editor-resources-resume.png). [Verification](performance/editor-resources-verification.json) records 549 passing regressions, three focused state tests, TypeScript and production build. Pending disk saves, cross-platform builds and real provider workloads were not separately exercised.
+
+The lifetime design follows the chapter's reachability reasoning and the installed CodeMirror compartment/language contracts. Removing a derived owner allows collection; changing visibility alone does not. Diagnostic GC is confined to the benchmark. Reproduce with `npm run bench:editor-resources -- /absolute/frozen-baseline-host /absolute/report.json`; the frozen baseline must contain the pre-change desktop and built UI with matching installed dependencies.

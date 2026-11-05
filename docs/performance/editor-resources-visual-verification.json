@@ -1,0 +1,77 @@
+{
+  "sameView": true,
+  "sameState": true,
+  "foldPlaceholderVisible": true,
+  "before": {
+    "selection": {
+      "ranges": [
+        {
+          "anchor": 3,
+          "head": 3
+        },
+        {
+          "anchor": 20,
+          "head": 25
+        }
+      ],
+      "main": 0
+    },
+    "undoGroups": 1,
+    "redoGroups": 0,
+    "folds": [
+      [
+        12093,
+        12108
+      ],
+      [
+        12093,
+        12108
+      ]
+    ],
+    "dirty": true,
+    "scrollTop": 18000,
+    "scrollLeft": 0,
+    "search": "item_900",
+    "options": [
+      false,
+      false,
+      false
+    ]
+  },
+  "after": {
+    "selection": {
+      "ranges": [
+        {
+          "anchor": 3,
+          "head": 3
+        },
+        {
+          "anchor": 20,
+          "head": 25
+        }
+      ],
+      "main": 0
+    },
+    "undoGroups": 1,
+    "redoGroups": 0,
+    "folds": [
+      [
+        12093,
+        12108
+      ],
+      [
+        12093,
+        12108
+      ]
+    ],
+    "dirty": true,
+    "scrollTop": 18000,
+    "scrollLeft": 0,
+    "search": "item_900",
+    "options": [
+      false,
+      false,
+      false
+    ]
+  }
+}

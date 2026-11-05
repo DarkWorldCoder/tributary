@@ -110,17 +110,23 @@ const flashTimers = new WeakMap<EditorView, number>();
 /** Highlights for agent edits; pair with applyRemoteText. */
 export const agentFlash: Extension = [flashField, theme];
 
+/** Release a pane's transient edit highlight and its timer. */
+export function clearAgentFlash(view: EditorView) {
+  clearTimeout(flashTimers.get(view)); flashTimers.delete(view);
+  view.dispatch({ effects: flash.of(null) });
+}
+
 /**
  * Bring the editor up to date with the file on disk after someone else (an agent) changed it. Only the changed part
- * is replaced, outside the undo history unless `undoable`, and those lines are highlighted for a moment. Returns false
- * if unchanged.
+ * is replaced, outside the undo history unless `undoable`. Visible panes can briefly highlight those lines.
  */
-export function applyRemoteText(view: EditorView, text: string, color = 'var(--success)', undoable = false) {
+export function applyRemoteText(view: EditorView, text: string, color = 'var(--success)', undoable = false, animate = true) {
   const change = minimalChange(view.state.doc.toString(), text);
   if (!change) return false;
-  view.dispatch({ changes: change, annotations: [Transaction.remote.of(true), Transaction.addToHistory.of(undoable), ...(undoable ? [isolateHistory.of('full')] : [])], effects: flash.of({ ...changedLines(text, change), color }) });
+  view.dispatch({ changes: change, annotations: [Transaction.remote.of(true), Transaction.addToHistory.of(undoable), ...(undoable ? [isolateHistory.of('full')] : [])], effects: flash.of(animate ? { ...changedLines(text, change), color } : null) });
   clearTimeout(flashTimers.get(view));
-  flashTimers.set(view, window.setTimeout(() => { if (view.dom.isConnected) view.dispatch({ effects: flash.of(null) }); }, 2600));
+  flashTimers.delete(view);
+  if (animate) flashTimers.set(view, window.setTimeout(() => { flashTimers.delete(view); if (view.dom.isConnected) view.dispatch({ effects: flash.of(null) }); }, 2600));
   return true;
 }
 
