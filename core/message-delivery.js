@@ -4,8 +4,9 @@ const { createPatcher } = require('./message-patch');
 const RETRY_DELIVERY = Symbol('retry-message-delivery');
 // Coalescing timers and asynchronous webview delivery own their live messages
 // independently of the operation that emitted them.
-function bindMessageDelivery(hub, deliver, ms = 80) {
-  const pending = new Map(); const inFlight = new Set(); let patcher = createPatcher(); let closed = false;
+function bindMessageDelivery(hub, deliver, ms = 80, { maxInFlight = Infinity } = {}) {
+  if (maxInFlight !== Infinity && (!Number.isSafeInteger(maxInFlight) || maxInFlight < 1)) throw new Error('Message delivery concurrency must be a positive integer.');
+  const pending = new Map(); const inFlight = new Set(); let patcher = createPatcher(); let closed = false; let draining = false;
   const report = error => console.error(`Could not deliver chat update: ${String(error?.message || error)}`);
   const keyOf = (threadId, message) => `${threadId}\0${message.id}`;
   const send = (key, name, data, release, source) => {
@@ -21,10 +22,7 @@ function bindMessageDelivery(hub, deliver, ms = 80) {
         enqueue(latest ? { ...(latest.full || {}), threadId: latest.threadId, message: latest.message } : source, true);
       }
       inFlight.delete(key); release();
-      const next = pending.get(key);
-      if (!closed && next?.ready) {
-        try { flush(key, next); } catch (error) { report(error); }
-      }
+      try { drain(); } catch (error) { report(error); }
     };
     try { result = deliver(name, data); }
     catch (error) { finish(true); throw error; }
@@ -45,6 +43,23 @@ function bindMessageDelivery(hub, deliver, ms = 80) {
       else entry.release();
     } catch (error) { entry.release(); throw error; }
   };
+  // Admit before patch generation: queued replies retain their live source,
+  // not serialized deltas/snapshots. Map insertion order gives waiting replies
+  // priority over an active reply's next update. Synchronous transports drain
+  // iteratively rather than growing the stack through reentrant completions.
+  const drain = () => {
+    if (closed || draining) return;
+    draining = true; let failure;
+    try {
+      while (!closed && inFlight.size < maxInFlight) {
+        let next;
+        for (const pair of pending) if (pair[1].ready && !inFlight.has(pair[0])) { next = pair; break; }
+        if (!next) break;
+        try { flush(...next); } catch (error) { failure ||= error; }
+      }
+    } finally { draining = false; }
+    if (failure) throw failure;
+  };
   const enqueue = (data, full) => {
     if (closed) return;
     const { threadId, message } = data; const key = keyOf(threadId, message);
@@ -57,9 +72,9 @@ function bindMessageDelivery(hub, deliver, ms = 80) {
     entry.message = message;
     if (entry.full) entry.full = { ...entry.full, message };
     if (full) {
-      entry.full = data; entry.ready = true; clearTimeout(entry.timer); entry.timer = null; flush(key, entry);
+      entry.full = data; entry.ready = true; clearTimeout(entry.timer); entry.timer = null; drain();
     } else if (!entry.ready && !entry.timer) {
-      entry.timer = setTimeout(() => { entry.timer = null; entry.ready = true; flush(key, entry); }, ms);
+      entry.timer = setTimeout(() => { entry.timer = null; entry.ready = true; try { drain(); } catch (error) { report(error); } }, ms);
     }
   };
   const event = data => enqueue(data, false);

@@ -1,6 +1,7 @@
 'use strict';
 const { randomUUID } = require('node:crypto');
 const { RETRY_DELIVERY } = require('../core/message-delivery');
+const MAX_REPLY_PACKETS = 8;
 const ownsMessageFrame = (event, contents) => !!contents && !contents.isDestroyed() && event.sender === contents && !!event.senderFrame && event.senderFrame === contents.mainFrame;
 
 // This transport owns acknowledgement metadata, not another copy of each reply.
@@ -51,4 +52,4 @@ function createMessageTransport({ send, onReady = () => {} }) {
     state: () => ({ epoch, ready, closed, active: active.size, interrupted: interrupted.size }),
   };
 }
-module.exports = { createMessageTransport, ownsMessageFrame };
+module.exports = { createMessageTransport, ownsMessageFrame, MAX_REPLY_PACKETS };

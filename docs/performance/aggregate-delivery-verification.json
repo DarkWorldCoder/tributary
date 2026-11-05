@@ -1,0 +1,125 @@
+{
+  "date": "2026-11-05T08:38:13.969960+00:00",
+  "tests": {
+    "command": "npm test",
+    "passed": 539,
+    "failed": 0,
+    "logSha256": "4b96e771bcb94ddf90c193fff9372d99759211ddf27ebb65c2b6209b60de7899"
+  },
+  "native": "native-aggregate-delivery-benchmark.json",
+  "node": "aggregate-delivery-benchmark.json",
+  "localRuntimeAvailability": {
+    "scope": "Read-only discovery of the three default loopback service addresses; this does not prove the absence of all custom endpoints or dormant installs.",
+    "platform": "linux",
+    "arch": "x64",
+    "memoryGB": 15.3,
+    "availableMemoryGBAtProbe": 4.8,
+    "services": [
+      {
+        "id": "unsloth",
+        "status": "offline",
+        "reportedModels": 0
+      },
+      {
+        "id": "ollama",
+        "status": "offline",
+        "reportedModels": 0
+      },
+      {
+        "id": "lmstudio",
+        "status": "offline",
+        "reportedModels": 0
+      }
+    ]
+  },
+  "limitations": [
+    "Packet admission does not cap the number or size of pending live reply sources.",
+    "Individual messages can exceed any implied byte budget; no byte ceiling is implemented here.",
+    "Acknowledged streaming delta bases, other IPC channels, provider stdout and renderer state have independent lifetimes.",
+    "No real inference RAM/VRAM or whole-app memory reduction was measured."
+  ],
+  "nativeReload": {
+    "date": "2026-11-05T08:40:22.130Z",
+    "mode": "acknowledged",
+    "baseline": "93f5e5c desktop main/preload with the same current core coalescer and UI",
+    "stream": {
+      "updates": 100,
+      "blockedMs": 2000,
+      "packetsWhileBlocked": 1,
+      "serializedBytesWhileBlocked": 280,
+      "totalPackets": 2,
+      "totalSerializedBytes": 201091,
+      "transportAtBlockEnd": {
+        "epoch": "3a7ce55c-a858-42e1-9dc3-be84434b0256",
+        "ready": true,
+        "closed": false,
+        "active": 1,
+        "interrupted": 0
+      },
+      "peakOwnerCountDuringOperation": 3,
+      "finalExact": true
+    },
+    "reload": {
+      "newEpoch": true,
+      "packets": [
+        {
+          "name": "message",
+          "epoch": "3a7ce55c-a858-42e1-9dc3-be84434b0256"
+        },
+        {
+          "name": "message",
+          "epoch": "38e68594-a162-4f52-94f4-da042952e3ee"
+        }
+      ],
+      "fullReplay": true,
+      "historyPins": 0,
+      "persistedExact": true,
+      "rendered": true
+    },
+    "historyPins": 0,
+    "runtime": {
+      "node": "24.21.0",
+      "acorn": "8.18.0",
+      "ada": "4.0.0",
+      "amaro": "1.1.11",
+      "ares": "1.34.8",
+      "brotli": "1.2.0",
+      "cldr": "48.0",
+      "icu": "78.2",
+      "llhttp": "9.4.3",
+      "merve": "1.2.2",
+      "modules": "149",
+      "napi": "10",
+      "nbytes": "0.1.4",
+      "ncrypto": "0.0.1",
+      "nghttp2": "1.70.0",
+      "nghttp3": "",
+      "ngtcp2": "",
+      "openssl": "0.0.0",
+      "simdjson": "4.6.7",
+      "simdutf": "7.7.0",
+      "sqlite": "3.53.4",
+      "tz": "2026d",
+      "undici": "7.29.1",
+      "unicode": "17.0",
+      "uv": "1.52.1",
+      "uvwasi": "0.0.23",
+      "v8": "15.2.124.37-electron.0",
+      "zlib": "1.3.2.1-motley",
+      "zstd": "1.6.0",
+      "electron": "44.7.2",
+      "chrome": "152.0.7977.149"
+    },
+    "platform": "linux",
+    "scope": "Real Electron IPC with a blocked JavaScript renderer and synthetic Hub events. Packet and serialized-byte counts, not process RAM, React paint completion, provider flow control or a global memory ceiling.",
+    "sourceHashes": {
+      "core/message-delivery.js": "b2b14a66dcc657d6bdcc7287b233ebc9ee3464dc94d46092a5f8544cea19aa6c",
+      "desktop/message-transport.js": "ca0d87eae489aa2b1e34b093dbebd8d7f8a183adac96ef4487faaa5b35819ae6",
+      "desktop/main.js": "a892ebc678d516f02d77d091290927a87d4184c290cc46b0db42b592dc9ca910",
+      "desktop/preload.js": "70476719b310de3e99c8bd1f9c670136a9556e7ec84e3652ca4a029cf03a404f",
+      "ui/src/store.tsx": "7f0371c6fa04a43396aca62fe56dc79494efa66908a81d09453ee4bcd830e380",
+      "ui/dist/assets/app.js": "fe7351d5b2e82bcb53821902eed40fc48e53d13c50d739948575bcb5851a39f5",
+      "scripts/performance/native-ipc-delivery.cjs": "68346d961ceddd94c16a91b99634e4108da91ef6fedcbd28071e025a54dd88fa"
+    }
+  }
+}

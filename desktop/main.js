@@ -24,7 +24,7 @@ let hub = null;
 let updates = null;
 let lanHost = null;
 let messageTransport = null;
-const { createMessageTransport, ownsMessageFrame } = require('./message-transport');
+const { createMessageTransport, ownsMessageFrame, MAX_REPLY_PACKETS } = require('./message-transport');
 const getLanHost = () => lanHost ||= require('../server/lan-host').createLanHost({ dir: path.join(app.getPath('userData'), 'project-room') });
 
 function send(name, data) { if (win && !win.isDestroyed()) win.webContents.send('hub-event', name, data); }
@@ -32,7 +32,7 @@ function send(name, data) { if (win && !win.isDestroyed()) win.webContents.send(
 // Streaming delivery owns histories while its coalescing timer is pending.
 let disposeMessages;
 function wireEvents() {
-  disposeMessages = require('../core/message-delivery').bindMessageDelivery(hub, (name, data) => messageTransport?.deliver(name, data) ?? false);
+  disposeMessages = require('../core/message-delivery').bindMessageDelivery(hub, (name, data) => messageTransport?.deliver(name, data) ?? false, 80, { maxInFlight: MAX_REPLY_PACKETS });
   for (const n of ['state', 'threads', 'running', 'notification', 'collaboration', 'language-diagnostics', 'files-changed', 'debugger']) hub.on(n, (d) => send(n, d));
   hub.on('activity', (d) => send('activity', d)); // the live view
   // System notification when something finishes while the window is in the background.

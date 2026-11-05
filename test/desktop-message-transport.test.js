@@ -1,7 +1,7 @@
 'use strict';
 const test=require('node:test'), assert=require('node:assert/strict');
 const {EventEmitter}=require('node:events');
-const {createMessageTransport,ownsMessageFrame}=require('../desktop/message-transport');
+const {createMessageTransport,ownsMessageFrame,MAX_REPLY_PACKETS}=require('../desktop/message-transport');
 const {bindMessageDelivery}=require('../core/message-delivery');
 const tick=()=>new Promise(setImmediate), wait=ms=>new Promise(r=>setTimeout(r,ms));
 const until=async fn=>{for(let i=0;i<500;i++){if(fn())return;await wait(2)}throw Error('Delivery did not settle')};
@@ -11,7 +11,7 @@ function fixture(t){
  const hub=new EventEmitter(),packets=[],handshakes=[];let held=0,peak=0,dispose;
  hub.holdHistory=()=>{held++;peak=Math.max(peak,held);let live=true;return()=>{if(live){live=false;held--}}};
  const transport=createMessageTransport({send:(channel,...args)=>{if(channel==='hub-message')packets.push(clone({name:args[0],data:args[1],token:args[2]}));else handshakes.push(args[0])},onReady:()=>dispose.reset()});
- dispose=bindMessageDelivery(hub,(...args)=>transport.deliver(...args),1);
+ dispose=bindMessageDelivery(hub,(...args)=>transport.deliver(...args),1,{maxInFlight:MAX_REPLY_PACKETS});
  t.after(()=>{dispose();transport.close()});
  return {hub,transport,dispose,packets,handshakes,held:()=>held,peak:()=>peak,ready:()=>transport.ready(transport.state().epoch,true),emit:(name,m,threadId='chat')=>hub.emit(name,{threadId,message:m}),ack:index=>transport.ack(packets[index].token,true)};
 }
@@ -85,4 +85,19 @@ test('sandboxed preload acknowledges synchronous listener dispatch without expos
  ipc.emit('hub-message',{},'message',{}, {epoch:'one',id:2});await tick();assert.equal(sent.at(-1)[2],false);assert.equal(errors.length,1);
  const count=sent.length;ipc.emit('hub-message',{},'message',{}, {epoch:'old',id:3});await tick();assert.equal(sent.length,count);
  ipc.emit('hub-message-handshake',{},'two');assert.deepEqual(sent.at(-1),['hub-message-ready','two',true]);offBad();offOther();
+});
+
+
+test('the shared desktop packet cap survives many-reply reload and releases every history owner',async t=>{
+ const f=fixture(t);f.ready();const messages=Array.from({length:40},(_,i)=>({...message('reply-'+i),text:'initial'}));
+ for(const m of messages)f.emit('message',m,m.id);assert.equal(f.packets.length,MAX_REPLY_PACKETS);assert.equal(f.transport.state().active,MAX_REPLY_PACKETS);
+ f.transport.reset();for(const m of messages){m.text+=' final';m.ok=true;f.emit('message',m,m.id)}
+ assert.equal(f.transport.state().interrupted,MAX_REPLY_PACKETS);f.ready();await until(()=>f.packets.length===MAX_REPLY_PACKETS*2);
+ let index=MAX_REPLY_PACKETS;while(f.held()){
+  assert.ok(f.transport.state().active<=MAX_REPLY_PACKETS);const end=f.packets.length;
+  for(;index<end;index++)f.ack(index);await tick();
+ }
+ const finals=f.packets.slice(MAX_REPLY_PACKETS);assert.equal(finals.length,messages.length);assert.ok(finals.every(p=>p.name==='message'));
+ const received=new Map(finals.map(p=>[p.data.message.id,p.data.message]));for(const m of messages)assert.deepEqual(received.get(m.id),m);
+ assert.equal(f.transport.state().active,0);assert.equal(f.transport.state().interrupted,0);
 });
