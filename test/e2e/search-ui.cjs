@@ -98,6 +98,11 @@ app.on('browser-window-created', (_event, win) => {
     await click('.cm-vscode-search button[name="replaceAll"]'); assert.equal(await run(`document.querySelector('.cm-content').cmTile.root.view.state.doc.toString().includes('welcome')`), true);
     await key('Escape'); await key('z', ['control']); assert.equal(await run(`document.querySelector('.cm-content').cmTile.root.view.state.doc.toString()`), 'export const greeting = "hello";\n');
     check('editor Find, match count, Replace All and undo use real CodeMirror history');
+    await run(`document.querySelector('.cm-content').cmTile.root.view.focus();[...document.querySelectorAll('[role="menubar"] [role="menuitem"]')].find(e=>e.textContent==='Edit').focus();true`);
+    await key('Down'); await until(() => run(`!!document.querySelector('[role="menu"]')`), 'Edit menu');
+    await run(`[...document.querySelectorAll('[role="menu"] [role="menuitem"]')].find(e=>e.textContent.startsWith('Find in file')).focus();true`); await key('Enter');
+    await until(() => run(`!!document.querySelector('.cm-vscode-search')`), 'menu Find restores editor focus'); await key('Escape');
+    check('Edit menu restores a connected editor through its weak focus hint');
 
     const layouts = [];
     // Exercise the responsive renderer below the normal native minimum width.

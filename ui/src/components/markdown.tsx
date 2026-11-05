@@ -6,6 +6,10 @@ import { useHighlightedCode } from '@/hooks/use-highlighted-code';
 import { splitBlocks } from '@/lib/markdown-blocks.mjs';
 import { hub } from '@/store';
 import { MarkdownImage } from '@/components/markdown-image';
+import { shouldWindowCode, supportsCodeViewport, codeHasInteraction } from '@/lib/code-viewport.mjs';
+import { Button } from '@/components/ui/button';
+
+const CodeViewport = React.lazy(() => import('@/components/code-viewport'));
 
 const PreviewFile = React.createContext<{ file?: string; project?: string }>({});
 function ImageElement({ src, alt }: { src?: string | Blob; alt?: string }) {
@@ -14,6 +18,32 @@ function ImageElement({ src, alt }: { src?: string | Blob; alt?: string }) {
 }
 
 export function HighlightedCode({ code, language, title, wrap, lineNumbers, size = 'sm' }: { code: string; language: string; title?: React.ReactNode; wrap?: boolean; lineNumbers?: boolean; size?: 'sm' | 'default' }) {
+  const root = React.useRef<HTMLDivElement>(null);
+  const [windowed, setWindowed] = React.useState(() => shouldWindowCode(code, language));
+  React.useEffect(() => {
+    const target = root.current; if (windowed || !target || !shouldWindowCode(code, language)) return;
+    let alive = true;
+    const upgrade = () => { if (alive && !codeHasInteraction(target)) setWindowed(true); };
+    const blur = () => queueMicrotask(upgrade);
+    upgrade(); target.addEventListener('focusout', blur); target.ownerDocument.addEventListener('selectionchange', upgrade);
+    return () => { alive = false; target.removeEventListener('focusout', blur); target.ownerDocument.removeEventListener('selectionchange', upgrade); };
+  }, [windowed, code, language]);
+  return <div ref={root} className="min-w-0">{windowed && supportsCodeViewport(language) ? <LargeCodeBlock code={code} language={language} title={title} wrap={wrap} lineNumbers={lineNumbers} size={size} /> : <SmallCodeBlock code={code} language={language} title={title} wrap={wrap} lineNumbers={lineNumbers} size={size} />}</div>;
+}
+
+function LargeCodeBlock({ code, language, title, wrap, lineNumbers, size }: React.ComponentProps<typeof HighlightedCode>) {
+  const [plain, setPlain] = React.useState(false);
+  return <CodeBlock size={size}>
+    <CodeBlockHeader><CodeBlockTitle>{title || language}</CodeBlockTitle><CodeBlockActions>
+      <Button size="xs" variant="ghost" aria-pressed={plain} onClick={() => setPlain(!plain)} title="Plain text supports browser selection and page search across the full block">{plain ? 'Syntax view' : 'Plain text'}</Button>
+      <CodeBlockCopyButton value={code} />
+    </CodeBlockActions></CodeBlockHeader>
+    {plain && <CodeBlockContent wrap={wrap} className="max-h-[28rem]" aria-label="Full code text">{code}</CodeBlockContent>}
+    <div hidden={plain}><React.Suspense fallback={<div className="h-112 p-3 text-xs text-muted-foreground" role="status">Opening code…</div>}><CodeViewport code={code} language={language} wrap={wrap} lineNumbers={lineNumbers} inactive={plain} /></React.Suspense></div>
+  </CodeBlock>;
+}
+
+function SmallCodeBlock({ code, language, title, wrap, lineNumbers, size }: React.ComponentProps<typeof HighlightedCode>) {
   const lines = useHighlightedCode(code, language);
   return (
     <CodeBlock size={size}>

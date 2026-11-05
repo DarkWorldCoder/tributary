@@ -1,0 +1,46 @@
+TARGET object:e#299547
+PATH 20 synthetic:(Global handles)#23
+  synthetic:(Global handles)#23 --internal:285 / V8PerContextData::context_--> native:system / NativeContext / file://#7751
+  native:system / NativeContext / file://#7751 --internal:global_proxy_object--> native:Window / file://#81309
+  native:Window / file://#81309 --element:5--> native:HTMLDocument#81451
+  native:HTMLDocument#81451 --element:40--> native:blink::SVGDocumentExtensions#61050
+  native:blink::SVGDocumentExtensions#61050 --element:2--> native:blink::HeapHashTableBacking<blink::HashTable<cppgc::internal::BasicMember<blink::SVGSVGElement, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>, cppgc::internal::BasicMember<blink::SVGSVGElement, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>, blink::IdentityExtractor, blink::HashTraits<cppgc::internal::BasicMember<blink::SVGSVGElement, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::HashTraits<cppgc::internal::BasicMember<blink::SVGSVGElement, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::HeapAllocator>>#61052
+  native:blink::HeapHashTableBacking<blink::HashTable<cppgc::internal::BasicMember<blink::SVGSVGElement, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>, cppgc::internal::BasicMember<blink::SVGSVGElement, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>, blink::IdentityExtractor, blink::HashTraits<cppgc::internal::BasicMember<blink::SVGSVGElement, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::HashTraits<cppgc::internal::BasicMember<blink::SVGSVGElement, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::HeapAllocator>>#61052 --element:60--> native:SVGSVGElement#60083
+  native:SVGSVGElement#60083 --element:17--> native:<button class="titlebar-button" aria-label="Next chat" disabled="">#60075
+  native:<button class="titlebar-button" aria-label="Next chat" disabled="">#60075 --property:__reactProps$fnek96h1i6c--> object:Object#60079
+  object:Object#60079 --property:onClick--> closure:onClick#309025
+  closure:onClick#309025 --internal:context--> object:system / Context / scope @67599#207495
+  object:system / Context / scope @67599#207495 --context:o--> object:Object#333599
+  object:Object#333599 --property:current--> native:<input name="search" placeholder="Find" aria-label="Find" autocomplete="off" spellcheck="false" main-field="true" aria-invalid="false">#394631
+  native:<input name="search" placeholder="Find" aria-label="Find" autocomplete="off" spellcheck="false" main-field="true" aria-invalid="false">#394631 --element:13--> native:blink::EventTargetData#20798
+  native:blink::EventTargetData#20798 --element:1--> native:blink::BasicHeapVector<blink::internal::HeapCollectionType::kGCed, cppgc::internal::BasicMember<blink::RegisteredEventListener, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>, 1>#20800
+  native:blink::BasicHeapVector<blink::internal::HeapCollectionType::kGCed, cppgc::internal::BasicMember<blink::RegisteredEventListener, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>, 1>#20800 --element:1--> native:blink::RegisteredEventListener#528
+  native:blink::RegisteredEventListener#528 --element:1--> native:EventListener#524
+  native:EventListener#524 --element:1--> native:V8EventListener#526
+  native:V8EventListener#526 --element:1--> closure:re#394647
+  closure:re#394647 --internal:context--> object:system / Context / scope @218953#394629
+  object:system / Context / scope @218953#394629 --context:e--> object:e#299547
+PATH 22 synthetic:(GC roots)#3
+  synthetic:(GC roots)#3 --element:29--> synthetic:C++ Persistent roots#484837
+  synthetic:C++ Persistent roots#484837 --internal:blink::WebLocalFrameImpl::WebLocalFrameImpl(base::PassKey<WebLocalFrameImpl>, mojom::blink::TreeScopeType, WebLocalFrameClient *, blink::InterfaceRegistry *, const LocalFrameToken &)@../../third_party/blink/renderer/core/frame/web_local_frame_impl.cc:2296--> native:blink::WebLocalFrameImpl#86
+  native:blink::WebLocalFrameImpl#86 --element:3--> native:blink::LocalFrame#1308
+  native:blink::LocalFrame#1308 --element:10--> native:Window / file://#81309
+  native:Window / file://#81309 --element:5--> native:HTMLDocument#81451
+  native:HTMLDocument#81451 --element:40--> native:blink::SVGDocumentExtensions#61050
+  native:blink::SVGDocumentExtensions#61050 --element:2--> native:blink::HeapHashTableBacking<blink::HashTable<cppgc::internal::BasicMember<blink::SVGSVGElement, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>, cppgc::internal::BasicMember<blink::SVGSVGElement, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>, blink::IdentityExtractor, blink::HashTraits<cppgc::internal::BasicMember<blink::SVGSVGElement, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::HashTraits<cppgc::internal::BasicMember<blink::SVGSVGElement, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::HeapAllocator>>#61052
+  native:blink::HeapHashTableBacking<blink::HashTable<cppgc::internal::BasicMember<blink::SVGSVGElement, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>, cppgc::internal::BasicMember<blink::SVGSVGElement, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>, blink::IdentityExtractor, blink::HashTraits<cppgc::internal::BasicMember<blink::SVGSVGElement, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::HashTraits<cppgc::internal::BasicMember<blink::SVGSVGElement, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>>, blink::HeapAllocator>>#61052 --element:60--> native:SVGSVGElement#60083
+  native:SVGSVGElement#60083 --element:17--> native:<button class="titlebar-button" aria-label="Next chat" disabled="">#60075
+  native:<button class="titlebar-button" aria-label="Next chat" disabled="">#60075 --property:__reactProps$fnek96h1i6c--> object:Object#60079
+  object:Object#60079 --property:onClick--> closure:onClick#309025
+  closure:onClick#309025 --internal:context--> object:system / Context / scope @67599#207495
+  object:system / Context / scope @67599#207495 --context:o--> object:Object#333599
+  object:Object#333599 --property:current--> native:<input name="search" placeholder="Find" aria-label="Find" autocomplete="off" spellcheck="false" main-field="true" aria-invalid="false">#394631
+  native:<input name="search" placeholder="Find" aria-label="Find" autocomplete="off" spellcheck="false" main-field="true" aria-invalid="false">#394631 --element:13--> native:blink::EventTargetData#20798
+  native:blink::EventTargetData#20798 --element:1--> native:blink::BasicHeapVector<blink::internal::HeapCollectionType::kGCed, cppgc::internal::BasicMember<blink::RegisteredEventListener, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>, 1>#20800
+  native:blink::BasicHeapVector<blink::internal::HeapCollectionType::kGCed, cppgc::internal::BasicMember<blink::RegisteredEventListener, cppgc::internal::StrongMemberTag, cppgc::internal::DijkstraWriteBarrierPolicy>, 1>#20800 --element:1--> native:blink::RegisteredEventListener#528
+  native:blink::RegisteredEventListener#528 --element:1--> native:EventListener#524
+  native:EventListener#524 --element:1--> native:V8EventListener#526
+  native:V8EventListener#526 --element:1--> closure:re#394647
+  closure:re#394647 --internal:context--> object:system / Context / scope @218953#394629
+  object:system / Context / scope @218953#394629 --context:e--> object:e#299547
+VISITED 114735

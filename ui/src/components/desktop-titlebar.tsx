@@ -16,12 +16,14 @@ export function DesktopTitlebar() {
   const s = useStore(); const { toggleSidebar } = useSidebar();
   const fullscreen = useFullscreen();
   const [maximized, setMaximized] = React.useState(false);
-  const editTarget = React.useRef<HTMLElement | null>(null);
+  // This is a focus hint, not an owner. A removed Find input can otherwise
+  // retain its listeners, destroyed editor and complete document through here.
+  const editTarget = React.useRef<WeakRef<HTMLElement> | null>(null);
   const history = React.useRef<string[]>([]); const position = React.useRef(-1); const navigating = React.useRef(false);
   const [, refresh] = React.useReducer((n) => n + 1, 0);
   const desktop = s.hub.platform === 'desktop' && !/Mac/.test(navigator.platform);
   React.useEffect(() => {
-    const remember = (event: FocusEvent) => { if (event.target instanceof HTMLElement && event.target.matches('input,textarea,[contenteditable=true]')) editTarget.current = event.target; };
+    const remember = (event: FocusEvent) => { if (event.target instanceof HTMLElement && event.target.matches('input,textarea,[contenteditable=true]')) editTarget.current = new WeakRef(event.target); };
     document.addEventListener('focusin', remember); return () => document.removeEventListener('focusin', remember);
   }, []);
   React.useEffect(() => {
@@ -51,7 +53,8 @@ export function DesktopTitlebar() {
   const menu = (label: string, children: React.ReactNode) => <Menubar.Menu><Menubar.Trigger className="h-7 rounded px-2 text-xs text-muted-foreground outline-none hover:bg-muted data-[state=open]:bg-muted focus-visible:ring-1 focus-visible:ring-ring">{label}</Menubar.Trigger><Menubar.Portal><Menubar.Content align="start" sideOffset={4} className="z-50 min-w-48 rounded-lg border bg-popover p-1 text-popover-foreground shadow-lg">{children}</Menubar.Content></Menubar.Portal></Menubar.Menu>;
   const edit = (action: string) => {
     // Let application editors handle their own history; native text inputs keep the OS edit commands.
-    if (editTarget.current?.isConnected) editTarget.current.focus({ preventScroll: true });
+    const target = editTarget.current?.deref();
+    if (target?.isConnected) target.focus({ preventScroll: true });
     if (document.activeElement?.closest('.cm-editor')) window.dispatchEvent(new CustomEvent('tributary:editor-command', { detail: action }));
     else if (action === 'find' || action === 'replace') toast.info('Focus a code file to find or replace text.');
     else void s.hub.call('editAction', action).catch((error: Error) => toast.error(error.message));
@@ -61,7 +64,7 @@ export function DesktopTitlebar() {
       <button className="titlebar-button" aria-label="Previous chat" disabled={position.current < 1} onClick={() => void navigate(-1)}><ArrowLeft /></button>
       <button className="titlebar-button" aria-label="Next chat" disabled={position.current >= history.current.length - 1} onClick={() => void navigate(1)}><ArrowRight /></button>
       <Tooltip><TooltipTrigger asChild><button className="titlebar-button" aria-label="Toggle project sidebar" onClick={toggleSidebar}><PanelLeft /></button></TooltipTrigger><TooltipContent>Project sidebar <ShortcutLabel action="sidebar" /></TooltipContent></Tooltip>
-      <Menubar.Root className="flex items-center" aria-label="Application menu" onPointerDownCapture={() => { if (document.activeElement instanceof HTMLElement && document.activeElement.matches('input,textarea,[contenteditable=true]')) editTarget.current = document.activeElement; }} onFocusCapture={(event) => { if (event.relatedTarget instanceof HTMLElement && event.relatedTarget.matches('input,textarea,[contenteditable=true]')) editTarget.current = event.relatedTarget; }}>
+      <Menubar.Root className="flex items-center" aria-label="Application menu" onPointerDownCapture={() => { if (document.activeElement instanceof HTMLElement && document.activeElement.matches('input,textarea,[contenteditable=true]')) editTarget.current = new WeakRef(document.activeElement); }} onFocusCapture={(event) => { if (event.relatedTarget instanceof HTMLElement && event.relatedTarget.matches('input,textarea,[contenteditable=true]')) editTarget.current = new WeakRef(event.relatedTarget); }}>
         {menu('File', <>{item('New chat', () => s.newThread(), !s.project)}{item('Open project…', () => { void s.hub.call<string | null>('pickProject').then(async (path) => { if (path) { await s.refreshState(); s.newThread(path); } }).catch((e) => toast.error(e.message)); })}{item('Open workspace…', openWorkspace)}{item('Add folders to workspace…', addFolders, !s.project)}{item('Save workspace as…', () => { if (s.project) void s.hub.call('saveWorkspace', s.project).catch((error) => toast.error(error.message)); }, !s.project)}{item('Open recent…', () => s.setRecentOpen(true))}{item('Settings', () => s.openSettings('connections'))}</>)}
         {menu('Edit', <>{['undo', 'redo', 'cut', 'copy', 'paste', 'selectAll'].map((action) => item(action === 'selectAll' ? 'Select all' : action[0].toUpperCase() + action.slice(1), () => edit(action)))}<Menubar.Separator className="my-1 h-px bg-border" />{item('Find in file', () => edit('find'))}{item('Replace in file', () => edit('replace'))}{item('Search in files', () => window.dispatchEvent(new Event('tributary:search-project')), !s.project)}</>)}
         {menu('View', <>{item('Command palette', () => s.setPalette(true))}{item('Search in files', () => window.dispatchEvent(new Event('tributary:search-project')), !s.project)}{item('Project sidebar', toggleSidebar)}{item('Workspace', () => { s.setWorkspaceExpanded(false); s.openPanel('files'); }, !s.project)}{item(s.workspaceExpanded ? 'Restore layout' : 'Focus workspace', () => { s.setWorkspaceExpanded(!s.panel.open || !s.workspaceExpanded); s.openPanel(s.panel.tab); }, !s.project)}{item(fullscreen.active ? 'Exit full screen' : 'Full screen', () => void fullscreen.toggle())}{item('Test results', () => s.openPanel('tests'), !s.project)}{item('Debugger', () => s.setDebugOpen(!s.debugOpen), !s.project)}{item('Terminal', () => s.setTerminalOpen(!s.terminalOpen), !s.project)}{item('Project room', () => s.setRoomOpen(true))}{item('Agent teams', () => s.setTeamOpen(true), !s.project)}{item('Live activity', () => window.dispatchEvent(new Event('tributary:live')))}{item('Keyboard shortcuts', () => s.setShortcutsOpen(true))}</>)}
