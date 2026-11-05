@@ -1,6 +1,7 @@
 'use strict';
 const fs = require('node:fs/promises');
 const path = require('node:path');
+const { directoryPage, compareDirectoryEntries } = require('./directory-page');
 function contained(root, target) { const r = path.relative(root, target); return r === '' || (r !== '..' && !r.startsWith(`..${path.sep}`) && !path.isAbsolute(r)); }
 async function projectPath(root, rel, create = false) {
   if (typeof rel !== 'string' || rel.includes('\0') || path.isAbsolute(rel)) throw new Error('Choose a relative path inside the project.');
@@ -15,10 +16,18 @@ async function projectPath(root, rel, create = false) {
 async function readDirectory(root, rel = '', { showHidden = false, offset = 0, limit = 200 } = {}) {
   if (!Number.isSafeInteger(offset) || offset < 0 || offset > 100000 || !Number.isSafeInteger(limit) || limit < 1 || limit > 500) throw new Error('Invalid folder page.');
   const dir = await projectPath(root, rel);
-  const entries = await fs.readdir(dir, { withFileTypes: true });
-  if (entries.length > 100000) throw new Error('This folder is too large to list. Open a smaller folder in your external editor.');
-  const visible = entries.filter((e) => showHidden || !e.name.startsWith('.')).sort((a, b) => Number(b.isDirectory()) - Number(a.isDirectory()) || a.name.localeCompare(b.name) || (a.name < b.name ? -1 : 1));
-  const page = await Promise.all(visible.slice(offset, offset + limit).map(async (e) => {
+  let selected;
+  if (offset + limit <= 4096) {
+    selected = await directoryPage(await fs.opendir(dir, { bufferSize: 256 }), { showHidden, offset, limit });
+  } else {
+    // Deep pages need most of the prefix anyway. The measured native bulk-read
+    // path is faster there than building a large selection heap entry by entry.
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    if (entries.length > 100000) throw new Error('This folder is too large to list. Open a smaller folder in your external editor.');
+    const visible = entries.filter(e => showHidden || !e.name.startsWith('.')).sort(compareDirectoryEntries);
+    selected = { entries: visible.slice(offset, offset + limit), next: offset + limit < visible.length ? offset + limit : null, total: visible.length };
+  }
+  const page = await Promise.all(selected.entries.map(async (e) => {
     const entry = { name: e.name, rel: path.join(rel, e.name).split(path.sep).join('/'), directory: e.isDirectory(), symlink: e.isSymbolicLink() };
     // pnpm and other package managers expose dependencies as directory links.
     // Resolve only this bounded page and keep the project containment checks.
@@ -28,7 +37,7 @@ async function readDirectory(root, rel = '', { showHidden = false, offset = 0, l
     }
     return entry;
   }));
-  return { entries: page, next: offset + limit < visible.length ? offset + limit : null, total: visible.length };
+  return { entries: page, next: selected.next, total: selected.total };
 }
 async function createEntry(root, rel, kind) {
   if (!['file', 'folder'].includes(kind) || typeof rel !== 'string' || !rel.trim() || rel.split(/[\\/]/).some((part) => !part || part === '.' || part === '..' || part.toLowerCase() === '.git')) throw new Error('Choose a file or folder name inside the project.');

@@ -32,6 +32,65 @@ test('folder listing paginates deterministically and rejects invalid pages and e
   await assert.rejects(readDirectory(root, '', { offset: -1 }), /Invalid folder page/);
 });
 
+test('streamed folder pages preserve complete sort order across adversarial input and page boundaries', async () => {
+  const { directoryPage } = require('../core/directory-page');
+  const entries = Array.from({ length: 1400 }, (_, i) => ({ name: (i % 11 === 0 ? '.' : '') + ['Z', 'é', 'a', 'A', '中'][i % 5] + String(i).padStart(4, '0'), isDirectory: () => i % 9 === 0 }));
+  const compare = (a, b) => Number(b.isDirectory()) - Number(a.isDirectory()) || a.name.localeCompare(b.name) || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
+  for (const showHidden of [true, false]) {
+    const sorted = entries.filter(e => showHidden || !e.name.startsWith('.')).sort(compare);
+    for (const order of [entries, [...entries].reverse(), [...entries].sort(compare)]) {
+      for (const offset of [0, 199, 200, 999, 1300, 1400]) {
+        const result = await directoryPage((async function* () { yield* order; })(), { showHidden, offset, limit: 200 });
+        assert.deepEqual(result.entries.map(e => e.name), sorted.slice(offset, offset + 200).map(e => e.name));
+        assert.equal(result.total, sorted.length);
+        assert.equal(result.next, offset + 200 < sorted.length ? offset + 200 : null);
+      }
+    }
+  }
+});
+
+test('streamed folder limits count hidden entries and close the source when refusing an oversized folder', async () => {
+  const { directoryPage } = require('../core/directory-page'); let closed = false;
+  const source = (async function* () { try { for (let i = 0; i < 100001; i++) yield { name: '.hidden-' + i, isDirectory: () => false }; } finally { closed = true; } })();
+  await assert.rejects(directoryPage(source, { showHidden: false, offset: 0, limit: 200 }), /too large/);
+  assert.equal(closed, true);
+  const empty = await directoryPage((async function* () {})(), { showHidden: true, offset: 0, limit: 200 });
+  assert.deepEqual(empty, { entries: [], total: 0, next: null });
+});
+
+test('callback directory scans close once after success, read failures and synchronous throws', async () => {
+  const { directoryPage } = require('../core/directory-page');
+  for (const mode of ['success', 'callback-error', 'throw']) {
+    let count = 0; let closes = 0; const failure = new Error('read failed');
+    const dir = {
+      read(callback) {
+        if (++count === 3) {
+          if (mode === 'throw') throw failure;
+          queueMicrotask(() => callback(mode === 'callback-error' ? failure : null, null));
+        } else queueMicrotask(() => callback(null, { name: count === 1 ? 'z' : 'a', isDirectory: () => false }));
+      },
+      async close() { closes++; if (mode !== 'success') throw new Error('secondary close failure'); },
+    };
+    const pending = directoryPage(dir, { showHidden: true, offset: 0, limit: 1 });
+    if (mode === 'success') assert.deepEqual((await pending).entries.map(e => e.name), ['a']);
+    else await assert.rejects(pending, error => error === failure);
+    assert.equal(closes, 1);
+  }
+});
+
+test('real folder pages keep the same entries when crossing from streaming to deep-page bulk reads', async (t) => {
+  const root = mkTmp('hybrid-pages'); t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  for (let i = 0; i < 4250; i++) fs.writeFileSync(path.join(root, `file-${String(i).padStart(5, '0')}.txt`), '');
+  fs.mkdirSync(path.join(root, 'z-folder')); fs.mkdirSync(path.join(root, 'a-folder'));
+  const reference = fs.readdirSync(root, { withFileTypes: true }).sort((a, b) => Number(b.isDirectory()) - Number(a.isDirectory()) || a.name.localeCompare(b.name) || (a.name < b.name ? -1 : 1)).map(e => e.name);
+  for (const offset of [0, 3800, 4000, 4200, 5000]) {
+    const page = await readDirectory(root, '', { offset, limit: 200, showHidden: true });
+    assert.deepEqual(page.entries.map(e => e.name), reference.slice(offset, offset + 200));
+    assert.equal(page.total, reference.length);
+    assert.equal(page.next, offset + 200 < reference.length ? offset + 200 : null);
+  }
+});
+
 test('host file APIs refuse symlink escapes for directory reads, file reads and saves', async (t) => {
   const base = mkTmp('links'); const root = path.join(base, 'project'); const outside = path.join(base, 'outside');
   fs.mkdirSync(root); fs.mkdirSync(outside); fs.writeFileSync(path.join(outside, 'secret.txt'), 'private');

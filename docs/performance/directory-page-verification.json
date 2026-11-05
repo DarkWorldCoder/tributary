@@ -1,0 +1,22 @@
+{
+  "date": "2026-11-05",
+  "status": "local source verification; not packaged release evidence",
+  "regression": {
+    "tests": 519,
+    "passed": 519,
+    "failed": 0
+  },
+  "nativeDesktop": {
+    "initial": 200,
+    "afterPagination": 507,
+    "lastFileOpened": true,
+    "remainingPaginationButtons": 0
+  },
+  "sources": {
+    "core/files.js": "724b2fb3724a1e0b522e839f7fae457ed1c24fad9b0797c318403417098b3884",
+    "core/directory-page.js": "c9fe71be13be06af94773f1f1347765a8cc1e162cebdead737b0885fd8ec689b",
+    "test/files.test.js": "7741a5fee11ffcd2c492e6ca31343925cee053370b01b19af380135fc0090367",
+    "package.json": "9b79c452431dc00af1f4a0321ab1474d53fca15026ab4d65a9463f839e5f4e92",
+    "scripts/performance/directory-pages.cjs": "89bee0da7e60774206b0994df9219ccf62b3e6946c0bf868ce1d36f24757222c"
+  }
+}

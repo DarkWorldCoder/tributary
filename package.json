@@ -31,6 +31,7 @@
     "bench:memory": "node scripts/benchmark-memory.cjs",
     "bench:stream": "node scripts/performance/stream-store.cjs",
     "bench:bundles": "node scripts/performance/bundles.mjs",
+    "bench:directories": "node scripts/performance/directory-pages.cjs",
     "bench:retention": "node scripts/performance/retention.cjs",
     "bench:proc": "node scripts/performance/proc-stream.cjs",
     "bench:local-requests": "node scripts/performance/local-requests.cjs",
