@@ -53,6 +53,7 @@ app.on('browser-window-created', (_event, win) => {
         await until(() => run(`{const img=document.querySelectorAll(${JSON.stringify(selector)})[${i}].querySelector('img');!!img?.complete && img.naturalWidth>0}`), 'README image '+i);
         images.push(await run(`{const img=document.querySelectorAll(${JSON.stringify(selector)})[${i}].querySelector('img');({alt:img.alt,width:img.naturalWidth,height:img.naturalHeight})}`));
       }
+      if (images[0].width !== 1200 || images[0].height !== 280) throw Error('Brand banner intrinsic size is incorrect');
       await run(`document.querySelectorAll(${JSON.stringify(selector)})[${count-1}].click();true`);
       await until(() => run(`{const dialog=document.querySelector('.image-dialog[data-state="open"]');!!dialog?.querySelector('img')?.naturalWidth && dialog.getBoundingClientRect().width>0 && Number(getComputedStyle(dialog).opacity)>.99}`), 'expanded benchmark figure');
       await delay(250);

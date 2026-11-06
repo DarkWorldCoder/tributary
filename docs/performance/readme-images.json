@@ -1,11 +1,11 @@
 {
   "passed": true,
-  "date": "2026-11-06T09:10:00.302Z",
+  "date": "2026-11-06T09:15:13.709Z",
   "images": [
     {
       "alt": "Tributary — every coding agent, one stream of work",
-      "width": 300,
-      "height": 70
+      "width": 1200,
+      "height": 280
     },
     {
       "alt": "Tributary workbench with the actual repository file explorer, source editor and chat",
