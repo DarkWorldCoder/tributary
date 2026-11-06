@@ -1,0 +1,43 @@
+{
+  "date": "2026-11-06T07:03:14.087402+00:00",
+  "regressions": {
+    "passed": 619,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 86268.445664,
+    "logSha256": "22aada7dcee60ef59062ab4d40b4f47d50bda794a019bdc8cb35da43f1ef8ced"
+  },
+  "types": "Passed before frozen cohort; production source remained fixed.",
+  "uiBuild": "Passed before cohort; complete build hashes verified in every native run.",
+  "extensionBuild": "npm pretest ran node vscode/build.js successfully before the final regression suite.",
+  "native": {
+    "agentEditor": 6,
+    "splitEditor": 16,
+    "search": 15
+  },
+  "sourceHashes": {
+    "ui/src/components/code-editor.tsx": "88e01c176dda943946d56a242dd8cc4bd3120767fd10501fd092099402115108",
+    "ui/src/lib/agent-editor.ts": "ecedb6e973a32123ed35e53f0acc3eb52245daac37ce86859e755b60f0b2768a",
+    "ui/src/lib/editor-spacing.mjs": "4caee53663cf5a47855f18b15ba6d95f73370d2f84a1a7afe08d25e142f3748b",
+    "ui/src/lib/format-document.mjs": "79445720f2214e3be793b9b2bf8bc2272fc293ee496c7e2c54186edac37548ed",
+    "ui/src/lib/text-change.mjs": "503189e6e2116eb960d7798533b5744cdff7ef42c2a8925f052812806d4ffb01"
+  },
+  "measurementApps": 48,
+  "firstRegressionAttempt": {
+    "exitCode": 143,
+    "completed": false,
+    "countedAsPassing": false,
+    "logSha256": "d53bf947a6f9dbfb17160dc6290f2b9a8c8cb27a98d551e30afcbfeb6c40bba4"
+  },
+  "additionalCrlfProbe": {
+    "baselineCommit": "ea94d4b",
+    "baselineFailed": true,
+    "optimizedFailed": true,
+    "expected": "// 😀\nconst label = \"नमस्ते\";\n",
+    "actual": "// 😀\nconst label = \"नमस्ते\";\n\n",
+    "cause": "Comparing an LF editor document to raw CRLF before CodeMirror normalizes the replacement duplicates a suffix newline. This predates the allocation optimization; a separate correction is required.",
+    "measuredCohortUsedLF": true
+  },
+  "scope": "Linux source apps and temporary fixture data. No paid provider, installed Windows/macOS or full physical-IME certification."
+}

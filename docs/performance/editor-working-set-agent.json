@@ -1,0 +1,22 @@
+{
+  "passed": true,
+  "date": "2026-11-06T06:41:55.617Z",
+  "checks": [
+    "stale agent edits cannot overwrite newer unsaved typing",
+    "agent edits preserve user text, use real undo/redo, format and save exact buffer contents",
+    "editor control selects the agent working folder when a different workspace root was visible",
+    "agent navigation opens the exact caret, splits panes, focuses groups and switches workspace panels",
+    "a background agent cannot take over another visible chat",
+    "stopping a turn cancels pending editor work; a delayed formatter cannot apply after cancellation"
+  ],
+  "sourceHashes": {
+    "core/workbench.js": "5111be81e8ddf73e61fc231f299a7bc500bceb0289740a54292f2d7ed1d86c16",
+    "core/hub.js": "ff9ce666a7fd3a82a7ba0ce43b492d527088d458bd901ce1a8839deb0c61195b",
+    "core/local-agent.js": "55e81df4faf82f14348573769b32ddfb738eebb54f04708f6e18535c2ec3e589",
+    "desktop/main.js": "3b15cf0411f40bcf5d2575110f71b1b78b4732a955980ad19073834cf4910875",
+    "ui/src/components/agent-workbench.tsx": "b3eedc9ed46d19347c7b79f4ddccaaf4a52dbd4e24579a4b1d46f7a9ec4169d5",
+    "ui/src/components/code-editor.tsx": "88e01c176dda943946d56a242dd8cc4bd3120767fd10501fd092099402115108",
+    "ui/src/components/workspace-files.tsx": "fe66aa7e98e286dcfa985bb07e77c6322fb61de512b0ce65b5a34316afff5401"
+  },
+  "scope": "Isolated Linux Electron; actual CodeMirror and file bridge. No paid provider, macOS/Windows native UI or installer exercised."
+}

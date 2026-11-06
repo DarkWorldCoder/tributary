@@ -4,7 +4,7 @@
 import { RangeSet, StateEffect, StateField, Transaction, type EditorState, type Extension } from '@codemirror/state';
 import { Decoration, EditorView, GutterMarker, gutter, keymap, showTooltip, type DecorationSet, type Tooltip } from '@codemirror/view';
 import { isolateHistory } from '@codemirror/commands';
-import { changedLines, minimalChange } from '@/lib/text-change.mjs';
+import { changedLines, minimalChange, type TextChange } from '@/lib/text-change.mjs';
 
 export interface BlameTurn { agent: string; threadId: string; title: string; messageId: string; ts?: number; request?: string }
 export interface Blame { authors: number[]; turns: BlameTurn[] }
@@ -120,10 +120,11 @@ export function clearAgentFlash(view: EditorView) {
  * Bring the editor up to date with the file on disk after someone else (an agent) changed it. Only the changed part
  * is replaced, outside the undo history unless `undoable`. Visible panes can briefly highlight those lines.
  */
-export function applyRemoteText(view: EditorView, text: string, color = 'var(--success)', undoable = false, animate = true) {
-  const change = minimalChange(view.state.doc.toString(), text);
+export function applyRemoteText(view: EditorView, text: string, color = 'var(--success)', undoable = false, animate = true, knownChange?: TextChange | null) {
+  const change = knownChange === undefined ? minimalChange(view.state.doc.toString(), text) : knownChange;
   if (!change) return false;
-  view.dispatch({ changes: change, annotations: [Transaction.remote.of(true), Transaction.addToHistory.of(undoable), ...(undoable ? [isolateHistory.of('full')] : [])], effects: flash.of(animate ? { ...changedLines(text, change), color } : null) });
+  const highlight = animate ? { ...changedLines(text, change, view.state.doc.lineAt(change.from).number), color } : null;
+  view.dispatch({ changes: change, annotations: [Transaction.remote.of(true), Transaction.addToHistory.of(undoable), ...(undoable ? [isolateHistory.of('full')] : [])], effects: flash.of(highlight) });
   clearTimeout(flashTimers.get(view));
   flashTimers.delete(view);
   if (animate) flashTimers.set(view, window.setTimeout(() => { flashTimers.delete(view); if (view.dom.isConnected) view.dispatch({ effects: flash.of(null) }); }, 2600));

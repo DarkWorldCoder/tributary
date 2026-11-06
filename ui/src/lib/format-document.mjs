@@ -21,11 +21,26 @@ export async function formatDocument(path, text) {
 export const nativeFormatTool = (path) => ({ sh: 'shfmt', bash: 'shfmt', bats: 'shfmt', lua: 'StyLua', luau: 'StyLua', toml: 'Taplo', go: 'gofmt', rs: 'rustfmt', py: 'Ruff or Black', pyi: 'Ruff or Black', c: 'clang-format', h: 'clang-format', cc: 'clang-format', cpp: 'clang-format', cxx: 'clang-format', hh: 'clang-format', hpp: 'clang-format', hxx: 'clang-format', java: 'clang-format', cs: 'clang-format', m: 'clang-format', mm: 'clang-format', zig: 'zig fmt' }[String(path).split('.').pop().toLowerCase()] || null);
 
 /** A small, bounded hint; only the real parser/formatter may change source. */
+// LF is absent from each old per-line input. Exclude it explicitly here so the
+// whole-prefix regex cannot join a multi-line try/catch into a compact line.
+const compactTry = /\btry[^\S\n]*\{.+\}[^\S\n]*catch\b/;
+const compactStatements = /;[^;]+;/;
 export function formattingHint(path, text) {
-  const lines = text.slice(0, 128 * 1024).split('\n');
-  if (lines.some((line) => line.length > 300)) return 'Long lines';
+  const sample = text.slice(0, 128 * 1024);
+  for (let start = 0;;) {
+    const newline = sample.indexOf('\n', start), end = newline < 0 ? sample.length : newline;
+    if (end - start > 300) return 'Long lines';
+    if (newline < 0) break;
+    start = newline + 1;
+  }
   const parser = formatParser(path, text);
-  if (['babel', 'typescript'].includes(parser) && lines.some((line) =>
-    /\btry\s*\{.+\}\s*catch\b/.test(line) || line.length > 100 && /;[^;]+;/.test(line))) return 'Compact code';
+  if (parser !== 'babel' && parser !== 'typescript') return null;
+  if (compactTry.test(sample)) return 'Compact code';
+  for (let start = 0;;) {
+    const newline = sample.indexOf('\n', start), end = newline < 0 ? sample.length : newline;
+    if (end - start > 100 && compactStatements.test(sample.slice(start, end))) return 'Compact code';
+    if (newline < 0) break;
+    start = newline + 1;
+  }
   return null;
 }

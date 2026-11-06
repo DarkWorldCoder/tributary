@@ -10,7 +10,7 @@ import { useDebugger } from '@/hooks/use-debugger';
 import { debugGutter, debugLines } from '@/lib/debug-editor';
 import * as React from 'react';
 import { basicSetup } from 'codemirror';
-import { EditorState, Compartment, Prec, Transaction, type Extension } from '@codemirror/state';
+import { EditorState, Compartment, Prec, Transaction, type Extension, type Text } from '@codemirror/state';
 import { EditorView, keymap } from '@codemirror/view';
 import { lintGutter, lintKeymap, setDiagnostics } from '@codemirror/lint';
 import { autocompletion } from '@codemirror/autocomplete';
@@ -20,7 +20,7 @@ import { documentLanguage } from '@/lib/document-language-support.mjs';
 import { formatInWorker } from '@/lib/formatter';
 import { formatParser, nativeFormatTool } from '@/lib/format-document.mjs';
 import { editorSpacing } from '@/lib/editor-spacing.mjs';
-import { minimalChange } from '@/lib/text-change.mjs';
+import { minimalChange, textAfterChanges } from '@/lib/text-change.mjs';
 import { undo as undoEdit, redo as redoEdit, selectAll, undoDepth, redoDepth, isolateHistory, indentWithTab } from '@codemirror/commands';
 import { syntaxHighlighting, indentUnit } from '@codemirror/language';
 import { editorTheme as theme, editorHighlight as highlight } from '@/lib/editor-appearance';
@@ -50,6 +50,9 @@ export function CodeEditor({ project: documentProject, active = true, keepAlive 
 }) {
   const host = React.useRef<HTMLDivElement>(null);
   const view = React.useRef<EditorView | null>(null);
+  // One alias for the current parent-owned value, never a snapshot history.
+  // Edits use ChangeSet offsets; exact echoes skip serialization and diffing.
+  const canonical = React.useRef<{ doc: Text; text: string } | null>(null);
   const latestScroll = React.useRef<EditorMemento['scroll']>(undefined);
   const parked = React.useRef<(EditorMemento & { path: string; workspace: string | null }) | null>(null);
   const [pendingEdit, setPendingEdit] = React.useState(0);
@@ -163,7 +166,12 @@ export function CodeEditor({ project: documentProject, active = true, keepAlive 
             if (latestScroll.current && u.docChanged) for (const transaction of u.transactions) latestScroll.current = latestScroll.current?.map(transaction.changes);
             if (u.docChanged) ++revision;
             reportHistory(u.view);
-            if (u.docChanged && u.transactions.some((transaction) => !transaction.annotation(Transaction.remote))) cb.current.onChange?.(u.state.doc.toString());
+            if (u.docChanged) {
+              if (u.transactions.some((transaction) => !transaction.annotation(Transaction.remote)) && cb.current.onChange) {
+                const text = canonical.current?.doc === u.startState.doc ? textAfterChanges(canonical.current.text, u.changes) : u.state.doc.toString();
+                canonical.current = { doc: u.state.doc, text }; cb.current.onChange(text);
+              } else canonical.current = null;
+            }
             if (u.selectionSet && u.transactions.some((transaction) => transaction.isUserEvent('select'))) cb.current.onNavigate?.();
             if (u.selectionSet || u.docChanged) { const head = u.state.selection.main.head; const current = u.state.doc.lineAt(head); cb.current.onCursorChange?.({ line: current.number, column: head - current.from + 1 }); }
           }),
@@ -205,6 +213,7 @@ export function CodeEditor({ project: documentProject, active = true, keepAlive 
     v.contentDOM.addEventListener('compositionend', endComposition);
     return () => {
       if (!v) return;
+      canonical.current = null;
       v.contentDOM.removeEventListener('compositionstart', startComposition); v.contentDOM.removeEventListener('compositionend', endComposition);
       cancelAnimationFrame(scrollFrame); v.scrollDOM.removeEventListener('scroll', rememberScroll);
       const snapshot = captureEditorMemento(v);
@@ -269,12 +278,18 @@ export function CodeEditor({ project: documentProject, active = true, keepAlive 
   React.useEffect(() => {
     const v = view.current;
     if (!v) { if (parked.current && updateParkedText(parked.current, value)) { latestScroll.current = parked.current.scroll; setDiskChanged((n) => n + 1); } return; }
+    const previous = canonical.current;
+    if (previous?.doc === v.state.doc && previous.text === value) return;
+    canonical.current = null;
     // Only the changed part is replaced, so the cursor and scroll position stay put; the changed lines light up.
-    const change = followChanges ? minimalChange(v.state.doc.toString(), value) : null;
-    if (applyRemoteText(v, value, undefined, true, active)) {
+    const change = minimalChange(previous?.doc === v.state.doc ? previous.text : v.state.doc.toString(), value);
+    if (applyRemoteText(v, value, undefined, true, active, change)) {
       setDiskChanged((n) => n + 1);
-      if (active && change) v.dispatch({ effects: EditorView.scrollIntoView(Math.min(value.length, change.from), { y: 'center' }) });
+      if (active && followChanges && change) v.dispatch({ effects: EditorView.scrollIntoView(Math.min(value.length, change.from), { y: 'center' }) });
     }
+    // CodeMirror normalizes CR/CRLF. Raw disk text with CR cannot be used with
+    // its offsets; the next edit falls back to one canonical tree snapshot.
+    if (!value.includes('\r')) canonical.current = { doc: v.state.doc, text: value };
   }, [value, followChanges]);
   React.useEffect(() => {
     const editor = view.current; if (!active || !editor || !workspace) return;

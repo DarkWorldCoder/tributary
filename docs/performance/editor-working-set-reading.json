@@ -1,0 +1,68 @@
+{
+  "date": "2026-11-06",
+  "purpose": "Separate editor allocation traffic, natural collector trace events and resident process accounting; avoid repeated serialization and accidental string backing-store retention.",
+  "runtime": {
+    "electron": "44.7.2",
+    "v8": "15.2.124.37-electron.0",
+    "upstreamV8Tag": "15.2.124.37",
+    "note": "Upstream tagged source was read; this is not byte-for-byte verification of Electron's patched V8 binary."
+  },
+  "book": {
+    "title": "Operating Systems: Three Easy Pieces",
+    "authors": "Remzi H. Arpaci-Dusseau and Andrea C. Arpaci-Dusseau",
+    "chapter": 13,
+    "titleOfChapter": "The Abstraction: Address Spaces",
+    "url": "https://pages.cs.wisc.edu/~remzi/OSTEP/vm-intro.pdf",
+    "pdfSha256": "c57de8420ea7bc8afbca5ce3ba92bcc0b32d5f719f4ab613dd9ceb698d537acc",
+    "pages": 9,
+    "scope": "Read the complete extracted chapter text, listing, references and homework prompts. Rendered diagrams were not inspected; homework experiments and linked references were not executed/read.",
+    "application": "A process address space and language-level allocation traffic are not physical resident memory. This phase reports separate app-tree PSS samples instead of equating profiler bytes with RAM savings.",
+    "wholeBookRead": false
+  },
+  "sources": [
+    {
+      "url": "https://github.com/v8/v8/blob/15.2.124.37/src/builtins/array-join.tq",
+      "blob": "c9ec15e06ea2badbf3649f02185d7c7661d61481",
+      "scope": "BufferJoin and Add/RepeatLast storage paths; including the single-buffer-string fast path and sequential result allocation.",
+      "completeRepositoryRead": false
+    },
+    {
+      "url": "https://github.com/v8/v8/blob/15.2.124.37/src/inspector/v8-heap-profiler-agent-impl.cc",
+      "blob": "a2f2ed22df1e48f4d02648d96830c6d3a658d1dc",
+      "scope": "Sampling flags and GetAllocationProfile call; inspector enables kSamplingForceGC.",
+      "completeRepositoryRead": false
+    },
+    {
+      "url": "https://github.com/v8/v8/blob/15.2.124.37/src/profiler/sampling-heap-profiler.cc",
+      "blob": "7ea26d4064f842e9b2b45d71bfe019be106c6d72",
+      "scope": "GetAllocationProfile implementation; requested profile collection forces diagnostic GC with kSamplingForceGC.",
+      "completeRepositoryRead": false
+    },
+    {
+      "url": "https://github.com/v8/v8/blob/15.2.124.37/src/heap/gc-tracer.cc",
+      "blob": "9ef93130942eea8a7f67087cf946089ae3663a21",
+      "scope": "StartObservablePause, UpdateCurrentEvent, StartCycle/atomic phase and StopObservablePause scopes. Event durations are not asserted to be a universal exact stop-the-world metric.",
+      "completeRepositoryRead": false
+    },
+    {
+      "url": "https://github.com/electron/electron/blob/v44.7.2/docs/api/content-tracing.md",
+      "blob": "204ea7153d5cee4600e507a980c11d4d582209e2",
+      "scope": "Pinned contentTracing start/stop acknowledgement, trace buffer usage and process buffering API sections.",
+      "completeRepositoryRead": false
+    }
+  ],
+  "localSource": {
+    "package": "@codemirror/state",
+    "version": "6.13.1",
+    "scope": "ChangeSet length, empty and iterChanges declarations/source; actual Text and ChangeSet differential checks including multi-edit and composed changes."
+  },
+  "implementation": "Current canonical value is aliased once per editor. Changes materialize inserted Text and one sequential result string; exact parent echoes bypass serialization. Single-piece joins are split to avoid V8's return-original-string fast path. Bounded metadata scans replace per-line split/regex arrays. CR-bearing raw inputs retain the existing canonicalization fallback.",
+  "notClaimed": [
+    "All memory books read",
+    "All relevant source repositories read",
+    "A universal V8 string-layout guarantee across future runtimes",
+    "Production forced GC or heap flags",
+    "A new native runtime dependency or Rust bridge",
+    "Constant-space dirty text or undo history"
+  ]
+}
