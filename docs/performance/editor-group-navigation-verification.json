@@ -1,0 +1,55 @@
+{
+  "passed": true,
+  "date": "2026-11-06T03:40:14.643Z",
+  "checks": [
+    "Ctrl+backslash creates independent groups without replacing the existing editor",
+    "same-file edits and undo synchronize; Ctrl+S saves the focused group",
+    "Ctrl+Tab switches files inside the focused group and returns keyboard focus there",
+    "Quick Open and toolbar save target their group; other file remains unchanged",
+    "keyboard-accessible divider resizes editor groups",
+    "split down creates rows; closing a group keeps its unsaved document",
+    "restart restores editor groups, selected files and unsaved text",
+    "closing the last dirty view asks before discarding",
+    "narrow layout fits; joining releases the extra editor without losing text",
+    "native right-click tab menu splits the selected file and focuses its new group",
+    "numbered shortcuts focus visual groups, create the next empty group, preserve it on restart and route Quick Open there",
+    "command palette group navigation restores keyboard focus to the chosen editor"
+  ],
+  "sourceHashes": {
+    "ui/src/components/workspace-files.tsx": "c395f51415e1a100fcb97978f43c2379f5995f561844e3548bfce2a5ab02861d",
+    "ui/src/components/file-switcher.tsx": "ca398def534cc3ef152bf774a01d88e9835817f0a12ad4a8723549d4ee360023",
+    "ui/src/lib/editor-groups.mjs": "cd0e4039874718cb7fa1071f51812a7218efa5f8b05e8d0d8f149257d41f9f36",
+    "ui/src/components/keyboard-shortcuts.tsx": "efc40e1b159e25e62887a2297914edf6212aff49654d0b66b74c7b495fc2f6e2",
+    "core/shortcuts.mjs": "5b55fc0b3db1c518ecefcadefd9f3dd4393fd2d876e7b9b6246f79b4348c5bc0",
+    "ui/src/components/command-palette.tsx": "581daedee4539676acca024a91f0e3447a7b7605b381231238acd35acef382e3",
+    "ui/src/components/desktop-titlebar.tsx": "b7b36e54aded83e55881bebb3734a7342b04679df50d87a8fa353ae1137731f7",
+    "ui/src/index.css": "3ac0df7ca29be99252e396b357029c00561e0f2d6bc0d2cdba69e83e24a39f43",
+    "test/e2e/editor-split.cjs": "e5836fc00b9047d957b8b3608531f7cb58acf9c9215168e7271f2ade4282c0d8"
+  },
+  "scope": "Linux Electron source build, real CodeMirror instances and temporary files/drafts. Agent discovery disabled. No native Windows/macOS or installer verification.",
+  "validation": {
+    "focusedTests": 36,
+    "typescript": "passed",
+    "productionUiBuild": "passed",
+    "vscodeBundleBuild": "passed",
+    "nativeSearchChecks": 14
+  },
+  "sourceReferences": [
+    {
+      "repository": "microsoft/vscode",
+      "path": "src/vs/workbench/browser/parts/editor/editorCommands.ts",
+      "blob": "0cb56b5350645eb5194343d26aff8418732ccfab",
+      "section": "registerFocusEditorGroupAtIndexCommands"
+    },
+    {
+      "repository": "microsoft/vscode",
+      "path": "src/vs/workbench/browser/parts/editor/editorActions.ts",
+      "blob": "2f6c4255df516cd993fe044f3d5005d47f45459c",
+      "section": "FocusFirstGroupAction"
+    }
+  ],
+  "limits": [
+    "Linux Electron source build only; no native Windows or macOS check.",
+    "Linear row or column groups; no nested grid or tab dragging."
+  ]
+}

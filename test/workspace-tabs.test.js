@@ -78,3 +78,20 @@ test('joining a split preserves all unsaved file references and saved layouts va
   assert.deepEqual(malformed.groups[0].paths, ['a.ts', 'draft.ts']);
   assert.equal(malformed.groups[0].active, 'a.ts');
 });
+
+test('numbered group focus uses visual order, creates only the next group and restores empty groups', async () => {
+  const { editorGroups, splitEditorGroup, focusEditorGroupAt, restoreEditorGroups } = await groups;
+  const original = editorGroups(['a.ts'], 'a.ts');
+  const empty = focusEditorGroupAt(original, 1);
+  assert.deepEqual(empty.groups[1], { id: 'editor-2', paths: [], active: null });
+  assert.equal(original.groups.length, 1);
+  assert.deepEqual(restoreEditorGroups(empty, ['a.ts'], 'a.ts'), empty);
+  assert.equal(focusEditorGroupAt(original, 2), original);
+  for (const index of [-1, 8, NaN, 0.5, '1']) assert.equal(focusEditorGroupAt(empty, index), empty);
+  const first = focusEditorGroupAt(empty, 0);
+  const reordered = splitEditorGroup(first);
+  assert.deepEqual(reordered.groups.map(group => group.id), ['editor-1', 'editor-3', 'editor-2']);
+  assert.equal(focusEditorGroupAt(reordered, 1).focused, 'editor-3');
+  assert.equal(focusEditorGroupAt(reordered, 2).focused, 'editor-2');
+  assert.equal(focusEditorGroupAt(first, 0), first);
+});

@@ -1,6 +1,7 @@
 export const SHORTCUTS = [
   { id: 'find-file', label: 'Find a project file', group: 'Navigation', keys: ['Mod', 'P'] },
   { id: 'split-editor', label: 'Split editor', group: 'Navigation', keys: ['Mod', '\\'] },
+  ...Array.from({ length: 8 }, (_, index) => ({ id: `focus-editor-${index + 1}`, label: `Focus editor group ${index + 1}`, group: 'Editor groups', keys: ['Mod', String(index + 1)] })),
   { id: 'split-terminal', label: 'Split terminal', group: 'Navigation', keys: ['Mod', 'Shift', '5'] },
   { id: 'new-terminal', label: 'New terminal', group: 'Navigation', keys: ['Mod', 'Shift', '`'] },
   { id: 'new', label: 'New chat', group: 'Chat', keys: ['Mod', 'Shift', 'O'], aliases: [['Mod', 'N']] },

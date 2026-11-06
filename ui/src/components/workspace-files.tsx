@@ -1,4 +1,4 @@
-import { editorGroups, selectGroupFile, splitEditorGroup, closeGroupFiles, joinEditorGroup, restoreEditorGroups, type EditorGroup, type EditorGroups } from '@/lib/editor-groups.mjs';
+import { editorGroups, selectGroupFile, focusEditorGroupAt, splitEditorGroup, closeGroupFiles, joinEditorGroup, restoreEditorGroups, type EditorGroup, type EditorGroups } from '@/lib/editor-groups.mjs';
 import { createDirectorySession, type DirectorySession } from '@/lib/directory-session.mjs';
 import { useTreeViewport } from '@/hooks/use-tree-viewport';
 import { ProjectSearch } from '@/components/project-search';
@@ -466,7 +466,7 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
   const focusEditorGroup = () => {
     requestAnimationFrame(() => requestAnimationFrame(() => {
       const group = root.current?.querySelector<HTMLElement>(`[data-editor-group="${groupsRef.current.focused}"]`);
-      if (group?.offsetParent) (group.querySelector<HTMLElement>('.cm-content') || group.querySelector<HTMLElement>('[role="tab"][data-state="active"]'))?.focus();
+      if (group?.offsetParent) (group.querySelector<HTMLElement>('.cm-content') || group.querySelector<HTMLElement>('[role="tab"][data-state="active"]') || group).focus();
       pendingGroupFocus.current = null;
     }));
   };
@@ -482,12 +482,23 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
     pendingGroupFocus.current = groupsRef.current.focused; focusEditorGroup();
   };
   const joinGroup = (id: string) => { updateGroups(state => joinEditorGroup(state, id)); pendingGroupFocus.current = groupsRef.current.focused; focusEditorGroup(); };
+  const focusAtIndex = (index: number) => {
+    const next = focusEditorGroupAt(groupsRef.current, index);
+    if (!next.groups[index]) return;
+    setComparison(null); s.pauseFollowing(); setBrowse(false);
+    ++sequence.current; setBusy(false); setOpening(null); setLine(undefined); setColumn(undefined);
+    updateGroups(() => next);
+    pendingGroupFocus.current = next.focused; focusEditorGroup();
+  };
+  const numberedFocus = React.useRef(focusAtIndex); numberedFocus.current = focusAtIndex;
   const splitCurrent = React.useRef(splitGroup); splitCurrent.current = splitGroup;
   React.useEffect(() => {
     if (!visible) return;
     const split = (event: Event) => splitCurrent.current((event as CustomEvent).detail === 'vertical' ? 'vertical' : 'horizontal');
+    const focus = (event: Event) => numberedFocus.current((event as CustomEvent<number>).detail);
     window.addEventListener('tributary:split-editor', split);
-    return () => window.removeEventListener('tributary:split-editor', split);
+    window.addEventListener('tributary:focus-editor-group', focus);
+    return () => { window.removeEventListener('tributary:split-editor', split); window.removeEventListener('tributary:focus-editor-group', focus); };
   }, [visible]);
   const allDocs = docs;
   const renderGroup = (group: EditorGroup) => {
@@ -558,7 +569,7 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
         </DropdownMenu>
       </div>);
 
-    return <Tabs key={group.id} value={active ?? ''} onValueChange={select} data-editor-group={group.id} data-focused={focused} aria-label={`Editor group ${groupLayout.groups.indexOf(group) + 1}`} onPointerDownCapture={() => focusGroup(group.id)} onFocusCapture={() => focusGroup(group.id)} className="editor-group flex h-full min-h-0 min-w-0 flex-col gap-0 overflow-hidden">
+    return <Tabs key={group.id} value={active ?? ''} onValueChange={select} data-editor-group={group.id} data-focused={focused} tabIndex={-1} aria-label={`Editor group ${groupLayout.groups.indexOf(group) + 1}`} onPointerDownCapture={() => focusGroup(group.id)} onFocusCapture={() => focusGroup(group.id)} className="editor-group flex h-full min-h-0 min-w-0 flex-col gap-0 overflow-hidden">
       {fileNavigation}
             {comparison ? <WorkspaceFileChange bridge={s.hub} project={project} rel={comparison} revision={`${repository.revision}:${directoryRevision}`} visible={visible} dirty={docs.some((item) => item.rel === comparison && item.dirty)} deleted={changedFiles.some((item) => item.rel === comparison && item.status === 'D')} onEdit={() => { const rel = comparison; setComparison(null); void openDoc(rel, 'pinned', undefined, undefined, false, true); }} onClose={() => { setComparison(null); if (!docs.length && small) setBrowse(true); }} /> : doc ? <>
               <div className="workspace-file-actions flex h-7 min-w-0 shrink-0 items-center border-b px-3 max-sm:h-11">

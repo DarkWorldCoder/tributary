@@ -41,6 +41,7 @@ export function CommandPalette() {
     { id: 'files', label: 'View: Show Explorer', icon: FileImage, shortcut: 'files', keywords: ['files', 'images', 'preview'], disabled: !s.project, run: () => { s.setSearchFilesOpen(false); s.openPanel('files'); } },
     { id: 'split-editor', label: 'View: Split Editor Right', icon: FileImage, shortcut: 'split-editor', disabled: !s.project, run: () => splitEditor() },
     { id: 'split-editor-down', label: 'View: Split Editor Down', icon: FileImage, disabled: !s.project, run: () => splitEditor('vertical') },
+    ...Array.from({ length: 8 }, (_, index): Action => ({ id: `focus-editor-${index + 1}`, label: `View: Focus Editor Group ${index + 1}`, icon: FileImage, shortcut: `focus-editor-${index + 1}` as ShortcutAction, disabled: !s.project, run: () => { s.openPanel('files'); requestAnimationFrame(() => requestAnimationFrame(() => window.dispatchEvent(new CustomEvent('tributary:focus-editor-group', { detail: index })))); } })),
     { id: 'memory', label: 'Project: Open Memory', icon: BookOpen, shortcut: 'memory', disabled: !s.project, run: () => s.openPanel('memory') },
     { id: 'preview', label: 'View: Open App Preview', icon: Globe, shortcut: 'preview', disabled: !s.project, run: () => s.openPanel('preview') },
     { id: 'tests', label: 'Testing: Show Test Results and QA', icon: Bug, keywords: ['Playwright', 'report', 'failure', 'trace', 'bug'], disabled: !s.project, run: () => s.openPanel('tests') },

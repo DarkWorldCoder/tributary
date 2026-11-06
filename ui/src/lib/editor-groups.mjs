@@ -5,6 +5,15 @@ export function editorGroups(paths = [], active = paths[0] ?? null) {
 export function selectGroupFile(state, id, rel) {
   return { ...state, focused: id, groups: state.groups.map(group => group.id === id ? { ...group, active: rel, paths: rel && !group.paths.includes(rel) ? [...group.paths, rel] : group.paths } : group) };
 }
+// Numbered focus follows visual order. Only the next missing group is created.
+export function focusEditorGroupAt(state, index) {
+  if (!Number.isInteger(index) || index < 0 || index >= 8 || index > state.groups.length) return state;
+  const existing = state.groups[index];
+  if (existing) return state.focused === existing.id ? state : { ...state, focused: existing.id };
+  let n = 1; while (state.groups.some(group => group.id === `editor-${n}`)) ++n;
+  const next = { id: `editor-${n}`, paths: [], active: null };
+  return { ...state, focused: next.id, groups: [...state.groups, next] };
+}
 export function splitEditorGroup(state, direction = state.direction) {
   const source = state.groups.find(group => group.id === state.focused);
   if (!source?.active) return state;
@@ -38,7 +47,7 @@ export function restoreEditorGroups(saved, paths, active) {
     let id = /^editor-\d+$/.test(group?.id) && !ids.has(group.id) ? group.id : `editor-${index + 1}`;
     while (ids.has(id)) id += '0'; ids.add(id);
     return { id, paths: selected, active: selected.includes(group?.active) ? group.active : selected[0] ?? null };
-  }).filter(group => group.paths.length);
+  });
   if (!groups.length) return editorGroups(paths, active);
   // Keep drafts that were not assigned to a surviving group reachable.
   groups[0].paths.push(...paths.filter(path => !groups.some(group => group.paths.includes(path))));
