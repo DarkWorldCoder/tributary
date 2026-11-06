@@ -16,6 +16,8 @@
 
 See [research and remaining work](MEMORY_OPTIMIZATION_RESEARCH.md) for the source inventory, implementation decisions, benchmark limits and unfinished retention work.
 
+Editor change annotations now use a single source-line scan, avoiding full review-row/column construction and a second complete line split. The scan preserves changes beyond the former 2,000-row presentation limit. [Parser measurements and coverage](performance/EDITOR_DIFF.md) separate equal-output allocation/time results from the newly complete large marker sets; this is not a whole-app RAM claim.
+
 ## Reproduce the sidebar benchmark
 
 Run `npm run bench:memory`. It creates disposable history and compares the previous and optimized sidebar caches in separate processes with explicit garbage collection. No real user conversations or local models are opened.

@@ -2,7 +2,7 @@ import { captureEditorTransfer, restoreEditorTransfer, type EditorTransfer, capt
 import { configuredLanguage, serverCompletions } from '@/lib/language-tools';
 import { applyLspEdits, type LspEdit } from '@/lib/lsp-edits.mjs';
 import { changeGutter, setFileChanges } from '@/lib/change-gutter';
-import { editorDiffMarkers, editorDiffStats } from '@/lib/editor-diff.mjs';
+import { editorDiff } from '@/lib/editor-diff.mjs';
 import { sourceGrammar } from '@/lib/source-grammar.mjs';
 import { configureEditorGrammar } from '@/lib/editor-grammar.mjs';
 import { sourceLanguage, sourceSyntaxSupported } from '@/lib/source-language.mjs';
@@ -347,7 +347,7 @@ export function CodeEditor({ project: documentProject, active = true, keepAlive 
     const editor = view.current; if (!active || !editor || !workspace) return;
     let alive = true;
     const timer = setTimeout(() => {
-      s.hub.call<string>('fileDiff', workspace, path).then((diff) => { if (alive && view.current === editor) { editor.dispatch({ effects: setFileChanges.of(editorDiffMarkers(diff)) }); cb.current.onChangeStats?.({ rel: path, ...editorDiffStats(diff) }); } }).catch(() => { if (alive && view.current === editor) { editor.dispatch({ effects: setFileChanges.of([]) }); cb.current.onChangeStats?.(null); } });
+      s.hub.call<string>('fileDiff', workspace, path).then((diff) => { if (alive && view.current === editor) { const parsed = editorDiff(diff); editor.dispatch({ effects: setFileChanges.of(parsed.markers) }); cb.current.onChangeStats?.({ rel: path, ...parsed.stats }); } }).catch(() => { if (alive && view.current === editor) { editor.dispatch({ effects: setFileChanges.of([]) }); cb.current.onChangeStats?.(null); } });
     }, 150);
     return () => { alive = false; clearTimeout(timer); };
   }, [workspace, path, diskChanged, s.git?.stat, s.git?.branch, s.hub, active]);

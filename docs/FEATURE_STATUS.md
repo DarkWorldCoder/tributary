@@ -1,5 +1,7 @@
 # Feature status and next work
 
+Memory follow-up on 6 November: [complete editor diff metadata](performance/EDITOR_DIFF.md) removes review-only row/column allocations and fixes missing gutter changes after 2,000 preview rows. Sixty isolated parser subprocesses keep equal-output performance comparisons separate from expanded marker coverage. Validation: 647 regressions and five native Linux checks. Overall memory/literature/OS/model coverage remains ongoing.
+
 6 November update: [project editor settings and ESLint](PROJECT_ESLINT.md) now provide local-tool setup, real live diagnostics, undoable fixes and separate fix-on-save. Files use bounded asynchronous reads; nested packages select their own Prettier runtime/plugins. The publisher verifies uploaded SHA-256 digests before publication and completed retries. Validation: 642 regression tests, 10 real-ESLint Linux editor checks, 5 formatting checks, 17 split-editor checks, and a local packaged Linux runtime probe. Cross-platform packaged checks run in Distribution; these checks are not installer GUI certification or a refreshed performance comparison.
 
 Source-reviewed on 2 November 2026. This tracks every candidate in PRODUCT_ROADMAP.md, not a claim that the whole roadmap is delivered. “Implemented” describes the stated foundation; “Partial” lists the remaining boundary. “Not built in” means no dedicated implementation was identified in this pass; a capable installed assistant may offer related functionality independently.

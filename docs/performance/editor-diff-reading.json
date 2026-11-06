@@ -1,0 +1,25 @@
+{
+  "date": "2026-11-06",
+  "source": "https://gameprogrammingpatterns.com/data-locality.html",
+  "reader": "https://r.jina.ai/https://gameprogrammingpatterns.com/data-locality.html",
+  "capture": {
+    "bytes": 39993,
+    "lines": 581,
+    "words": 6403,
+    "sha256": "241b7dc6f298e62c6d24e4b7270e93529c0484d1383d521300a36957b760faba"
+  },
+  "scope": {
+    "completeCapturedChapterTextAndCppListingsRead": true,
+    "imagesVisuallyInspected": false,
+    "cppCompiledOrBenchmarked": false,
+    "linkedChaptersAndPapersReadInThisPass": false,
+    "entireBookRead": false
+  },
+  "application": "Separate the hot line/count scan from cold diff-presentation rows. Avoid materializing source substrings and split-review columns for editor gutter metadata. Preserve full patch coverage and exact source. C++ cache-line claims are not assumed to describe V8 strings/objects; measure allocation and parser work directly.",
+  "notClaimed": [
+    "hardware cache-miss reduction",
+    "whole-app RAM reduction",
+    "different garbage collector",
+    "book exhaustiveness"
+  ]
+}

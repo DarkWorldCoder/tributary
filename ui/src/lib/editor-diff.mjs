@@ -1,30 +1,28 @@
-import { diffRows } from '../../../core/diff-view.mjs';
-
-// Anchor deleted lines to the next surviving line, including deletions at EOF.
-export function editorDiffMarkers(diff) {
-  const parsed = diffRows(diff);
-  const markers = new Map(); let next = 1;
-  for (const row of parsed.rows) {
-    if (row.kind === 'hunk') { next = Math.max(1, Number(/\+(\d+)/.exec(row.text)?.[1] || 1)); continue; }
-    if (row.kind === 'add' || row.kind === 'remove') {
-      const line = row.kind === 'add' ? row.after : next;
-      const marker = markers.get(line) || { line, added: 0, removed: 0 };
-      marker[row.kind === 'add' ? 'added' : 'removed']++;
-      markers.set(line, marker);
-    }
-    if (row.after != null) next = row.after + 1;
+// Editor annotations need the complete supplied patch, not the bounded review UI.
+// Scan line boundaries without materializing source lines, display rows or columns.
+function scanDiff(input, withMarkers) {
+  const text = String(input || ''); const markers = withMarkers ? new Map() : null;
+  let next = 1, oldLeft = 0, newLeft = 0, untracked = false, added = 0, removed = 0, binary = false;
+  for (let start = 0; start < text.length;) {
+    const newline = text.indexOf('\n', start), end = newline < 0 ? text.length : newline;
+    const prefix = text.charCodeAt(start);
+    if (prefix === 64 && text.startsWith('@@ ', start)) {
+      const hunk = /^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/.exec(text.slice(start, Math.min(end, start + 160)));
+      if (hunk) { next = Math.max(1, Number(hunk[3])); oldLeft = Number(hunk[2] ?? 1); newLeft = Number(hunk[4] ?? 1); untracked = false; }
+    } else if (text.startsWith('diff --git ', start)) { oldLeft = newLeft = 0; untracked = false; }
+    else if (text.startsWith('Binary files ', start) || text.startsWith('GIT binary patch', start) || text.startsWith('Binary file.', start)) { binary = true; oldLeft = newLeft = 0; untracked = false; }
+    else if (!oldLeft && !newLeft && text.startsWith('new file ', start) && !text.startsWith('new file mode', start)) { next = 1; untracked = true; }
+    else if (prefix === 43 && (newLeft > 0 || untracked) || prefix === 45 && oldLeft > 0) {
+      const add = prefix === 43; const line = next;
+      if (markers) { const marker = markers.get(line) || { line, added: 0, removed: 0 }; marker[add ? 'added' : 'removed']++; markers.set(line, marker); }
+      if (add) { added++; next++; if (!untracked) newLeft--; } else { removed++; oldLeft--; }
+    } else if (prefix === 32 && oldLeft > 0 && newLeft > 0) { next++; oldLeft--; newLeft--; }
+    start = end + 1;
   }
-  return [...markers.values()].sort((a, b) => a.line - b.line);
+  return { markers: binary || !markers ? [] : [...markers.values()].sort((a, b) => a.line - b.line), stats: binary ? { binary: true } : { added, removed } };
 }
 
-export function editorDiffStats(diff) {
-  let added = 0; let removed = 0; let source = false; let binary = false;
-  for (const line of String(diff || '').split('\n')) {
-    if (/^Binary files |^GIT binary patch/.test(line)) binary = true;
-    if (line.startsWith('diff --git ')) { source = false; continue; }
-    if (line.startsWith('@@ ') || line.startsWith('new file ') && !line.startsWith('new file mode')) { source = true; continue; }
-    if (!source) continue;
-    if (line.startsWith('+')) added++; else if (line.startsWith('-')) removed++;
-  }
-  return binary ? { binary: true } : { added, removed };
-}
+export function editorDiff(diff) { return scanDiff(diff, true); }
+// Compatibility helpers share the scanner; stats-only callers allocate no markers.
+export function editorDiffMarkers(diff) { return scanDiff(diff, true).markers; }
+export function editorDiffStats(diff) { return scanDiff(diff, false).stats; }

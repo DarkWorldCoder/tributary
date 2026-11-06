@@ -1,0 +1,53 @@
+{
+  "date": "2026-11-06",
+  "baseCommit": "fdcf3b18f7b4acefaa5784a80554d7ed35d15657",
+  "sourceHashes": {
+    "ui/src/lib/editor-diff.mjs": "1f4fbdac7e96ed7098f9890c584ee9d4eecfd75c899baebade444ad155eb7349",
+    "ui/src/lib/editor-diff.d.mts": "92943e3075061c95ad0b3b8d1f23c20335d1a25a90c1e1a5f7ae7bc56f0a6e44",
+    "ui/src/components/code-editor.tsx": "e484fbab4694d835bf4bbc6e06634e2dbcd375d595abf0ef0e7cbcb39ab30057",
+    "test/editor-diff.test.mjs": "e8d22a84dd8b134c3fec65488fef3b84ddb089f6a1f79d4b59b8591ca63b1c56",
+    "test/e2e/editor-diff.cjs": "720ac48da0b8362d00761d629763af96c133c3c7d40c777e97483d059156a136",
+    "scripts/performance/editor-diff.cjs": "2076f15514881a871d2602ff3774c5626e8454caaf8837928e8dee7cc08a1315",
+    "package.json": "5022fe152ab19e906a0bae512a5aba857915bffa35c602263bdfd2746d3b9d51"
+  },
+  "unitTests": {
+    "passed": 647,
+    "command": "npm test"
+  },
+  "focusedTests": {
+    "passed": 26,
+    "files": [
+      "test/editor-diff.test.mjs",
+      "test/reply-timeline.test.js",
+      "test/improvements.test.js"
+    ]
+  },
+  "typecheck": true,
+  "productionBuild": true,
+  "native": {
+    "passed": true,
+    "lines": 4000,
+    "checks": [
+      "Exact source and full replacement counts",
+      "First-line addition/deletion marker",
+      "Final source-line marker after more than 8000 supplied diff rows",
+      "Native local edit and undo retain the entire file",
+      "Real disk writes refresh the buffer, counters and final marker without reopening"
+    ],
+    "scope": "Linux source Electron/CodeMirror with real Git and file watches. Functional coverage, not a process-memory or latency benchmark."
+  },
+  "benchmark": {
+    "file": "editor-diff-benchmark.json",
+    "cases": 5,
+    "freshSubprocesses": 60,
+    "allComparedResultsExact": true,
+    "scope": "Five isolated Node parser workloads, three alternating fresh subprocess pairs per workload and phase. Timing/natural GC and allocation sampling run separately; all compared results are exactly equal. Large-diff marker coverage differs and is excluded from the like-for-like performance comparison: largeStats measures only exact full statistics. No Electron process RAM, GPU/model memory, hardware cache misses or end-to-end interaction claims."
+  },
+  "visualEvidence": "editor-diff-last-line.png",
+  "limitations": [
+    "No whole-app RAM, GPU/model or hardware cache-miss measurements",
+    "Linux source UI only; no native macOS/Windows UI certification",
+    "Large-diff marker behavior differs from old truncation and is excluded from the equal-output performance comparison",
+    "The existing supplied-patch and editor size limits are unchanged"
+  ]
+}
