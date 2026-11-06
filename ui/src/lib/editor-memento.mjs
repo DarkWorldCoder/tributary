@@ -1,6 +1,7 @@
 import { EditorState, Transaction } from '@codemirror/state';
 import { historyField, isolateHistory } from '@codemirror/commands';
 import { minimalChange } from './text-change.mjs';
+import { editorText } from './editor-text.mjs';
 
 // A group handoff must rebuild extensions with the destination's callbacks.
 // Serialize only text, selection and undo/redo; no source view or DOM crosses.
@@ -41,7 +42,7 @@ export function updateEditorMemento(memento, spec) {
 // Apply each observed external revision while parked, preserving the same
 // remote/undo boundary as applyRemoteText without creating a hidden UI.
 export function updateParkedText(memento, text) {
-  const change = minimalChange(memento.state.doc.toString(), text);
+  const change = minimalChange(memento.state.doc.toString(), editorText(text));
   if (!change) return false;
   updateEditorMemento(memento, { changes: change, annotations: [Transaction.remote.of(true), Transaction.addToHistory.of(true), isolateHistory.of('full')] });
   return true;

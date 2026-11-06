@@ -5,6 +5,7 @@ import { RangeSet, StateEffect, StateField, Transaction, type EditorState, type 
 import { Decoration, EditorView, GutterMarker, gutter, keymap, showTooltip, type DecorationSet, type Tooltip } from '@codemirror/view';
 import { isolateHistory } from '@codemirror/commands';
 import { changedLines, minimalChange, type TextChange } from '@/lib/text-change.mjs';
+import { editorText } from './editor-text.mjs';
 
 export interface BlameTurn { agent: string; threadId: string; title: string; messageId: string; ts?: number; request?: string }
 export interface Blame { authors: number[]; turns: BlameTurn[] }
@@ -121,6 +122,7 @@ export function clearAgentFlash(view: EditorView) {
  * is replaced, outside the undo history unless `undoable`. Visible panes can briefly highlight those lines.
  */
 export function applyRemoteText(view: EditorView, text: string, color = 'var(--success)', undoable = false, animate = true, knownChange?: TextChange | null) {
+  if (knownChange === undefined) text = editorText(text);
   const change = knownChange === undefined ? minimalChange(view.state.doc.toString(), text) : knownChange;
   if (!change) return false;
   const highlight = animate ? { ...changedLines(text, change, view.state.doc.lineAt(change.from).number), color } : null;

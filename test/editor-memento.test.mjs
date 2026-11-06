@@ -43,6 +43,17 @@ test('parked changes map the scroll anchor and no-op revisions retain identity',
   assert.equal(saved.state.doc.toString().startsWith('prefix\n'), true);
 });
 
+test('parked CRLF revisions normalize before diffing and keep exact undo boundaries', () => {
+  const saved = fixture(), original = saved.state.doc.toString(), crlf = original.replaceAll('\n', '\r\n');
+  assert.equal(updateParkedText(saved, crlf), false);
+  const next = crlf + '// 😀 external\r\n';
+  assert.equal(updateParkedText(saved, next), true);
+  assert.equal(saved.state.doc.toString(), original + '// 😀 external\n');
+  const target = { get state() { return saved.state; }, dispatch(transaction) { saved.state = transaction.state; } };
+  assert.equal(undo(target), true); assert.equal(saved.state.doc.toString(), original);
+  assert.equal(redo(target), true); assert.equal(saved.state.doc.toString(), original + '// 😀 external\n');
+});
+
 test('moving between groups transfers undo and selection using fresh destination extensions', async () => {
   const { captureEditorTransfer, restoreEditorTransfer } = await import('../ui/src/lib/editor-memento.mjs');
   const { StateField } = await import('../ui/node_modules/@codemirror/state/dist/index.js');

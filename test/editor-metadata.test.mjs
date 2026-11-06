@@ -4,6 +4,7 @@ import { editorSpacing } from '../ui/src/lib/editor-spacing.mjs';
 import { formatParser, formattingHint } from '../ui/src/lib/format-document.mjs';
 import { changedLines, minimalChange, textAfterChanges } from '../ui/src/lib/text-change.mjs';
 import { ChangeSet, Text } from '../ui/node_modules/@codemirror/state/dist/index.js';
+import { editorText } from '../ui/src/lib/editor-text.mjs';
 
 // Previous split/regex implementations are deliberately kept as independent
 // oracles for the bounded index scans and their existing sampling boundaries.
@@ -77,4 +78,16 @@ test('canonical text updates match CodeMirror for multiple edits and UTF-16 edge
   const original = 'one\ntwo\nthree', first = ChangeSet.of({from: 4, to: 7, insert: 'TWO'}, original.length), second = ChangeSet.of({from: 0, insert: 'start\n'}, first.newLength), composed = first.compose(second);
   assert.equal(textAfterChanges(original, composed), second.apply(first.apply(Text.of(original.split('\n')))).toString());
   assert.throws(() => textAfterChanges('wrong', ChangeSet.empty(1)), /does not match/);
+});
+
+test('disk line endings normalize before diffing without creating extra lines', () => {
+  const cases = ['', 'a\r\nb\r\n', '\r\n', '\r', '\r\n\n\r', '// 😀\r\nconst label = "नमस्ते";\r\n', 'a\u2028b\u2029c'];
+  for (const source of cases) {
+    const normalized = editorText(source);
+    const changes = ChangeSet.of({ from: 0, insert: source }, 0), actual = changes.apply(Text.empty).toString();
+    assert.equal(normalized, actual);
+    assert.equal(minimalChange(actual, normalized), null);
+    const original = Text.of('previous\n'.split('\n')), change = minimalChange(original.toString(), normalized);
+    assert.equal(ChangeSet.of(change || [], original.length).apply(original).toString(), actual);
+  }
 });

@@ -1,0 +1,55 @@
+{
+  "date": "2026-11-06T07:07:33.092318+00:00",
+  "measuredOptimizationCommit": "d03db47",
+  "preexistingBugBaseline": "ea94d4b",
+  "regressions": {
+    "passed": 621,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 94550.492776
+  },
+  "focused": {
+    "passed": 11,
+    "failed": 0
+  },
+  "native": {
+    "agentEditor": 7,
+    "splitEditor": 16,
+    "search": 15
+  },
+  "types": "passed",
+  "productionUiBuild": "passed",
+  "extensionBuild": "passed via npm pretest: node vscode/build.js",
+  "sourceHashes": {
+    "ui/src/components/code-editor.tsx": "5ad74c65925ce85c276cfb72a9654b42cde929cf709e477a1b902f81f30c7135",
+    "ui/src/lib/agent-editor.ts": "fe02dacf417f8e71a722d10299e1eb31dc6483e09f4875629bfcf3d95535d5bf",
+    "ui/src/lib/editor-memento.mjs": "086d94dd3598e1fc1efd2157cb0977a38897b7d4598717a7cecd450e1295f32b",
+    "ui/src/lib/editor-text.mjs": "6fea6b92c4c6dceb942deac1e08e5bad4b0438064286beb7b93302b4782a9fe7",
+    "ui/src/lib/editor-text.d.mts": "721a9b00c055e19e83a2dc0d5ae16b64c66863fd4be5d8212ac930a97e09a133",
+    "test/e2e/agent-editor.cjs": "1adc5402cef5c0f17e353b922adda4db7dee85a84878d502c093350b4673682d",
+    "test/editor-metadata.test.mjs": "18a158793eb6c0cd88f7fb7651b7192a01dac2d9ec5b59d8b69a0c0cbbaf0496",
+    "test/editor-memento.test.mjs": "6ca9bb04e4269379eec24ba2abc99de5ec21172e0902a8124dab8fd25a3cd288"
+  },
+  "baselineFailure": {
+    "expected": "// 😀\nconst label = \"नमस्ते\";\n",
+    "actual": "// 😀\nconst label = \"नमस्ते\";\n\n",
+    "reproducedInBaselineAndOptimizationBuild": true
+  },
+  "checks": [
+    "Live CRLF open and remote updates preserve exact canonical text without extra blank lines",
+    "Multiple edits preserve Unicode and parent echoes",
+    "Actual save writes the intended text, with local undo after a remote update",
+    "Parked CRLF-equivalent values retain state identity; changed revisions preserve undo/redo",
+    "Agent stale-revision protection, editor navigation, cancellation and visible-chat ownership remain intact"
+  ],
+  "logs": {
+    "tributary-editor-crlf-baseline.log": "261f39e08e4543a80771a64837c549ab5114623784188982bb5393ba1927bc43",
+    "tributary-editor-working-set-agent.log": "dddc5767cf052feaa01bf671168b2494994ba50118cf61566c28b11c1980a86b",
+    "tributary-editor-crlf-agent.log": "151678c598f8c5c2b9e2918b8af167878c95d712687b51366121c57ab8bab715",
+    "tributary-editor-crlf-full-tests.log": "afb26c85b785362aae91fdc0a605d8d50362df6c96a20280ec8f00ea0afb18f6",
+    "tributary-editor-crlf-types.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "tributary-editor-crlf-build.log": "ba10ff43fbc90778dd9810527531e5bb85cbd04e3c0b86f2dc16128577b57ac3"
+  },
+  "scope": "Separate correctness follow-up. The 48-app allocation/trace/PSS cohort and first bundle audit measure d03db47, not this subsequent build. No new RAM/timing, Windows/macOS installation, paid-provider or physical-IME claim."
+}

@@ -21,6 +21,7 @@ import { formatInWorker } from '@/lib/formatter';
 import { formatParser, nativeFormatTool } from '@/lib/format-document.mjs';
 import { editorSpacing } from '@/lib/editor-spacing.mjs';
 import { minimalChange, textAfterChanges } from '@/lib/text-change.mjs';
+import { editorText } from '@/lib/editor-text.mjs';
 import { undo as undoEdit, redo as redoEdit, selectAll, undoDepth, redoDepth, isolateHistory, indentWithTab } from '@codemirror/commands';
 import { syntaxHighlighting, indentUnit } from '@codemirror/language';
 import { editorTheme as theme, editorHighlight as highlight } from '@/lib/editor-appearance';
@@ -278,18 +279,17 @@ export function CodeEditor({ project: documentProject, active = true, keepAlive 
   React.useEffect(() => {
     const v = view.current;
     if (!v) { if (parked.current && updateParkedText(parked.current, value)) { latestScroll.current = parked.current.scroll; setDiskChanged((n) => n + 1); } return; }
+    const text = editorText(value);
     const previous = canonical.current;
-    if (previous?.doc === v.state.doc && previous.text === value) return;
+    if (previous?.doc === v.state.doc && previous.text === text) return;
     canonical.current = null;
     // Only the changed part is replaced, so the cursor and scroll position stay put; the changed lines light up.
-    const change = minimalChange(previous?.doc === v.state.doc ? previous.text : v.state.doc.toString(), value);
-    if (applyRemoteText(v, value, undefined, true, active, change)) {
+    const change = minimalChange(previous?.doc === v.state.doc ? previous.text : v.state.doc.toString(), text);
+    if (applyRemoteText(v, text, undefined, true, active, change)) {
       setDiskChanged((n) => n + 1);
-      if (active && followChanges && change) v.dispatch({ effects: EditorView.scrollIntoView(Math.min(value.length, change.from), { y: 'center' }) });
+      if (active && followChanges && change) v.dispatch({ effects: EditorView.scrollIntoView(Math.min(text.length, change.from), { y: 'center' }) });
     }
-    // CodeMirror normalizes CR/CRLF. Raw disk text with CR cannot be used with
-    // its offsets; the next edit falls back to one canonical tree snapshot.
-    if (!value.includes('\r')) canonical.current = { doc: v.state.doc, text: value };
+    canonical.current = { doc: v.state.doc, text };
   }, [value, followChanges]);
   React.useEffect(() => {
     const editor = view.current; if (!active || !editor || !workspace) return;

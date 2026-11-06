@@ -1,0 +1,222 @@
+{
+  "date": "2026-11-06T07:06:05.401Z",
+  "passed": true,
+  "checks": [
+    "title bar command center opens Quick Open and displays its shortcut",
+    "Ctrl+Shift+F and search on type over real files",
+    "slow responses cannot overwrite newer queries; only latest waiting search runs",
+    "IME composition does not launch incomplete searches",
+    "Enter searches immediately without duplicate debounce request",
+    "arrow navigation, collapse, and exact file/column opening",
+    "live filters, case option and visible regex errors",
+    "late search reply is safe after sidebar close",
+    "editor Find, match count, Replace All and undo use real CodeMirror history",
+    "Edit menu restores a connected editor through its weak focus hint",
+    "top command picker fits 1280, 900, 390 and 320 pixel windows",
+    "command and filename labels highlight matches without changing their text or filtering",
+    "Ctrl+P Quick Open uses real filename search",
+    "filtered recent/other group labels stay visible; file:line:column opens the exact editor caret",
+    "declarative theme colors reach palette, keyboard badges, Search and editor Find; removing the theme restores defaults"
+  ],
+  "layouts": [
+    {
+      "width": 1280,
+      "picker": 600,
+      "left": 340,
+      "right": 940,
+      "top": 40
+    },
+    {
+      "width": 900,
+      "picker": 558,
+      "left": 171,
+      "right": 729,
+      "top": 40
+    },
+    {
+      "width": 390,
+      "picker": 358,
+      "left": 16,
+      "right": 374,
+      "top": 40
+    },
+    {
+      "width": 320,
+      "picker": 288,
+      "left": 16,
+      "right": 304,
+      "top": 40
+    }
+  ],
+  "maxConcurrentSearches": 1,
+  "requests": [
+    {
+      "query": "greeting",
+      "options": {
+        "caseSensitive": false,
+        "wholeWord": false,
+        "regexp": false,
+        "include": "",
+        "exclude": "",
+        "detail": true
+      }
+    },
+    {
+      "query": "greet",
+      "options": {
+        "caseSensitive": false,
+        "wholeWord": false,
+        "regexp": false,
+        "include": "",
+        "exclude": "",
+        "detail": true
+      }
+    },
+    {
+      "query": "hello",
+      "options": {
+        "caseSensitive": false,
+        "wholeWord": false,
+        "regexp": false,
+        "include": "",
+        "exclude": "",
+        "detail": true
+      }
+    },
+    {
+      "query": "world",
+      "options": {
+        "caseSensitive": false,
+        "wholeWord": false,
+        "regexp": false,
+        "include": "",
+        "exclude": "",
+        "detail": true
+      }
+    },
+    {
+      "query": "greeting",
+      "options": {
+        "caseSensitive": false,
+        "wholeWord": false,
+        "regexp": false,
+        "include": "",
+        "exclude": "",
+        "detail": true
+      }
+    },
+    {
+      "query": "greeting",
+      "options": {
+        "caseSensitive": false,
+        "wholeWord": false,
+        "regexp": false,
+        "include": "main.ts",
+        "exclude": "",
+        "detail": true
+      }
+    },
+    {
+      "query": "greeting",
+      "options": {
+        "caseSensitive": false,
+        "wholeWord": false,
+        "regexp": false,
+        "include": "main.ts",
+        "exclude": "main.ts",
+        "detail": true
+      }
+    },
+    {
+      "query": "greeting",
+      "options": {
+        "caseSensitive": false,
+        "wholeWord": false,
+        "regexp": false,
+        "include": "",
+        "exclude": "",
+        "detail": true
+      }
+    },
+    {
+      "query": "HELLO",
+      "options": {
+        "caseSensitive": false,
+        "wholeWord": false,
+        "regexp": false,
+        "include": "",
+        "exclude": "",
+        "detail": true
+      }
+    },
+    {
+      "query": "HELLO",
+      "options": {
+        "caseSensitive": true,
+        "wholeWord": false,
+        "regexp": false,
+        "include": "",
+        "exclude": "",
+        "detail": true
+      }
+    },
+    {
+      "query": "[",
+      "options": {
+        "caseSensitive": false,
+        "wholeWord": false,
+        "regexp": true,
+        "include": "",
+        "exclude": "",
+        "detail": true
+      }
+    },
+    {
+      "query": "greet",
+      "options": {
+        "caseSensitive": false,
+        "wholeWord": false,
+        "regexp": true,
+        "include": "",
+        "exclude": "",
+        "detail": true
+      }
+    },
+    {
+      "query": "greeting",
+      "options": {
+        "caseSensitive": false,
+        "wholeWord": false,
+        "regexp": false,
+        "include": "",
+        "exclude": "",
+        "detail": true
+      }
+    },
+    {
+      "query": "greeting",
+      "options": {
+        "caseSensitive": true,
+        "wholeWord": false,
+        "regexp": false,
+        "include": "",
+        "exclude": "",
+        "detail": true
+      }
+    }
+  ],
+  "sourceHashes": {
+    "ui/src/components/desktop-titlebar.tsx": "b1a1a471ee2a4453ff826c20cdd5ffc24587aa640e5ac2f8f733f047bf9e19bc",
+    "ui/src/components/project-search.tsx": "35ab8dfd1eaa368e419797de67569cde7cd809de93f27813308759e74ac25e83",
+    "ui/src/lib/editor-search.ts": "7ec2e61785f23b6dee50686eb25f1681fe5e4703e52a29a99831353d969b0130",
+    "ui/src/components/command-palette.tsx": "1524f2d633f3d24f3086fb7fd3d96fbde8618490914711394fe60da516ad5d9d",
+    "ui/src/components/quick-open.tsx": "6ca1bc313542a6ab14c87ec3569289436eb2132cfd6b767c26b05ae720430c7b",
+    "ui/src/components/search-label.tsx": "97e81a778bfb4c568d38d5615392f4e65983eaf556d198b4b0ef0ccb57beb1ef",
+    "ui/src/lib/search-label.mjs": "09b067dfa6169a63a2ee9ee5da1ec21019fc6325cdcd0f7f64b717ec312672ec",
+    "ui/src/lib/quick-open-query.mjs": "7519049ce03bab00e1cf4721052f5f6e7210e776e510aae5a33f35af429a117b",
+    "ui/src/lib/extension-theme-variables.mjs": "8ffc1d348cb33d39e46c7a5ed024585fdffe51e8e4881e446bdc3762006daef1",
+    "ui/src/index.css": "3ac0df7ca29be99252e396b357029c00561e0f2d6bc0d2cdba69e83e24a39f43",
+    "test/e2e/search-ui.cjs": "fe7b58dff1a5ee005ad8a301dfd1fc214092d8cb768f2440862dc8dcdb0cba8c"
+  },
+  "scope": "Linux Electron source build; isolated real files and actual search worker. Agent discovery disabled; two search replies deliberately held to exercise races. Native minimum width reduced only in this fixture for 390/320 pixel renderer checks. No live provider or installer claim."
+}
