@@ -47,6 +47,17 @@ app.on('browser-window-created', (_event, win) => {
     checks.push('Ctrl+backslash creates independent groups without replacing the existing editor');
     await append(1, '// shared edit\n');
     await until(async () => (await texts()).every(value => value === original + '// shared edit\n'), 'shared document synchronization');
+    const explorerVisible = () => run(`!!document.querySelector('.workspace-explorer')?.offsetWidth`);
+    await click('[aria-label="Hide file explorer"]');
+    await until(async () => !await explorerVisible(), 'explorer hides');
+    assert.equal(await run(`document.querySelector('${group(1)} .cm-content').cmTile.root.view === window.firstSplitView`), true);
+    assert.deepEqual(await texts(), [original + '// shared edit\n', original + '// shared edit\n']);
+    await click(group(1) + ' [aria-label="Show explorer"]');
+    await until(explorerVisible, 'toolbar reopens explorer');
+    await click('[aria-label="Hide file explorer"]'); await until(async () => !await explorerVisible(), 'hide before shortcut');
+    await focus(1); await key('e', ['control', 'shift']); await until(explorerVisible, 'shortcut reopens explorer');
+    assert.equal(await run(`document.querySelector('${group(1)} .cm-content').cmTile.root.view === window.firstSplitView`), true);
+    checks.push('explorer hides and reopens from its toolbar and Ctrl+Shift+E without replacing editors, losing drafts or undo history');
     await focus(2); await key('z', ['control']);
     await until(async () => (await texts()).every(value => value === original), 'undo synchronized across both views');
     await append(2, '// saved from group two\n'); await delay(100); await key('s', ['control']);

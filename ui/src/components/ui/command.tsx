@@ -40,6 +40,8 @@ function CommandDialog({
   className,
   showCloseButton = false,
   commandProps,
+  onOpenAutoFocus,
+  onCloseAutoFocus,
   ...props
 }: React.ComponentProps<typeof Dialog> & {
   title?: string
@@ -47,6 +49,8 @@ function CommandDialog({
   className?: string
   showCloseButton?: boolean
   commandProps?: React.ComponentProps<typeof CommandPrimitive>
+  onOpenAutoFocus?: React.ComponentProps<typeof DialogContent>["onOpenAutoFocus"]
+  onCloseAutoFocus?: React.ComponentProps<typeof DialogContent>["onCloseAutoFocus"]
 }) {
   return (
     <Dialog {...props}>
@@ -56,6 +60,8 @@ function CommandDialog({
           className
         )}
         showCloseButton={showCloseButton}
+        onOpenAutoFocus={onOpenAutoFocus}
+        onCloseAutoFocus={onCloseAutoFocus}
         overlayClassName="bg-transparent! backdrop-filter-none!"
       >
         <DialogHeader className="sr-only">

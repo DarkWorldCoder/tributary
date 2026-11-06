@@ -13,7 +13,9 @@
 
 ## Existing formatting
 
-Format document, right-click formatting and Format on Save share the project-aware formatter.
+Format document, right-click formatting and Format on Save share the project-aware formatter. Use **Settings → Language tools → Format on save** to enable or disable automatic formatting. Right-click the editor → **Format document**, or press **Shift+Alt+F**, to format explicitly.
+
+Prettier overrides and EditorConfig line-ending rules apply on save. The editor compares normalized buffer text while writing the formatter’s requested line endings to disk, so CRLF output does not cause a false “Draft changed” refusal or duplicate blank lines. A native UI regression covers CRLF save, changing the rules, repeat-save modification times and undo.
 
 1. Use the project's installed Prettier runtime when one is present inside the selected root; otherwise use bundled Prettier 3.9.10.
 2. Resolve project Prettier config, overrides and EditorConfig. Trusted projects can load their config modules and installed plugins in a separate process with bounded input/output and a timeout. No packages are installed by formatting.

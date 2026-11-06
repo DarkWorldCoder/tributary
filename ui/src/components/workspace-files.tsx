@@ -14,6 +14,7 @@ import { configuredLanguage } from '@/lib/language-tools';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { LineChangeCount } from '@/components/line-change-count';
 import { sourceLanguage } from '@/lib/source-language.mjs';
+import { editorText } from '@/lib/editor-text.mjs';
 import { editorSpacing } from '@/lib/editor-spacing.mjs';
 import { DebugSidebar, DebugControls } from '@/components/debug-sidebar';
 import { ShortcutLabel, ShortcutKeys } from '@/components/shortcut-settings';
@@ -312,7 +313,10 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
   React.useEffect(() => {
     const request = s.fileToOpen;
     if (!visible || restoring || !request || request.project !== project || handledIntent.current === request.n) return;
-    handledIntent.current = request.n; void openDoc(request.rel, request.intent, request.line, request.column, request.following, request.editor);
+    handledIntent.current = request.n; const focusOwner = document.activeElement;
+    void openDoc(request.rel, request.intent, request.line, request.column, request.following, request.editor).then(() => {
+      if (!request.following && handledIntent.current === request.n) focusEditorGroup(focusOwner);
+    });
   }, [s.fileToOpen, visible, restoring, project, openDoc]);
 
   // A Write tool can announce a path before the file exists. Keep following that
@@ -390,17 +394,17 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
             : catalog.formatters.some((entry) => entry.available && !!entry.command && tool.includes(entry.command.toLowerCase()));
         }
         if (available) {
-          if (saveProject.current !== project || editor.text() !== doc.text) { toast.message('Draft changed. Save again.'); return; }
+          if (saveProject.current !== project || editor.text() !== editorText(doc.text)) { toast.message('Draft changed. Save again.'); return; }
           const formatted = await editor.format(true, valid);
           if (formatted === null) return;
           text = formatted;
         }
       }
       if (valid && !valid()) return;
-      if (saveProject.current !== project || editor && editor.text() !== text) { toast.message('Draft changed. Save again.'); return; }
+      if (saveProject.current !== project || editor && editor.text() !== editorText(text)) { toast.message('Draft changed. Save again.'); return; }
       const result = await s.hub.call<{ mtime: number }>('writeFile', project, doc.rel, text, doc.mtime);
       if (saveProject.current !== project) return;
-      setDocs((all) => all.map((item) => item.rel === doc.rel ? { ...item, mtime: result.mtime, dirty: item.text !== text, content: text, diskChanged: false, diskError: false } : item));
+      setDocs((all) => all.map((item) => item.rel === doc.rel ? { ...item, mtime: result.mtime, dirty: editorText(item.text) !== editorText(text), content: text, diskChanged: false, diskError: false } : item));
       s.refreshGit(project);
       return { saved: true, path: doc.rel, mtime: result.mtime };
     } catch (e) { if (strict) throw e; toast.error((e as Error).message); }
@@ -472,8 +476,11 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
   const iconButton = 'workbench-action shrink-0 [&_svg]:size-4';
 
   const pendingGroupFocus = React.useRef<string | null>(null);
-  const focusEditorGroup = () => {
+  const focusEditorGroup = (expected?: Element | null) => {
     requestAnimationFrame(() => requestAnimationFrame(() => {
+      const current = document.activeElement;
+      if (expected !== undefined && current !== expected && current !== document.body && current !== document.documentElement) { pendingGroupFocus.current = null; return; }
+      if (document.querySelector('[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]')) { pendingGroupFocus.current = null; return; }
       const group = root.current?.querySelector<HTMLElement>(`[data-editor-group="${groupsRef.current.focused}"]`);
       if (group?.offsetParent) (group.querySelector<HTMLElement>('.cm-content') || group.querySelector<HTMLElement>('[role="tab"][data-state="active"]') || group).focus();
       pendingGroupFocus.current = null;
@@ -521,6 +528,16 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
   };
   const numberedFocus = React.useRef(focusAtIndex); numberedFocus.current = focusAtIndex;
   const splitCurrent = React.useRef(splitGroup); splitCurrent.current = splitGroup;
+  React.useEffect(() => {
+    if (!visible) return;
+    const show = (event: Event) => {
+      const hide = (event as CustomEvent).detail === 'hide';
+      setCollapsed(hide); setBrowse(!hide);
+      if (hide) focusEditorGroup();
+    };
+    window.addEventListener('tributary:explorer', show);
+    return () => window.removeEventListener('tributary:explorer', show);
+  }, [visible]);
   React.useEffect(() => {
     if (!visible) return;
     const split = (event: Event) => splitCurrent.current((event as CustomEvent).detail === 'vertical' ? 'vertical' : 'horizontal');
@@ -589,7 +606,7 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
     };
     const select = (rel: string) => { setComparison(null); s.pauseFollowing(); ++sequence.current; setBusy(false); setOpening(null); setError(null); updateGroups(state => selectGroupFile(state, group.id, rel)); setLine(undefined); setColumn(undefined); setBrowse(false); };
   const fileNavigation = (<div className="workbench-toolbar workspace-file-navigation border-b bg-background/60 pr-2">
-        <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" className={cn(iconButton, s.codeLayout && !small && !collapsed && 'hidden')} aria-label={small ? debugVisible ? 'Show debugger' : 'Browse files' : collapsed ? 'Show explorer' : 'Collapse explorer'} aria-expanded={small ? browse : !collapsed} onClick={() => small ? setBrowse(!browse) : setCollapsed(!collapsed)}>{collapsed || (small && !browse) ? <PanelLeftOpen /> : <PanelLeftClose />}</Button></TooltipTrigger><TooltipContent>{small ? 'Browse files' : collapsed ? 'Show explorer' : 'Collapse explorer'}</TooltipContent></Tooltip>
+        <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" className={iconButton} aria-label={small ? debugVisible ? 'Show debugger' : 'Browse files' : collapsed ? 'Show explorer' : 'Collapse explorer'} aria-expanded={small ? browse : !collapsed} onClick={() => small ? setBrowse(!browse) : setCollapsed(!collapsed)}>{collapsed || (small && !browse) ? <PanelLeftOpen /> : <PanelLeftClose />}</Button></TooltipTrigger><TooltipContent>{small ? 'Browse files' : collapsed ? <>Show explorer <ShortcutLabel action="files" /></> : 'Collapse explorer'}</TooltipContent></Tooltip>
         <div ref={focused ? fileTabs : undefined} className="workspace-file-strip @container relative min-w-0 flex-1 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <TabsList aria-label="Open files" variant="line" className="workspace-file-list justify-start gap-0 rounded-none p-0">
             {docs.map((item) => <div key={item.rel} className="relative flex shrink-0"><ContextMenu><ContextMenuTrigger asChild><TabsTrigger key={item.rel} value={item.rel} data-file-path={item.rel} title={item.rel} aria-label={`${item.rel}${!item.pinned ? ', preview' : ''}${item.dirty ? ', unsaved' : ''}`} onDoubleClick={() => pin(item.rel)} className={cn('workspace-file-tab h-8 min-w-0 max-w-[min(16rem,100cqw)] flex-none justify-start rounded-none border-0 px-2.5 pr-8 text-[13px] font-normal after:hidden focus-visible:ring-inset max-sm:h-11 max-sm:pr-12', !item.pinned && 'italic')}>
@@ -666,8 +683,8 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
               </div>
               {!IMAGE.test(doc.rel) && <div className="workspace-file-footer flex min-w-0 shrink-0 items-center gap-1 border-t px-2">
                 <Popover><PopoverTrigger asChild><button type="button" aria-label="Document information" className="editor-status-info flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded px-1 text-left text-xs tabular-nums text-muted-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring">
-                  {doc.mode === 'edit' && !doc.binary ? <><span role="status" aria-live="off" aria-label="Editor position" className="shrink-0 whitespace-nowrap">Ln {cursors[`${group.id}:${doc.rel}`]?.line ?? 1}<span className="editor-cursor-column">, Col {cursors[`${group.id}:${doc.rel}`]?.column ?? 1}</span></span><span className="editor-file-details min-w-0 truncate">{documentInfo!.language} · {documentInfo!.spacing.useTabs ? 'Tabs' : 'Spaces'}: {documentInfo!.spacing.tabSize} · UTF-8 · {doc.text.includes('\r\n') ? 'CRLF' : 'LF'}{doc.truncated && ' · Read only'}</span></> : <span className="truncate">{live}</span>}
-                </button></PopoverTrigger><PopoverContent align="start" side="top" className="w-72 max-w-[calc(100vw-16px)] text-xs"><p className="mb-3 break-all font-medium">{doc.rel}</p><dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-muted-foreground"><dt>Language</dt><dd className="text-foreground">{documentInfo!.language}</dd><dt>Indentation</dt><dd>{documentInfo!.spacing.useTabs ? 'Tabs' : 'Spaces'}: {documentInfo!.spacing.tabSize}</dd><dt>Encoding</dt><dd>UTF-8 · {doc.text.includes('\r\n') ? 'CRLF' : 'LF'}</dd><dt>File state</dt><dd>{doc.truncated ? 'Read only' : doc.dirty ? 'Unsaved changes' : 'Saved'}</dd><dt>Updates</dt><dd>{live}</dd></dl></PopoverContent></Popover>
+                  {doc.mode === 'edit' && !doc.binary ? <><span role="status" aria-live="off" aria-label="Editor position" className="shrink-0 whitespace-nowrap">Ln {cursors[`${group.id}:${doc.rel}`]?.line ?? 1}<span className="editor-cursor-column">, Col {cursors[`${group.id}:${doc.rel}`]?.column ?? 1}</span></span><span className="editor-file-details min-w-0 truncate">{documentInfo!.language} · {documentInfo!.spacing.useTabs ? 'Tabs' : 'Spaces'}: {documentInfo!.spacing.tabSize} · UTF-8 · {doc.content.includes('\r\n') ? 'CRLF' : 'LF'}{doc.truncated && ' · Read only'}</span></> : <span className="truncate">{live}</span>}
+                </button></PopoverTrigger><PopoverContent align="start" side="top" className="w-72 max-w-[calc(100vw-16px)] text-xs"><p className="mb-3 break-all font-medium">{doc.rel}</p><dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-muted-foreground"><dt>Language</dt><dd className="text-foreground">{documentInfo!.language}</dd><dt>Indentation</dt><dd>{documentInfo!.spacing.useTabs ? 'Tabs' : 'Spaces'}: {documentInfo!.spacing.tabSize}</dd><dt>Encoding</dt><dd>UTF-8 · {doc.content.includes('\r\n') ? 'CRLF' : 'LF'}</dd><dt>File state</dt><dd>{doc.truncated ? 'Read only' : doc.dirty ? 'Unsaved changes' : 'Saved'}</dd><dt>Updates</dt><dd>{live}</dd></dl></PopoverContent></Popover>
                 {editorStats?.rel === doc.rel && !!((editorStats.added || 0) + (editorStats.removed || 0)) && <span className="editor-status-changes shrink-0"><LineChangeCount {...editorStats} /></span>}
 
                 <div role="group" aria-label="File actions" className="flex shrink-0 items-center gap-0.5">
@@ -728,7 +745,7 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            <div className="flex shrink-0 items-center justify-between border-b px-2 py-1"><span className="px-1 text-xs text-muted-foreground">Explorer</span><Button size="xs" variant="ghost" aria-label="Show workspace changes" onClick={() => { void s.openReview(); }}><GitCompareArrows />Changes<span className="text-xs tabular-nums text-muted-foreground">{changedFiles.length}</span></Button></div>
+            <div className="flex shrink-0 items-center justify-between border-b px-2 py-1"><span className="px-1 text-xs text-muted-foreground">Explorer</span><div className="flex items-center gap-1"><Button size="xs" variant="ghost" aria-label="Show workspace changes" onClick={() => { void s.openReview(); }}><GitCompareArrows />Changes<span className="text-xs tabular-nums text-muted-foreground">{changedFiles.length}</span></Button><Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={iconButton} aria-label="Hide file explorer" onClick={() => { if (small) setBrowse(false); else setCollapsed(true); focusEditorGroup(); }}><PanelLeftClose /></Button></TooltipTrigger><TooltipContent>Hide file explorer</TooltipContent></Tooltip></div></div>
             <>
             {searchOpen && <div id={searchId} className="flex shrink-0 items-center gap-1 border-b p-1.5">
               <Input ref={search} value={filter} onChange={(event) => setFilter(event.target.value)} onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeSearch(); } }} placeholder="Find a file…" aria-label="Find a file" className="h-8 min-w-0 bg-transparent text-[13px] shadow-none max-sm:h-11" />

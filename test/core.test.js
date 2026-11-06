@@ -260,10 +260,12 @@ test('custom agents can use a streaming protocol: their args list gets {prompt},
 
 test('version probes run once per binary and two at a time', { skip: process.platform === 'win32' }, async () => {
   const { probeVersions } = require('../core/agents');
-  const dir = tmp(); const log = path.join(dir, 'log');
+  const dir = tmp(); const log = path.join(dir, 'log'); const ready = path.join(dir, 'two-started');
   const bin = (name) => {
     const p = path.join(dir, name);
-    fs.writeFileSync(p, `#!${process.execPath}\nconst fs=require('fs');fs.appendFileSync(${JSON.stringify(log)}, 'start ${name}\\n');setTimeout(()=>{fs.appendFileSync(${JSON.stringify(log)}, 'end ${name}\\n');console.log('${name} 1.0.0')},150);\n`, { mode: 0o755 });
+    // Keep the first pair alive until both processes have actually started.
+    // A fixed sleep can finish before the second Node process is scheduled.
+    fs.writeFileSync(p, `#!${process.execPath}\nconst fs=require('fs');const log=${JSON.stringify(log)},ready=${JSON.stringify(ready)};fs.appendFileSync(log, 'start ${name}\\n');function finish(){if(!fs.existsSync(ready)){if(fs.readFileSync(log,'utf8').split('\\n').filter(l=>l.startsWith('start ')).length<2){setTimeout(finish,5);return;}fs.writeFileSync(ready,'ready');}fs.appendFileSync(log,'end ${name}\\n');console.log('${name} 1.0.0');}finish();\n`, { mode: 0o755 });
     return p;
   };
   const shared = bin('shared'); const one = bin('one'); const two = bin('two');

@@ -1,0 +1,28 @@
+{
+  "passed": true,
+  "date": "2026-11-06T09:10:00.302Z",
+  "images": [
+    {
+      "alt": "Tributary — every coding agent, one stream of work",
+      "width": 300,
+      "height": 70
+    },
+    {
+      "alt": "Tributary workbench with the actual repository file explorer, source editor and chat",
+      "width": 1680,
+      "height": 1050
+    },
+    {
+      "alt": "Real Tributary source in split editors with the project file list visible",
+      "width": 1680,
+      "height": 1050
+    },
+    {
+      "alt": "Tributary, VS Code and Zed in the same controlled large-project navigation test",
+      "width": 1248,
+      "height": 480
+    }
+  ],
+  "expanded": true,
+  "scope": "Real repository README in Tributary Markdown preview; local SVG/PNG figures loaded and image dialog opened. Remote badge images are external links in this viewer. GitHub rendering and network badges are separate."
+}

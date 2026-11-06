@@ -14,9 +14,11 @@ test('release publication requires all six platform/architecture builds and hash
       const file = `Tributary-${pkg.version}-${platform}-${artifactArch}.${ext}`; files.push(file); fs.writeFileSync(path.join(dir, file), 'download bytes: ' + file);
     }
   }
+  fs.writeFileSync(path.join(dir, files[0]), Buffer.alloc(131075, 0x83)); // Cross multiple 64 KiB checksum reads.
   assert.equal(releaseAssets(dir), 14);
   const sums = fs.readFileSync(path.join(dir, 'SHA256SUMS.txt'), 'utf8').trim().split('\n'); assert.equal(sums.length, 14);
   for (const file of files) assert.ok(sums.includes(crypto.createHash('sha256').update(fs.readFileSync(path.join(dir, file))).digest('hex') + '  ' + file));
+  const stale = path.join(dir, 'Tributary-old-win-x64.exe'); fs.writeFileSync(stale, 'stale'); assert.throws(() => releaseAssets(dir), /exactly 14/); fs.unlinkSync(stale);
   fs.unlinkSync(path.join(dir, files.at(-1))); assert.throws(() => releaseAssets(dir), /Missing linux\/arm64/);
 });
 

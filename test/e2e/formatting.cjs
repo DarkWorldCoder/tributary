@@ -1,0 +1,45 @@
+'use strict';
+const fs = require('node:fs'), path = require('node:path'), os = require('node:os'), assert = require('node:assert/strict');
+const { app } = require('electron');
+const root = fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-format-ui-')), project = path.join(root, 'project'), profile = path.join(root, 'profile');
+fs.mkdirSync(project); const original = 'export function greet(){const name="Tributary";return name;}\r\n';
+fs.writeFileSync(path.join(project, 'main.ts'), original);
+fs.writeFileSync(path.join(project, '.prettierrc.json'), JSON.stringify({ singleQuote: true, semi: false, overrides: [{ files: '*.ts', options: { tabWidth: 4 } }] }));
+fs.writeFileSync(path.join(project, '.editorconfig'), 'root = true\n[*]\nindent_style = space\nindent_size = 2\nend_of_line = crlf\n');
+process.env.TRIBUTARY_DATA_DIR = profile;
+const core = require('../../core'), drafts = require('../../core/drafts');
+const seed = new core.Hub({ dataDir: profile, home: root, secrets: new core.MemorySecrets() }); seed.createThread(project, 'Formatting rules'); seed.fileWatches.close(); seed.store.close();
+drafts.save(profile, 'files:' + project, { active: 'main.ts', tabs: [{ rel: 'main.ts', mode: 'edit', pinned: true }] });
+core.Hub = class extends core.Hub { async init() { this.agents = []; this.scanningAgents = false; this.emit('state'); return this; } };
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+async function until(fn, label) { const end = Date.now() + 15000; while (!await fn()) { if (Date.now() > end) throw Error('Timed out: ' + label); await delay(30); } }
+const deadline = setTimeout(() => app.exit(1), 90000); let started = false;
+app.on('browser-window-created', (_event, win) => {
+  const web = win.webContents, run = code => web.executeJavaScript(code);
+  const key = async (keyCode, modifiers = []) => { web.sendInputEvent({ type: 'keyDown', keyCode, modifiers }); web.sendInputEvent({ type: 'keyUp', keyCode, modifiers }); await delay(80); };
+  const focus = () => run(`document.querySelector('.cm-content').cmTile.root.view.focus();true`);
+  const text = () => run(`document.querySelector('.cm-content').cmTile.root.view.state.doc.toString()`);
+  web.once('did-finish-load', () => { if (started) return; started = true; (async () => {
+    await run(`localStorage.setItem('tributary.project', ${JSON.stringify(JSON.stringify(project))});localStorage.setItem('tributary.workspaceViews.v1',JSON.stringify({[${JSON.stringify(project)}]:{layout:'editor',expanded:true,panel:{open:true,tab:'files'}}}));true`);
+    const loaded = new Promise(resolve => web.once('did-finish-load', resolve)); web.reload(); await loaded;
+    await until(() => run(`!!document.querySelector('.cm-content')`), 'editor');
+    assert.equal(fs.readFileSync(path.join(project, 'main.ts'), 'utf8'), original);
+    await focus(); await key('s', ['control']);
+    const expected = "export function greet() {\r\n    const name = 'Tributary'\r\n    return name\r\n}\r\n";
+    await until(() => fs.readFileSync(path.join(project, 'main.ts'), 'utf8') === expected, 'format on save applies project rules and CRLF');
+    assert.equal(await text(), expected.replace(/\r\n/g, '\n'));
+    assert.match(await run(`document.querySelector('[aria-label="Document information"]').textContent`), /CRLF/);
+    await until(() => run(`!document.querySelector('[aria-label="main.ts, unsaved"]')`), 'saved draft clean');
+    const mtime = fs.statSync(path.join(project, 'main.ts')).mtimeMs; await focus(); await key('s', ['control']); await delay(500);
+    assert.equal(fs.statSync(path.join(project, 'main.ts')).mtimeMs, mtime);
+    fs.writeFileSync(path.join(project, '.prettierrc.json'), JSON.stringify({ singleQuote: false, semi: true, tabWidth: 2, endOfLine: 'lf' }));
+    await focus(); await key('s', ['control']);
+    await until(() => fs.readFileSync(path.join(project, 'main.ts'), 'utf8') === 'export function greet() {\n  const name = "Tributary";\n  return name;\n}\n', 'updated formatting rules are read on the next save');
+    await until(() => run(`document.querySelector('[aria-label="Document information"]').textContent.includes('· LF')`), 'saved line-ending status');
+    await focus(); await key('z', ['control']); await until(async () => (await text()).includes("    const name = 'Tributary'"), 'formatting is undoable');
+    console.log(JSON.stringify({ passed: true, checks: ['Opening does not rewrite the file', 'Save applies Prettier overrides and EditorConfig CRLF without duplicate lines', 'Repeat save preserves mtime and leaves a clean draft', 'Changed project rules are used on next save', 'Formatting preserves native undo'], scope: 'Linux source UI, real CodeMirror and formatter child process, temporary trusted project/profile.' }));
+    clearTimeout(deadline); app.quit();
+  })().catch(async error => { console.error(error.stack); fs.writeFileSync('/tmp/tributary-format-failure.png', (await web.capturePage()).toPNG()); app.exit(1); }); });
+});
+app.on('quit', () => fs.rmSync(root, { recursive: true, force: true }));
+require('../../desktop/main.js');

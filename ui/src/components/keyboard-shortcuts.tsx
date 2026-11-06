@@ -53,7 +53,7 @@ export function KeyboardShortcuts() {
         else if (s.project) {
           if (action === 'workspace') s.setPanel({ ...s.panel, open: !s.panel.open });
           else if (action === 'terminal') s.setTerminalOpen(!s.terminalOpen);
-          else if (action === 'files' || action === 'changes' || action === 'memory' || action === 'preview') { if (action === 'files') s.setSearchFilesOpen(false); s.openPanel(action === 'changes' ? 'review' : action); s.setWorkspaceExpanded(false); }
+          else if (action === 'files' || action === 'changes' || action === 'memory' || action === 'preview') { if (action === 'files') { s.setSearchFilesOpen(false); s.setDebugOpen(false); requestAnimationFrame(() => requestAnimationFrame(() => window.dispatchEvent(new Event('tributary:explorer')))); } s.openPanel(action === 'changes' ? 'review' : action); if (action !== 'files') s.setWorkspaceExpanded(false); }
         }
       }
     };

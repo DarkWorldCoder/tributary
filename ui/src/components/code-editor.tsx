@@ -84,13 +84,13 @@ export function CodeEditor({ project: documentProject, active = true, keepAlive 
     const original = v.state.doc.toString(); formatBusy.current = true; setFormatting(true);
     try {
       const configured = configuredLanguage(store.current.st?.settings.languageServers, path);
-      // Web languages use the bundled formatter consistently, even when an LSP
+      // Web languages use the project-aware formatter consistently, even when an LSP
       // also offers whitespace edits that leave compact blocks on one line.
       const serverEdits = !formatParser(path) && configured && languageOwner ? await store.current.hub.call<LspEdit[] | null>('languageFormat', workspace, path, original, { tabSize: editorSpacing(path, original).tabSize, insertSpaces: !editorSpacing(path, original).useTabs }, languageOwner) : null;
       const text = serverEdits ? applyLspEdits(original, serverEdits) : formatParser(path) && store.current.hub.platform === 'mock' ? await formatInWorker(path, original) : await store.current.hub.call<string>('formatSource', workspace, path, original, automatic);
       if (view.current !== v || valid && !valid()) return null;
       if (v.state.doc.toString() !== original) { toast.message('Draft changed while formatting. Try again.'); return null; }
-      const change = minimalChange(original, text);
+      const change = minimalChange(original, editorText(text));
       if (change) v.dispatch({ changes: change, annotations: [Transaction.userEvent.of('input.format'), isolateHistory.of('full')] });
       if (isActive.current) v.focus();
       return text;

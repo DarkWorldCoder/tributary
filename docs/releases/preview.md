@@ -9,13 +9,15 @@ Tributary preview for macOS, Windows and Linux.
 
 ### Included
 
-New in 0.1.4:
+In this update:
 
-- Hidden and ignored files, including `.env`, visible in the file explorer; create files and folders directly, or right-click a folder. Find project files with Ctrl/Cmd+P.
-- Independent split terminals, new-terminal shortcuts, and docking within the editor so chat stays full height. Shells survive hiding and reopening the workspace.
-- A unified source-control sidebar, compact chat controls, chronological tool activity, and direct installation of compatible Open VSX theme/icon packs.
-- Lower retained history and appearance-cache working sets, bounded terminal output transport, local-generation admission, and cleaner worker, language-server and preview lifetimes. Detailed synthetic benchmark scopes are documented in the repository; these are not universal RAM or inference-speed guarantees.
-- Gemini MCP placeholder restoration so a CLI config save does not leave managed credentials as plain text.
+- Hide and reopen the file explorer from the workbench toolbar or Ctrl/Cmd+Shift+E without closing files, losing undo history or leaving the focused layout.
+- Agent editor controls, independent split groups and live buffer edits, with line-ending normalization for CRLF/Unicode updates.
+- Project-rule formatting on save now writes requested CRLF/LF output correctly, keeps native undo and shows the saved file’s line endings.
+- Quick Open takes focus before typing begins; closing it or finishing a delayed file load cannot take focus from a newer search or picker.
+- A shorter visual README with actual repository screenshots, an animated brand illustration, benchmark charts, reproducible results and contributor guidance.
+- Automatic versioned previews after successful main pushes; complete six-platform builds and checksums are uploaded before the release becomes visible.
+- A complete large-project navigation comparison with VS Code and Zed: the same 20,008 source files, verified contents, all nine fresh instances, raw observations and software-graphics limits. It records where other editors do better. Historical Tributary allocation optimizations are documented separately.
 
 New in 0.1.3: guided local-model setup for Unsloth, Ollama and LM Studio; model discovery, API-key setup and local chat or coding agents with file tools, command approvals and background workers; resume controls after network interruptions; a compact Notes/Context/Activity memory panel; compact history/project-memory budgets; and smaller sidebar status caches that keep full replies on disk until opened. Model downloads, loading and GPU memory remain managed by the local model app.
 

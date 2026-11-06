@@ -2,32 +2,57 @@ name: Distribution
 
 on:
   push:
+    branches: [main]
     tags: ['v*']
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Existing version tag to build (for example v0.1.0)'
-        required: true
+        description: 'Existing version tag; leave blank to release this main commit'
+        required: false
         type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: distribution-${{ github.event.inputs.tag || github.ref_name }}
+  group: distribution
+  queue: max
   cancel-in-progress: false
 
-env:
-  RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
-
 jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      tag: ${{ steps.plan.outputs.tag }}
+      version: ${{ steps.plan.outputs.version }}
+      source: ${{ steps.plan.outputs.source }}
+      automatic: ${{ steps.plan.outputs.automatic }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - id: plan
+        name: Allocate or reuse a release version
+        env:
+          RELEASE_SOURCE: ${{ github.sha }}
+          RELEASE_MANUAL_TAG: ${{ inputs.tag || (github.ref_type == 'tag' && github.ref_name) || '' }}
+        run: node scripts/release-version.cjs plan
+
   validate:
+    needs: plan
+    env:
+      RELEASE_VERSION: ${{ needs.plan.outputs.version }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: ${{ env.RELEASE_TAG }}
+          ref: ${{ needs.plan.outputs.source }}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '24'
@@ -35,8 +60,8 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             ui/package-lock.json
-      - name: Check version
-        run: node -e 'if (process.env.RELEASE_TAG !== "v" + require("./package.json").version) throw Error("Tag must match package version")'
+      - name: Prepare versioned manifests
+        run: node scripts/release-version.cjs prepare
       - run: npm ci
       - run: npm ci --prefix ui
       - run: npx --prefix ui tsc --noEmit -p ui/tsconfig.json
@@ -48,7 +73,9 @@ jobs:
       - run: npm test
 
   build:
-    needs: validate
+    needs: [plan, validate]
+    env:
+      RELEASE_VERSION: ${{ needs.plan.outputs.version }}
     name: Build ${{ matrix.platform }} ${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 45
@@ -65,7 +92,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: ${{ env.RELEASE_TAG }}
+          ref: ${{ needs.plan.outputs.source }}
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '24'
@@ -73,6 +100,8 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             ui/package-lock.json
+      - name: Prepare versioned manifests
+        run: node scripts/release-version.cjs prepare
       - run: npm ci
       - run: npm ci --prefix ui
       - run: npm run build:ui:clean
@@ -97,7 +126,12 @@ jobs:
             release/*.tar.gz
 
   publish:
-    needs: build
+    needs: [plan, build]
+    env:
+      RELEASE_SOURCE: ${{ needs.plan.outputs.source }}
+      RELEASE_TAG: ${{ needs.plan.outputs.tag }}
+      RELEASE_VERSION: ${{ needs.plan.outputs.version }}
+      RELEASE_AUTOMATIC: ${{ needs.plan.outputs.automatic }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -105,7 +139,17 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: ${{ env.RELEASE_TAG }}
+          ref: ${{ needs.plan.outputs.source }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - name: Create immutable version snapshot and tag
+        run: |
+          git config user.name "Tributary releases"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch --tags origin
+          node scripts/release-version.cjs tag
+          git push origin "refs/tags/$RELEASE_TAG"
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           path: release-assets
@@ -115,5 +159,4 @@ jobs:
       - name: Publish preview downloads
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create "$RELEASE_TAG" release-assets/* --verify-tag --prerelease --title "Tributary ${RELEASE_TAG#v} Preview" --notes-file docs/releases/preview.md
+        run: node scripts/publish-release.cjs release-assets
