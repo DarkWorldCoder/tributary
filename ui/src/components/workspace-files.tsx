@@ -1,3 +1,4 @@
+import { editorGroups, selectGroupFile, splitEditorGroup, closeGroupFiles, joinEditorGroup, restoreEditorGroups, type EditorGroup, type EditorGroups } from '@/lib/editor-groups.mjs';
 import { createDirectorySession, type DirectorySession } from '@/lib/directory-session.mjs';
 import { useTreeViewport } from '@/hooks/use-tree-viewport';
 import { ProjectSearch } from '@/components/project-search';
@@ -19,10 +20,11 @@ import { useShortcutPreferences } from '@/hooks/use-shortcut-preferences';
 import { DocumentOutline } from '@/components/document-outline';
 import * as React from 'react';
 import { toast } from 'sonner';
-import { FilePlus, FolderPlus, GitCompareArrows, Bug, Copy, CircleAlert, SquareTerminal, WandSparkles, Check, ChevronRight, Circle, Ellipsis, Eye, FolderOpen, Image as ImageIcon, PanelLeftClose, PanelLeftOpen, Pencil, Pin, RefreshCw, RotateCw, Save, Search, Undo2, Redo2, SquareArrowOutUpRight, WrapText, X } from 'lucide-react';
+import { Columns2, Rows2, FilePlus, FolderPlus, GitCompareArrows, Bug, Copy, CircleAlert, SquareTerminal, WandSparkles, Check, ChevronRight, Circle, Ellipsis, Eye, FolderOpen, Image as ImageIcon, PanelLeftClose, PanelLeftOpen, Pencil, Pin, RefreshCw, RotateCw, Save, Search, Undo2, Redo2, SquareArrowOutUpRight, WrapText, X } from 'lucide-react';
 import type { PanelImperativeHandle } from 'react-resizable-panels';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem, ContextMenuSeparator } from '@/components/ui/context-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Empty, EmptyContent, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
@@ -46,7 +48,7 @@ import { createExplorerIndex, type ExplorerNode as Node } from '@/lib/explorer-i
 import { imageMime, imageSource } from '@/lib/image-preview.mjs';
 import { projectProfile } from '@/lib/project-profile.mjs';
 import { rememberFile } from '@/lib/recent-work.mjs';
-import { closeFileTabs, fileTabLabel, openFileTab } from '@/lib/workspace-tabs.mjs';
+import { fileTabLabel, openFileTab } from '@/lib/workspace-tabs.mjs';
 import { cn } from '@/lib/utils';
 import { formatParser, nativeFormatTool, formattingHint } from '@/lib/format-document.mjs';
 import { useRunInTerminal } from '@/hooks/use-run-in-terminal';
@@ -138,7 +140,7 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
   }, [project, filter, hidden, s.hub, directoryRevision, warm, index]);
   const [checksOpen, setChecksOpen] = React.useState(false);
   const [formatAllOpen, setFormatAllOpen] = React.useState(false);
-  const [comparison, setComparison] = React.useState<string | null>(null);
+  const [comparisonRel, setComparison] = React.useState<string | null>(null);
   const repository = useWorkspaceGit(s.hub, project, visible, directoryRevision);
   const changedFiles = React.useMemo(() => workspaceChanges(project, repository.git), [project, repository.git]);
   const reviewSaved = (rel: string) => { s.pauseFollowing(); setComparison(rel); setBrowse(false); };
@@ -151,13 +153,21 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
   const [collapsed, setCollapsed] = React.useState(false);
   const [open, setOpen] = React.useState<Set<string>>(new Set());
   const [docs, setDocs] = React.useState<Doc[]>([]);
-  const [editorStats, setEditorStats] = React.useState<{ rel: string; added?: number; removed?: number; binary?: boolean } | null>(null);
-  const [editorHistory, setEditorHistory] = React.useState<EditorHistory | null>(null);
+  const [groupStats, setGroupStats] = React.useState<Record<string, { rel: string; added?: number; removed?: number; binary?: boolean } | null>>({});
+  const [groupHistories, setGroupHistories] = React.useState<Record<string, EditorHistory | null>>({});
+  const historiesRef = React.useRef(groupHistories); historiesRef.current = groupHistories;
   const saveBusy = React.useRef(false);
   const saveProject = React.useRef(project); saveProject.current = project;
   const [saving, setSaving] = React.useState(false);
   const [cursors, setCursors] = React.useState<Record<string, { line: number; column: number }>>({});
-  const [active, setActive] = React.useState<string | null>(null);
+  const [groupLayout, setGroupLayout] = React.useState<EditorGroups>(() => editorGroups());
+  const groupsRef = React.useRef(groupLayout); groupsRef.current = groupLayout;
+  const updateGroups = React.useCallback((change: (state: EditorGroups) => EditorGroups) => { const next = change(groupsRef.current); groupsRef.current = next; setGroupLayout(next); }, []);
+  const active = groupLayout.groups.find(group => group.id === groupLayout.focused)?.active ?? null;
+  const setActive = React.useCallback((value: React.SetStateAction<string | null>) => updateGroups(state => {
+    const current = state.groups.find(group => group.id === state.focused)?.active ?? null;
+    return selectGroupFile(state, state.focused, typeof value === 'function' ? value(current) : value);
+  }), [updateGroups]);
   const [line, setLine] = React.useState<number | undefined>();
   const [column, setColumn] = React.useState<number | undefined>();
   const [switcherOpen, setSwitcherOpen] = React.useState(false);
@@ -167,7 +177,7 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
   const [opening, setOpening] = React.useState<string | null>(null);
   const [showOpening, setShowOpening] = React.useState(false);
   React.useEffect(() => { if (!busy) { setShowOpening(false); return; } const timer = setTimeout(() => setShowOpening(true), 200); return () => clearTimeout(timer); }, [busy]);
-  const [confirmation, setConfirmation] = React.useState<{ paths: string[]; reload?: boolean } | null>(null);
+  const [confirmation, setConfirmation] = React.useState<{ paths: string[]; group?: string; reload?: boolean } | null>(null);
   const [comparing, setComparing] = React.useState<{ rel: string; diff: string | null } | null>(null);
   const [restoring, setRestoring] = React.useState(true);
   const [small, setSmall] = React.useState(() => window.innerWidth < 640);
@@ -180,14 +190,25 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
   const debuggerWidth = React.useRef(280);
   React.useEffect(() => { if (debugVisible) s.setSearchFilesOpen(false); if (debugVisible || s.searchFilesOpen) { setCollapsed(false); setBrowse(true); } }, [debugVisible, s.searchFilesOpen]);
   const docsRef = React.useRef(docs); docsRef.current = docs;
+  const documentPaths = docs.map(doc => doc.rel).join('\0');
+  React.useEffect(() => {
+    const allowed = new Set(docsRef.current.map(doc => doc.rel));
+    updateGroups(state => {
+      let changed = false;
+      const groups = state.groups.map(group => {
+        const paths = group.paths.filter(path => allowed.has(path));
+        if (paths.length === group.paths.length) return group;
+        changed = true; return { ...group, paths, active: paths.includes(group.active || '') ? group.active : paths[0] ?? null };
+      });
+      return changed ? { ...state, groups } : state;
+    });
+  }, [documentPaths, updateGroups]);
   const sourceRef = React.useRef({ project: s.project, threadId: s.thread?.id }); sourceRef.current = { project: s.project, threadId: s.thread?.id };
-  const activeRef = React.useRef(active); activeRef.current = active;
   const sequence = React.useRef(0);
   const requests = React.useRef(new Map<string, Promise<FileContent>>());
   const handledIntent = React.useRef<number | undefined>(undefined);
   const fileTabs = React.useRef<HTMLDivElement>(null);
   const root = React.useRef<HTMLDivElement>(null);
-  const [tabEnds, setTabEnds] = React.useState<{ rel: string; right: number }[]>([]);
   const tabSignature = JSON.stringify(docs.map(({ rel, dirty, pinned }) => [rel, dirty, pinned]));
   const focusActiveTab = () => (fileTabs.current?.querySelector<HTMLElement>('[role="tab"][data-state="active"]') ?? root.current?.querySelector<HTMLElement>('[aria-label="Open files menu"]'))?.focus({ preventScroll: true });
   const search = React.useRef<HTMLInputElement>(null);
@@ -214,19 +235,8 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
   }, [visible, small, browse, collapsed, debugVisible]);
   React.useEffect(() => { if (s.hub.platform === 'desktop') s.hub.call<{ id: string; name: string }[]>('editors').then(setEditors).catch(() => {}); }, [s.hub]);
   React.useLayoutEffect(() => {
-    if (!visible || !fileTabs.current) return;
-    const measure = () => {
-      const ends = [...(fileTabs.current?.querySelectorAll<HTMLElement>('[role="tab"][data-file-path]') ?? [])].map((tab) => ({ rel: tab.dataset.filePath!, right: tab.offsetLeft + tab.offsetWidth }));
-      setTabEnds((previous) => previous.length === ends.length && previous.every((item, index) => item.rel === ends[index].rel && item.right === ends[index].right) ? previous : ends);
-      fileTabs.current?.querySelector<HTMLElement>('[role="tab"][data-state="active"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-    };
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(fileTabs.current);
-    const list = fileTabs.current.querySelector('[role="tablist"]');
-    if (list) observer.observe(list);
-    return () => observer.disconnect();
-  }, [active, tabSignature, visible, s.codeLayout]);
+    if (visible) fileTabs.current?.querySelector<HTMLElement>('[role="tab"][data-state="active"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [active, tabSignature, visible, groupLayout.focused]);
 
   const read = React.useCallback((rel: string) => {
     let request = requests.current.get(rel);
@@ -243,14 +253,15 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
     let cancelled = false;
     setRestoring(true);
     (async () => {
-      const saved = savedFileSession(await s.hub.call('draft', `files:${project}`).catch(() => null));
+      const snapshot = await s.hub.call<{ editorGroups?: unknown } | null>('draft', `files:${project}`).catch(() => null);
+      const saved = savedFileSession(snapshot);
       const restored = (await Promise.all(saved.tabs.map(async (tab): Promise<Doc | null> => {
         if (tab.text !== undefined) return { rel: tab.rel, size: tab.base!.length, binary: false, truncated: false, mtime: tab.mtime!, content: tab.base!, text: tab.text, dirty: true, pinned: true, mode: tab.mode, wrap: tab.wrap, recovered: true };
         try { const file = await read(tab.rel); return { ...file, rel: tab.rel, text: file.content, dirty: false, pinned: tab.pinned, mode: tab.mode, wrap: tab.wrap }; } catch { return null; }
       }))).filter((doc): doc is Doc => !!doc);
       if (cancelled || !restored.length) return;
       setDocs((open) => [...open, ...restored.filter((doc) => !open.some((item) => item.rel === doc.rel))]);
-      setActive((current) => current ?? (restored.some((doc) => doc.rel === saved.active) ? saved.active : restored[0].rel));
+      updateGroups(() => restoreEditorGroups(snapshot?.editorGroups, restored.map(doc => doc.rel), saved.active));
       setBrowse(false);
     })().finally(() => { if (!cancelled) setRestoring(false); });
     return () => { cancelled = true; };
@@ -263,11 +274,12 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
     sessionDraft.current = writer;
     return () => { writer.dispose(); sessionDraft.current = null; };
   }, [project, s.hub]);
-  React.useEffect(() => { if (!restoring) sessionDraft.current?.set(fileSession(docs, active)); }, [docs, active, restoring]);
+  React.useEffect(() => { if (!restoring) { const session = fileSession(docs, active); sessionDraft.current?.set(session ? { ...session, editorGroups: groupLayout } : null); } }, [docs, active, groupLayout, restoring]);
 
   const pauseFollowing = React.useRef(s.pauseFollowing); pauseFollowing.current = s.pauseFollowing;
   const openDoc = React.useCallback(async (rel: string, intent: OpenIntent = 'preview', ln?: number, col?: number, following = false, editor = false) => {
     if (!following) pauseFollowing.current();
+    if (groupsRef.current.groups.length > 1) intent = 'pinned';
     setComparison(null);
     setColumn(col);
     setOpen((folders) => { const next = new Set(folders); const parts = rel.split('/'); parts.slice(0, -1).forEach((_, i) => next.add(parts.slice(0, i + 1).join('/'))); return next; });
@@ -350,19 +362,11 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
     return () => { disposed = true; if (typeof off === 'function') off(); if (watchId) s.hub.call('unwatchFiles', watchId).catch(() => {}); };
   }, [visible, project, watched, s.hub, read, load, watchRevision]);
 
-  const doc = docs.find((doc) => doc.rel === active) ?? null;
-  const documentInfo = React.useMemo(() => doc ? { language: sourceLanguage(doc.rel, doc.text).label, spacing: editorSpacing(doc.rel, doc.text) } : null, [doc?.rel, doc?.text]);
+  const doc = docs.find(item => item.rel === active) ?? null;
   const decorations = React.useMemo(() => explorerDecorations(project, repository.git, docs.filter((item) => item.dirty).map((item) => item.rel)), [project, repository.git, docs]);
-  const formatHint = React.useMemo(() => doc ? formattingHint(doc.rel, doc.text) : null, [doc?.rel, doc?.text]);
-  const canFormat = !!doc && !doc.binary && !doc.truncated && !!(formatParser(doc.rel) || nativeFormatTool(doc.rel) || configuredLanguage(s.st?.settings.languageServers, doc.rel));
-  const formatActive = () => {
-    if (!doc || !canFormat) return;
-    setDocs((all) => all.map((item) => item.rel === doc.rel ? { ...item, mode: 'edit' } : item));
-    requestAnimationFrame(() => requestAnimationFrame(() => window.dispatchEvent(new CustomEvent('tributary:format-file', { detail: { project, path: doc.rel } }))));
-  };
-  const toggleWrap = () => setDocs((all) => all.map((item) => item.rel === active ? { ...item, wrap: !item.wrap } : item));
   const pin = (rel: string) => setDocs((all) => all.map((doc) => doc.rel === rel ? { ...doc, pinned: true } : doc));
-  const save = async () => {
+  const saveDocument = async (doc: Doc | null, editorHistory: EditorHistory | null) => {
+    const canFormat = !!doc && !!(formatParser(doc.rel) || nativeFormatTool(doc.rel) || configuredLanguage(s.st?.settings.languageServers, doc.rel));
     if (!doc || doc.binary || doc.truncated || saveBusy.current) return;
     saveBusy.current = true; setSaving(true);
     let text = doc.text;
@@ -423,13 +427,15 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
     if (target?.isConnected) target.focus({ preventScroll: true });
     else focusActiveTab();
   };
-  const close = (paths: string[], confirmed = false) => {
-    if (!confirmed && docsRef.current.some((doc) => paths.includes(doc.rel) && doc.dirty)) {
-      restoreFocus.current = document.activeElement as HTMLElement; setConfirmation({ paths }); return;
+  const close = (paths: string[], confirmed = false, group = groupsRef.current.focused) => {
+    const elsewhere = new Set(groupsRef.current.groups.filter(item => item.id !== group).flatMap(item => item.paths));
+    if (!confirmed && docsRef.current.some((doc) => paths.includes(doc.rel) && doc.dirty && !elsewhere.has(doc.rel))) {
+      restoreFocus.current = document.activeElement as HTMLElement; setConfirmation({ paths, group }); return;
     }
     ++sequence.current; setBusy(false); setOpening(null);
-    const next = closeFileTabs(docsRef.current, activeRef.current, paths);
-    setDocs(next.tabs); setActive(next.active);
+    const next = closeGroupFiles(groupsRef.current, group, paths);
+    const retained = new Set(next.groups.flatMap(item => item.paths));
+    updateGroups(() => next); setDocs(all => all.filter(item => retained.has(item.rel)));
     // A removed close button cannot receive focus; select its surviving neighbour.
     requestAnimationFrame(focusActiveTab);
   };
@@ -456,24 +462,76 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
   const label = (rel: string) => fileTabLabel(rel, docs.map((doc) => doc.rel));
   const iconButton = 'workbench-action shrink-0 [&_svg]:size-4';
 
+  const pendingGroupFocus = React.useRef<string | null>(null);
+  const focusEditorGroup = () => {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const group = root.current?.querySelector<HTMLElement>(`[data-editor-group="${groupsRef.current.focused}"]`);
+      if (group?.offsetParent) (group.querySelector<HTMLElement>('.cm-content') || group.querySelector<HTMLElement>('[role="tab"][data-state="active"]'))?.focus();
+      pendingGroupFocus.current = null;
+    }));
+  };
+  const focusGroup = (id: string) => {
+    if (groupsRef.current.focused === id) return;
+    ++sequence.current; setBusy(false); setOpening(null); setLine(undefined); setColumn(undefined);
+    updateGroups(state => ({ ...state, focused: id }));
+  };
+  const splitGroup = (direction: EditorGroups['direction'], id = groupsRef.current.focused) => {
+    setComparison(null); s.pauseFollowing();
+    setDocs(all => all.map(item => item.pinned ? item : { ...item, pinned: true }));
+    updateGroups(state => splitEditorGroup({ ...state, focused: id }, direction));
+    pendingGroupFocus.current = groupsRef.current.focused; focusEditorGroup();
+  };
+  const joinGroup = (id: string) => { updateGroups(state => joinEditorGroup(state, id)); pendingGroupFocus.current = groupsRef.current.focused; focusEditorGroup(); };
+  const splitCurrent = React.useRef(splitGroup); splitCurrent.current = splitGroup;
+  React.useEffect(() => {
+    if (!visible) return;
+    const split = (event: Event) => splitCurrent.current((event as CustomEvent).detail === 'vertical' ? 'vertical' : 'horizontal');
+    window.addEventListener('tributary:split-editor', split);
+    return () => window.removeEventListener('tributary:split-editor', split);
+  }, [visible]);
+  const allDocs = docs;
+  const renderGroup = (group: EditorGroup) => {
+    const docs = allDocs.filter(item => group.paths.includes(item.rel));
+    const active = group.active, doc = docs.find(item => item.rel === active) ?? null;
+    const focused = group.id === groupLayout.focused;
+    const comparison = focused ? comparisonRel : null;
+    const editorHistory = groupHistories[group.id] ?? null, editorStats = groupStats[group.id];
+    const documentInfo = doc ? { language: sourceLanguage(doc.rel, doc.text).label, spacing: editorSpacing(doc.rel, doc.text) } : null;
+    const formatHint = doc ? formattingHint(doc.rel, doc.text) : null;
+    const canFormat = !!doc && !doc.binary && !doc.truncated && !!(formatParser(doc.rel) || nativeFormatTool(doc.rel) || configuredLanguage(s.st?.settings.languageServers, doc.rel));
+    const save = () => saveDocument(doc, historiesRef.current[group.id] ?? null);
+    const toggleWrap = () => setDocs(all => all.map(item => item.rel === active ? { ...item, wrap: !item.wrap } : item));
+    const formatActive = () => {
+      if (!doc || !canFormat) return;
+      setDocs(all => all.map(item => item.rel === doc.rel ? { ...item, mode: 'edit' } : item));
+      requestAnimationFrame(() => requestAnimationFrame(() => { const history = historiesRef.current[group.id]; if (history?.path === doc.rel) void history.format(); }));
+    };
+    const select = (rel: string) => { setComparison(null); s.pauseFollowing(); ++sequence.current; setBusy(false); setOpening(null); setError(null); updateGroups(state => selectGroupFile(state, group.id, rel)); setLine(undefined); setColumn(undefined); setBrowse(false); };
   const fileNavigation = (<div className="workbench-toolbar workspace-file-navigation border-b bg-background/60 pr-2">
         <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" className={cn(iconButton, s.codeLayout && !small && !collapsed && 'hidden')} aria-label={small ? debugVisible ? 'Show debugger' : 'Browse files' : collapsed ? 'Show explorer' : 'Collapse explorer'} aria-expanded={small ? browse : !collapsed} onClick={() => small ? setBrowse(!browse) : setCollapsed(!collapsed)}>{collapsed || (small && !browse) ? <PanelLeftOpen /> : <PanelLeftClose />}</Button></TooltipTrigger><TooltipContent>{small ? 'Browse files' : collapsed ? 'Show explorer' : 'Collapse explorer'}</TooltipContent></Tooltip>
-        <div ref={fileTabs} className="workspace-file-strip @container relative min-w-0 flex-1 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div ref={focused ? fileTabs : undefined} className="workspace-file-strip @container relative min-w-0 flex-1 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <TabsList aria-label="Open files" variant="line" className="workspace-file-list justify-start gap-0 rounded-none p-0">
-            {docs.map((item) => <TabsTrigger key={item.rel} value={item.rel} data-file-path={item.rel} title={item.rel} aria-label={`${item.rel}${!item.pinned ? ', preview' : ''}${item.dirty ? ', unsaved' : ''}`} onDoubleClick={() => pin(item.rel)} className={cn('workspace-file-tab h-8 min-w-0 max-w-[min(16rem,100cqw)] flex-none justify-start rounded-none border-0 px-2.5 pr-8 text-[13px] font-normal after:hidden focus-visible:ring-inset max-sm:h-11 max-sm:pr-12', !item.pinned && 'italic')}>
+            {docs.map((item) => <div key={item.rel} className="relative flex shrink-0"><ContextMenu><ContextMenuTrigger asChild><TabsTrigger key={item.rel} value={item.rel} data-file-path={item.rel} title={item.rel} aria-label={`${item.rel}${!item.pinned ? ', preview' : ''}${item.dirty ? ', unsaved' : ''}`} onDoubleClick={() => pin(item.rel)} className={cn('workspace-file-tab h-8 min-w-0 max-w-[min(16rem,100cqw)] flex-none justify-start rounded-none border-0 px-2.5 pr-8 text-[13px] font-normal after:hidden focus-visible:ring-inset max-sm:h-11 max-sm:pr-12', !item.pinned && 'italic')}>
               <FileTypeIcon path={item.rel} /><span className="truncate">{label(item.rel)}</span>
               {item.dirty && <Circle aria-hidden="true" className="size-2 fill-current" />}
-            </TabsTrigger>)}
+            </TabsTrigger></ContextMenuTrigger><ContextMenuContent onCloseAutoFocus={event => { if (pendingGroupFocus.current) event.preventDefault(); }}>
+                <ContextMenuItem onSelect={() => { updateGroups(state => selectGroupFile(state, group.id, item.rel)); splitGroup('horizontal', group.id); }}><Columns2 />Split right</ContextMenuItem>
+                <ContextMenuItem onSelect={() => { updateGroups(state => selectGroupFile(state, group.id, item.rel)); splitGroup('vertical', group.id); }}><Rows2 />Split down</ContextMenuItem>
+                <ContextMenuSeparator /><ContextMenuItem onSelect={() => close([item.rel], false, group.id)}><X />Close</ContextMenuItem>
+              </ContextMenuContent></ContextMenu><Button variant="ghost" size="icon-sm" className={cn(iconButton, "absolute right-0 top-0")} aria-label={`Close ${item.rel}`} onClick={() => close([item.rel], false, group.id)}><X /></Button></div>)}
           </TabsList>
-          <div role="group" aria-label="Close files" className="pointer-events-none absolute inset-0">
-            {tabEnds.map(({ rel, right }) => <Button key={rel} variant="ghost" size="icon-sm" className={cn(iconButton, 'workspace-file-close pointer-events-auto absolute rounded-md')} style={{ left: right }} aria-label={`Close ${rel}`} onClick={() => close([rel])}><X /></Button>)}
-          </div>
         </div>
+        <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" className={iconButton} aria-label="Split editor right" disabled={!doc} onClick={() => splitGroup('horizontal', group.id)}><Columns2 /></Button></TooltipTrigger><TooltipContent>Split editor right <ShortcutLabel action="split-editor" /></TooltipContent></Tooltip>
+        {groupLayout.groups.length > 1 && <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" className={iconButton} aria-label="Close editor group" onClick={() => joinGroup(group.id)}><X /></Button></TooltipTrigger><TooltipContent>Close group · keep open files</TooltipContent></Tooltip>}
         <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon-sm" className={iconButton} aria-label="Open files menu" aria-busy={busy}>{showOpening ? <Spinner /> : <Ellipsis />}</Button></DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="max-h-[70dvh] max-w-[calc(100vw-16px)] overflow-y-auto max-sm:[&_[role=menuitem]]:min-h-11">
+          <DropdownMenuContent onCloseAutoFocus={event => { if (pendingGroupFocus.current) event.preventDefault(); }} align="end" className="max-h-[70dvh] max-w-[calc(100vw-16px)] overflow-y-auto max-sm:[&_[role=menuitem]]:min-h-11">
             <DropdownMenuItem onSelect={() => s.openPanel('preview')}>Project tools & extensions</DropdownMenuItem>
             <DropdownMenuItem onSelect={() => setChecksOpen(true)}>Lint, type check & tests…</DropdownMenuItem>
             <DropdownMenuItem disabled={s.hub.platform === 'mock'} onSelect={() => setFormatAllOpen(true)}><WandSparkles />Format all files…</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem disabled={!doc} onSelect={() => splitGroup('horizontal', group.id)}><Columns2 />Split editor right<ShortcutLabel action="split-editor" /></DropdownMenuItem>
+            <DropdownMenuItem disabled={!doc} onSelect={() => splitGroup('vertical', group.id)}><Rows2 />Split editor down</DropdownMenuItem>
+            {groupLayout.groups.length > 1 && <DropdownMenuItem onSelect={() => updateGroups(state => ({ ...state, direction: state.direction === 'horizontal' ? 'vertical' : 'horizontal' }))}>Toggle editor layout</DropdownMenuItem>}
             <DropdownMenuSeparator />
             <DropdownMenuLabel>Open files</DropdownMenuLabel>
             {!docs.length && <DropdownMenuItem disabled>No open files</DropdownMenuItem>}
@@ -500,10 +558,66 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
         </DropdownMenu>
       </div>);
 
+    return <Tabs key={group.id} value={active ?? ''} onValueChange={select} data-editor-group={group.id} data-focused={focused} aria-label={`Editor group ${groupLayout.groups.indexOf(group) + 1}`} onPointerDownCapture={() => focusGroup(group.id)} onFocusCapture={() => focusGroup(group.id)} className="editor-group flex h-full min-h-0 min-w-0 flex-col gap-0 overflow-hidden">
+      {fileNavigation}
+            {comparison ? <WorkspaceFileChange bridge={s.hub} project={project} rel={comparison} revision={`${repository.revision}:${directoryRevision}`} visible={visible} dirty={docs.some((item) => item.rel === comparison && item.dirty)} deleted={changedFiles.some((item) => item.rel === comparison && item.status === 'D')} onEdit={() => { const rel = comparison; setComparison(null); void openDoc(rel, 'pinned', undefined, undefined, false, true); }} onClose={() => { setComparison(null); if (!docs.length && small) setBrowse(true); }} /> : doc ? <>
+              <div className="workspace-file-actions flex h-7 min-w-0 shrink-0 items-center border-b px-3 max-sm:h-11">
+                <nav aria-label="File breadcrumbs" title={doc.rel} className="min-w-0 flex-1 overflow-hidden text-xs text-muted-foreground"><ol className="flex min-w-0 items-center gap-1">
+                  {(doc.rel.split('/').length > 3 ? ['…', ...doc.rel.split('/').slice(-2)] : doc.rel.split('/')).map((part, index, parts) => <li key={index} className={cn('flex min-w-0 items-center gap-1', index === parts.length - 1 && 'flex-1')} >{index > 0 && <ChevronRight className="size-3 shrink-0" />}<span className="truncate" aria-current={index === parts.length - 1 ? 'page' : undefined}>{part}</span></li>)}
+                </ol></nav>
+                {doc.mode === 'edit' && !doc.binary && <DocumentOutline path={doc.rel} text={doc.text} onSelect={(ln, col) => void openDoc(doc.rel, 'pinned', ln, col)} />}
+              </div>
+              {doc.mode === 'edit' && !doc.binary && formatHint && (formatHint === 'Compact code' || !doc.wrap) && <div role="group" aria-label="Formatting actions" className="flex shrink-0 flex-wrap items-center gap-1 border-b bg-muted/30 px-3 py-1 text-xs text-muted-foreground"><span className="min-w-0 flex-1">{formatHint}</span>{canFormat && <Tooltip><TooltipTrigger asChild><Button size="xs" variant="ghost" onClick={formatActive}><WandSparkles />Format document</Button></TooltipTrigger><TooltipContent>Format indentation and line breaks <ShortcutKeys keys={['Shift', 'Alt', 'F']} platform={platform} /></TooltipContent></Tooltip>}{!doc.wrap && <Button size="xs" variant="ghost" onClick={toggleWrap}><WrapText />Wrap lines</Button>}<Button size="xs" variant="ghost" onClick={() => s.openSettings('language-tools')}>Formatting tools</Button></div>}
+              {(doc.diskChanged || doc.diskError) ? <div role="status" className="flex shrink-0 flex-wrap items-center gap-1 border-b bg-muted px-3 py-1 text-xs"><span className="flex-1">{doc.diskError ? 'File unavailable. Draft kept.' : 'Changed on disk. Draft kept.'}</span>{doc.dirty && <Button variant="ghost" size="sm" onClick={() => void compare(doc)}>Compare</Button>}<Button variant="ghost" size="sm" onClick={() => { if (doc.dirty) { restoreFocus.current = document.activeElement as HTMLElement; setConfirmation({ paths: [doc.rel], reload: true }); } else void reload(doc.rel); }}>Reload</Button></div>
+                : doc.recovered && doc.dirty && <div role="status" className="flex shrink-0 flex-wrap items-center gap-1 border-b bg-muted px-3 py-1 text-xs"><span className="flex-1">Unsaved changes restored from your last session.</span><Button variant="ghost" size="sm" onClick={() => void compare(doc)}>Compare</Button><Button variant="ghost" size="sm" onClick={() => forget(doc.rel)}>Keep</Button></div>}
+              <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
+                {docs.map((item) => <TabsContent key={item.rel} value={item.rel} tabIndex={-1} className="h-full min-h-0">
+                  {item.rel === active && (item.binary && !IMAGE.test(item.rel) ? <p className="p-6 text-center text-sm text-muted-foreground">Binary file · {item.size.toLocaleString()} bytes</p>
+                    : item.mode === 'preview' && previewable(item.rel) ? <FilePreview doc={item} project={project} />
+                      : <CodeEditor active={visible} keepAlive={saving} onReview={() => void reviewSaved(item.rel)} onChangeStats={stats => setGroupStats(all => ({ ...all, [group.id]: stats }))} followChanges={s.following && active === item.rel} onHistoryChange={history => setGroupHistories(all => ({ ...all, [group.id]: history }))} onNavigate={s.pauseFollowing} onDiagnostics={updateLiveDiagnostics} project={project} path={item.rel} value={item.text} line={focused ? line : undefined} column={focused ? column : undefined} readOnly={item.truncated} diagnostics={!item.dirty && checkResult && item.mtime <= checkResult.startedAt ? checkResult.diagnostics.filter((d) => d.rel === item.rel) : []} wrap={item.wrap} onToggleWrap={toggleWrap} onCursorChange={(position) => setCursors((all) => all[`${group.id}:${item.rel}`]?.line === position.line && all[`${group.id}:${item.rel}`]?.column === position.column ? all : { ...all, [`${group.id}:${item.rel}`]: position })} onSave={save} onChange={(value) => { s.pauseFollowing(); setDocs((all) => all.map((current) => current.rel === item.rel ? { ...current, text: value, dirty: value !== current.content, pinned: true, recovered: false } : current)); }} />)}
+                </TabsContent>)}
+              </div>
+              {!IMAGE.test(doc.rel) && <div className="workspace-file-footer flex min-w-0 shrink-0 items-center gap-1 border-t px-2">
+                <Popover><PopoverTrigger asChild><button type="button" aria-label="Document information" className="editor-status-info flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded px-1 text-left text-xs tabular-nums text-muted-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring">
+                  {doc.mode === 'edit' && !doc.binary ? <><span role="status" aria-live="off" aria-label="Editor position" className="shrink-0 whitespace-nowrap">Ln {cursors[`${group.id}:${doc.rel}`]?.line ?? 1}<span className="editor-cursor-column">, Col {cursors[`${group.id}:${doc.rel}`]?.column ?? 1}</span></span><span className="editor-file-details min-w-0 truncate">{documentInfo!.language} · {documentInfo!.spacing.useTabs ? 'Tabs' : 'Spaces'}: {documentInfo!.spacing.tabSize} · UTF-8 · {doc.text.includes('\r\n') ? 'CRLF' : 'LF'}{doc.truncated && ' · Read only'}</span></> : <span className="truncate">{live}</span>}
+                </button></PopoverTrigger><PopoverContent align="start" side="top" className="w-72 max-w-[calc(100vw-16px)] text-xs"><p className="mb-3 break-all font-medium">{doc.rel}</p><dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-muted-foreground"><dt>Language</dt><dd className="text-foreground">{documentInfo!.language}</dd><dt>Indentation</dt><dd>{documentInfo!.spacing.useTabs ? 'Tabs' : 'Spaces'}: {documentInfo!.spacing.tabSize}</dd><dt>Encoding</dt><dd>UTF-8 · {doc.text.includes('\r\n') ? 'CRLF' : 'LF'}</dd><dt>File state</dt><dd>{doc.truncated ? 'Read only' : doc.dirty ? 'Unsaved changes' : 'Saved'}</dd><dt>Updates</dt><dd>{live}</dd></dl></PopoverContent></Popover>
+                {editorStats?.rel === doc.rel && !!((editorStats.added || 0) + (editorStats.removed || 0)) && <span className="editor-status-changes shrink-0"><LineChangeCount {...editorStats} /></span>}
+
+                <div role="group" aria-label="File actions" className="flex shrink-0 items-center gap-0.5">
+                {doc.mode === 'edit' && !doc.binary && <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={cn(iconButton, 'editor-secondary-action')} aria-label="Format document" disabled={!canFormat} onClick={formatActive}><WandSparkles /></Button></TooltipTrigger><TooltipContent>Format document <ShortcutKeys keys={['Shift', 'Alt', 'F']} platform={platform} /></TooltipContent></Tooltip>}
+                {doc.mode === 'edit' && !doc.binary && <>
+                  <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={cn(iconButton, 'editor-secondary-action')} aria-label="Undo edit" disabled={doc.truncated || editorHistory?.path !== doc.rel || !editorHistory.canUndo} onClick={() => editorHistory?.undo()}><Undo2 /></Button></TooltipTrigger><TooltipContent>Undo edit <ShortcutKeys keys={['Mod', 'Z']} platform={platform} /></TooltipContent></Tooltip>
+                  <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={cn(iconButton, 'editor-secondary-action')} aria-label="Redo edit" disabled={doc.truncated || editorHistory?.path !== doc.rel || !editorHistory.canRedo} onClick={() => editorHistory?.redo()}><Redo2 /></Button></TooltipTrigger><TooltipContent>Redo edit <ShortcutKeys keys={platform === 'mac' ? ['Mod', 'Shift', 'Z'] : ['Mod', 'Y']} platform={platform} /></TooltipContent></Tooltip>
+                </>}
+                <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={cn(iconButton, 'editor-secondary-action')} aria-label="Review saved file changes" onClick={() => void reviewSaved(doc.rel)}><GitCompareArrows /></Button></TooltipTrigger><TooltipContent>Review saved changes</TooltipContent></Tooltip>
+                <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={cn(iconButton, 'editor-secondary-action')} aria-label="Project checks" aria-pressed={checksOpen} onClick={() => setChecksOpen((open) => !open)}><CircleAlert /></Button></TooltipTrigger><TooltipContent>Lint, type check & tests</TooltipContent></Tooltip>
+                {doc.mode === 'edit' && !doc.binary && <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={cn(iconButton, 'editor-secondary-action')} aria-label="Wrap lines" aria-pressed={!!doc.wrap} onClick={toggleWrap}><WrapText /></Button></TooltipTrigger><TooltipContent>Wrap lines <ShortcutKeys keys={['Alt', 'Z']} platform={platform} /></TooltipContent></Tooltip>}
+                {previewable(doc.rel) && !doc.binary && !IMAGE.test(doc.rel) && <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={cn(iconButton, 'editor-secondary-action')} aria-label={doc.mode === 'edit' ? 'Preview file' : 'Edit file'} onClick={() => setDocs((all) => all.map((item) => item.rel === doc.rel ? { ...item, mode: item.mode === 'edit' ? 'preview' : 'edit' } : item))}>{doc.mode === 'edit' ? <Eye /> : <Pencil />}</Button></TooltipTrigger><TooltipContent>{doc.mode === 'edit' ? 'Preview' : 'Edit'}</TooltipContent></Tooltip>}
+                {editors.length > 0 && <DropdownMenu><DropdownMenuTrigger asChild><Button size="icon-sm" variant="ghost" className={cn(iconButton, 'editor-secondary-action')} aria-label="Open in editor" title="Open in editor"><SquareArrowOutUpRight /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="max-sm:[&_[role=menuitem]]:min-h-11"><DropdownMenuLabel>Open in editor</DropdownMenuLabel>{editors.map((editor) => <DropdownMenuItem key={editor.id} onClick={() => s.hub.call('openInEditor', editor.id, project, doc.rel, line).catch((e) => toast.error(e.message))}>{editor.name}</DropdownMenuItem>)}</DropdownMenuContent></DropdownMenu>}
+                {!doc.binary && <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={iconButton} disabled={saving || !doc.dirty || doc.truncated} aria-label="Save file" aria-busy={saving} onClick={save}><Save /></Button></TooltipTrigger><TooltipContent>Save <ShortcutKeys keys={['Mod', 'S']} platform={platform} /></TooltipContent></Tooltip>}
+                <DropdownMenu><DropdownMenuTrigger asChild><Button size="icon-sm" variant="ghost" className={iconButton} aria-label="Editor actions"><Ellipsis /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" side="top" className="max-h-[70dvh] max-w-[calc(100vw-16px)] overflow-y-auto max-sm:[&_[role^=menuitem]]:min-h-11">
+                  <DropdownMenuLabel>Editor actions</DropdownMenuLabel>
+                  <DropdownMenuItem disabled={!canFormat} onSelect={formatActive}><WandSparkles />Format document<ShortcutKeys keys={['Shift', 'Alt', 'F']} platform={platform} /></DropdownMenuItem>
+                  <DropdownMenuItem disabled={doc.truncated || editorHistory?.path !== doc.rel || !editorHistory.canUndo} onSelect={() => editorHistory?.undo()}><Undo2 />Undo<ShortcutKeys keys={['Mod', 'Z']} platform={platform} /></DropdownMenuItem>
+                  <DropdownMenuItem disabled={doc.truncated || editorHistory?.path !== doc.rel || !editorHistory.canRedo} onSelect={() => editorHistory?.redo()}><Redo2 />Redo<ShortcutKeys keys={platform === 'mac' ? ['Mod', 'Shift', 'Z'] : ['Mod', 'Y']} platform={platform} /></DropdownMenuItem>
+                  <DropdownMenuCheckboxItem checked={!!doc.wrap} onCheckedChange={toggleWrap}>Wrap lines<ShortcutKeys keys={['Alt', 'Z']} platform={platform} /></DropdownMenuCheckboxItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => void reviewSaved(doc.rel)}><GitCompareArrows />Review saved changes</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => setChecksOpen(true)}><CircleAlert />Lint, type check & tests</DropdownMenuItem>
+                  {previewable(doc.rel) && !doc.binary && <DropdownMenuItem onSelect={() => setDocs((all) => all.map((item) => item.rel === doc.rel ? { ...item, mode: item.mode === 'edit' ? 'preview' : 'edit' } : item))}><Eye />{doc.mode === 'edit' ? 'Preview file' : 'Edit file'}</DropdownMenuItem>}
+                  {editors.map((editor) => <DropdownMenuItem key={editor.id} onSelect={() => void s.hub.call('openInEditor', editor.id, project, doc.rel, line).catch((error: Error) => toast.error(error.message))}><SquareArrowOutUpRight />Open in {editor.name}</DropdownMenuItem>)}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem disabled={saving || !doc.dirty || doc.truncated || doc.binary} onSelect={() => void save()}><Save />Save file<ShortcutKeys keys={['Mod', 'S']} platform={platform} /></DropdownMenuItem>
+                </DropdownMenuContent></DropdownMenu>
+                </div>
+              </div>}
+            </> : <Empty className="h-full border-0 p-4"><EmptyHeader><EmptyMedia variant="icon"><ImageIcon /></EmptyMedia><EmptyTitle>Select a file</EmptyTitle></EmptyHeader><EmptyContent><Button variant="outline" size="sm" onClick={browseFiles}><FolderOpen />Browse files</Button></EmptyContent></Empty>}
+    </Tabs>;
+  };
+
   return <div ref={root} className="relative flex h-full min-h-0 flex-col text-[13px]">
-    <FileSwitcher visible={visible} paths={docs.map((doc) => doc.rel)} active={active} open={switcherOpen} setOpen={setSwitcherOpen} onSelect={(rel) => void openDoc(rel, 'pinned')} />
-    <Tabs value={active ?? ''} onValueChange={(rel) => { setComparison(null); s.pauseFollowing(); ++sequence.current; setBusy(false); setOpening(null); setError(null); setActive(rel); setLine(undefined); setColumn(undefined); setBrowse(false); }} className="min-h-0 flex-1 gap-0">
-      {(!s.codeLayout || small) && fileNavigation}
+    <FileSwitcher visible={visible} paths={docs.filter(doc => groupLayout.groups.find(group => group.id === groupLayout.focused)?.paths.includes(doc.rel)).map(doc => doc.rel)} active={active} open={switcherOpen} setOpen={setSwitcherOpen} onSelect={(rel) => void openDoc(rel, 'pinned')} onRestoreFocus={focusEditorGroup} />
+    <div className="flex min-h-0 flex-1 flex-col gap-0">
       {busy && <span role="status" className="sr-only">Opening file…</span>}
       {error && <div role="alert" className="absolute inset-x-0 top-10 z-20 flex items-center gap-1 border-b bg-popover px-3 py-1 text-xs max-sm:top-11"><span className="min-w-0 flex-1 truncate" title={`${error.rel}: ${error.message}`}>Couldn’t open {error.rel.split('/').pop()}. {error.message}</span><Button variant="ghost" size="sm" onClick={() => { if (error.reload) { setError(null); void reload(error.rel); } else void openDoc(error.rel, error.intent, error.line); }}>Retry</Button><Button variant="ghost" size="icon-sm" aria-label="Dismiss file error" onClick={() => setError(null)}><X /></Button></div>}
       <ResizablePanelGroup id={`files-${project}`} elementRef={fileGroup} className="min-h-0 flex-1" disabled={small || collapsed} onLayoutChanged={(layout, meta) => { if (meta.isUserInteraction && !small && !collapsed && fileGroup.current) (debugVisible ? debuggerWidth : explorerWidth).current = Math.min(360, Math.max(debugVisible ? 224 : 176, layout[`explorer-${project}`] * (fileGroup.current.clientWidth - 1) / 100)); }}>
@@ -551,67 +665,20 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
         <ResizableHandle aria-label="Resize file explorer" title="Arrow keys resize; Enter resets" onDoubleClick={() => { explorerWidth.current = 224; explorer.current?.resize(224); }} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); explorerWidth.current = 224; explorer.current?.resize(224); } }} className={small || collapsed ? 'hidden' : ''} />
         <ResizablePanel id={`reader-${project}`} minSize={small ? browse ? 0 : '100%' : 144} maxSize={small && browse ? 0 : '100%'} className="h-full min-w-0">
           <div className={cn('flex h-full min-h-0 min-w-0 flex-col overflow-hidden', small && browse && 'hidden')}>
-            {s.codeLayout && !small && fileNavigation}
             {debugVisible && <div className="debug-control-strip"><DebugControls /></div>}
-            {comparison ? <WorkspaceFileChange bridge={s.hub} project={project} rel={comparison} revision={`${repository.revision}:${directoryRevision}`} visible={visible} dirty={docs.some((item) => item.rel === comparison && item.dirty)} deleted={changedFiles.some((item) => item.rel === comparison && item.status === 'D')} onEdit={() => { const rel = comparison; setComparison(null); void openDoc(rel, 'pinned', undefined, undefined, false, true); }} onClose={() => { setComparison(null); if (!docs.length && small) setBrowse(true); }} /> : doc ? <>
-              <div className="workspace-file-actions flex h-7 min-w-0 shrink-0 items-center border-b px-3 max-sm:h-11">
-                <nav aria-label="File breadcrumbs" title={doc.rel} className="min-w-0 flex-1 overflow-hidden text-xs text-muted-foreground"><ol className="flex min-w-0 items-center gap-1">
-                  {(doc.rel.split('/').length > 3 ? ['…', ...doc.rel.split('/').slice(-2)] : doc.rel.split('/')).map((part, index, parts) => <li key={index} className={cn('flex min-w-0 items-center gap-1', index === parts.length - 1 && 'flex-1')} >{index > 0 && <ChevronRight className="size-3 shrink-0" />}<span className="truncate" aria-current={index === parts.length - 1 ? 'page' : undefined}>{part}</span></li>)}
-                </ol></nav>
-                {doc.mode === 'edit' && !doc.binary && <DocumentOutline path={doc.rel} text={doc.text} onSelect={(ln, col) => void openDoc(doc.rel, 'pinned', ln, col)} />}
-              </div>
-              {doc.mode === 'edit' && !doc.binary && formatHint && (formatHint === 'Compact code' || !doc.wrap) && <div role="group" aria-label="Formatting actions" className="flex shrink-0 flex-wrap items-center gap-1 border-b bg-muted/30 px-3 py-1 text-xs text-muted-foreground"><span className="min-w-0 flex-1">{formatHint}</span>{canFormat && <Tooltip><TooltipTrigger asChild><Button size="xs" variant="ghost" onClick={formatActive}><WandSparkles />Format document</Button></TooltipTrigger><TooltipContent>Format indentation and line breaks <ShortcutKeys keys={['Shift', 'Alt', 'F']} platform={platform} /></TooltipContent></Tooltip>}{!doc.wrap && <Button size="xs" variant="ghost" onClick={toggleWrap}><WrapText />Wrap lines</Button>}<Button size="xs" variant="ghost" onClick={() => s.openSettings('language-tools')}>Formatting tools</Button></div>}
-              {(doc.diskChanged || doc.diskError) ? <div role="status" className="flex shrink-0 flex-wrap items-center gap-1 border-b bg-muted px-3 py-1 text-xs"><span className="flex-1">{doc.diskError ? 'File unavailable. Draft kept.' : 'Changed on disk. Draft kept.'}</span>{doc.dirty && <Button variant="ghost" size="sm" onClick={() => void compare(doc)}>Compare</Button>}<Button variant="ghost" size="sm" onClick={() => { if (doc.dirty) { restoreFocus.current = document.activeElement as HTMLElement; setConfirmation({ paths: [doc.rel], reload: true }); } else void reload(doc.rel); }}>Reload</Button></div>
-                : doc.recovered && doc.dirty && <div role="status" className="flex shrink-0 flex-wrap items-center gap-1 border-b bg-muted px-3 py-1 text-xs"><span className="flex-1">Unsaved changes restored from your last session.</span><Button variant="ghost" size="sm" onClick={() => void compare(doc)}>Compare</Button><Button variant="ghost" size="sm" onClick={() => forget(doc.rel)}>Keep</Button></div>}
-              <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
-                {docs.map((item) => <TabsContent key={item.rel} value={item.rel} tabIndex={-1} className="h-full min-h-0">
-                  {item.rel === active && (item.binary && !IMAGE.test(item.rel) ? <p className="p-6 text-center text-sm text-muted-foreground">Binary file · {item.size.toLocaleString()} bytes</p>
-                    : item.mode === 'preview' && previewable(item.rel) ? <FilePreview doc={item} project={project} />
-                      : <CodeEditor active={visible} keepAlive={saving} onReview={() => void reviewSaved(item.rel)} onChangeStats={setEditorStats} followChanges={s.following && active === item.rel} onHistoryChange={setEditorHistory} onNavigate={s.pauseFollowing} onDiagnostics={updateLiveDiagnostics} project={project} path={item.rel} value={item.text} line={line} column={column} readOnly={item.truncated} diagnostics={!item.dirty && checkResult && item.mtime <= checkResult.startedAt ? checkResult.diagnostics.filter((d) => d.rel === item.rel) : []} wrap={item.wrap} onToggleWrap={toggleWrap} onCursorChange={(position) => setCursors((all) => all[item.rel]?.line === position.line && all[item.rel]?.column === position.column ? all : { ...all, [item.rel]: position })} onSave={save} onChange={(value) => { s.pauseFollowing(); setDocs((all) => all.map((current) => current.rel === item.rel ? { ...current, text: value, dirty: value !== current.content, pinned: true, recovered: false } : current)); }} />)}
-                </TabsContent>)}
-              </div>
-              {debugVisible && <React.Suspense fallback={<p role="status" className="border-t p-2 text-xs">Opening console…</p>}><DebugConsole /></React.Suspense>}
-              {!IMAGE.test(doc.rel) && <div className="workspace-file-footer flex min-w-0 shrink-0 items-center gap-1 border-t px-2">
-                <Popover><PopoverTrigger asChild><button type="button" aria-label="Document information" className="editor-status-info flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded px-1 text-left text-xs tabular-nums text-muted-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring">
-                  {doc.mode === 'edit' && !doc.binary ? <><span role="status" aria-live="off" aria-label="Editor position" className="shrink-0 whitespace-nowrap">Ln {cursors[doc.rel]?.line ?? 1}<span className="editor-cursor-column">, Col {cursors[doc.rel]?.column ?? 1}</span></span><span className="editor-file-details min-w-0 truncate">{documentInfo!.language} · {documentInfo!.spacing.useTabs ? 'Tabs' : 'Spaces'}: {documentInfo!.spacing.tabSize} · UTF-8 · {doc.text.includes('\r\n') ? 'CRLF' : 'LF'}{doc.truncated && ' · Read only'}</span></> : <span className="truncate">{live}</span>}
-                </button></PopoverTrigger><PopoverContent align="start" side="top" className="w-72 max-w-[calc(100vw-16px)] text-xs"><p className="mb-3 break-all font-medium">{doc.rel}</p><dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-muted-foreground"><dt>Language</dt><dd className="text-foreground">{documentInfo!.language}</dd><dt>Indentation</dt><dd>{documentInfo!.spacing.useTabs ? 'Tabs' : 'Spaces'}: {documentInfo!.spacing.tabSize}</dd><dt>Encoding</dt><dd>UTF-8 · {doc.text.includes('\r\n') ? 'CRLF' : 'LF'}</dd><dt>File state</dt><dd>{doc.truncated ? 'Read only' : doc.dirty ? 'Unsaved changes' : 'Saved'}</dd><dt>Updates</dt><dd>{live}</dd></dl></PopoverContent></Popover>
-                {editorStats?.rel === doc.rel && !!((editorStats.added || 0) + (editorStats.removed || 0)) && <span className="editor-status-changes shrink-0"><LineChangeCount {...editorStats} /></span>}
-
-                <div role="group" aria-label="File actions" className="flex shrink-0 items-center gap-0.5">
-                {doc.mode === 'edit' && !doc.binary && <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={cn(iconButton, 'editor-secondary-action')} aria-label="Format document" disabled={!canFormat} onClick={formatActive}><WandSparkles /></Button></TooltipTrigger><TooltipContent>Format document <ShortcutKeys keys={['Shift', 'Alt', 'F']} platform={platform} /></TooltipContent></Tooltip>}
-                {doc.mode === 'edit' && !doc.binary && <>
-                  <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={cn(iconButton, 'editor-secondary-action')} aria-label="Undo edit" disabled={doc.truncated || editorHistory?.path !== doc.rel || !editorHistory.canUndo} onClick={() => editorHistory?.undo()}><Undo2 /></Button></TooltipTrigger><TooltipContent>Undo edit <ShortcutKeys keys={['Mod', 'Z']} platform={platform} /></TooltipContent></Tooltip>
-                  <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={cn(iconButton, 'editor-secondary-action')} aria-label="Redo edit" disabled={doc.truncated || editorHistory?.path !== doc.rel || !editorHistory.canRedo} onClick={() => editorHistory?.redo()}><Redo2 /></Button></TooltipTrigger><TooltipContent>Redo edit <ShortcutKeys keys={platform === 'mac' ? ['Mod', 'Shift', 'Z'] : ['Mod', 'Y']} platform={platform} /></TooltipContent></Tooltip>
-                </>}
-                <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={cn(iconButton, 'editor-secondary-action')} aria-label="Review saved file changes" onClick={() => void reviewSaved(doc.rel)}><GitCompareArrows /></Button></TooltipTrigger><TooltipContent>Review saved changes</TooltipContent></Tooltip>
-                <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={cn(iconButton, 'editor-secondary-action')} aria-label="Project checks" aria-pressed={checksOpen} onClick={() => setChecksOpen((open) => !open)}><CircleAlert /></Button></TooltipTrigger><TooltipContent>Lint, type check & tests</TooltipContent></Tooltip>
-                {doc.mode === 'edit' && !doc.binary && <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={cn(iconButton, 'editor-secondary-action')} aria-label="Wrap lines" aria-pressed={!!doc.wrap} onClick={toggleWrap}><WrapText /></Button></TooltipTrigger><TooltipContent>Wrap lines <ShortcutKeys keys={['Alt', 'Z']} platform={platform} /></TooltipContent></Tooltip>}
-                {previewable(doc.rel) && !doc.binary && !IMAGE.test(doc.rel) && <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={cn(iconButton, 'editor-secondary-action')} aria-label={doc.mode === 'edit' ? 'Preview file' : 'Edit file'} onClick={() => setDocs((all) => all.map((item) => item.rel === doc.rel ? { ...item, mode: item.mode === 'edit' ? 'preview' : 'edit' } : item))}>{doc.mode === 'edit' ? <Eye /> : <Pencil />}</Button></TooltipTrigger><TooltipContent>{doc.mode === 'edit' ? 'Preview' : 'Edit'}</TooltipContent></Tooltip>}
-                {editors.length > 0 && <DropdownMenu><DropdownMenuTrigger asChild><Button size="icon-sm" variant="ghost" className={cn(iconButton, 'editor-secondary-action')} aria-label="Open in editor" title="Open in editor"><SquareArrowOutUpRight /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="max-sm:[&_[role=menuitem]]:min-h-11"><DropdownMenuLabel>Open in editor</DropdownMenuLabel>{editors.map((editor) => <DropdownMenuItem key={editor.id} onClick={() => s.hub.call('openInEditor', editor.id, project, doc.rel, line).catch((e) => toast.error(e.message))}>{editor.name}</DropdownMenuItem>)}</DropdownMenuContent></DropdownMenu>}
-                {!doc.binary && <Tooltip><TooltipTrigger asChild><Button size="icon-sm" variant="ghost" className={iconButton} disabled={saving || !doc.dirty || doc.truncated} aria-label="Save file" aria-busy={saving} onClick={save}><Save /></Button></TooltipTrigger><TooltipContent>Save <ShortcutKeys keys={['Mod', 'S']} platform={platform} /></TooltipContent></Tooltip>}
-                <DropdownMenu><DropdownMenuTrigger asChild><Button size="icon-sm" variant="ghost" className={iconButton} aria-label="Editor actions"><Ellipsis /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" side="top" className="max-h-[70dvh] max-w-[calc(100vw-16px)] overflow-y-auto max-sm:[&_[role^=menuitem]]:min-h-11">
-                  <DropdownMenuLabel>Editor actions</DropdownMenuLabel>
-                  <DropdownMenuItem disabled={!canFormat} onSelect={formatActive}><WandSparkles />Format document<ShortcutKeys keys={['Shift', 'Alt', 'F']} platform={platform} /></DropdownMenuItem>
-                  <DropdownMenuItem disabled={doc.truncated || editorHistory?.path !== doc.rel || !editorHistory.canUndo} onSelect={() => editorHistory?.undo()}><Undo2 />Undo<ShortcutKeys keys={['Mod', 'Z']} platform={platform} /></DropdownMenuItem>
-                  <DropdownMenuItem disabled={doc.truncated || editorHistory?.path !== doc.rel || !editorHistory.canRedo} onSelect={() => editorHistory?.redo()}><Redo2 />Redo<ShortcutKeys keys={platform === 'mac' ? ['Mod', 'Shift', 'Z'] : ['Mod', 'Y']} platform={platform} /></DropdownMenuItem>
-                  <DropdownMenuCheckboxItem checked={!!doc.wrap} onCheckedChange={toggleWrap}>Wrap lines<ShortcutKeys keys={['Alt', 'Z']} platform={platform} /></DropdownMenuCheckboxItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={() => void reviewSaved(doc.rel)}><GitCompareArrows />Review saved changes</DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => setChecksOpen(true)}><CircleAlert />Lint, type check & tests</DropdownMenuItem>
-                  {previewable(doc.rel) && !doc.binary && <DropdownMenuItem onSelect={() => setDocs((all) => all.map((item) => item.rel === doc.rel ? { ...item, mode: item.mode === 'edit' ? 'preview' : 'edit' } : item))}><Eye />{doc.mode === 'edit' ? 'Preview file' : 'Edit file'}</DropdownMenuItem>}
-                  {editors.map((editor) => <DropdownMenuItem key={editor.id} onSelect={() => void s.hub.call('openInEditor', editor.id, project, doc.rel, line).catch((error: Error) => toast.error(error.message))}><SquareArrowOutUpRight />Open in {editor.name}</DropdownMenuItem>)}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem disabled={saving || !doc.dirty || doc.truncated || doc.binary} onSelect={() => void save()}><Save />Save file<ShortcutKeys keys={['Mod', 'S']} platform={platform} /></DropdownMenuItem>
-                </DropdownMenuContent></DropdownMenu>
-                </div>
-              </div>}
-            </> : <Empty className="h-full border-0 p-4"><EmptyHeader><EmptyMedia variant="icon"><ImageIcon /></EmptyMedia><EmptyTitle>Select a file</EmptyTitle></EmptyHeader><EmptyContent><Button variant="outline" size="sm" onClick={browseFiles}><FolderOpen />Browse files</Button></EmptyContent></Empty>}
+            <ResizablePanelGroup id={`editor-groups-${project}`} orientation={small ? 'vertical' : groupLayout.direction} className="min-h-0 min-w-0 flex-1">
+              {groupLayout.groups.map((group, index) => <React.Fragment key={group.id}>
+                {index > 0 && <ResizableHandle aria-label="Resize editor groups" />}
+                <ResizablePanel id={`${project}-${group.id}`} minSize={`${Math.min(20, 60 / groupLayout.groups.length)}%`} defaultSize={`${100 / groupLayout.groups.length}%`} className="min-h-0 min-w-0">{renderGroup(group)}</ResizablePanel>
+              </React.Fragment>)}
+            </ResizablePanelGroup>
+            {debugVisible && <React.Suspense fallback={<p role="status" className="border-t p-2 text-xs">Opening console…</p>}><DebugConsole /></React.Suspense>}
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
       <FormatProjectDialog open={formatAllOpen} onOpenChange={setFormatAllOpen} project={project} getUnsaved={() => docsRef.current.filter((item) => item.dirty).map((item) => item.rel)} onApplied={() => { refreshFiles(); s.refreshGit(project); }} />
       {checksOpen && <div className="h-[min(300px,45%)] min-h-40 shrink-0 border-t"><ProjectChecks visible={visible} staleFiles={docs.filter((d) => d.dirty || (checkResult && d.mtime > checkResult.startedAt)).map((d) => d.rel)} liveDiagnostics={liveDiagnostics.filter((d) => d.rel === active && docs.some((doc) => doc.rel === active && doc.mode === 'edit'))} project={project} onClose={() => setChecksOpen(false)} onResult={setCheckResult} /></div>}
-    </Tabs>
+    </div>
     <Dialog open={!!creation} onOpenChange={(open) => { if (!open && !creationBusy) setCreation(null); }}>
       <DialogContent className="sm:max-w-sm"><form onSubmit={submitCreation} className="space-y-4">
         <DialogHeader><DialogTitle>New {creation?.kind}</DialogTitle><DialogDescription>Enter a name or a path inside an existing folder.</DialogDescription></DialogHeader>
@@ -623,7 +690,7 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
     <AlertDialog open={!!confirmation} onOpenChange={(isOpen) => { if (!isOpen) setConfirmation(null); }}>
       <AlertDialogContent className="max-w-[calc(100vw-32px)] max-sm:[&_button]:min-h-11" onCloseAutoFocus={returnFocus}>
         <AlertDialogHeader><AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle><AlertDialogDescription className="break-words">{confirmation?.paths.filter((path) => docs.find((doc) => doc.rel === path)?.dirty).join(', ')}<br />Your edits will be lost.</AlertDialogDescription></AlertDialogHeader>
-        <AlertDialogFooter><AlertDialogCancel>Keep editing</AlertDialogCancel><AlertDialogAction variant="destructive" onClick={() => { if (!confirmation) return; if (confirmation.reload) void reload(confirmation.paths[0]); else close(confirmation.paths, true); setConfirmation(null); }}>Discard changes</AlertDialogAction></AlertDialogFooter>
+        <AlertDialogFooter><AlertDialogCancel>Keep editing</AlertDialogCancel><AlertDialogAction variant="destructive" onClick={() => { if (!confirmation) return; if (confirmation.reload) void reload(confirmation.paths[0]); else close(confirmation.paths, true, confirmation.group); setConfirmation(null); }}>Discard changes</AlertDialogAction></AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
 

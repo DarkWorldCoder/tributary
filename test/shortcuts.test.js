@@ -71,6 +71,7 @@ test('VS Code workspace shortcuts do not collide with preview and work on Ctrl o
       assert.equal(shortcutAction({ ...event, key }, { platform }), action);
     }
     assert.equal(shortcutAction({ ...event, shiftKey: false, key: 'p' }, { platform }), 'find-file');
+    assert.equal(shortcutAction({ ...event, shiftKey: false, key: '\\' }, { platform }), 'split-editor');
     assert.equal(shortcutAction({ ...event, shiftKey: false, altKey: true, key: 'p' }, { platform }), 'preview');
   }
   assert.equal(bindingConflict('search', ['Mod', 'Shift', 'P']), null);

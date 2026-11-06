@@ -1,5 +1,6 @@
 export const SHORTCUTS = [
   { id: 'find-file', label: 'Find a project file', group: 'Navigation', keys: ['Mod', 'P'] },
+  { id: 'split-editor', label: 'Split editor', group: 'Navigation', keys: ['Mod', '\\'] },
   { id: 'split-terminal', label: 'Split terminal', group: 'Navigation', keys: ['Mod', 'Shift', '5'] },
   { id: 'new-terminal', label: 'New terminal', group: 'Navigation', keys: ['Mod', 'Shift', '`'] },
   { id: 'new', label: 'New chat', group: 'Chat', keys: ['Mod', 'Shift', 'O'], aliases: [['Mod', 'N']] },

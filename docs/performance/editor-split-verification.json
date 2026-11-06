@@ -1,0 +1,54 @@
+{
+  "passed": true,
+  "date": "2026-11-06T02:58:12.672Z",
+  "checks": [
+    "Ctrl+backslash creates independent groups without replacing the existing editor",
+    "same-file edits and undo synchronize; Ctrl+S saves the focused group",
+    "Ctrl+Tab switches files inside the focused group and returns keyboard focus there",
+    "Quick Open and toolbar save target their group; other file remains unchanged",
+    "keyboard-accessible divider resizes editor groups",
+    "split down creates rows; closing a group keeps its unsaved document",
+    "restart restores editor groups, selected files and unsaved text",
+    "closing the last dirty view asks before discarding",
+    "narrow layout fits; joining releases the extra editor without losing text",
+    "native right-click tab menu splits the selected file and focuses its new group"
+  ],
+  "boxes": [
+    {
+      "x": 225,
+      "y": 32,
+      "width": 1215,
+      "height": 305.34375
+    },
+    {
+      "x": 225,
+      "y": 338.34375,
+      "width": 1215,
+      "height": 305.328125
+    },
+    {
+      "x": 225,
+      "y": 644.671875,
+      "width": 1215,
+      "height": 305.328125
+    }
+  ],
+  "sourceHashes": {
+    "ui/src/components/workspace-files.tsx": "0c502ba0c2bd6b5f04306c5e70d9b9d297512289ff26aec8c592c4bffdc69d8f",
+    "ui/src/components/file-switcher.tsx": "ca398def534cc3ef152bf774a01d88e9835817f0a12ad4a8723549d4ee360023",
+    "ui/src/lib/editor-groups.mjs": "0ed0a94c5845611967aad0cbf918ecdfe42f7b053f2fd1b2980377097e969ce3",
+    "ui/src/components/keyboard-shortcuts.tsx": "45f517fc9e931a895e3a022ad4ed8f9c0d2aa7dc908d5b2e1280ea79f320ac34",
+    "core/shortcuts.mjs": "2bdadb8061f267c31fe1a338b8894f5816db7a5f126b432292b839851cd47821",
+    "ui/src/components/command-palette.tsx": "e407121ea902d61cc961819186dff3cf6fea11349978c38414fc06ff60492ba5",
+    "ui/src/components/desktop-titlebar.tsx": "b7b36e54aded83e55881bebb3734a7342b04679df50d87a8fa353ae1137731f7",
+    "ui/src/index.css": "3ac0df7ca29be99252e396b357029c00561e0f2d6bc0d2cdba69e83e24a39f43",
+    "test/e2e/editor-split.cjs": "8ed52eb0a8f8a1084141d0f6d41e10ad7ae9b5d62f1ce8f961ceefd0f47bd71c"
+  },
+  "scope": "Linux Electron source build, real CodeMirror instances and temporary files/drafts. Agent discovery disabled. No native Windows/macOS or installer verification.",
+  "validation": {
+    "focusedTestFiles": 6,
+    "typescript": "passed",
+    "productionUiBuild": "passed",
+    "vscodeBundleBuild": "passed"
+  }
+}

@@ -26,6 +26,7 @@ export function CommandPalette() {
   const labelQuery = query.replace(/^\s*>\s*/, '');
   React.useEffect(() => { if (s.palette) setQuery('>'); }, [s.palette]);
   const close = () => s.setPalette(false);
+  const splitEditor = (direction = 'horizontal') => { s.openPanel('files'); requestAnimationFrame(() => requestAnimationFrame(() => window.dispatchEvent(new CustomEvent('tributary:split-editor', { detail: direction })))); };
   const run = (fn: () => unknown) => () => { close(); void Promise.resolve().then(fn).catch((error: Error) => toast.error(error.message || 'Could not run command')); };
   const actions: Action[] = [
     { id: 'find-file', label: 'File: Quick Open', icon: FileImage, shortcut: 'find-file', keywords: ['find', 'search', 'filename'], disabled: !s.project, run: () => window.dispatchEvent(new Event('tributary:quick-open')) },
@@ -38,6 +39,8 @@ export function CommandPalette() {
     { id: 'help', label: 'Preferences: Keyboard Shortcuts', icon: Keyboard, shortcut: 'help', run: () => s.setShortcutsOpen(true) },
     { id: 'new', label: 'Chat: New Chat', icon: SquarePen, shortcut: 'new', disabled: !s.project, run: () => s.newThread() },
     { id: 'files', label: 'View: Show Explorer', icon: FileImage, shortcut: 'files', keywords: ['files', 'images', 'preview'], disabled: !s.project, run: () => { s.setSearchFilesOpen(false); s.openPanel('files'); } },
+    { id: 'split-editor', label: 'View: Split Editor Right', icon: FileImage, shortcut: 'split-editor', disabled: !s.project, run: () => splitEditor() },
+    { id: 'split-editor-down', label: 'View: Split Editor Down', icon: FileImage, disabled: !s.project, run: () => splitEditor('vertical') },
     { id: 'memory', label: 'Project: Open Memory', icon: BookOpen, shortcut: 'memory', disabled: !s.project, run: () => s.openPanel('memory') },
     { id: 'preview', label: 'View: Open App Preview', icon: Globe, shortcut: 'preview', disabled: !s.project, run: () => s.openPanel('preview') },
     { id: 'tests', label: 'Testing: Show Test Results and QA', icon: Bug, keywords: ['Playwright', 'report', 'failure', 'trace', 'bug'], disabled: !s.project, run: () => s.openPanel('tests') },

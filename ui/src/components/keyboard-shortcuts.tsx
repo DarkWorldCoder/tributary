@@ -27,11 +27,12 @@ export function KeyboardShortcuts() {
       }
       const action = shortcutAction(event, { platform, overrides });
       // Editors and terminals own their key bindings, including saving and commands.
-      if ((event.target as HTMLElement)?.closest?.('.cm-editor, .xterm, [contenteditable="true"]') && !['search', 'search-project', 'files', 'changes', 'settings', 'sidebar', 'find-file', 'split-terminal', 'new-terminal', 'debug', 'terminal', 'workspace', 'zoom-workspace', 'fullscreen'].includes(action || '')) return;
+      if ((event.target as HTMLElement)?.closest?.('.cm-editor, .xterm, [contenteditable="true"]') && !['search', 'search-project', 'files', 'changes', 'settings', 'sidebar', 'find-file', 'split-editor', 'split-terminal', 'new-terminal', 'debug', 'terminal', 'workspace', 'zoom-workspace', 'fullscreen'].includes(action || '')) return;
       if (action) {
         event.preventDefault(); event.stopPropagation();
         if (s.workspaceExpanded && ['sidebar', 'terminal', 'debug', 'new', 'recent'].includes(action)) s.setWorkspaceExpanded(false);
         if (action === 'find-file') window.dispatchEvent(new Event('tributary:quick-open'));
+        else if (action === 'split-editor') { s.openPanel('files'); requestAnimationFrame(() => requestAnimationFrame(() => window.dispatchEvent(new Event('tributary:split-editor')))); }
         else if (action === 'split-terminal' || action === 'new-terminal') { s.setTerminalOpen(true); requestAnimationFrame(() => window.dispatchEvent(new Event(`tributary:${action}`))); }
         else if (action === 'help') s.setShortcutsOpen(true);
         else if (action === 'search') s.setPalette(true);

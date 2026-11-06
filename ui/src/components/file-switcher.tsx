@@ -4,7 +4,7 @@ import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from '@
 import { FileTypeIcon } from '@/components/file-type-icon';
 import { recentFiles } from '@/lib/workbench-navigation.mjs';
 
-export function FileSwitcher({ visible, paths, active, open, setOpen, onSelect }: { visible: boolean; paths: string[]; active: string | null; open: boolean; setOpen: (open: boolean) => void; onSelect: (path: string) => void }) {
+export function FileSwitcher({ visible, paths, active, open, setOpen, onSelect, onRestoreFocus }: { visible: boolean; paths: string[]; active: string | null; open: boolean; setOpen: (open: boolean) => void; onSelect: (path: string) => void; onRestoreFocus?: () => void }) {
   const keyboardPick = React.useRef<string | null>(null);
   const committed = React.useRef(false);
   const history = React.useRef<string[]>([]);
@@ -33,7 +33,7 @@ export function FileSwitcher({ visible, paths, active, open, setOpen, onSelect }
     window.addEventListener('keydown', down, true); window.addEventListener('keyup', up, true);
     return () => { window.removeEventListener('keydown', down, true); window.removeEventListener('keyup', up, true); };
   }, [visible, setOpen]);
-  return <Dialog open={open && visible} onOpenChange={(next) => { if (!next) { keyboardPick.current = null; opened.current = false; } setOpen(next); }}><DialogContent showCloseButton={false} onCloseAutoFocus={(event) => { if (committed.current) { event.preventDefault(); committed.current = false; requestAnimationFrame(() => document.querySelector<HTMLElement>('[role="tabpanel"][data-state="active"] .cm-content')?.focus()); } }} className="gap-0 overflow-hidden p-0 sm:max-w-md"><DialogHeader className="sr-only"><DialogTitle>Switch file</DialogTitle><DialogDescription>Recently used open files. Release Control to switch, or choose a file.</DialogDescription></DialogHeader>
+  return <Dialog open={open && visible} onOpenChange={(next) => { if (!next) { keyboardPick.current = null; opened.current = false; } setOpen(next); }}><DialogContent showCloseButton={false} onCloseAutoFocus={(event) => { if (committed.current) { event.preventDefault(); committed.current = false; if (onRestoreFocus) onRestoreFocus(); else requestAnimationFrame(() => document.querySelector<HTMLElement>('[role="tabpanel"][data-state="active"] .cm-content')?.focus()); } }} className="gap-0 overflow-hidden p-0 sm:max-w-md"><DialogHeader className="sr-only"><DialogTitle>Switch file</DialogTitle><DialogDescription>Recently used open files. Release Control to switch, or choose a file.</DialogDescription></DialogHeader>
     <Command value={selected} onValueChange={setSelected}><CommandInput placeholder="Find an open file…" aria-label="Find an open file" /><CommandList><CommandEmpty>No matching files.</CommandEmpty>{order.map((path) => <CommandItem key={path} value={path} onSelect={() => commit(path)} className="gap-2 max-sm:min-h-11"><FileTypeIcon path={path} /><span className="min-w-0 flex-1"><span className="block truncate">{path.split('/').pop()}</span><span className="block truncate text-xs text-muted-foreground">{path}</span></span>{path === active && <span className="text-xs text-muted-foreground">Current</span>}</CommandItem>)}</CommandList></Command>
   </DialogContent></Dialog>;
 }
