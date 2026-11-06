@@ -1,0 +1,34 @@
+{
+  "regressions": {
+    "passed": 657,
+    "log": "/tmp/tributary-filename-hot-loop-full-tests.log"
+  },
+  "focused": {
+    "passed": 25,
+    "log": "/tmp/tributary-filename-hot-loop-tests.log"
+  },
+  "typecheck": {
+    "passed": true,
+    "log": "/tmp/tributary-filename-hot-loop-types.log"
+  },
+  "native": {
+    "freshInstances": 6,
+    "currentQueryObservations": 42,
+    "exactSourceSelections": 18,
+    "cancelledRealScans": 6,
+    "ownersAndWorkAfterClose": 0,
+    "report": "filename-hot-loop-native.json"
+  },
+  "isolatedNode": {
+    "freshProcesses": 72,
+    "timingAndAllocationSeparate": true,
+    "allResultsExactlyEqual": true,
+    "report": "filename-hot-loop-benchmark.json"
+  },
+  "scope": "Source Linux Electron and Node workloads. UI did not change and its existing compiled asset hashes are recorded in the native cohort. Six-platform installer packaging/runtime checks run separately in Distribution CI; physical installers/devices and whole-app RAM are not verified by these benchmarks.",
+  "filenameFollowup": {
+    "passed": 10,
+    "log": "/tmp/tributary-filename-hot-loop-portable-test.log",
+    "scope": "After making the independent Unicode test oracle respect filesystem-returned spelling."
+  }
+}

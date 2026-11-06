@@ -14,6 +14,7 @@ async function scanFileNames(root, query, { showHidden = true, limit = 2000, sig
   if (!Number.isSafeInteger(limit) || limit < 1 || limit > 2000) throw new Error('Invalid file search limit.');
   check(signal);
   const needle = query.trim().toLowerCase(), files = [];
+  const localNeedle = !needle.includes('/');
   let total = 0, visited = 0, unreadable = 0;
   if (!needle) return { files, total, visited, unreadable, limited: false };
   const base = await io.realpath(root); check(signal);
@@ -49,19 +50,28 @@ async function scanFileNames(root, query, { showHidden = true, limit = 2000, sig
       throw error;
     }
     let failed = false;
+    const prefix = rel ? rel + '/' : '';
+    const parentMatches = localNeedle && rel.toLowerCase().includes(needle);
     try {
       await new Promise((resolve, reject) => {
         const read = () => { try { check(signal); directory.read(next); } catch (error) { reject(error); } };
+        // One continuation per directory, not one allocation per entry.
+        const resume = () => visited % 256 === 0 ? setImmediate(read) : read();
         const next = (error, entry) => {
           if (error) { reject(error); return; }
           try {
             check(signal); if (!entry) { resolve(); return; }
             visited++;
-            const resume = () => visited % 256 === 0 ? setImmediate(read) : read();
-            if (entry.isSymbolicLink() || !showHidden && entry.name.startsWith('.') || entry.isDirectory() && ignored.has(entry.name)) { resume(); return; }
-            const name = rel ? rel + '/' + entry.name : entry.name;
-            if (entry.isDirectory()) { void walk(name, depth + 1).then(resume, reject); return; }
-            if (entry.isFile() && name.toLowerCase().includes(needle)) accept(name);
+            if (entry.isSymbolicLink() || !showHidden && entry.name.startsWith('.')) { resume(); return; }
+            if (entry.isDirectory()) {
+              if (!ignored.has(entry.name)) { void walk(prefix + entry.name, depth + 1).then(resume, reject); return; }
+            } else if (entry.isFile()) {
+              // A name-only query cannot cross a slash. Reuse its parent match
+              // and form full paths only for matches, while path queries keep
+              // the complete case-insensitive substring semantics.
+              const name = localNeedle ? null : prefix + entry.name;
+              if (localNeedle ? parentMatches || entry.name.toLowerCase().includes(needle) : name.toLowerCase().includes(needle)) accept(name ?? prefix + entry.name);
+            }
             resume();
           } catch (cause) { reject(cause); }
         };

@@ -1,0 +1,1179 @@
+{
+  "baseline": "7c49ca232c13ea1d8bf27da27b2841fa2519bc93",
+  "sourceHashes": {
+    "core/filename-search.js": "eca33ed21741e58914128c86c637921dc5866e2f271566e19bb34045ff86bb9d",
+    "core/hub.js": "0ddefcb477b34851e309028094e71ef0fbadccb19bd5b0bdc88476a27de800ce",
+    "desktop/main.js": "7065ec294c3fc484846ca544c1836393a1ca7a92ff103b67bb7b63911cf3787e",
+    "ui/src/components/quick-open.tsx": "45f1cae81c05e1e93fde392c45f1b1acca57463de73955a43fd4e918f3bd65da",
+    "ui/src/lib/file-search.mjs": "fd1984a7696ff3d80be530eed316cf91c2d61d376c33f8237e22b112fc8d9090",
+    "scripts/performance/filename-native.cjs": "6f7ee5c75185b86dd781674375c41fb2626e8d4ab4d3e5d4b09b0ace789c620a",
+    "scripts/performance/native-filename-latency.cjs": "c8f2928cfe5c22b86a19f3e2bdd2fb46e19ba9691525b285d42fc815382c74ec"
+  },
+  "uiHashes": {
+    "app.js": "1f16082d72d5bebd0684c6f47164bfd82eb36b0a993c6e8cd3d24fdbeebf040a",
+    "chevron-right-CIo6dSn6.js": "f88eb4120044755245816cde6c0b7d15da18aff81f7ae229cb95336decb4be3f",
+    "circle-cJJXqcWx.js": "25fe4be2f37330b48d2022eee9901276a76146a6d9add6ac76fdf4dfa681a3c4",
+    "clike-C2M2Cbvf.js": "8753685128e25a5b83495d2c12ac38765032b5ebe2058145df7173a1b1343909",
+    "cmake-84nbDH0I.js": "b04b2d247760958ea0055bc5f2e6b71768ce16eb6c4c9ef107f9756832a49fbf",
+    "code-editor-oSCp3epk.js": "f44ca2bf029265c4607f895c5db2635345d65608b2f916e2bc2f1c39cf24e53b",
+    "code-viewport-Bx7PnuXF.js": "192122632d3aa8135ff444bf7839a2ec9c6e5f4f0311b270707940db04333461",
+    "code-viewport-DK6iDEqd.js": "5891bc1abab5f22aa2acd66a007821b3db7123cf647293bd26b4f3d3d99d99fc",
+    "collaboration-dialog-Cp_gmQ_M.js": "5536268a4fecceb6ac8f0aa2d4575c84b201c3a66c31a27807bdd8e6310ee29f",
+    "collaboration-web-BIhIJ9xU.js": "8592b900600ac1cf3dcac7b47361eabb43ed88d38ebf2eea0c0a987e51d831c6",
+    "context-menu-DFCshhAm.js": "36c953fb205763b55dddb6a5e9eecb69c58ac78a42c0c546e47e29c60eee4a65",
+    "core-DWp-hk2C.js": "ae14df441fc2b1dde961f48070577258dfc6f682f6cff9b11bf5d39a6acf7dac",
+    "css-BGIxQoYs.js": "8e762ca7ede2a05f2a0984ffb6cb1f515da8f704f1d39bfc550d6325562967cc",
+    "css-DgaLhXQH.js": "b1dd12b636e645f65871e8ea347f0f8e93979161cbffcef0670b5d27cdddb3dc",
+    "debug-panel-CQMa5A8N.js": "8e20c9c084344c79a1c777a56d57d41d0eb6ffa1f9d3f7dd1cca3534882c6260",
+    "dialog-DlGxCpFC.js": "7eb6b25b9e9e9a4173d7b8515fb5b41d585304a8acc1df9e0473013cbf61bd20",
+    "diff-ChtP43wD.js": "cf4c32c773b4aec08498fd170b7f74733a695fdbcbb18170413e05c8d64d4848",
+    "diff-woXpYk--.js": "80befa61827dedd8e1a37e5521dd2ef55fad173bbbd9f36db966fc0b088079e6",
+    "dist--hdZl-xu.js": "fa3de9f47d0115287a9fe91695981ee119d42e9077e6671f8166d53afd045b07",
+    "dist-6WNNvkM4.js": "b30f8186ea977b1cf8214c914734dcbc33666206090e6a7f69c4c50417ee293f",
+    "dist-9_TiSLOh.js": "12b9a01d99d3ad03f3c5b792c51cf6adeb69a227f06a6c9850372ff1d724a77a",
+    "dist-BBz6tnJk.js": "9a9e149e2e321ff452c0bdf736d25f429bc9c5df9f3c8663e25816a0964fb774",
+    "dist-BH-f6rrq.js": "24ee4b374dc640899a88a8a97e8bb47822296fb43b167bc96e332c91a2f36bb5",
+    "dist-BIDTLCHB.js": "3ef57d93e77f1b3c61ba1569020a8a939fb16385b2ca3862cfe29da5f63ea0ba",
+    "dist-BIg70Vvj.js": "a121625797cc9b6dd6e6b7d92113aee89d39bd8337b90d93f9a36956eea85f6d",
+    "dist-BM2gUak-.js": "bbd38d2da05b9486651571cbd24f856e9b0ad4627d2210bac292368e6638dd8c",
+    "dist-BXfZG7RS.js": "41f775cd972efb7e12063daf4e653a76a9c8724fb53d9054e8dc8f62d71bdf39",
+    "dist-BfnOkjdz.js": "2b226d7c02bcea023bfd67688397fefc8307cdffdc7f922494d088bd57bec9d0",
+    "dist-Bnpp7cOW.js": "91f5bfb35bf2894187c7079ec62cd7f1b07e0dd7708a1074df51596e2930d6fb",
+    "dist-Bv5hryYT.js": "d8202e57d56598fba4324c40f29e9b70cd3a44a2eb34fd0f28625960f72903eb",
+    "dist-BxW_Xh0A.js": "76450e33afae3927f983ff841d7207059af62cf760a0d8a980ccdf725a6e985a",
+    "dist-D1JI_ikE.js": "407314e585c90ec671d409eaea780722e00af0e2b2ef3ca6e3fec45352f1c47f",
+    "dist-D32v2gzM.js": "38e2ab9f56b19fa9eb8f99198f27aa79afb49062f5575f2068ff2b9f8228b147",
+    "dist-D_Zn-F8V.js": "df855d3b72b632067c8c4d37cdc8b3f3867a340e82bdeda85b2833321f33577d",
+    "dist-Dgyn_Z3c.js": "264250e814085de55c85a3ed1ebf84a9410487d59e9c354b144e0aa723d0c78e",
+    "dist-Dkww3_eR.js": "9fdca6a897cc63298b3ac084e5173359983792acd0068b03a88f7bbc0566e2e0",
+    "dist-YYQR4uW1.js": "6ba7abf6c1ad4c76bd32d047d7ffdb657199515222e1d8eba82937f6298aead3",
+    "dist-yZhEl1M-.js": "e3b9a772a1cb6fc89ca4aad548699ce58dc13fa6ec0822569b9220840e276fe5",
+    "dockerfile-BDePf5PZ.js": "910e002b7be59eb335007c02ab897aa4f64982061a9f391ce0038de2ab7d593e",
+    "document-panel-BR0nkZfZ.js": "e9ca6e0021458ab41ff5f65de9bfa99766f1b39b2a55418d67eace2f757207b5",
+    "dotenv-CuH5my32.js": "d76dc3fd773b987ca5901c59ee0bc06df41649353083ebf17efb822fce70c9e1",
+    "dotenv-language-kwtdnn7Q.js": "0d1da4d812cfecc76ecf04869954433bba958f0ee0627db1f3e971b8fa84b28e",
+    "dropdown-menu-WEPw46I9.js": "6eda44eadc4d7d758af8c8fa14b98e2cb52bb062e8e0883155aae6f4c77b5256",
+    "editor-search-CIgUK0i6.js": "673fc3abb518dee722c874896cedbcbf1a998252508da4e0378e19e5d8346391",
+    "elm-Cshzl8qu.js": "7dc9b8c8a1289df3800c9ca773519840019d47deefb03dca7f7302b9882f12e9",
+    "engine-javascript-C30F4iNc.js": "a730e95b314bf69e239c65f3baa3852c2bee5cd766c87474d54ee8425bb32cd2",
+    "erlang-BV0c4Hdn.js": "17d201413a70fc04906b3d0265bc6b80e7d8f176c38f46979c366ecbea144e77",
+    "format-worker-BcjjmJ4U.js": "dcb32977003ce6d154e21b219ac1343724a0f345ad07c3e7e425825e6a67b410",
+    "github-dark-C-LZuMrd.js": "4b20a66425669986c784d2f948aab0f38add042b7b167a2245d0c86a781706e1",
+    "github-light-EUqPIrTm.js": "b41057cac4d9e62754f5d64f241ec9153a0c3d53f5eaa2464d3acf9a644e8852",
+    "groovy-CUrWKPia.js": "16f67c3049122d437e325ca5e80eea28368331f9f6f42d9865aa337276747e00",
+    "haskell-BRsoo5mP.js": "868e8b21da5021140b51775df3d9ebb51bf5aa0925b2dba75b9923e71a717e6d",
+    "html-CvFb5cGI.js": "f2aaa50bc67d66313483f5d43e28e6850e57c180df254b3a0482bc3e129ac8ca",
+    "javascript-BzbQS41l.js": "4914f43c4495fd0c8375e5d78993533a679e0579010f602fb75cc33a763e6f1c",
+    "javascript-CpIGwZ_Y.js": "1d2d85c02908c8e7ae2f784bd5b01ae410172ddf30822801c667727cf72465ff",
+    "javascript-dHfrH00f.js": "177b20e219321c5445cc45a56ea39d59a5ab6e0851fa2df22185e3aa78b78939",
+    "json-qhed-kSA.js": "cde89b6485baf9a68c80f28098ff191e7ba063cd0c5c50d2f9abf57f5e4be826",
+    "jsx-Bz0zcwM4.js": "e2b4114d3baef8c939630fafbcdbc4b2ea14f796c4d453ff322da0beb47f41f1",
+    "language-worker-BYYojUbb.js": "6ed4b9d293f89d53b47c008a4ebe76271c7c03b6366f7133f10e712a55631919",
+    "lib-DiDhCJ4b.js": "0834f589534ae79850ed2de680383c3f26c7b1120bff5211e802afd5439234d0",
+    "lua-DPCEkfD_.js": "2f4183f6b44b5ad6d9e5fe805a843c7d9336a4e95ef811b7bff81a03562295d6",
+    "markdown-BYOwaDjH.js": "024bf1ea6f860d9477d5ef72a2553f1ae4b0ff3d07f5d24d2e270e4f4f5a9b95",
+    "markdown-C-vi9wa7.js": "634e4a5c091e6a7dec0b6f03df0fd48f61d193f21a0ea2b2dcae0438501b22ce",
+    "perl-BkSkiI9m.js": "efd47f9ae8043b2e00b8ac2ecf12d5b3916d049fd230d4e2de748e79c633d125",
+    "powershell-D8WpQPaX.js": "19fed4e3b21edac914eba6a26cbc7e476a94ea6028dcc22e9b77600f4a618f8f",
+    "project-room-x3Lmx8aU.js": "74318c8051657a3d745bc437e12869ec5156f806220292a65b150760e70601be",
+    "properties-C357ku5U.js": "265cd5a3bc8e8e1426825db6da7dfd6398db08f4ca5dc266b3f432a982868452",
+    "python-gzcpVVnB.js": "be0bae300e9d8dbae905d9faa24b84adc622796c87170848bf0460d01ad4049c",
+    "rolldown-runtime-XKyaHtl9.js": "548d1dbf321e7d2ae804fcc158b588706a7c52f8ca175de1490c6ccb4dbe55b7",
+    "ruby-ChfNwlCY.js": "bf7640300ec2fcda90331b55594a232b76d5a3542be898d4b6565b6cb3a61ce7",
+    "server-DoMx36Oq.js": "954cd3af666de389d5a215959e7280e3db6aaad6d01d061d6ade4eb5a70e6405",
+    "settings-dialog-CJCui3kQ.js": "df8481a16b2f03d6b4f18ef3e15ca4802d26ee4727dd290c18f442139346f785",
+    "shell-DwuoZtxw.js": "eada594fb1134cc2dfb8874e055a8db889b2685fa6aa6342841343be30038937",
+    "shellscript-CLZ0U2zV.js": "c1988bee5cd7a3ecc9f95a549ca16e93e6932d81684caf08d004346df88d1f7c",
+    "skeleton-DrdQom55.js": "6bdd2d183ed5e1269dbef37feb0974673e794777f4c73e58d19a2170f93fa9e2",
+    "source-grammar-CmJPpjvS.js": "b180d0799d38f6e3e23727b657eaf759200b7301dfb22fb51c351d1ebfb83f54",
+    "source-language-TmxZz5PI.js": "6e838694274c66377273954c5eae5faef407e0d39ec3c144760a6d13cf9f7d16",
+    "spinner-DxYRdzik.js": "aea0ffd46b3930f14a681cb3ffe94717bd17e8bbd4ce1e1e5f58aa248694cbcd",
+    "sql-CEbI0hMM.js": "d24bf09f14609073d7faa41f010fa7bc81a620d20efbf5da5878e109a308df2c",
+    "stex-DNzd62Q_.js": "f12ad11c2bff04c45c80f79d02250c76f0b1d01b254d04da7b195f4ad15b556f",
+    "swift-DKB6_1j6.js": "f0835c04896ba11cf7884b2175e31574762723655d4e6461ce6ec7046479eaa3",
+    "tabs-C4O8nl-o.js": "c519fa3e4400da3eef6a3b58f62150e04931c41a5a87cdd7a4a85e66ad70c90f",
+    "team-dialog-B1ge-PIv.js": "51f0804805848e60a2f5f20edb8df1d6f475d3a71ab4942584bdd33a1ca957cd",
+    "terminal-DFA3lC9h.js": "1773db6dcfbf3c0e19e6239448bb1a0aed5a0ec81321ea47d6ac6aa071c828ec",
+    "terminal-links-CenV2cxd.js": "df43e07d3b4fded2db03dacd3c208f5af21e99b21f98382632c0ab11dbe66a66",
+    "terminal-panel-BdVWCb5S.js": "5eece264605f4e415015e4b082bdf71a946acca9be4336d3984bd546745859ce",
+    "toggle-group-DDZ_Dawl.js": "aa7b009ed7280add9aea22d01d8b89aa8dcbdde2fd03c4aef3e3e4441f843713",
+    "toml-BPTmHmyx.js": "55c50c3d69b919264e6f1d9e6d9279d381d88c1c9a9e1cd4a75c82abe9680de8",
+    "tooltip-DrEhpk5M.js": "8fe649548dcefae23a9ceed80c6c4b374ab1022a8c43c8ff2308ed1e19ae388e",
+    "tsx-udAQXfEw.js": "9fc069255af55a76568fef90e87c0e2fa53f6ae74ed8eb8b364f5e6f9a61fee7",
+    "typescript-bsJCZSQ-.js": "95d1a5778c7f670197b7bb6cb0e95faa400d09f66c34486b4ba54a3fd597e3a1",
+    "use-mobile-DTMR8nGD.js": "db0fb0109bf5e19ef683ad49ac2f5eb3ec82b0f6e17df4816dc4f65607043537",
+    "workspace-app-B5vpeCPw.js": "efe171ad424462037d0a472be0a2fbb9bc378baeb283bf77108961c6eb7bfed0",
+    "workspace-panel-BRxhqNX5.js": "8f8170c8f5785051ad6383b2b07fd060c862f140fca4aaa8154aa27e2f6ca539",
+    "yaml-rwi0_p6S.js": "db14bd07972e830c86a4c8109530090c59def0c02864c923507b272d069b41a0"
+  },
+  "fixture": [
+    {
+      "query": "target-000000.ts",
+      "files": [
+        "src/a/b/c/d/e/target-000000.ts"
+      ],
+      "total": 1
+    },
+    {
+      "query": "target-000007.ts",
+      "files": [
+        "src/a/b/c/d/e/target-000007.ts"
+      ],
+      "total": 1
+    },
+    {
+      "query": "src/a/b/c/d/e/",
+      "files": [
+        "src/a/b/c/d/e/source-000000.ts",
+        "src/a/b/c/d/e/source-000001.ts",
+        "src/a/b/c/d/e/source-000002.ts",
+        "src/a/b/c/d/e/source-000003.ts",
+        "src/a/b/c/d/e/source-000004.ts",
+        "src/a/b/c/d/e/source-000005.ts",
+        "src/a/b/c/d/e/source-000006.ts",
+        "src/a/b/c/d/e/source-000007.ts",
+        "src/a/b/c/d/e/source-000008.ts",
+        "src/a/b/c/d/e/source-000009.ts",
+        "src/a/b/c/d/e/source-000010.ts",
+        "src/a/b/c/d/e/source-000011.ts",
+        "src/a/b/c/d/e/source-000012.ts",
+        "src/a/b/c/d/e/source-000013.ts",
+        "src/a/b/c/d/e/source-000014.ts",
+        "src/a/b/c/d/e/source-000015.ts",
+        "src/a/b/c/d/e/source-000016.ts",
+        "src/a/b/c/d/e/source-000017.ts",
+        "src/a/b/c/d/e/source-000018.ts",
+        "src/a/b/c/d/e/source-000019.ts",
+        "src/a/b/c/d/e/source-000020.ts",
+        "src/a/b/c/d/e/source-000021.ts",
+        "src/a/b/c/d/e/source-000022.ts",
+        "src/a/b/c/d/e/source-000023.ts",
+        "src/a/b/c/d/e/source-000024.ts",
+        "src/a/b/c/d/e/source-000025.ts",
+        "src/a/b/c/d/e/source-000026.ts",
+        "src/a/b/c/d/e/source-000027.ts",
+        "src/a/b/c/d/e/source-000028.ts",
+        "src/a/b/c/d/e/source-000029.ts",
+        "src/a/b/c/d/e/source-000030.ts",
+        "src/a/b/c/d/e/source-000031.ts",
+        "src/a/b/c/d/e/source-000032.ts",
+        "src/a/b/c/d/e/source-000033.ts",
+        "src/a/b/c/d/e/source-000034.ts",
+        "src/a/b/c/d/e/source-000035.ts",
+        "src/a/b/c/d/e/source-000036.ts",
+        "src/a/b/c/d/e/source-000037.ts",
+        "src/a/b/c/d/e/source-000038.ts",
+        "src/a/b/c/d/e/source-000039.ts",
+        "src/a/b/c/d/e/source-000040.ts",
+        "src/a/b/c/d/e/source-000041.ts",
+        "src/a/b/c/d/e/source-000042.ts",
+        "src/a/b/c/d/e/source-000043.ts",
+        "src/a/b/c/d/e/source-000044.ts",
+        "src/a/b/c/d/e/source-000045.ts",
+        "src/a/b/c/d/e/source-000046.ts",
+        "src/a/b/c/d/e/source-000047.ts",
+        "src/a/b/c/d/e/source-000048.ts",
+        "src/a/b/c/d/e/source-000049.ts",
+        "src/a/b/c/d/e/source-000050.ts",
+        "src/a/b/c/d/e/source-000051.ts",
+        "src/a/b/c/d/e/source-000052.ts",
+        "src/a/b/c/d/e/source-000053.ts",
+        "src/a/b/c/d/e/source-000054.ts",
+        "src/a/b/c/d/e/source-000055.ts",
+        "src/a/b/c/d/e/source-000056.ts",
+        "src/a/b/c/d/e/source-000057.ts",
+        "src/a/b/c/d/e/source-000058.ts",
+        "src/a/b/c/d/e/source-000059.ts",
+        "src/a/b/c/d/e/source-000060.ts",
+        "src/a/b/c/d/e/source-000061.ts",
+        "src/a/b/c/d/e/source-000062.ts",
+        "src/a/b/c/d/e/source-000063.ts",
+        "src/a/b/c/d/e/source-000064.ts",
+        "src/a/b/c/d/e/source-000065.ts",
+        "src/a/b/c/d/e/source-000066.ts",
+        "src/a/b/c/d/e/source-000067.ts",
+        "src/a/b/c/d/e/source-000068.ts",
+        "src/a/b/c/d/e/source-000069.ts",
+        "src/a/b/c/d/e/source-000070.ts",
+        "src/a/b/c/d/e/source-000071.ts",
+        "src/a/b/c/d/e/source-000072.ts",
+        "src/a/b/c/d/e/source-000073.ts",
+        "src/a/b/c/d/e/source-000074.ts",
+        "src/a/b/c/d/e/source-000075.ts",
+        "src/a/b/c/d/e/source-000076.ts",
+        "src/a/b/c/d/e/source-000077.ts",
+        "src/a/b/c/d/e/source-000078.ts",
+        "src/a/b/c/d/e/source-000079.ts",
+        "src/a/b/c/d/e/source-000080.ts",
+        "src/a/b/c/d/e/source-000081.ts",
+        "src/a/b/c/d/e/source-000082.ts",
+        "src/a/b/c/d/e/source-000083.ts",
+        "src/a/b/c/d/e/source-000084.ts",
+        "src/a/b/c/d/e/source-000085.ts",
+        "src/a/b/c/d/e/source-000086.ts",
+        "src/a/b/c/d/e/source-000087.ts",
+        "src/a/b/c/d/e/source-000088.ts",
+        "src/a/b/c/d/e/source-000089.ts",
+        "src/a/b/c/d/e/source-000090.ts",
+        "src/a/b/c/d/e/source-000091.ts",
+        "src/a/b/c/d/e/source-000092.ts",
+        "src/a/b/c/d/e/source-000093.ts",
+        "src/a/b/c/d/e/source-000094.ts",
+        "src/a/b/c/d/e/source-000095.ts",
+        "src/a/b/c/d/e/source-000096.ts",
+        "src/a/b/c/d/e/source-000097.ts",
+        "src/a/b/c/d/e/source-000098.ts",
+        "src/a/b/c/d/e/source-000099.ts"
+      ],
+      "total": 40008
+    },
+    {
+      "query": "b",
+      "files": [
+        "src/a/b/c/d/e/source-000000.ts",
+        "src/a/b/c/d/e/source-000001.ts",
+        "src/a/b/c/d/e/source-000002.ts",
+        "src/a/b/c/d/e/source-000003.ts",
+        "src/a/b/c/d/e/source-000004.ts",
+        "src/a/b/c/d/e/source-000005.ts",
+        "src/a/b/c/d/e/source-000006.ts",
+        "src/a/b/c/d/e/source-000007.ts",
+        "src/a/b/c/d/e/source-000008.ts",
+        "src/a/b/c/d/e/source-000009.ts",
+        "src/a/b/c/d/e/source-000010.ts",
+        "src/a/b/c/d/e/source-000011.ts",
+        "src/a/b/c/d/e/source-000012.ts",
+        "src/a/b/c/d/e/source-000013.ts",
+        "src/a/b/c/d/e/source-000014.ts",
+        "src/a/b/c/d/e/source-000015.ts",
+        "src/a/b/c/d/e/source-000016.ts",
+        "src/a/b/c/d/e/source-000017.ts",
+        "src/a/b/c/d/e/source-000018.ts",
+        "src/a/b/c/d/e/source-000019.ts",
+        "src/a/b/c/d/e/source-000020.ts",
+        "src/a/b/c/d/e/source-000021.ts",
+        "src/a/b/c/d/e/source-000022.ts",
+        "src/a/b/c/d/e/source-000023.ts",
+        "src/a/b/c/d/e/source-000024.ts",
+        "src/a/b/c/d/e/source-000025.ts",
+        "src/a/b/c/d/e/source-000026.ts",
+        "src/a/b/c/d/e/source-000027.ts",
+        "src/a/b/c/d/e/source-000028.ts",
+        "src/a/b/c/d/e/source-000029.ts",
+        "src/a/b/c/d/e/source-000030.ts",
+        "src/a/b/c/d/e/source-000031.ts",
+        "src/a/b/c/d/e/source-000032.ts",
+        "src/a/b/c/d/e/source-000033.ts",
+        "src/a/b/c/d/e/source-000034.ts",
+        "src/a/b/c/d/e/source-000035.ts",
+        "src/a/b/c/d/e/source-000036.ts",
+        "src/a/b/c/d/e/source-000037.ts",
+        "src/a/b/c/d/e/source-000038.ts",
+        "src/a/b/c/d/e/source-000039.ts",
+        "src/a/b/c/d/e/source-000040.ts",
+        "src/a/b/c/d/e/source-000041.ts",
+        "src/a/b/c/d/e/source-000042.ts",
+        "src/a/b/c/d/e/source-000043.ts",
+        "src/a/b/c/d/e/source-000044.ts",
+        "src/a/b/c/d/e/source-000045.ts",
+        "src/a/b/c/d/e/source-000046.ts",
+        "src/a/b/c/d/e/source-000047.ts",
+        "src/a/b/c/d/e/source-000048.ts",
+        "src/a/b/c/d/e/source-000049.ts",
+        "src/a/b/c/d/e/source-000050.ts",
+        "src/a/b/c/d/e/source-000051.ts",
+        "src/a/b/c/d/e/source-000052.ts",
+        "src/a/b/c/d/e/source-000053.ts",
+        "src/a/b/c/d/e/source-000054.ts",
+        "src/a/b/c/d/e/source-000055.ts",
+        "src/a/b/c/d/e/source-000056.ts",
+        "src/a/b/c/d/e/source-000057.ts",
+        "src/a/b/c/d/e/source-000058.ts",
+        "src/a/b/c/d/e/source-000059.ts",
+        "src/a/b/c/d/e/source-000060.ts",
+        "src/a/b/c/d/e/source-000061.ts",
+        "src/a/b/c/d/e/source-000062.ts",
+        "src/a/b/c/d/e/source-000063.ts",
+        "src/a/b/c/d/e/source-000064.ts",
+        "src/a/b/c/d/e/source-000065.ts",
+        "src/a/b/c/d/e/source-000066.ts",
+        "src/a/b/c/d/e/source-000067.ts",
+        "src/a/b/c/d/e/source-000068.ts",
+        "src/a/b/c/d/e/source-000069.ts",
+        "src/a/b/c/d/e/source-000070.ts",
+        "src/a/b/c/d/e/source-000071.ts",
+        "src/a/b/c/d/e/source-000072.ts",
+        "src/a/b/c/d/e/source-000073.ts",
+        "src/a/b/c/d/e/source-000074.ts",
+        "src/a/b/c/d/e/source-000075.ts",
+        "src/a/b/c/d/e/source-000076.ts",
+        "src/a/b/c/d/e/source-000077.ts",
+        "src/a/b/c/d/e/source-000078.ts",
+        "src/a/b/c/d/e/source-000079.ts",
+        "src/a/b/c/d/e/source-000080.ts",
+        "src/a/b/c/d/e/source-000081.ts",
+        "src/a/b/c/d/e/source-000082.ts",
+        "src/a/b/c/d/e/source-000083.ts",
+        "src/a/b/c/d/e/source-000084.ts",
+        "src/a/b/c/d/e/source-000085.ts",
+        "src/a/b/c/d/e/source-000086.ts",
+        "src/a/b/c/d/e/source-000087.ts",
+        "src/a/b/c/d/e/source-000088.ts",
+        "src/a/b/c/d/e/source-000089.ts",
+        "src/a/b/c/d/e/source-000090.ts",
+        "src/a/b/c/d/e/source-000091.ts",
+        "src/a/b/c/d/e/source-000092.ts",
+        "src/a/b/c/d/e/source-000093.ts",
+        "src/a/b/c/d/e/source-000094.ts",
+        "src/a/b/c/d/e/source-000095.ts",
+        "src/a/b/c/d/e/source-000096.ts",
+        "src/a/b/c/d/e/source-000097.ts",
+        "src/a/b/c/d/e/source-000098.ts",
+        "src/a/b/c/d/e/source-000099.ts"
+      ],
+      "total": 40008
+    },
+    {
+      "query": "e/target-000003.ts",
+      "files": [
+        "src/a/b/c/d/e/target-000003.ts"
+      ],
+      "total": 1
+    },
+    {
+      "query": "missing-needle",
+      "files": [],
+      "total": 0
+    }
+  ],
+  "medians": {
+    "target-000000.ts": {
+      "baseline": 289.59999999962747,
+      "optimized": 279.5
+    },
+    "target-000007.ts": {
+      "baseline": 231,
+      "optimized": 231.19999999925494
+    },
+    "src/a/b/c/d/e/": {
+      "baseline": 268.5,
+      "optimized": 256.59999999962747
+    },
+    "b": {
+      "baseline": 274.69999999925494,
+      "optimized": 271.09999999962747
+    },
+    "e/target-000003.ts": {
+      "baseline": 237.69999999925494,
+      "optimized": 239.40000000037253
+    },
+    "missing-needle": {
+      "baseline": 210.7999999988824,
+      "optimized": 208.40000000037253
+    }
+  },
+  "runs": [
+    {
+      "repeat": 0,
+      "baseline": {
+        "observations": [
+          {
+            "query": "target-000000.ts",
+            "elapsedMs": 289.59999999962747,
+            "rows": 1,
+            "total": 1,
+            "sawBusy": true
+          },
+          {
+            "query": "target-000007.ts",
+            "elapsedMs": 231,
+            "rows": 1,
+            "total": 1,
+            "sawBusy": true
+          },
+          {
+            "query": "src/a/b/c/d/e/",
+            "elapsedMs": 268.5,
+            "rows": 100,
+            "total": 40008,
+            "sawBusy": true
+          },
+          {
+            "query": "b",
+            "elapsedMs": 274.69999999925494,
+            "rows": 100,
+            "total": 40008,
+            "sawBusy": true
+          },
+          {
+            "query": "e/target-000003.ts",
+            "elapsedMs": 240.59999999962747,
+            "rows": 1,
+            "total": 1,
+            "sawBusy": true
+          },
+          {
+            "query": "missing-needle",
+            "elapsedMs": 210.10000000149012,
+            "rows": 0,
+            "total": 0,
+            "sawBusy": true
+          },
+          {
+            "query": "target-000007.ts",
+            "elapsedMs": 225.2999999988824,
+            "rows": 1,
+            "total": 1,
+            "sawBusy": true,
+            "replacement": true
+          }
+        ],
+        "scans": [
+          {
+            "query": "target-000000.ts",
+            "started": 2095.291506,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 1,
+            "durationMs": 115.77696699999979
+          },
+          {
+            "query": "target-000007.ts",
+            "started": 2937.431291,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 1,
+            "durationMs": 54.06597000000011
+          },
+          {
+            "query": "src/a/b/c/d/e/",
+            "started": 3793.230326,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 40008,
+            "durationMs": 65.01355600000034
+          },
+          {
+            "query": "b",
+            "started": 4300.729168,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 40008,
+            "durationMs": 64.49461900000006
+          },
+          {
+            "query": "e/target-000003.ts",
+            "started": 4812.73254,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 1,
+            "durationMs": 63.212131999999656
+          },
+          {
+            "query": "missing-needle",
+            "started": 5540.209382,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 0,
+            "durationMs": 55.37342400000034
+          },
+          {
+            "query": "source-",
+            "started": 5958.807899,
+            "cancelled": true,
+            "durationMs": 9.83395500000006
+          },
+          {
+            "query": "target-000007.ts",
+            "started": 6148.446844,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 1,
+            "durationMs": 52.50607200000013
+          }
+        ],
+        "exact": true,
+        "ownersAfterClose": 0,
+        "activeAfterClose": 0,
+        "scope": "Linux source Electron, same compiled UI and 40,008 nested searchable source files, native text input to exact current result DOM including debounce/IPC. Visible result DOM is not hardware input-to-paint. Initial Explorer index completes before measurement. No provider/model calls, diagnostic GC or whole-app RAM measurement.",
+        "sourceHashes": {
+          "core/filename-search.js": "eca33ed21741e58914128c86c637921dc5866e2f271566e19bb34045ff86bb9d",
+          "core/hub.js": "0ddefcb477b34851e309028094e71ef0fbadccb19bd5b0bdc88476a27de800ce",
+          "desktop/main.js": "7065ec294c3fc484846ca544c1836393a1ca7a92ff103b67bb7b63911cf3787e",
+          "ui/src/components/quick-open.tsx": "45f1cae81c05e1e93fde392c45f1b1acca57463de73955a43fd4e918f3bd65da",
+          "ui/src/lib/file-search.mjs": "fd1984a7696ff3d80be530eed316cf91c2d61d376c33f8237e22b112fc8d9090",
+          "scripts/performance/filename-native.cjs": "6f7ee5c75185b86dd781674375c41fb2626e8d4ab4d3e5d4b09b0ace789c620a",
+          "scripts/performance/native-filename-latency.cjs": "c8f2928cfe5c22b86a19f3e2bdd2fb46e19ba9691525b285d42fc815382c74ec"
+        },
+        "stdout": ""
+      },
+      "optimized": {
+        "observations": [
+          {
+            "query": "target-000000.ts",
+            "elapsedMs": 303.19999999925494,
+            "rows": 1,
+            "total": 1,
+            "sawBusy": true
+          },
+          {
+            "query": "target-000007.ts",
+            "elapsedMs": 217.10000000149012,
+            "rows": 1,
+            "total": 1,
+            "sawBusy": true
+          },
+          {
+            "query": "src/a/b/c/d/e/",
+            "elapsedMs": 272.2000000011176,
+            "rows": 100,
+            "total": 40008,
+            "sawBusy": true
+          },
+          {
+            "query": "b",
+            "elapsedMs": 271.09999999962747,
+            "rows": 100,
+            "total": 40008,
+            "sawBusy": true
+          },
+          {
+            "query": "e/target-000003.ts",
+            "elapsedMs": 239.40000000037253,
+            "rows": 1,
+            "total": 1,
+            "sawBusy": true
+          },
+          {
+            "query": "missing-needle",
+            "elapsedMs": 199.40000000037253,
+            "rows": 0,
+            "total": 0,
+            "sawBusy": true
+          },
+          {
+            "query": "target-000007.ts",
+            "elapsedMs": 225.09999999962747,
+            "rows": 1,
+            "total": 1,
+            "sawBusy": true,
+            "replacement": true
+          }
+        ],
+        "scans": [
+          {
+            "query": "target-000000.ts",
+            "started": 2049.309215,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 1,
+            "durationMs": 115.86969699999963
+          },
+          {
+            "query": "target-000007.ts",
+            "started": 2923.139291,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 1,
+            "durationMs": 47.67540999999983
+          },
+          {
+            "query": "src/a/b/c/d/e/",
+            "started": 3570.77452,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 40008,
+            "durationMs": 58.30983400000014
+          },
+          {
+            "query": "b",
+            "started": 4090.673956,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 40008,
+            "durationMs": 72.3784069999997
+          },
+          {
+            "query": "e/target-000003.ts",
+            "started": 4584.898239,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 1,
+            "durationMs": 57.86995899999965
+          },
+          {
+            "query": "missing-needle",
+            "started": 5457.15756,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 0,
+            "durationMs": 45.57684900000004
+          },
+          {
+            "query": "source-",
+            "started": 5895.291403,
+            "cancelled": true,
+            "durationMs": 9.850354000000152
+          },
+          {
+            "query": "target-000007.ts",
+            "started": 6096.3072,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 1,
+            "durationMs": 52.005307999999786
+          }
+        ],
+        "exact": true,
+        "ownersAfterClose": 0,
+        "activeAfterClose": 0,
+        "scope": "Linux source Electron, same compiled UI and 40,008 nested searchable source files, native text input to exact current result DOM including debounce/IPC. Visible result DOM is not hardware input-to-paint. Initial Explorer index completes before measurement. No provider/model calls, diagnostic GC or whole-app RAM measurement.",
+        "sourceHashes": {
+          "core/filename-search.js": "eca33ed21741e58914128c86c637921dc5866e2f271566e19bb34045ff86bb9d",
+          "core/hub.js": "0ddefcb477b34851e309028094e71ef0fbadccb19bd5b0bdc88476a27de800ce",
+          "desktop/main.js": "7065ec294c3fc484846ca544c1836393a1ca7a92ff103b67bb7b63911cf3787e",
+          "ui/src/components/quick-open.tsx": "45f1cae81c05e1e93fde392c45f1b1acca57463de73955a43fd4e918f3bd65da",
+          "ui/src/lib/file-search.mjs": "fd1984a7696ff3d80be530eed316cf91c2d61d376c33f8237e22b112fc8d9090",
+          "scripts/performance/filename-native.cjs": "6f7ee5c75185b86dd781674375c41fb2626e8d4ab4d3e5d4b09b0ace789c620a",
+          "scripts/performance/native-filename-latency.cjs": "c8f2928cfe5c22b86a19f3e2bdd2fb46e19ba9691525b285d42fc815382c74ec"
+        },
+        "stdout": ""
+      }
+    },
+    {
+      "repeat": 1,
+      "optimized": {
+        "observations": [
+          {
+            "query": "target-000000.ts",
+            "elapsedMs": 260.30000000074506,
+            "rows": 1,
+            "total": 1,
+            "sawBusy": true
+          },
+          {
+            "query": "target-000007.ts",
+            "elapsedMs": 231.19999999925494,
+            "rows": 1,
+            "total": 1,
+            "sawBusy": true
+          },
+          {
+            "query": "src/a/b/c/d/e/",
+            "elapsedMs": 250.80000000074506,
+            "rows": 100,
+            "total": 40008,
+            "sawBusy": true
+          },
+          {
+            "query": "b",
+            "elapsedMs": 283,
+            "rows": 100,
+            "total": 40008,
+            "sawBusy": true
+          },
+          {
+            "query": "e/target-000003.ts",
+            "elapsedMs": 239.7999999988824,
+            "rows": 1,
+            "total": 1,
+            "sawBusy": true
+          },
+          {
+            "query": "missing-needle",
+            "elapsedMs": 208.40000000037253,
+            "rows": 0,
+            "total": 0,
+            "sawBusy": true
+          },
+          {
+            "query": "target-000007.ts",
+            "elapsedMs": 228.39999999850988,
+            "rows": 1,
+            "total": 1,
+            "sawBusy": true,
+            "replacement": true
+          }
+        ],
+        "scans": [
+          {
+            "query": "target-000000.ts",
+            "started": 2150.472864,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 1,
+            "durationMs": 85.06620599999997
+          },
+          {
+            "query": "target-000007.ts",
+            "started": 3015.816098,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 1,
+            "durationMs": 51.72236900000007
+          },
+          {
+            "query": "src/a/b/c/d/e/",
+            "started": 3903.183162,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 40008,
+            "durationMs": 49.070626000000175
+          },
+          {
+            "query": "b",
+            "started": 4428.664371,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 40008,
+            "durationMs": 56.358588000000054
+          },
+          {
+            "query": "e/target-000003.ts",
+            "started": 4941.24986,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 1,
+            "durationMs": 56.98437699999977
+          },
+          {
+            "query": "missing-needle",
+            "started": 5797.404525,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 0,
+            "durationMs": 54.247997999999825
+          },
+          {
+            "query": "source-",
+            "started": 6224.49157,
+            "cancelled": true,
+            "durationMs": 12.91606899999988
+          },
+          {
+            "query": "target-000007.ts",
+            "started": 6426.166267,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 1,
+            "durationMs": 55.40392500000053
+          }
+        ],
+        "exact": true,
+        "ownersAfterClose": 0,
+        "activeAfterClose": 0,
+        "scope": "Linux source Electron, same compiled UI and 40,008 nested searchable source files, native text input to exact current result DOM including debounce/IPC. Visible result DOM is not hardware input-to-paint. Initial Explorer index completes before measurement. No provider/model calls, diagnostic GC or whole-app RAM measurement.",
+        "sourceHashes": {
+          "core/filename-search.js": "eca33ed21741e58914128c86c637921dc5866e2f271566e19bb34045ff86bb9d",
+          "core/hub.js": "0ddefcb477b34851e309028094e71ef0fbadccb19bd5b0bdc88476a27de800ce",
+          "desktop/main.js": "7065ec294c3fc484846ca544c1836393a1ca7a92ff103b67bb7b63911cf3787e",
+          "ui/src/components/quick-open.tsx": "45f1cae81c05e1e93fde392c45f1b1acca57463de73955a43fd4e918f3bd65da",
+          "ui/src/lib/file-search.mjs": "fd1984a7696ff3d80be530eed316cf91c2d61d376c33f8237e22b112fc8d9090",
+          "scripts/performance/filename-native.cjs": "6f7ee5c75185b86dd781674375c41fb2626e8d4ab4d3e5d4b09b0ace789c620a",
+          "scripts/performance/native-filename-latency.cjs": "c8f2928cfe5c22b86a19f3e2bdd2fb46e19ba9691525b285d42fc815382c74ec"
+        },
+        "stdout": ""
+      },
+      "baseline": {
+        "observations": [
+          {
+            "query": "target-000000.ts",
+            "elapsedMs": 368.1000000014901,
+            "rows": 1,
+            "total": 1,
+            "sawBusy": true
+          },
+          {
+            "query": "target-000007.ts",
+            "elapsedMs": 229.7000000011176,
+            "rows": 1,
+            "total": 1,
+            "sawBusy": true
+          },
+          {
+            "query": "src/a/b/c/d/e/",
+            "elapsedMs": 265.6000000014901,
+            "rows": 100,
+            "total": 40008,
+            "sawBusy": true
+          },
+          {
+            "query": "b",
+            "elapsedMs": 285.40000000037253,
+            "rows": 100,
+            "total": 40008,
+            "sawBusy": true
+          },
+          {
+            "query": "e/target-000003.ts",
+            "elapsedMs": 232.30000000074506,
+            "rows": 1,
+            "total": 1,
+            "sawBusy": true
+          },
+          {
+            "query": "missing-needle",
+            "elapsedMs": 223.60000000149012,
+            "rows": 0,
+            "total": 0,
+            "sawBusy": true
+          },
+          {
+            "query": "target-000007.ts",
+            "elapsedMs": 248.5,
+            "rows": 1,
+            "total": 1,
+            "sawBusy": true,
+            "replacement": true
+          }
+        ],
+        "scans": [
+          {
+            "query": "target-000000.ts",
+            "started": 2068.202706,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 1,
+            "durationMs": 171.0784239999998
+          },
+          {
+            "query": "target-000007.ts",
+            "started": 3034.448028,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 1,
+            "durationMs": 49.96413700000039
+          },
+          {
+            "query": "src/a/b/c/d/e/",
+            "started": 3926.169608,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 40008,
+            "durationMs": 61.15245999999979
+          },
+          {
+            "query": "b",
+            "started": 4489.473859,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 40008,
+            "durationMs": 71.23836699999993
+          },
+          {
+            "query": "e/target-000003.ts",
+            "started": 5030.564213,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 1,
+            "durationMs": 57.76375700000062
+          },
+          {
+            "query": "missing-needle",
+            "started": 5963.728962,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 0,
+            "durationMs": 70.154133
+          },
+          {
+            "query": "source-",
+            "started": 6444.819718,
+            "cancelled": true,
+            "durationMs": 13.575257999999849
+          },
+          {
+            "query": "target-000007.ts",
+            "started": 6640.823273,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 1,
+            "durationMs": 69.27066999999988
+          }
+        ],
+        "exact": true,
+        "ownersAfterClose": 0,
+        "activeAfterClose": 0,
+        "scope": "Linux source Electron, same compiled UI and 40,008 nested searchable source files, native text input to exact current result DOM including debounce/IPC. Visible result DOM is not hardware input-to-paint. Initial Explorer index completes before measurement. No provider/model calls, diagnostic GC or whole-app RAM measurement.",
+        "sourceHashes": {
+          "core/filename-search.js": "eca33ed21741e58914128c86c637921dc5866e2f271566e19bb34045ff86bb9d",
+          "core/hub.js": "0ddefcb477b34851e309028094e71ef0fbadccb19bd5b0bdc88476a27de800ce",
+          "desktop/main.js": "7065ec294c3fc484846ca544c1836393a1ca7a92ff103b67bb7b63911cf3787e",
+          "ui/src/components/quick-open.tsx": "45f1cae81c05e1e93fde392c45f1b1acca57463de73955a43fd4e918f3bd65da",
+          "ui/src/lib/file-search.mjs": "fd1984a7696ff3d80be530eed316cf91c2d61d376c33f8237e22b112fc8d9090",
+          "scripts/performance/filename-native.cjs": "6f7ee5c75185b86dd781674375c41fb2626e8d4ab4d3e5d4b09b0ace789c620a",
+          "scripts/performance/native-filename-latency.cjs": "c8f2928cfe5c22b86a19f3e2bdd2fb46e19ba9691525b285d42fc815382c74ec"
+        },
+        "stdout": ""
+      }
+    },
+    {
+      "repeat": 2,
+      "baseline": {
+        "observations": [
+          {
+            "query": "target-000000.ts",
+            "elapsedMs": 278.5,
+            "rows": 1,
+            "total": 1,
+            "sawBusy": true
+          },
+          {
+            "query": "target-000007.ts",
+            "elapsedMs": 236.60000000149012,
+            "rows": 1,
+            "total": 1,
+            "sawBusy": true
+          },
+          {
+            "query": "src/a/b/c/d/e/",
+            "elapsedMs": 279.2000000011176,
+            "rows": 100,
+            "total": 40008,
+            "sawBusy": true
+          },
+          {
+            "query": "b",
+            "elapsedMs": 260.69999999925494,
+            "rows": 100,
+            "total": 40008,
+            "sawBusy": true
+          },
+          {
+            "query": "e/target-000003.ts",
+            "elapsedMs": 237.69999999925494,
+            "rows": 1,
+            "total": 1,
+            "sawBusy": true
+          },
+          {
+            "query": "missing-needle",
+            "elapsedMs": 210.7999999988824,
+            "rows": 0,
+            "total": 0,
+            "sawBusy": true
+          },
+          {
+            "query": "target-000007.ts",
+            "elapsedMs": 231.80000000074506,
+            "rows": 1,
+            "total": 1,
+            "sawBusy": true,
+            "replacement": true
+          }
+        ],
+        "scans": [
+          {
+            "query": "target-000000.ts",
+            "started": 2005.402605,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 1,
+            "durationMs": 98.9763919999998
+          },
+          {
+            "query": "target-000007.ts",
+            "started": 2923.166555,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 1,
+            "durationMs": 60.23314200000004
+          },
+          {
+            "query": "src/a/b/c/d/e/",
+            "started": 3975.047023,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 40008,
+            "durationMs": 63.017065999999886
+          },
+          {
+            "query": "b",
+            "started": 4496.762186,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 40008,
+            "durationMs": 53.254251000000295
+          },
+          {
+            "query": "e/target-000003.ts",
+            "started": 5025.545336,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 1,
+            "durationMs": 59.75950699999976
+          },
+          {
+            "query": "missing-needle",
+            "started": 5933.830156,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 0,
+            "durationMs": 57.442731000000094
+          },
+          {
+            "query": "source-",
+            "started": 6394.338472,
+            "cancelled": true,
+            "durationMs": 8.073021999999582
+          },
+          {
+            "query": "target-000007.ts",
+            "started": 6585.890248,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 1,
+            "durationMs": 57.41897000000063
+          }
+        ],
+        "exact": true,
+        "ownersAfterClose": 0,
+        "activeAfterClose": 0,
+        "scope": "Linux source Electron, same compiled UI and 40,008 nested searchable source files, native text input to exact current result DOM including debounce/IPC. Visible result DOM is not hardware input-to-paint. Initial Explorer index completes before measurement. No provider/model calls, diagnostic GC or whole-app RAM measurement.",
+        "sourceHashes": {
+          "core/filename-search.js": "eca33ed21741e58914128c86c637921dc5866e2f271566e19bb34045ff86bb9d",
+          "core/hub.js": "0ddefcb477b34851e309028094e71ef0fbadccb19bd5b0bdc88476a27de800ce",
+          "desktop/main.js": "7065ec294c3fc484846ca544c1836393a1ca7a92ff103b67bb7b63911cf3787e",
+          "ui/src/components/quick-open.tsx": "45f1cae81c05e1e93fde392c45f1b1acca57463de73955a43fd4e918f3bd65da",
+          "ui/src/lib/file-search.mjs": "fd1984a7696ff3d80be530eed316cf91c2d61d376c33f8237e22b112fc8d9090",
+          "scripts/performance/filename-native.cjs": "6f7ee5c75185b86dd781674375c41fb2626e8d4ab4d3e5d4b09b0ace789c620a",
+          "scripts/performance/native-filename-latency.cjs": "c8f2928cfe5c22b86a19f3e2bdd2fb46e19ba9691525b285d42fc815382c74ec"
+        },
+        "stdout": ""
+      },
+      "optimized": {
+        "observations": [
+          {
+            "query": "target-000000.ts",
+            "elapsedMs": 279.5,
+            "rows": 1,
+            "total": 1,
+            "sawBusy": true
+          },
+          {
+            "query": "target-000007.ts",
+            "elapsedMs": 247.2000000011176,
+            "rows": 1,
+            "total": 1,
+            "sawBusy": true
+          },
+          {
+            "query": "src/a/b/c/d/e/",
+            "elapsedMs": 256.59999999962747,
+            "rows": 100,
+            "total": 40008,
+            "sawBusy": true
+          },
+          {
+            "query": "b",
+            "elapsedMs": 251.7000000011176,
+            "rows": 100,
+            "total": 40008,
+            "sawBusy": true
+          },
+          {
+            "query": "e/target-000003.ts",
+            "elapsedMs": 231.40000000037253,
+            "rows": 1,
+            "total": 1,
+            "sawBusy": true
+          },
+          {
+            "query": "missing-needle",
+            "elapsedMs": 234,
+            "rows": 0,
+            "total": 0,
+            "sawBusy": true
+          },
+          {
+            "query": "target-000007.ts",
+            "elapsedMs": 224.40000000037253,
+            "rows": 1,
+            "total": 1,
+            "sawBusy": true,
+            "replacement": true
+          }
+        ],
+        "scans": [
+          {
+            "query": "target-000000.ts",
+            "started": 2144.68949,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 1,
+            "durationMs": 97.646166
+          },
+          {
+            "query": "target-000007.ts",
+            "started": 2982.716192,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 1,
+            "durationMs": 67.90688600000021
+          },
+          {
+            "query": "src/a/b/c/d/e/",
+            "started": 3865.801907,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 40008,
+            "durationMs": 66.51660300000003
+          },
+          {
+            "query": "b",
+            "started": 4336.732269,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 40008,
+            "durationMs": 56.957266999999774
+          },
+          {
+            "query": "e/target-000003.ts",
+            "started": 4817.878877,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 1,
+            "durationMs": 54.15078199999971
+          },
+          {
+            "query": "missing-needle",
+            "started": 5827.210636,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 0,
+            "durationMs": 78.24402100000043
+          },
+          {
+            "query": "source-",
+            "started": 6302.329966,
+            "cancelled": true,
+            "durationMs": 10.35294999999951
+          },
+          {
+            "query": "target-000007.ts",
+            "started": 6487.689629,
+            "cancelled": false,
+            "visited": 40015,
+            "total": 1,
+            "durationMs": 46.97909899999922
+          }
+        ],
+        "exact": true,
+        "ownersAfterClose": 0,
+        "activeAfterClose": 0,
+        "scope": "Linux source Electron, same compiled UI and 40,008 nested searchable source files, native text input to exact current result DOM including debounce/IPC. Visible result DOM is not hardware input-to-paint. Initial Explorer index completes before measurement. No provider/model calls, diagnostic GC or whole-app RAM measurement.",
+        "sourceHashes": {
+          "core/filename-search.js": "eca33ed21741e58914128c86c637921dc5866e2f271566e19bb34045ff86bb9d",
+          "core/hub.js": "0ddefcb477b34851e309028094e71ef0fbadccb19bd5b0bdc88476a27de800ce",
+          "desktop/main.js": "7065ec294c3fc484846ca544c1836393a1ca7a92ff103b67bb7b63911cf3787e",
+          "ui/src/components/quick-open.tsx": "45f1cae81c05e1e93fde392c45f1b1acca57463de73955a43fd4e918f3bd65da",
+          "ui/src/lib/file-search.mjs": "fd1984a7696ff3d80be530eed316cf91c2d61d376c33f8237e22b112fc8d9090",
+          "scripts/performance/filename-native.cjs": "6f7ee5c75185b86dd781674375c41fb2626e8d4ab4d3e5d4b09b0ace789c620a",
+          "scripts/performance/native-filename-latency.cjs": "c8f2928cfe5c22b86a19f3e2bdd2fb46e19ba9691525b285d42fc815382c74ec"
+        },
+        "stdout": ""
+      }
+    }
+  ],
+  "scope": "Three alternating fresh native Electron pairs, same compiled UI and nested files. Scanner module alone differs; manager/IPC/UI implementation remains identical. All source selections and result prefixes/totals must match; no source saves. Input-to-current-result-DOM includes the 150ms debounce and IPC; not hardware input-to-paint. Actual cancellation is observed, never forced with an injected wait. No cross-editor, startup, model or RAM claim."
+}

@@ -11,6 +11,7 @@ Tributary preview for macOS, Windows and Linux.
 
 In this update:
 
+- Reduce temporary filename-search allocation by reusing directory continuations and parent matches. Unicode/path semantics, complete results and real cancellation are checked; native response-time gains are modest and workload-dependent.
 - Find files beyond the former 20,000-entry cutoff. Quick Open and Explorer searches now stream directory entries, show limited-result totals, cancel obsolete work, and release searches when their view closes or reloads. Admission and result storage are bounded; isolated measurements document both memory savings and the single-scan throughput tradeoff.
 - Scan editor change markers and line counts once, with less temporary parser allocation and complete marker coverage beyond the review UI's 2,000-row limit. Real Git, undo and watched-file updates are checked; isolated parser measurements remain separate from whole-app memory claims.
 - Read project `.vscode/settings.json` and language overrides; run project-local ESLint diagnostics, undoable right-click fixes and independent fix-on-save. Install/setup ESLint per workspace folder from Language tools.

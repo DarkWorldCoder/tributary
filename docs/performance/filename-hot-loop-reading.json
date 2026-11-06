@@ -1,0 +1,12 @@
+{
+  "url": "https://gameprogrammingpatterns.com/dirty-flag.html",
+  "title": "Game Programming Patterns: Dirty Flag",
+  "captureSha256": "cbce364a7b16d39a0ecc6c4be3af86657fa01ec88c1643f232e8036008515d0c",
+  "bytes": 26054,
+  "lines": 339,
+  "words": 4067,
+  "read": "Complete captured prose and C++ listings, lines 1-339; excerpts that truncated were read again.",
+  "notReadOrExecuted": "Chapter images not visually inspected; C++ examples not compiled; linked material and whole book not read in this pass.",
+  "application": "Reuse derived parent-match/prefix data only for one directory frame with immutable query/path inputs. There is no persistent filename cache requiring dirty-flag invalidation. The chapter also documents the retained-memory and invalidation costs of caching.",
+  "limits": "Book patterns motivate candidate changes; measurements determine which variant ships. No C++ memory-layout or cache-miss claim for V8."
+}

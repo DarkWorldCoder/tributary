@@ -40,3 +40,5 @@ The complete captured prose and C++ listings of Robert Nystrom's author-hosted [
 ## Remaining work
 
 Measure rapid typing and root switching in the full native app against the same large-project fixture before claiming end-to-end speed improvements. Repeated scans still re-enumerate directories; a bounded, invalidated cache or shared index needs a measured ownership design. The separate `listFiles` API still has its documented prefix limits and a bulk-reading local non-Git fallback. Very deep directory frames retain buffers proportional to depth. None of these limitations is a reason to hide files or discard unsaved editor state to reduce memory numbers.
+
+A later [hot-loop follow-up](FILENAME_SEARCH_HOT_LOOP.md) reduces temporary scanner allocation and measures native query response, while retaining the buffer policy. The historical measurements above remain unchanged.

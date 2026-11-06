@@ -45,6 +45,19 @@ test('real nested and hidden files remain searchable without contents or symlink
   assert.deepEqual((await scanFileNames(root, 'needle', { showHidden: false })).files, expected.slice(1));
   assert.deepEqual((await scanFileNames(root, ' ')).files, []);
 });
+test('name-only optimization preserves full-path, parent-name and Unicode lowercase matches', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'tributary-file-matching-')); t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const names = ['Nested/Source.ts', 'Nested/other.GO', 'Nested/ΩΣ/ΟΣ.txt', 'Nested/İndex/TİTLE.rs', 'Nested/.env', 'alpha/𝄞-😀.zig', 'alpha/\uE000.rs', 'alpha/名前.ts', 'alpha/name[1].ts', 'alpha/space name.py', 'Nested/endsΣ/ΓΣ.txt'];
+  for (const name of names) { await fs.mkdir(path.dirname(path.join(root, name)), { recursive: true }); await fs.writeFile(path.join(root, name), ''); }
+  // Use the filesystem's returned spelling (including any normalization), then
+  // compare against the simple full-path predicate independently of the walker.
+  const actual = (await fs.readdir(root, { recursive: true, withFileTypes: true })).filter(entry => entry.isFile()).map(entry => path.relative(root, path.join(entry.parentPath, entry.name)).split(path.sep).join('/'));
+  for (const query of ['source', 'Nested', 'nested/', 'ED/SO', 'other.go', 'ος', 'οσ', 'Σ/Γ', 'i\u0307', 'i\u0307ndex/ti\u0307', '名前', '😀', '\uE000', '.env', '[1]', 'space name', '  SOURCE  ', 'does-not-exist']) {
+    const expected = actual.filter(name => name.toLowerCase().includes(query.trim().toLowerCase())).sort();
+    const result = await scanFileNames(root, query, { limit: 3 });
+    assert.deepEqual(result.files, expected.slice(0, 3), query); assert.equal(result.total, expected.length, query); assert.equal(result.limited, expected.length > 3, query);
+  }
+});
 test('missing nested directories are reported; root errors and excessive depth are explicit', async () => {
   let closed = 0;
   const io = { realpath: async p => p, opendir: async p => {

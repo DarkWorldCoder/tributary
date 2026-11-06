@@ -31,6 +31,8 @@
     "bench:memory": "node scripts/benchmark-memory.cjs",
     "bench:stream": "node scripts/performance/stream-store.cjs",
     "bench:bundles": "node scripts/performance/bundles.mjs",
+    "bench:filenames:loop": "node scripts/performance/filename-tuning.cjs",
+    "bench:filenames:native": "node scripts/performance/filename-native.cjs",
     "bench:filenames": "node scripts/performance/filename-search.cjs",
     "bench:directories": "node scripts/performance/directory-pages.cjs",
     "bench:delivery": "node scripts/performance/message-delivery.cjs",

@@ -98,3 +98,7 @@ The largest outstanding engineering work is shared source-file synchronization a
 ### Filename discovery: 6 November 2026
 
 Quick Open and Explorer now own cancellable, streamed filename scans. The old silent 20,000-entry cutoff is removed; result rows and active/queued work remain bounded, with exact counts and explicit unreadable-folder/depth outcomes. Tests cover owner isolation, closed roots, stale replies and handle cleanup; a native 21,001-match fixture checks actual editor contents, focus and cancellation. [Scope, measurements and remaining work](performance/FILENAME_SEARCH.md). The older cross-editor benchmark remains frozen and is not a measurement of this change.
+
+### Filename scanner follow-up: 6 November 2026
+
+Directory-scoped continuations and parent-name matching reduce temporary allocation while preserving complete results, Unicode/full-path matching and cancellation. [Node and native measurements](performance/FILENAME_SEARCH_HOT_LOOP.md) retain timing/peak-memory regressions and the rejected buffer experiment; these are not whole-app RAM or cross-editor speed claims.

@@ -676,3 +676,7 @@ Validation passes 647 regressions, TypeScript, production UI build and five nati
 ## Complete, owned filename searches
 
 [The filename search report](performance/FILENAME_SEARCH.md) records streaming directory discovery, cancellation through the Quick Open/Explorer/desktop/VS Code lifetime, bounded admission, complete coverage past the old 20,000-entry cutoff, and exact result-prefix metadata. Isolated measurements include the throughput tradeoff, sampled heap, native process peak RSS and event-loop timer gaps; they do not refresh whole-app or cross-editor rankings. The author-hosted Event Queue chapter was read with explicit scope; no production GC, native-language rewrite, hidden source data or discarded undo state was introduced.
+
+## Filename scanner hot-loop allocation
+
+[The follow-up report](performance/FILENAME_SEARCH_HOT_LOOP.md) records scoped parent-match reuse and one continuation per directory, 72 equal-output Node subprocesses, and six native Electron instances with exact result/source checks and real cancellation. The nested sparse case uses about 49% less sampled scanner allocation; timings and peak memory move in both directions. A larger-buffer experiment is retained but not shipped. The Dirty Flag chapter reading has explicit scope; no persistent filename cache or new runtime is added.
