@@ -21,6 +21,7 @@ class LocalRequests {
     const key = endpointKey(gateway.baseUrl); const limit = requestLimit(gateway.localConcurrency);
     let pool = this.pools.get(key);
     if (!pool) { pool = { active: new Set(), waiting: [] }; this.pools.set(key, pool); }
+    if (pool.maintenance) return Promise.reject(new Error('The local model is being stopped. Wait for the engine to restart.'));
     const drain = () => {
       while (pool.waiting.length) {
         const next = pool.waiting[0];
@@ -50,6 +51,12 @@ class LocalRequests {
   }
   // Bounded operational counts only. Never return prompts, keys or callbacks.
   counts() { return { services: this.pools.size, active: [...this.pools.values()].reduce((n, p) => n + p.active.size, 0), waiting: [...this.pools.values()].reduce((n, p) => n + p.waiting.length, 0) }; }
+  exclusive(gateway) {
+    const key = endpointKey(gateway.baseUrl), pool = this.pools.get(key);
+    if (pool && (pool.active.size || pool.waiting.length || pool.maintenance)) throw Error('The local model is in use. Stop its active chats before stopping the engine.');
+    const reserved = { active: new Set(), waiting: [], maintenance: true }; this.pools.set(key, reserved);
+    return () => { if (this.pools.get(key) === reserved) this.pools.delete(key); };
+  }
 }
 const localRequests = new LocalRequests();
 module.exports = { LocalRequests, localRequests, requestLimit, endpointKey, MAX_WAITING };

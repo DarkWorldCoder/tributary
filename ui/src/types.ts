@@ -15,7 +15,7 @@ export interface RegistryAgent {
   install: { kind: 'npx' | 'uvx' | 'binary' | 'unknown'; runnable: boolean; command?: string; args?: string[] };
 }
 export interface Project { path: string; name: string; trusted?: boolean; folders?: string[]; kind?: 'personal' }
-export interface Gateway { id: string; name: string; protocol: Protocol; baseUrl: string; model: string; wireApi?: 'chat' | 'responses'; hasKey?: boolean; apiKey?: string; clearKey?: boolean; direct?: boolean; localRuntime?: 'unsloth' | 'ollama' | 'lmstudio' | null; historyBudget?: number; localConcurrency?: number; localAgent?: boolean; maxOutputTokens?: number }
+export interface Gateway { id: string; name: string; protocol: Protocol; baseUrl: string; model: string; wireApi?: 'chat' | 'responses'; hasKey?: boolean; apiKey?: string; clearKey?: boolean; direct?: boolean; localRuntime?: 'unsloth' | 'ollama' | 'lmstudio' | 'llamacpp' | null; historyBudget?: number; localConcurrency?: number; localAgent?: boolean; managedLocal?: boolean; maxOutputTokens?: number }
 export interface TaskTemplate { id: string; title: string; group: string; description: string; needsMaterial?: boolean }
 export interface TaskInput { templateId: string; goal: string; audience?: string; material?: string }
 export interface DocumentVersion { title: string; content: string; revision: number; updatedAt: number }

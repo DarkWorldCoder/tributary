@@ -14,7 +14,7 @@ for (const file of ['core/index.js', 'core/path-command.js', 'core/path-prefix.j
   if (!entries.has('/' + file)) throw new Error(`Package is missing ${file}`);
 }
 if ([...entries].some((file) => /(?:^|\/)\.env(?:\.|$)/.test(file))) throw new Error('Environment files must never be packaged.');
-for (const file of ['core/format-worker.cjs', 'core/search-worker.cjs', 'core/files.js', 'core/directory-page.js', `node_modules/@lydell/node-pty-${platform === 'mac' ? 'darwin' : platform === 'win' ? 'win32' : 'linux'}-${arch}/package.json`]) {
+for (const file of ['core/format-worker.cjs', 'core/search-worker.cjs', 'core/local-engine-worker.cjs', 'core/files.js', 'core/directory-page.js', `node_modules/@lydell/node-pty-${platform === 'mac' ? 'darwin' : platform === 'win' ? 'win32' : 'linux'}-${arch}/package.json`]) {
   if (!fs.existsSync(path.join(archive + '.unpacked', file))) throw new Error(`Unpacked runtime is missing ${file}`);
 }
 const binary = path.join(base, platform === 'mac' ? 'MacOS/Tributary' : platform === 'win' ? 'Tributary.exe' : 'tributary');
@@ -42,6 +42,12 @@ const code = String.raw`
       assert.ok(result.includes('const sample ='));
       const search = await runtime('./core/files').searchProject(dir, 's[a]mple', { regexp: true });
       assert.equal(search.matches.length, 1);
+      await new Promise((resolve, reject) => {
+        const owned = runtime('./core/local-engine-process').spawnOwnedRuntime(process.execPath, ['-e', 'console.log("owned-runtime-ready");setInterval(()=>{},1000)'], { cwd: dir });
+        let ready = false; const timer = setTimeout(() => { owned.kill('SIGKILL'); reject(Error('Packaged engine guardian timed out')); }, 10000);
+        owned.stdout.on('data', chunk => { if (String(chunk).includes('owned-runtime-ready')) { ready = true; owned.kill('SIGTERM'); } });
+        owned.once('error', reject); owned.once('close', code => { clearTimeout(timer); try { assert.equal(code, 0); assert.ok(ready && owned.runtimePid); assert.throws(() => process.kill(owned.runtimePid, 0)); resolve(); } catch (error) { reject(error); } });
+      });
     } finally { fs.rmSync(dir, { recursive: true, force: true }); }
     // ConPTY keeps a native helper thread alive after its shell exits on Windows.
     // This is a bounded test process: exit only after every assertion and cleanup

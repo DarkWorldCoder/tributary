@@ -116,6 +116,14 @@ const API = {
   personalWorkspace: () => hub.personalWorkspace(),
   testConnection: (id) => hub.testConnection(id),
   localModelServices: () => hub.localModelServices(),
+  localEngineState: () => hub.localEngineState(),
+  startLocalEngine: (input) => hub.startLocalEngine(input),
+  stopLocalEngine: () => hub.stopLocalEngine(),
+  async pickLocalEngineFile(kind) {
+    if (!['server', 'model'].includes(kind)) throw Error('Choose an engine executable or GGUF model.');
+    const result = await dialog.showOpenDialog(win, { title: kind === 'model' ? 'Choose a GGUF model' : 'Choose the llama-server executable', properties: ['openFile'], ...(kind === 'model' ? { filters: [{ name: 'GGUF model', extensions: ['gguf'] }] } : process.platform === 'win32' ? { filters: [{ name: 'Executable', extensions: ['exe'] }] } : {}) });
+    return result.canceled ? null : result.filePaths[0] || null;
+  },
   inspectLocalModels: (input) => hub.inspectLocalModels(input),
   connectLocalModel: (input) => hub.connectLocalModel(input),
   modelCatalog: (agent, gateway) => hub.modelCatalog(agent, gateway),
@@ -505,6 +513,15 @@ app.whenReady().then(async () => {
 });
 // Write anything still waiting in the store before the process ends.
 let stoppedHostingForQuit = false;
+let stoppingLocalEngine = false;
+app.on('before-quit', (event) => {
+  const engine = hub?._localEngine;
+  if (!engine?.child && !engine?.starting) return;
+  event.preventDefault();
+  if (stoppingLocalEngine) return;
+  stoppingLocalEngine = true;
+  void engine.stop().catch(error => console.error('Could not stop the local engine:', error.message)).finally(() => { stoppingLocalEngine = false; app.quit(); });
+});
 app.on('before-quit', (event) => {
   if (!lanHost || stoppedHostingForQuit) return;
   event.preventDefault();

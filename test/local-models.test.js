@@ -17,7 +17,7 @@ test('discovery is bounded GET-only metadata with no prompt, key or model startu
   const result = await discover({ fetchImpl: async (url, init) => { requests.push({ url, init }); return Response.json({ data: [{ id: 'local-model', loaded: true }, { id: 'on-disk', loaded: false }, { id: '../bad with spaces' }] }); } });
   assert.equal(requests.length, SERVICES.length);
   assert.ok(result.hardware.memoryGB > 0);
-  for (const request of requests) { assert.equal(request.init.redirect, 'error'); assert.equal(request.init.headers.Authorization, undefined); assert.ok(!request.init.body); assert.match(request.url, /^http:\/\/127\.0\.0\.1:\d+\/v1\/models$/); }
+  for (const request of requests) { assert.equal(request.init.redirect, 'error'); assert.equal(request.init.headers.Authorization, undefined); assert.ok(!request.init.body); assert.match(request.url, /^http:\/\/127\.0\.0\.1:\d+(?:\/v1)?\/models$/); }
   assert.deepEqual(result.services[0].models, [{ id: 'local-model', name: 'local-model', loaded: true }, { id: 'on-disk', name: 'on-disk', loaded: false }]);
 });
 

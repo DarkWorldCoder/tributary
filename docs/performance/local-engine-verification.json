@@ -1,0 +1,34 @@
+{
+  "date": "2026-11-06",
+  "focusedOwnershipTests": 22,
+  "desktopUiCases": 5,
+  "asarGuardian": "passed Electron 44.7.2 synthetic ASAR",
+  "typescript": "passed",
+  "uiBuild": "passed",
+  "vscodeBundle": "passed",
+  "coldHub": "Fresh Node process: constructing Hub and reading stopped engine state neither imports local-engine nor instantiates its manager. No runtime/guardian started.",
+  "sourceHashes": {
+    "core/local-engine.js": "7ff290067f9970d81240b4e61f51ea38b8f2fffce5c9ad05a3665d3990947aca",
+    "core/local-engine-process.js": "7e6f6c1cc0094e06bd9d35a7cc7b3a97f387e2bd143449d6d1dc2a92fdedbeef",
+    "core/local-engine-worker.cjs": "c2b50b76a41f4117878368f1538809be3de699eb73ebc8f399a89cf44a10527c",
+    "core/local-models.js": "77c1b658bfcd3c7015d261699e70a1f7a9c942850a88e6fb18364d7bae4eb9d3",
+    "core/local-requests.js": "3cc682dcc3ad6e2a8347dda9fd2b764e3b4925b57b9da9d11386686de22ae734",
+    "core/hub.js": "5aa7a815611d33b1caec807a60242d360d4dbe1ce16681104843f400f63c0761",
+    "desktop/main.js": "1876c07a78b45264df0924fcf89b2b005a3809d835a8242819960cb67727650e",
+    "ui/src/components/local-models.tsx": "ef6f099146db937a55e1fd59a82ce8ad75bab0e8beb03d788d4f99aaf9adc090",
+    "test/local-engine.test.js": "2ef5a8933271b7ce23657c5eddff893f784ed6a5b0dc8d138c58d4983f1fb2f4",
+    "test/fake-local-engine.cjs": "9501ce1ec34f98e2aab4e339e9f5487365bdc8ac4b79956e7d80b5ccdf8a038b",
+    "test/e2e/local-engine-ui.cjs": "00a96f804c75db4a5cbd152024d0b97c42b738e372f80a63bd4a0d43eea00caa",
+    "test/e2e/local-engine-asar.cjs": "14c443a5ac692a35ac6d0d8cd5c2dae34637a2941de67892c307f22b6a685e6b",
+    "scripts/verify-distribution.cjs": "2c06577cb4f2e63588e378e97e99f33f8e5e203c830bcadc748c2088e938acdb",
+    "package.json": "e3fff5f7be3b55d966dece790731a90acb2b0e785d5cc0925e7e35172c1ed2aa"
+  },
+  "scope": "CPU engine and Linux source-build/native runtime checks. Final whole-suite result included after completion. Model memory report measures actual CPU weights; desktop HTTP fixture uses a synthetic model response and controlled file-picker values.",
+  "fullRegressionSuite": {
+    "passed": 597,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 79304.446596
+  }
+}

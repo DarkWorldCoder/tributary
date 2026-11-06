@@ -1,0 +1,12 @@
+{
+  "date": "2026-11-06T03:10:06.620Z",
+  "passed": true,
+  "checks": [
+    "File chooser results, start, private managed credentials and metadata-only sleep status use the real desktop bridge",
+    "Start local chat creates the owned profile and a real streamed authenticated response renders",
+    "Cancel startup wins the pending UI request and reaps a deliberately hung native child",
+    "Stop reaps both processes; restart rebinds the existing profile without duplicates",
+    "Ordinary app quit waits for the owned runtime and guardian to exit"
+  ],
+  "scope": "Linux source Electron; actual Hub, local HTTP streaming and IPC guardian, synthetic model runtime with accelerated idle clock. Native file chooser return values controlled. Native CPU weights/memory tested separately; no provider, installer or Windows/macOS UI claim."
+}

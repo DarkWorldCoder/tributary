@@ -7,6 +7,7 @@ const SERVICES = [
   { id: 'unsloth', name: 'Unsloth', baseUrl: 'http://127.0.0.1:8888/v1', download: 'https://unsloth.ai/download', docs: 'https://unsloth.ai/docs/basics/api', setup: 'Open Unsloth, load a chat model, then create a key in Settings → API.' },
   { id: 'ollama', name: 'Ollama', baseUrl: 'http://127.0.0.1:11434/v1', download: 'https://ollama.com/download', docs: 'https://docs.ollama.com/openai', setup: 'Start Ollama and download a chat model, then refresh models here.' },
   { id: 'lmstudio', name: 'LM Studio', baseUrl: 'http://127.0.0.1:1234/v1', download: 'https://lmstudio.ai/download', docs: 'https://lmstudio.ai/docs/developer/openai-compat', setup: 'Load a chat model in LM Studio and start its local API server.' },
+  { id: 'llamacpp', name: 'llama.cpp', baseUrl: 'http://127.0.0.1:8080/v1', download: 'https://github.com/ggml-org/llama.cpp/releases', docs: 'https://github.com/ggml-org/llama.cpp/tree/master/tools/server#sleeping-on-idle', setup: 'Connect to an existing llama.cpp server, or start a CPU engine here with a local executable and GGUF model.' },
 ];
 function localAddress(input) {
   let url; try { url = new URL(input); } catch { throw new Error('Enter a valid local model server address.'); }
@@ -18,7 +19,7 @@ function localAddress(input) {
 }
 function serviceInput(input = {}) {
   const service = SERVICES.find((service) => service.id === input.service);
-  if (!service) throw new Error('Choose Unsloth, Ollama or LM Studio.');
+  if (!service) throw new Error('Choose Unsloth, Ollama, LM Studio or llama.cpp.');
   const baseUrl = localAddress(input.baseUrl || service.baseUrl);
   if (input.apiKey != null && (typeof input.apiKey !== 'string' || input.apiKey.length > 4096 || /[\x00-\x1f\x7f]/.test(input.apiKey))) throw new Error('Use a valid local service API key.');
   return { service, baseUrl, apiKey: input.apiKey || '' };
@@ -39,7 +40,10 @@ async function inspect(input, { fetchImpl = fetch, timeoutMs = 4000 } = {}) {
   const { service, baseUrl, apiKey } = serviceInput(input);
   const base = { ...service, baseUrl, models: [], status: 'offline', message: 'Not responding. Start the service or check its address.' };
   let response;
-  try { response = await fetchImpl(`${baseUrl}/models`, { redirect: 'error', signal: AbortSignal.timeout(timeoutMs), headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {} }); }
+  // The native /models route is exempt from llama.cpp's idle timer and must
+  // not wake a sleeping model merely to list its metadata.
+  const catalog = service.id === 'llamacpp' ? baseUrl.slice(0, -3) + '/models' : `${baseUrl}/models`;
+  try { response = await fetchImpl(catalog, { redirect: 'error', signal: AbortSignal.timeout(timeoutMs), headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {} }); }
   catch { return base; }
   if (response.status === 401 || response.status === 403) { await response.body?.cancel(); return { ...base, status: 'needs-key', message: 'Service found. Enter its API key, then refresh models.' }; }
   if (!response.ok) { await response.body?.cancel(); return { ...base, status: 'error', message: `Local API returned HTTP ${response.status}. Check the address and that its API server is enabled.` }; }

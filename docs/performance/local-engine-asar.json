@@ -1,0 +1,6 @@
+{
+  "date": "2026-11-06T03:03:00.448Z",
+  "passed": true,
+  "output": "ENGINE_ASAR_OK 44.7.2",
+  "scope": "Actual Electron Node mode; helper loaded from a synthetic ASAR, unpacked guardian executes and reaps an owned child. No complete installer or native Windows/macOS claim."
+}

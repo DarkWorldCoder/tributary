@@ -195,16 +195,61 @@ class Hub extends EventEmitter {
     const r = await runDirectTurn({ gateway: { ...gateway, maxOutputTokens: 16 }, prompt: 'Reply with the word connected.', onEvent: (e) => { if (e.kind === 'error') errors.push(e.message); }, timeoutMs: 20000 });
     return { ok: r.ok, message: r.ok ? 'The assistant responded successfully.' : errors[0] || 'The assistant could not respond.' };
   }
-  localModelServices() { return require('./local-models').discover(); }
-  inspectLocalModels(input) { return require('./local-models').inspect(input); }
+  get localEngine() { return this._localEngine ||= new (require('./local-engine').LocalEngine)({ dataDir: this.dataDir }); }
+  async localEngineState() {
+    if (!this._localEngine) return { status: 'stopped', active: false, config: this.store.data.settings.localEngine || null, baseUrl: '', model: '', error: '' };
+    try { return await this._localEngine.refresh(); }
+    catch (error) { return { ...this._localEngine.state(), error: this._localEngine.clean(error.message) }; }
+  }
+  localEngineInput(input) {
+    const engine = this._localEngine;
+    return input.service === 'llamacpp' && engine?.child && !input.apiKey && typeof input.baseUrl === 'string' && require('./local-models').localAddress(input.baseUrl) === engine.baseUrl ? { ...input, apiKey: engine.apiKey } : input;
+  }
+  async localModelServices() {
+    const result = await require('./local-models').discover();
+    result.engine = await this.localEngineState();
+    if (this._localEngine?.child && ['ready', 'sleeping'].includes(result.engine.status)) {
+      const row = await this.inspectLocalModels({ service: 'llamacpp', baseUrl: result.engine.baseUrl });
+      result.services = result.services.map(service => service.id === 'llamacpp' ? row : service);
+    }
+    return result;
+  }
+  async inspectLocalModels(input) {
+    const row = await require('./local-models').inspect(this.localEngineInput(input));
+    const engine = this._localEngine;
+    if (engine?.child && row.baseUrl === engine.baseUrl) row.models = row.models.map(model => model.id === engine.model ? { ...model, name: path.basename(engine.config.modelPath, '.gguf'), loaded: engine.status !== 'sleeping' } : model);
+    return row;
+  }
+  async startLocalEngine(input) {
+    const state = await this.localEngine.start(input);
+    this.store.data.settings.localEngine = state.config;
+    // Rebind only profiles created through this owned engine. Manual service
+    // connections are never repointed or given its private credential.
+    const owned = this.store.data.gateways.filter(gateway => gateway.managedLocal);
+    for (const gateway of owned) {
+      const id = await this.saveGateway({ ...gateway, baseUrl: state.baseUrl, model: state.model, apiKey: this.localEngine.apiKey });
+      this.store.data.gateways.find(gateway => gateway.id === id).managedLocal = true;
+    }
+    this.store.save(true); this.emit('state'); return state;
+  }
+  async stopLocalEngine() {
+    const engine = this._localEngine; if (!engine) return this.localEngineState();
+    const owned = new Set(this.store.data.gateways.filter(gateway => gateway.managedLocal).map(gateway => 'direct:' + gateway.id));
+    for (const id of this.running.keys()) if (owned.has(this.thread(id).messages.findLast(message => message.role === 'assistant')?.agent)) throw Error('The local model is in use. Stop its active chats before stopping the engine.');
+    const release = engine.baseUrl ? require('./local-requests').localRequests.exclusive({ baseUrl: engine.baseUrl }) : null;
+    try { return await engine.stop(); } finally { release?.(); }
+  }
   async connectLocalModel(input) {
-    const local = require('./local-models'); const config = local.serviceInput(input);
-    const found = await local.inspect(input);
+    const local = require('./local-models'); input = this.localEngineInput(input); const config = local.serviceInput(input);
+    const found = await this.inspectLocalModels(input);
     if (found.status !== 'ready') throw new Error(found.message);
     const model = found.models.find((model) => model.id === input.model);
     if (!model) throw new Error('Choose a model currently reported by this service.');
-    const previous = this.store.data.gateways.find((gateway) => gateway.direct && gateway.localRuntime === config.service.id && gateway.baseUrl === config.baseUrl && gateway.model === model.id);
-    return this.saveGateway({ id: previous?.id, name: `${config.service.name} · ${model.name}`.slice(0, 80), protocol: 'openai', baseUrl: config.baseUrl, model: model.id, direct: true, localRuntime: config.service.id, historyBudget: input.historyBudget ?? 4000, localConcurrency: input.localConcurrency ?? previous?.localConcurrency ?? 1, localAgent: input.localAgent === true, apiKey: config.apiKey, maxOutputTokens: 2048 });
+    const managed = config.service.id === 'llamacpp' && this._localEngine?.child && config.baseUrl === this._localEngine.baseUrl && model.id === this._localEngine.model;
+    const previous = this.store.data.gateways.find((gateway) => gateway.direct && gateway.localRuntime === config.service.id && (managed ? gateway.managedLocal : gateway.baseUrl === config.baseUrl && gateway.model === model.id));
+    const id = await this.saveGateway({ id: previous?.id, name: `${config.service.name} · ${model.name}`.slice(0, 80), protocol: 'openai', baseUrl: config.baseUrl, model: model.id, direct: true, localRuntime: config.service.id, historyBudget: input.historyBudget ?? 4000, localConcurrency: managed ? 1 : input.localConcurrency ?? previous?.localConcurrency ?? 1, localAgent: input.localAgent === true, apiKey: config.apiKey, maxOutputTokens: 2048 });
+    if (managed) { this.store.data.gateways.find(gateway => gateway.id === id).managedLocal = true; this.store.save(); }
+    return id;
   }
   async modelCatalog(agentId, gatewayId) {
     const agent = this.agent(agentId);
@@ -337,6 +382,7 @@ class Hub extends EventEmitter {
       clean.historyBudget = g.historyBudget ?? prev?.historyBudget ?? 4000;
       if (![4000, 8000, 12000].includes(clean.historyBudget)) throw new Error('Choose a compact, balanced or extended local history budget.');
       clean.localConcurrency = require('./local-requests').requestLimit(g.localConcurrency ?? prev?.localConcurrency);
+      if (prev?.managedLocal && clean.localRuntime === 'llamacpp' && clean.baseUrl === prev.baseUrl && clean.model === prev.model) { clean.managedLocal = true; clean.localConcurrency = 1; }
     }
     if (clean.direct) connectionConfig(clean);
     if (g.apiKey) { await this.secrets.set(`gateway:${id}`, g.apiKey); clean.hasKey = true; } else if (prev) clean.hasKey = prev.hasKey;
@@ -353,6 +399,7 @@ class Hub extends EventEmitter {
     if (!id) return null;
     const g = this.store.data.gateways.find((x) => x.id === id);
     if (!g) throw new Error('Gateway not found');
+    if (g.managedLocal && !this._localEngine?.child) throw Error('Start the app-managed local engine in Local models first.');
     return { ...g, apiKey: g.hasKey ? await this.secrets.get(`gateway:${id}`) : '' };
   }
 

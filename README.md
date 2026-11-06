@@ -232,7 +232,9 @@ Leave out `TRIBUTARY_SMOKE_CLICKS` to capture the request while it is still wait
 ### Distribution builds
 
 Local model setup: **Settings → Connections → Set up local models** supports
-Unsloth, Ollama and LM Studio. See [local models](docs/LOCAL_MODELS.md) and
+Unsloth, Ollama, LM Studio and llama.cpp. On desktop, start an existing GGUF CPU
+model from the app, release it when idle and wake it for the next chat.
+See [local models](docs/LOCAL_MODELS.md) and
 [memory efficiency and benchmark](docs/MEMORY_EFFICIENCY.md).
 
 [Download preview releases](https://github.com/DarkWorldCoder/tributary/releases).

@@ -1,0 +1,19 @@
+{
+  "date": "2026-11-06",
+  "book": {
+    "title": "Operating Systems: Three Easy Pieces",
+    "chapter": "14 - Interlude: Memory API",
+    "source": "https://pages.cs.wisc.edu/~remzi/OSTEP/vm-api.pdf",
+    "pdfPages": 12,
+    "textLines": 557,
+    "textWords": 4231,
+    "pdfBytes": 97113,
+    "sha256": "959dba1dbd41e3e18e3d97269cc405dcc9ea0872d761d09bf3eec14f3f8273f3",
+    "scope": "Full chapter text, listings, references and homework questions read; rendered page 7 inspected. Homework, Valgrind and C examples were not executed; linked reference books were not read."
+  },
+  "maintainerSource": {
+    "url": "https://github.com/ggml-org/llama.cpp/blob/cd959bae99ff4bed22bef2604f45241c09bbb8c8/tools/server/README.md",
+    "blob": "afa448b8a736b41ff1adf706ea9d90c22683ed63",
+    "scope": "Full Sleeping on Idle section and targeted /props, model-list, API-key, context, thread and cache flag documentation; not the complete repository."
+  }
+}

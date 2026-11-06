@@ -2,26 +2,35 @@
 
 Open **Settings → Connections → Set up local models**.
 
-1. Choose **Unsloth**, **Ollama** or **LM Studio**. Tributary checks only their local API addresses.
-2. Install/open that model app if necessary, then download and load a chat model there.
+1. Choose **Unsloth**, **Ollama**, **LM Studio** or **llama.cpp**. Detection checks only local API addresses.
+2. Open that model app and load a chat model, or use the desktop app-managed llama.cpp controls below.
 3. For Unsloth, create a key in **Settings → API**. Paste it into Tributary and select **Refresh models**.
 4. Choose the model and a history budget. For coding, turn on **Local coding agent**, then choose **Start local agent**. Otherwise choose **Start local chat**.
 
-The connection becomes an assistant in the model picker. Existing chats, including chats from other providers, stay available. **Test connection** sends a short generation request; initial detection and setup only list models.
+The connection becomes an assistant in the model picker. Existing chats, including chats from other providers, stay available. **Test connection** sends a short generation request; detection and Refresh models only read metadata.
 
 | Service | Default API address |
 | --- | --- |
 | Unsloth | `http://127.0.0.1:8888/v1` |
 | Ollama | `http://127.0.0.1:11434/v1` |
 | LM Studio | `http://127.0.0.1:1234/v1` |
+| llama.cpp | `http://127.0.0.1:8080/v1` |
 
 Use the address actually shown by the model app. Unsloth can use another port, including 8000; edit its address and refresh. Private keys use Tributary’s existing credential storage. Detection never broadcasts a saved key to the other services. Remote endpoints belong in **Add connection**, with HTTPS.
 
+## Start a CPU model from the desktop app
+
+Choose **llama.cpp**, then select an existing **llama-server executable** and **GGUF model file**. Choose context, CPU threads and an idle-release interval, then **Start engine**. The model loads explicitly; Tributary does not download or install its runtime or weights. Choose **Start local chat** or **Start local agent** after it is ready.
+
+Idle release unloads the model and context. A new chat request reloads them automatically; checking status or refreshing its model list leaves it asleep. **Stop engine** releases the owned process; **Cancel startup** handles a slow or stuck start. Stop active chats before stopping the engine. Quit also stops the owned runtime. Other model apps/services are untouched.
+
+The address and private credential are managed automatically. The saved connection is reused on restart. This CPU engine runs one generation at a time to bound context memory; additional chats/agents queue. Existing external services keep their chosen parallel-request limits. Native versions must support llama.cpp's idle-sleep option. See [measured scope and results](performance/LOCAL_ENGINE.md).
+
 ## Memory use
 
-Model weights and inference stay in the external model service. Tributary does not bundle or load another model runtime. Choose a model/quantization that fits your RAM and GPU memory in that service; displayed system RAM is not a GPU compatibility check.
+Model weights and inference stay in a native process: your external service, or the explicitly started app-managed CPU engine. Tributary does not bundle another runtime. Choose a model/quantization that fits your RAM and GPU memory in the external service; displayed system RAM is not a GPU compatibility check. The app-managed engine is CPU-only.
 
-Local chats default to **Compact**: up to 4,000 characters of previous chat and 2,000 characters of project-memory excerpts, when project memory sharing is enabled. Balanced and Extended budgets are available. The current request, attachments and formatting overhead are additional; these character budgets are not exact token limits or VRAM estimates. Saved history and original memory notes are preserved. Unload models using the model app when you need to free its RAM/VRAM.
+Local chats default to **Compact**: up to 4,000 characters of previous chat and 2,000 characters of project-memory excerpts, when project memory sharing is enabled. Balanced and Extended budgets are available. The current request, attachments and formatting overhead are additional; these character budgets are not exact token limits or VRAM estimates. Saved history and original memory notes are preserved. Unload external models using their model app; use idle release or Stop engine for the managed CPU model. Sleeping releases model/context allocations, while some native runtime memory remains.
 
 ## Local coding agents
 
