@@ -161,6 +161,22 @@ test('project text search reports exact positions and skips binary, dependency a
   await assert.rejects(searchProject(root, ''), /Enter search text/);
 });
 
+test('raster metadata reads do not read image bytes, preserve text reads and retain path guards', async t => {
+  const base = mkTmp('image-metadata'), root = path.join(base, 'project'), outside = path.join(base, 'outside'); fs.mkdirSync(root); fs.mkdirSync(outside);
+  const bytes = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]); fs.writeFileSync(path.join(root, 'image.png'), bytes); fs.writeFileSync(path.join(root, 'main.ts'), 'source text'); fs.writeFileSync(path.join(outside, 'image.png'), bytes); fs.symlinkSync(path.join(outside, 'image.png'), path.join(root, 'escape.png')); fs.mkdirSync(path.join(root, 'folder.png'));
+  const hub = new Hub({ dataDir: path.join(base, 'data'), secrets: new MemorySecrets() }); hub.addProject(root);
+  const open = fs.promises.open; let deny = true, closed = 0, reads = 0;
+  t.after(() => { fs.promises.open = open; hub.fileWatches.close(); hub.store.close(); });
+  fs.promises.open = async function(filename, ...args) {
+    const handle = await open.call(this, filename, ...args); if (filename !== path.join(root, 'image.png')) return handle;
+    return { stat: () => handle.stat(), async read(...args) { reads++; if (deny) throw Error('Metadata read image bytes'); return handle.read(...args); }, async close() { closed++; await handle.close(); } };
+  };
+  const metadata = await hub.readFile(root, 'image.png', { metadataOnly: true }); assert.equal(metadata.size, bytes.length); assert.equal(metadata.binary, true); assert.equal(metadata.content, ''); assert.equal(metadata.base64, undefined); assert.equal(reads, 0); assert.equal(closed, 1);
+  assert.equal((await hub.readFile(root, 'main.ts', { metadataOnly: true })).content, 'source text');
+  await assert.rejects(hub.readFile(root, 'escape.png', { metadataOnly: true }), /outside project/); await assert.rejects(hub.readFile(outside, 'image.png', { metadataOnly: true }), /Unknown project/); await assert.rejects(hub.readFile(root, 'folder.png', { metadataOnly: true }), /folder/);
+  deny = false; assert.equal((await hub.readFile(root, 'image.png')).base64, bytes.toString('base64')); assert.equal(reads, 1); assert.equal(closed, 2);
+});
+
 test('image reads keep complete bounded payloads separate from text and binary fallbacks', async (t) => {
   const root = mkTmp('images');
   const hub = new Hub({ dataDir: path.join(root, 'data'), secrets: new MemorySecrets() }); hub.addProject(root);

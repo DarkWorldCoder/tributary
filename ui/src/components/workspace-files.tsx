@@ -43,12 +43,13 @@ import { DirectoryTree } from '@/components/directory-tree';
 import { Markdown } from '@/components/markdown';
 import { ProjectMenu } from '@/components/project-menu';
 import { ImagePreview } from '@/components/image-preview';
+import { useImageResource, useTextBlob } from '@/hooks/use-image-resource';
 import { ProjectChecks } from '@/components/project-checks';
 import { FileSwitcher } from '@/components/file-switcher';
 import { FileDiff } from '@/components/file-diff';
 import { draftWriter, fileSession, savedFileSession } from '@/lib/drafts.mjs';
 import { createExplorerIndex, type ExplorerNode as Node } from '@/lib/explorer-index.mjs';
-import { imageMime, imageSource } from '@/lib/image-preview.mjs';
+import { imageMime } from '@/lib/image-preview.mjs';
 import { projectProfile } from '@/lib/project-profile.mjs';
 import { rememberFile } from '@/lib/recent-work.mjs';
 import { fileTabLabel, openFileTab } from '@/lib/workspace-tabs.mjs';
@@ -56,7 +57,7 @@ import { cn } from '@/lib/utils';
 import { formatParser, nativeFormatTool, formattingHint } from '@/lib/format-document.mjs';
 import { useRunInTerminal } from '@/hooks/use-run-in-terminal';
 import { useStore } from '@/store';
-import type { FileContent, ProjectCheckResult } from '@/types';
+import type { FileContent, HubBridge, ProjectCheckResult } from '@/types';
 
 function TreeNode({ n, depth, open, toggle, active, onOpen, loading, decorations }: { decorations?: ReturnType<typeof explorerDecorations>; n: Node; depth: number; open: Set<string>; toggle: (p: string) => void; active: string | null; onOpen: (p: string, intent?: OpenIntent) => void; loading?: string | null }) {
   const isOpen = open.has(n.path);
@@ -74,13 +75,21 @@ function TreeNode({ n, depth, open, toggle, active, onOpen, loading, decorations
 }
 type OpenIntent = 'preview' | 'pinned';
 // recovered: unsaved text brought back from an earlier session (lib/drafts.mjs).
-type Doc = FileContent & { text: string; dirty: boolean; pinned: boolean; mode: 'edit' | 'preview'; diskChanged?: boolean; diskError?: boolean; wrap?: boolean; recovered?: boolean };
+type Doc = FileContent & { text: string; dirty: boolean; pinned: boolean; mode: 'edit' | 'preview'; diskChanged?: boolean; diskError?: boolean; wrap?: boolean; recovered?: boolean; previewRevision?: number };
 const IMAGE = /\.(png|jpe?g|gif|webp|bmp|ico|avif)$/i;
-function FilePreview({ doc, project }: { doc: Doc; project: string }) {
+function RasterPreview({ doc, project, hub }: { doc: Doc; project: string; hub: HubBridge }) {
+  const [attempt, setAttempt] = React.useState(0);
+  const revision = `${doc.mtime}:${doc.previewRevision || 0}:${attempt}`;
+  const image = useImageResource(hub, project, doc.rel, revision);
+  return <ImagePreview src={image.src} name={doc.rel} size={image.size ?? doc.size} revision={revision} loading={image.loading} unavailable={image.error || undefined} onRetry={() => setAttempt(value => value + 1)} />;
+}
+function FilePreview({ doc, project, hub, visible }: { doc: Doc; project: string; hub: HubBridge; visible: boolean }) {
   const html = React.useMemo(() => (/\.html?$/i.test(doc.rel) ? URL.createObjectURL(new Blob([doc.text], { type: 'text/html' })) : null), [doc.rel, doc.text]);
-  const src = React.useMemo(() => imageMime(doc.rel) ? imageSource({ ...doc, content: doc.text }) : null, [doc.rel, doc.text, doc.base64, doc.truncated]);
+  const vector = imageMime(doc.rel) === 'image/svg+xml';
+  const src = useTextBlob(doc.text, 'image/svg+xml', vector && visible && !doc.truncated);
   React.useEffect(() => () => { if (html) URL.revokeObjectURL(html); }, [html]);
-  if (imageMime(doc.rel)) return <ImagePreview key={doc.rel} src={src} name={doc.rel} size={doc.size} revision={doc.mtime} unavailable={doc.truncated ? `Image exceeds the ${IMAGE.test(doc.rel) ? '16' : '1'} MB preview limit.` : undefined} />;
+  if (IMAGE.test(doc.rel) && !doc.truncated) return visible ? <RasterPreview doc={doc} project={project} hub={hub} /> : null;
+  if (imageMime(doc.rel)) return <ImagePreview key={doc.rel} src={src} name={doc.rel} size={doc.size} revision={doc.mtime} loading={vector && visible && !doc.truncated && !src} unavailable={doc.truncated ? `Image exceeds the ${IMAGE.test(doc.rel) ? '16' : '1'} MB preview limit.` : undefined} />;
   if (/\.(md|mdx|markdown)$/i.test(doc.rel)) return <div role="region" aria-label="File preview" tabIndex={0} className="h-full overflow-auto px-5 py-4"><Markdown text={doc.text} baseFile={doc.rel} project={project} /></div>;
   if (html) return <iframe title={`Preview of ${doc.rel}`} sandbox="" src={html} className="h-full w-full bg-white" />;
   return null;
@@ -251,7 +260,12 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
   const read = React.useCallback((rel: string) => {
     let request = requests.current.get(rel);
     if (!request) {
-      request = s.hub.call<FileContent>('readFile', project, rel).finally(() => requests.current.delete(rel));
+      request = s.hub.call<FileContent>('readFile', project, rel, IMAGE.test(rel) ? { metadataOnly: true } : undefined).then(file => {
+        if (!IMAGE.test(rel)) return file;
+        // Older/custom bridges may ignore the option. Payloads still must not
+        // escape into persistent tab state or React's alternate state trees.
+        const { base64: _payload, ...metadata } = file; return metadata;
+      }).finally(() => requests.current.delete(rel));
       requests.current.set(rel, request);
     }
     return request;
@@ -347,18 +361,18 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
   React.useEffect(() => {
     if (!visible) return;
     let disposed = false; let watchId = '';
-    const refreshing = new Set<string>(); const again = new Set<string>();
-    const refresh = async (rel: string) => {
-      if (refreshing.has(rel)) { again.add(rel); return; }
+    const refreshing = new Set<string>(); const again = new Map<string, boolean>();
+    const refresh = async (rel: string, force = false) => {
+      if (refreshing.has(rel)) { again.set(rel, force || again.get(rel) || false); return; }
       refreshing.add(rel);
       try {
         const next = await read(rel);
         if (disposed) return;
         setDocs((all) => all.map((doc) => doc.rel !== rel ? doc : doc.dirty
           ? { ...doc, diskChanged: next.content !== doc.content || next.mtime !== doc.mtime, diskError: false }
-          : { ...doc, ...next, rel, text: next.content, dirty: false, diskChanged: false, diskError: false }));
+          : { ...doc, ...next, rel, text: next.content, dirty: false, diskChanged: false, diskError: false, previewRevision: force && IMAGE.test(rel) ? (doc.previewRevision || 0) + 1 : doc.previewRevision }));
       } catch { if (!disposed) setDocs((all) => all.map((doc) => doc.rel === rel ? { ...doc, diskError: true } : doc)); }
-      finally { refreshing.delete(rel); if (again.delete(rel) && !disposed) void refresh(rel); }
+      finally { refreshing.delete(rel); if (again.has(rel) && !disposed) { const force = again.get(rel); again.delete(rel); void refresh(rel, force); } }
     };
     // Also catch changes made while this project was inactive.
     for (const rel of JSON.parse(watched) as string[]) void refresh(rel);
@@ -366,7 +380,7 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
       if (disposed || event.project !== project || event.watchId !== watchId) return;
       if (event.error) { setLive('Live updates unavailable'); return; }
       if (event.paths.includes('')) { setDirectoryRevision((value) => value + 1); load(); }
-      for (const rel of event.paths.filter(Boolean)) void refresh(rel);
+      for (const rel of event.paths.filter(Boolean)) void refresh(rel, true);
     });
     s.hub.call<string>('watchFiles', project, JSON.parse(watched)).then((id) => {
       if (disposed) s.hub.call('unwatchFiles', id).catch(() => {});
@@ -404,7 +418,7 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
   const reload = async (rel: string) => {
     try {
       const file = await read(rel);
-      setDocs((all) => all.map((item) => item.rel === rel ? { ...item, ...file, text: file.content, dirty: false, diskChanged: false, diskError: false } : item));
+      setDocs((all) => all.map((item) => item.rel === rel ? { ...item, ...file, text: file.content, dirty: false, diskChanged: false, diskError: false, previewRevision: IMAGE.test(rel) ? (item.previewRevision || 0) + 1 : item.previewRevision } : item));
     } catch (cause) { setError({ rel, intent: 'pinned', reload: true, message: (cause as Error).message.replace(/^Error invoking remote method '[^']*': (Error: )?/, '') }); }
   };
   const forget = (rel: string) => setDocs((all) => all.map((item) => item.rel === rel ? { ...item, recovered: false } : item));
@@ -668,7 +682,7 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
               <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
                 {docs.map((item) => <TabsContent key={item.rel} value={item.rel} tabIndex={-1} className="h-full min-h-0">
                   {item.rel === active && (item.binary && !IMAGE.test(item.rel) ? <p className="p-6 text-center text-sm text-muted-foreground">Binary file · {item.size.toLocaleString()} bytes</p>
-                    : item.mode === 'preview' && previewable(item.rel) ? <FilePreview doc={item} project={project} />
+                    : item.mode === 'preview' && previewable(item.rel) ? <FilePreview doc={item} project={project} hub={s.hub} visible={visible} />
                       : <CodeEditor takeTransfer={() => { const saved = transferRef.current; if (!saved || saved.target !== group.id || saved.rel !== item.rel) return null; transferRef.current = null; return saved.snapshot; }} active={visible} keepAlive={saving} onReview={() => void reviewSaved(item.rel)} onChangeStats={stats => setGroupStats(all => ({ ...all, [group.id]: stats }))} followChanges={s.following && active === item.rel} onHistoryChange={history => setGroupHistories(all => ({ ...all, [group.id]: history }))} onNavigate={s.pauseFollowing} onDiagnostics={updateLiveDiagnostics} project={project} path={item.rel} value={item.text} line={focused ? line : undefined} column={focused ? column : undefined} readOnly={item.truncated} diagnostics={!item.dirty && checkResult && item.mtime <= checkResult.startedAt ? checkResult.diagnostics.filter((d) => d.rel === item.rel) : []} wrap={item.wrap} onToggleWrap={toggleWrap} onCursorChange={(position) => setCursors((all) => all[`${group.id}:${item.rel}`]?.line === position.line && all[`${group.id}:${item.rel}`]?.column === position.column ? all : { ...all, [`${group.id}:${item.rel}`]: position })} onSave={save} onChange={(value) => { s.pauseFollowing(); setDocs((all) => all.map((current) => current.rel === item.rel ? { ...current, text: value, dirty: value !== current.content, pinned: true, recovered: false } : current)); }} />)}
                 </TabsContent>)}
               </div>

@@ -7,8 +7,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { fitImageScale, imageBytes } from '@/lib/image-preview.mjs';
 
-type Props = { src: string | null; name: string; size?: number; unavailable?: string; revision?: number };
-function ImageCanvas({ src, name, size, unavailable, expand }: Props & { expand?: () => void }) {
+type Props = { src: string | null; name: string; size?: number; unavailable?: string; revision?: number | string; loading?: boolean; onRetry?: () => void };
+function ImageCanvas({ src, name, size, unavailable, loading = false, onRetry, expand }: Props & { expand?: () => void }) {
   const viewport = React.useRef<HTMLDivElement>(null);
   const [bounds, setBounds] = React.useState({ width: 0, height: 0 });
   const [natural, setNatural] = React.useState({ width: 0, height: 0 });
@@ -33,7 +33,7 @@ function ImageCanvas({ src, name, size, unavailable, expand }: Props & { expand?
       {src && !failed && <div className="grid place-items-center" style={{ width: Math.max(bounds.width, natural.width * scale + 32), height: Math.max(bounds.height, natural.height * scale + 32) }}>
         <img key={attempt} src={src} alt={name} draggable={false} decoding="async" referrerPolicy="no-referrer" className="image-preview-content" style={{ width: natural.width * scale, height: natural.height * scale, maxWidth: 'none', maxHeight: 'none' }} onLoad={(event) => setNatural({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })} onError={() => setFailed(true)} />
       </div>}
-      {(!src || failed) ? <div role="status" className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4 text-center text-xs text-muted-foreground"><ImageOff className="size-6" /><span>{unavailable || 'This image could not be displayed.'}</span>{src && <Button variant="outline" size="sm" className="max-sm:min-h-11" onClick={() => { setFailed(false); setNatural({ width: 0, height: 0 }); setAttempt((value) => value + 1); }}>Retry</Button>}</div>
+      {loading ? <div role="status" className="absolute inset-0 flex items-center justify-center gap-2 text-xs text-muted-foreground"><Spinner />Loading image…</div> : (!src || failed) ? <div role="status" className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4 text-center text-xs text-muted-foreground"><ImageOff className="size-6" /><span>{unavailable || 'This image could not be displayed.'}</span>{(src || onRetry) && <Button variant="outline" size="sm" className="max-sm:min-h-11" onClick={() => { if (onRetry) onRetry(); else { setFailed(false); setNatural({ width: 0, height: 0 }); setAttempt((value) => value + 1); } }}>Retry</Button>}</div>
         : !ready && <div role="status" className="absolute inset-0 flex items-center justify-center gap-2 text-xs text-muted-foreground"><Spinner />Loading image…</div>}
     </div>
     <footer className="image-footer flex shrink-0 flex-wrap items-center justify-between gap-x-3 border-t bg-card px-2 py-0.5 max-sm:justify-center">
@@ -58,7 +58,7 @@ export function ImageDialog({ open, onOpenChange, returnFocus, ...props }: Props
     <DialogContent showCloseButton={false} onCloseAutoFocus={(event) => { if (returnFocus?.current?.isConnected) { event.preventDefault(); returnFocus.current.focus({ preventScroll: true }); } }} className="image-dialog flex h-[calc(100dvh-32px)] w-[calc(100vw-32px)] max-w-none flex-col gap-0 overflow-hidden p-0 sm:max-w-none">
       <header className="workbench-toolbar gap-2 border-b px-2"><DialogTitle className="min-w-0 flex-1 truncate pl-1 text-[13px]" title={props.name}>{props.name.split('/').pop()}</DialogTitle><DialogClose asChild><Button variant="ghost" size="icon-sm" className="workbench-action" aria-label="Close image viewer"><X /></Button></DialogClose></header>
       <DialogDescription className="sr-only">{props.name}</DialogDescription>
-      <div className="min-h-0 flex-1"><ImageCanvas key={`${props.name}:${props.revision ?? ''}`} {...props} /></div>
+      <div className="min-h-0 flex-1"><ImageCanvas key={`${props.name}:${props.revision ?? ''}:${props.src?.startsWith('blob:') ? props.src : ''}`} {...props} /></div>
     </DialogContent>
   </Dialog>;
 }
@@ -66,5 +66,5 @@ export function ImageDialog({ open, onOpenChange, returnFocus, ...props }: Props
 export function ImagePreview(props: Props) {
   const [expanded, setExpanded] = React.useState(false);
   const returnFocus = React.useRef<HTMLElement | null>(null);
-  return <><ImageCanvas key={`${props.name}:${props.revision ?? ''}`} {...props} expand={() => { returnFocus.current = document.activeElement as HTMLElement; setExpanded(true); }} /><ImageDialog {...props} open={expanded} onOpenChange={setExpanded} returnFocus={returnFocus} /></>;
+  return <><ImageCanvas key={`${props.name}:${props.revision ?? ''}:${props.src?.startsWith('blob:') ? props.src : ''}`} {...props} expand={() => { returnFocus.current = document.activeElement as HTMLElement; setExpanded(true); }} /><ImageDialog {...props} open={expanded} onOpenChange={setExpanded} returnFocus={returnFocus} /></>;
 }

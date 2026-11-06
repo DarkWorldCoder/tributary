@@ -1,0 +1,19 @@
+{
+  "sources": [
+    {
+      "url": "https://doc.rust-lang.org/book/ch04-02-references-and-borrowing.html",
+      "retrievedDate": "2026-11-06",
+      "captureSha256": "8b68ec23d98dfc49fb48492061e408fe5a7a618e668aef5a371a40af857c9137",
+      "bytes": 14641,
+      "scope": "Complete captured chapter text/listings read in bounded segments; images and linked chapters not inspected; code not compiled. JS runtime leases do not provide Rust compiler guarantees."
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/URL/revokeObjectURL_static",
+      "retrievedDate": "2026-11-06",
+      "captureSha256": "925614e363d0a0a699d4d2d2384bcf7f3ffb676645a5f832ffbdb8b5a55085ce",
+      "bytes": 19428,
+      "scope": "Read API description, syntax, parameter, return and lifecycle notes; surrounding site navigation and linked File API specification not studied."
+    }
+  ],
+  "application": "Explicit shared ownership of derived raster/SVG Blob URLs; release at the last consumer; preserve primary source; no Rust bridge or production forced GC."
+}

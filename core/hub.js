@@ -893,7 +893,7 @@ class Hub extends EventEmitter {
   }
   async searchProject(dir, query, options) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return folderFiles.searchProject(dir, query, options); }
   async readDirectory(dir, rel, options) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return folderFiles.readDirectory(dir, rel, options); }
-  async readFile(dir, rel) {
+  async readFile(dir, rel, options) {
     if (!this.isWorkspace(dir)) throw new Error('Unknown project');
     const abs = await folderFiles.projectPath(dir, rel);
     const raster = /\.(png|jpe?g|gif|webp|bmp|ico|avif)$/i.test(abs);
@@ -903,13 +903,13 @@ class Hub extends EventEmitter {
     try {
       st = await handle.stat();
       if (!st.isFile()) throw new Error(st.isDirectory() ? 'This is a folder. Expand it in the Explorer to open a file.' : 'This entry is not a regular file.');
-      buffer = Buffer.allocUnsafe(raster && st.size > limit ? 0 : Math.min(st.size, limit));
+      buffer = Buffer.allocUnsafe(raster && (options?.metadataOnly === true || st.size > limit) ? 0 : Math.min(st.size, limit));
       while (bytes < buffer.length) { const { bytesRead } = await handle.read(buffer, bytes, buffer.length - bytes, bytes); if (!bytesRead) break; bytes += bytesRead; }
     } finally { await handle.close(); }
     const buf = buffer.subarray(0, bytes);
     const binary = raster || buf.subarray(0, 8000).includes(0);
     return { rel: path.relative(dir, abs), size: st.size, binary, truncated: st.size > limit, content: binary ? '' : buf.toString('utf8'), mtime: st.mtimeMs,
-      base64: raster && st.size <= limit ? buf.toString('base64') : undefined };
+      base64: raster && options?.metadataOnly !== true && st.size <= limit ? buf.toString('base64') : undefined };
   }
 
   // ---- memory

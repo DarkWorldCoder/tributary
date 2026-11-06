@@ -1,0 +1,78 @@
+import { imageMime } from './image-preview.mjs';
+
+/** Decode only into the owned Blob. Never retain a data URL in component state. */
+export async function imageBlobUrl(file, rel, current = () => true) {
+  if (!current()) return null;
+  const mime = imageMime(rel);
+  if (!mime || file.truncated) throw new Error(file.truncated ? 'Image exceeds preview limit.' : 'Unsupported image type.');
+  let blob;
+  if (mime === 'image/svg+xml') blob = new Blob([file.content], { type: mime });
+  else {
+    const encoded = file.base64;
+    if (typeof encoded !== 'string' || !encoded.length || encoded.length % 4 || encoded.length > Math.ceil(16 * 1024 ** 2 / 3) * 4) throw new Error('Image data is unavailable.');
+    let bytes;
+    if (typeof Uint8Array.fromBase64 === 'function') bytes = Uint8Array.fromBase64(encoded);
+    else {
+      const size = encoded.length / 4 * 3 - (encoded.endsWith('==') ? 2 : encoded.endsWith('=') ? 1 : 0);
+      bytes = new Uint8Array(size); let at = 0;
+      for (let offset = 0; offset < encoded.length; offset += 65536) {
+        if (!current()) return null;
+        const chunk = atob(encoded.slice(offset, offset + 65536));
+        for (let index = 0; index < chunk.length; index++) bytes[at++] = chunk.charCodeAt(index);
+        if (offset % (4 * 65536) === 0 && offset) await new Promise(resolve => setTimeout(resolve, 0));
+      }
+    }
+    if (!current()) return null;
+    if (bytes.byteLength > 16 * 1024 ** 2) throw new Error('Image exceeds preview limit.');
+    blob = new Blob([bytes], { type: mime });
+  }
+  if (!current()) return null;
+  if (mime === 'image/svg+xml' && blob.size > 1024 ** 2) throw new Error('Image exceeds preview limit.');
+  return URL.createObjectURL(blob);
+}
+
+/** Resources exist only while visible consumers own them. Read/decode admission
+ * is shared by a bridge, so rapid tab switches cannot start unbounded payloads. */
+export function createImageResources(read, create = imageBlobUrl, revoke = url => URL.revokeObjectURL(url)) {
+  const entries = new Map(), queue = []; let active = 0;
+  const alive = entry => entry.refs > 0 && entries.get(entry.key) === entry;
+  const publish = (entry, value) => { entry.snapshot = value; for (const listener of entry.listeners) listener(); };
+  const pump = () => {
+    while (active < 2 && queue.length) {
+      const entry = queue.shift(); if (!alive(entry)) continue;
+      active++;
+      void Promise.resolve().then(() => alive(entry) ? read(entry.project, entry.rel) : null).then(async file => {
+        if (!file || !alive(entry)) return;
+        const src = await create(file, entry.rel, () => alive(entry));
+        if (!src) { if (alive(entry)) throw new Error('Image data is unavailable.'); return; }
+        if (!alive(entry)) { revoke(src); return; }
+        entry.src = src;
+        publish(entry, { src, loading: false, error: '', size: file.size, mtime: file.mtime });
+      }).catch(error => { if (alive(entry)) publish(entry, { src: null, loading: false, error: error.message || 'Image unavailable.' }); }).finally(() => { active--; pump(); });
+    }
+  };
+  return {
+    acquire(project, rel, revision) {
+      const key = JSON.stringify([project, rel, revision]); let entry = entries.get(key);
+      if (!entry) {
+        if (entries.size >= 128) throw new Error('Too many image previews. Close an unused editor group.');
+        entry = { key, project, rel, refs: 0, src: null, listeners: new Set(), snapshot: { src: null, loading: true, error: '' } };
+        entries.set(key, entry); queue.push(entry);
+      }
+      entry.refs++; pump(); let released = false; const listeners = new Set();
+      return {
+        snapshot: () => entry.snapshot,
+        subscribe(listener) { if (released) return () => {}; const wrapped = () => listener(); listeners.add(wrapped); entry.listeners.add(wrapped); return () => { listeners.delete(wrapped); entry.listeners.delete(wrapped); }; },
+        release() {
+          if (released) return; released = true;
+          for (const listener of listeners) entry.listeners.delete(listener); listeners.clear();
+          if (--entry.refs) return;
+          entries.delete(key); entry.listeners.clear(); const index = queue.indexOf(entry); if (index !== -1) queue.splice(index, 1);
+          if (entry.src) { revoke(entry.src); entry.src = null; }
+          entry.snapshot = { src: null, loading: false, error: '' };
+        },
+      };
+    },
+    state() { return { entries: entries.size, owners: [...entries.values()].reduce((sum, entry) => sum + entry.refs, 0), active, queued: queue.length, urls: [...entries.values()].filter(entry => entry.src).length }; },
+  };
+}
