@@ -1,0 +1,29 @@
+{
+  "date": "2026-11-06",
+  "maintainerSource": [
+    {
+      "url": "https://github.com/ggml-org/llama.cpp/blob/cd959bae99ff4bed22bef2604f45241c09bbb8c8/tools/server/server-context.cpp",
+      "blob": "48f1e93a21b3049f920d1d68f691cb9f7c979ee2",
+      "scope": "Targeted destroy and handle_sleeping_state at lines 1135-1166, metadata helpers and get_props/get_models handlers around 5605-5702, 5878-5890 and 6367-6378, and update_cached_responses at 7209-7229. The full 7,229-line source was fetched, but only these lifecycle and metadata paths were read. Sleep destroys native model/context owners and metadata comes from cached responses. Not a whole-repository review."
+    },
+    {
+      "url": "https://github.com/ggml-org/llama.cpp/blob/cd959bae99ff4bed22bef2604f45241c09bbb8c8/tools/server/server.cpp",
+      "blob": "8b1d426506fdeb0f46b6a5ac225c08766d546399",
+      "scope": "Targeted route registration at lines 174-177. Native /models and OpenAI-compatible /v1/models use the same get_models handler. This explains why actual composer model discovery remains safe while the pinned runtime sleeps. No inference about every future runtime version."
+    }
+  ],
+  "historicalGcArticles": [
+    {
+      "url": "https://v8.dev/blog/trash-talk",
+      "published": "2019-01-03",
+      "scope": "Complete article text read: reachability, marking/sweeping/compaction, generational copying, remembered sets/write barriers, parallel/incremental/concurrent collection and idle tasks. Embedded video, image diagrams and linked papers not watched/read. Historical design explanation, not a claim that every internal detail remains unchanged in the measured Electron V8."
+    },
+    {
+      "url": "https://v8.dev/blog/orinoco",
+      "published": "2016-04-12",
+      "scope": "Complete article text read: parallel compaction, remembered-set layout and black allocation. Images and linked benchmark spreadsheets/papers not read. Historical design, not new benchmark results for Tributary."
+    }
+  ],
+  "application": "Keep JavaScript reachability, native model ownership and OS process accounting separate. Read heap/DOM counters without requesting collection; never transplant the historical article's speed or memory percentages to this app. Validate the actual model-picker bridge and native metadata handlers rather than assuming an undocumented alias reloads weights. Native ownership implementation already exists; this phase verifies it in the complete source desktop.",
+  "readingLimits": "No claim that all memory books, every GC approach or the complete native source was read. The earlier book/chapter inventory remains separate."
+}

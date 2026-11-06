@@ -54,7 +54,8 @@
     "bench:highlighter-owner": "node scripts/performance/highlighter-owner.cjs",
     "bench:markdown-stream": "node scripts/performance/markdown-stream.cjs",
     "bench:markdown-cpu": "node scripts/performance/markdown-cpu.mjs",
-    "bench:local-engine-memory": "node scripts/performance/local-engine-memory.cjs"
+    "bench:local-engine-memory": "node scripts/performance/local-engine-memory.cjs",
+    "bench:local-engine-desktop": "node scripts/performance/local-engine-desktop.cjs"
   },
   "devDependencies": {
     "electron": "44.7.2",

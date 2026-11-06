@@ -1,0 +1,54 @@
+{
+  "passed": true,
+  "date": "2026-11-06T03:50:38.677Z",
+  "sourceHashes": {
+    "core/local-engine.js": "7ff290067f9970d81240b4e61f51ea38b8f2fffce5c9ad05a3665d3990947aca",
+    "core/local-engine-process.js": "7e6f6c1cc0094e06bd9d35a7cc7b3a97f387e2bd143449d6d1dc2a92fdedbeef",
+    "core/local-engine-worker.cjs": "c2b50b76a41f4117878368f1538809be3de699eb73ebc8f399a89cf44a10527c",
+    "core/local-models.js": "77c1b658bfcd3c7015d261699e70a1f7a9c942850a88e6fb18364d7bae4eb9d3",
+    "core/local-requests.js": "3cc682dcc3ad6e2a8347dda9fd2b764e3b4925b57b9da9d11386686de22ae734",
+    "core/hub.js": "5aa7a815611d33b1caec807a60242d360d4dbe1ce16681104843f400f63c0761",
+    "core/direct.js": "3e74e1ff9f0716a540de95ce3065c9bbecede2c6d27f76dbf8384d6a5569dbf5",
+    "core/models.js": "d4821f4752c48acec8240ff57243bcab70aedcd06c68323671e638ce97294647",
+    "desktop/main.js": "1876c07a78b45264df0924fcf89b2b005a3809d835a8242819960cb67727650e",
+    "desktop/preload.js": "70476719b310de3e99c8bd1f9c670136a9556e7ec84e3652ca4a029cf03a404f",
+    "desktop/message-transport.js": "ca0d87eae489aa2b1e34b093dbebd8d7f8a183adac96ef4487faaa5b35819ae6",
+    "ui/src/store.tsx": "b46a36f55b237c7b5d202ba97256237e95d34b2529b5d872e27c20ca6a26d948",
+    "ui/src/components/model-picker.tsx": "a3505814a00c185ae097bc94b12b5daa660187305c2dbee8cc8d4bfa3dc1b538",
+    "ui/src/components/markdown.tsx": "b872cbe21b6e8ee7cb7f3fffa593f956cb8f578ea4fde81378ac2f9b25f206eb",
+    "scripts/performance/app-memory.cjs": "f2fb589461bd80861abd2ecc1d4824abcff5dd7b6be1af7cc9f91e7049af1043",
+    "scripts/performance/native-local-engine-desktop.cjs": "ad1d679a4c804981bb384071ee7a9354ade16da64b449457f5b7fbb7a5ef742d",
+    "scripts/performance/local-engine-desktop.cjs": "12841c6b6fcfbc7f74f834c7cd2ae5ed3d1f7b2766056dbdaef3f2913e41ec96"
+  },
+  "uiBuildSha256": "94d3948de437b122200d827009016cd05d33cbd329e70d71701481d5869ba7e8",
+  "actualDesktopCases": 6,
+  "realUiGenerations": 12,
+  "completeProcessTreeSamples": 180,
+  "rejectedFinalSamples": 0,
+  "allNativeGuardianAndMainPidsAbsentAfterRun": true,
+  "syntaxChecks": "both benchmark scripts passed node --check",
+  "preliminaryRuns": [
+    {
+      "scope": "Single sleep-enabled real-desktop probe",
+      "result": "passed; not included in final medians"
+    },
+    {
+      "scope": "First paired-set attempt",
+      "result": "Stopped at case 1-3600 when procfs caught a transient child exit (ESRCH); no incomplete totals used. All exploratory cases excluded from final result. Harness now retains rejected attempts separately and limits attempts per boundary."
+    }
+  ],
+  "regressionScope": "Production core/desktop/UI code unchanged from 2ca99cc. New serial harness, research/evidence documentation and package benchmark command only. Source and measured production dist hashes matched across all six final cases. No new full-suite/build/installer result claimed.",
+  "limitations": "Full source Electron descendant-process PSS including Electron Node-mode guardian and real CPU server; Xvfb, detached/reparented helpers, OS page cache and external driver allocations excluded. Same-machine paired descriptive observations, not randomized inference. No whole-machine freed-RAM, natural peak/GC latency, GPU, model quality, installer, native Windows/macOS or universal speed claim. Automatic agent discovery and update polling disabled only in fixture. No user profile/service changed.",
+  "focusedRegression": {
+    "tests": 22,
+    "passed": 22,
+    "failed": 0,
+    "skipped": 0,
+    "files": [
+      "test/local-engine.test.js",
+      "test/local-models.test.js",
+      "test/local-requests.test.js"
+    ],
+    "timing": "Run after all six final memory cases; no overlap with measurements."
+  }
+}

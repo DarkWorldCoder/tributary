@@ -16,7 +16,7 @@ These are independent medians and need not sum exactly. File-backed PSS reductio
 
 The next actual Hub chat reloads the model and produces a nonempty response in every case. Its median measured tree rises to 673.06 MiB. Stop reaps the native server and guardian; their PSS becomes zero by process absence. The still-running Hub controller remains at about 41.69 MiB. Neither Electron nor a GPU/driver is included in these numbers.
 
-The memory fixture runs its controller and guardian under Node 24.21. The desktop app forks the guardian through Electron's Node mode, which the separate functional check exercises. Its exact resident footprint, and combined renderer + owned-model memory, require a separate desktop measurement; the approximately 12 MiB value above is not claimed for every Electron/OS build.
+The memory fixture runs its controller and guardian under Node 24.21. The desktop app forks the guardian through Electron's Node mode. The later [full desktop measurement](LOCAL_ENGINE_DESKTOP.md) includes the real renderer, bridge and native model: 971.34 → 431.06 MiB total PSS after idle, with a roughly 31.7 MiB desktop guardian. The approximately 12 MiB value above belongs to the standalone Node fixture and is not claimed for every Electron/OS build.
 
 ## Product change
 
@@ -50,4 +50,4 @@ The first Python model transfer was explicitly terminated after curl's independe
 
 ## Still open
 
-This measures one small CPU model, retained process PSS at explicit boundaries and normal sleep/wake. It does not prove peak memory, natural GC latency, universal inference throughput, coding quality, combined Electron/model memory, GPU/VRAM behavior, other runtimes or native Windows/macOS packaging. Reload has a cost. Full transcript-body virtualization, other React/store lifetimes, dirty/undo budgets and broader model memory controls remain open under the overall optimization goal.
+This standalone fixture measures one small CPU model, retained process PSS at explicit boundaries and normal sleep/wake. Combined Electron/model memory is covered by the [desktop follow-up](LOCAL_ENGINE_DESKTOP.md). Neither experiment proves peak memory, natural GC latency, universal inference throughput, coding quality, GPU/VRAM behavior, other runtimes or native Windows/macOS packaging. Reload has a cost. Full transcript-body virtualization, other React/store lifetimes, dirty/undo budgets and broader model memory controls remain open under the overall optimization goal.
