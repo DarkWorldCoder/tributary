@@ -2,6 +2,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { searchLabelRanges } from '../ui/src/lib/search-label.mjs';
 import { extensionThemeVariables } from '../ui/src/lib/extension-theme-variables.mjs';
+import { quickOpenQuery } from '../ui/src/lib/quick-open-query.mjs';
+
+test('Quick Open separates caret locations from file names and keeps unsupported queries literal', () => {
+  assert.deepEqual(quickOpenQuery(' src/main.ts:12:7 '), { file: 'src/main.ts', line: 12, column: 7 });
+  assert.deepEqual(quickOpenQuery('main.ts:12'), { file: 'main.ts', line: 12, column: 1 });
+  assert.deepEqual(quickOpenQuery('main.ts:'), { file: 'main.ts', line: 1, column: 1 });
+  assert.deepEqual(quickOpenQuery('main.ts#4,2'), { file: 'main.ts', line: 4, column: 2 });
+  assert.deepEqual(quickOpenQuery('main.ts:0:0'), { file: 'main.ts', line: 1, column: 1 });
+  assert.deepEqual(quickOpenQuery('C:\\src\\main.ts:3:2'), { file: 'C:\\src\\main.ts', line: 3, column: 2 });
+  for (const file of ['src/a:b.ts', 'main.ts:2-4', 'main.ts:99999999999999999999', 'main.ts:not-a-line', ':12', 'main.ts']) assert.deepEqual(quickOpenQuery(file), { file });
+});
 
 test('picker labels prefer contiguous ranges and merge adjacent letters', () => {
   assert.deepEqual(searchLabelRanges('Memory: Open Memory', 'memory'), [{ start: 0, end: 6 }]);

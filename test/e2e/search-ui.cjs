@@ -57,7 +57,7 @@ app.on('browser-window-created', (_event, win) => {
     await delay(150); fs.writeFileSync(output + suffix + '.png', (await web.capturePage()).toPNG());
   };
   web.once('did-finish-load', () => { if (started) return; started = true; (async () => {
-    await run(`localStorage.setItem('tributary.project', ${JSON.stringify(JSON.stringify(project))}); localStorage.setItem('tributary.workspaceViews.v1', JSON.stringify({[${JSON.stringify(project)}]:{layout:'editor',expanded:false,panel:{open:true,tab:'files'}}}));true`);
+    await run(`localStorage.setItem('tributary.project', ${JSON.stringify(JSON.stringify(project))}); localStorage.setItem('tributary.recentCommands.v1', JSON.stringify(['settings', 'memory'])); localStorage.setItem('tributary.workspaceViews.v1', JSON.stringify({[${JSON.stringify(project)}]:{layout:'editor',expanded:false,panel:{open:true,tab:'files'}}}));true`);
     const loaded = new Promise(resolve => web.once('did-finish-load', resolve)); web.reload(); await loaded;
     await until(() => run(`!!document.querySelector('.cm-content')`), 'editor');
     await run(`document.querySelector('[aria-label="Projects and chats"][aria-expanded="true"]')?.click();true`);
@@ -129,6 +129,7 @@ app.on('browser-window-created', (_event, win) => {
       assert.equal(rect.width, width);
       assert.equal(Math.round(rect.picker), Math.round(rect.width < 640 ? rect.width - 32 : Math.min(600, rect.width * .62)));
       layouts.push(rect); await shot('.palette-' + width);
+      if (width < 640) assert.equal(await run(`[...document.querySelectorAll('.command-picker .command-section-label')].every(e=>getComputedStyle(e).display==='none')`), true);
       assert.equal(await run(`[...document.querySelectorAll('[data-slot="tooltip-content"]')].some(e=>getComputedStyle(e).visibility!=='hidden'&&e.getBoundingClientRect().width>0)`), false);
       assert.equal(await run(`[...document.querySelectorAll('.cm-ask-agent')].some(e=>getComputedStyle(e).visibility!=='hidden'&&e.getBoundingClientRect().width>0)`), false);
       await key('Escape');
@@ -138,6 +139,7 @@ app.on('browser-window-created', (_event, win) => {
     await until(() => run(`!!document.querySelector('.command-picker')`), 'command label match');
     await text('[aria-label="Search commands and chats"][cmdk-input]', '> memory');
     await until(() => run(`[...document.querySelectorAll('.command-picker [cmdk-item]:not([hidden]) .search-label-match')].some(e=>e.textContent==='Memory')`), 'highlighted command');
+    assert.equal(await run(`getComputedStyle(document.querySelector('[cmdk-group][aria-label="Recently used"] [cmdk-item] .command-section-label')).display`), 'block');
     await shot('.highlighted-command'); await key('Escape');
     win.setSize(1280, 850); await key('p', ['control']); await until(() => run(`!!document.querySelector('.file-picker')`), 'Quick Open');
     await text('[aria-label="Search project filenames"]', 'helper'); await until(() => run(`document.querySelector('.file-picker [cmdk-item]')?.textContent.includes('helper.ts')`), 'filename match');
@@ -152,6 +154,19 @@ app.on('browser-window-created', (_event, win) => {
     assert.deepEqual(await run(`[...document.querySelectorAll('.file-picker [cmdk-item] .search-label-match')].map(e=>e.textContent)`), ['main']);
     check('command and filename labels highlight matches without changing their text or filtering');
     check('Ctrl+P Quick Open uses real filename search'); await key('Escape');
+    await key('p', ['control']); await until(() => run(`!!document.querySelector('.file-picker')`), 'Quick Open location');
+    await text('[aria-label="Search project filenames"]', 'main.ts:2:10');
+    await until(() => run(`document.querySelector('.file-picker [cmdk-item]')?.textContent.includes('main.ts')`), 'filename with caret location');
+    assert.equal(await run(`document.querySelector('.file-picker [role="status"]').textContent`), '1 fileLine 2:10');
+    await shot('.file-location'); await key('Enter');
+    await until(() => run(`!!document.querySelector('[aria-label="Edit main.ts"]')`), 'open file at location');
+    assert.deepEqual(await run(`(()=>{const v=document.querySelector('.cm-content').cmTile.root.view,p=v.state.selection.main.head,l=v.state.doc.lineAt(p);return {line:l.number,column:p-l.from+1};})()`), { line: 2, column: 10 });
+    await key('p', ['control', 'shift']); await until(() => run(`!!document.querySelector('.command-picker')`), 'filtered group labels');
+    await text('[aria-label="Search commands and chats"][cmdk-input]', '> debug');
+    await until(() => run(`!!document.querySelector('[cmdk-group][aria-label="Other commands"] [cmdk-item]')`), 'filtered debugger command');
+    assert.equal(await run(`getComputedStyle(document.querySelector('[cmdk-group][aria-label="Other commands"] [cmdk-item] .command-section-label')).display`), 'block');
+    check('filtered recent/other group labels stay visible; file:line:column opens the exact editor caret');
+    await key('Escape');
     // Use the real appearance provider/settings bridge with a declarative test
     // theme; no extension runtime, registry download or user profile is touched.
     await run(`window.hub.call('setSettings', {extensionTheme:'fixture:search'})`);
@@ -182,7 +197,7 @@ app.on('browser-window-created', (_event, win) => {
     assert.equal(await run(`document.documentElement.style.getPropertyValue('--finder-background')`), '');
     assert.equal(await run(`document.documentElement.style.getPropertyValue('--search-input-background')`), '');
     check('declarative theme colors reach palette, keyboard badges, Search and editor Find; removing the theme restores defaults');
-    const sources = ['ui/src/components/project-search.tsx', 'ui/src/lib/editor-search.ts', 'ui/src/components/command-palette.tsx', 'ui/src/components/quick-open.tsx', 'ui/src/components/search-label.tsx', 'ui/src/lib/search-label.mjs', 'ui/src/lib/extension-theme-variables.mjs', 'ui/src/index.css', 'test/e2e/search-ui.cjs'];
+    const sources = ['ui/src/components/project-search.tsx', 'ui/src/lib/editor-search.ts', 'ui/src/components/command-palette.tsx', 'ui/src/components/quick-open.tsx', 'ui/src/components/search-label.tsx', 'ui/src/lib/search-label.mjs', 'ui/src/lib/quick-open-query.mjs', 'ui/src/lib/extension-theme-variables.mjs', 'ui/src/index.css', 'test/e2e/search-ui.cjs'];
     const sourceHashes = Object.fromEntries(sources.map(file => [file, crypto.createHash('sha256').update(fs.readFileSync(path.join(repo, file))).digest('hex')]));
     fs.writeFileSync(output, JSON.stringify({ date: new Date().toISOString(), passed: true, checks, layouts, maxConcurrentSearches: maxRunning, requests: calls, sourceHashes, scope: 'Linux Electron source build; isolated real files and actual search worker. Agent discovery disabled; two search replies deliberately held to exercise races. Native minimum width reduced only in this fixture for 390/320 pixel renderer checks. No live provider or installer claim.' }, null, 2) + '\n');
     console.log(JSON.stringify({ passed: true, checks })); clearTimeout(deadline); app.quit();

@@ -404,13 +404,14 @@ body:has(.feature-finder[data-state="open"]) .cm-ask-agent,
 .feature-finder [data-slot="command-shortcut"] > span { flex-wrap: nowrap; gap: 2px; }
 .feature-finder [data-slot="kbd"] { height: 16px; min-width: 16px; padding: 0 3px; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 3px; background: transparent; font-size: 10px; font-weight: 400; }
 .feature-finder [cmdk-item][data-selected="true"] [data-slot="kbd"] { color: inherit; border-color: color-mix(in srgb, currentColor 30%, transparent); }
-.feature-finder .command-section-label { margin-left: auto; flex-shrink: 0; font-size: 11px; color: var(--muted-foreground); }
+.feature-finder .command-section-label { display: none; margin-left: auto; flex-shrink: 0; font-size: 11px; color: var(--muted-foreground); }
+.feature-finder [cmdk-item]:first-child .command-section-label { display: block; }
 .feature-finder [cmdk-item] > svg:last-child:not(:first-child) { display: none; }
 @media (max-width: 639px), (pointer: coarse) {
   .feature-finder[data-slot="dialog-content"] { width: calc(100vw - 32px); }
   .feature-finder [cmdk-item] { min-height: 44px; }
   .feature-finder [data-slot="input-group"] { min-height: 44px; }
-  .feature-finder .command-section-label { display: none; }
+  .feature-finder [cmdk-item]:first-child .command-section-label { display: none; }
 }
 
 /* One row rhythm keeps labels, tab actions and neighboring panes on the same centerline. */
