@@ -1,0 +1,312 @@
+{
+  "date": "2026-11-06T05:20:17.342Z",
+  "inputSha256": "6520a88c5a52bee9829881c5cd96da123a3b38c6ab059fa52a8274086eac496e",
+  "analysisSourceSha256": "28a4c36abfd071708e863537adbcc2fc71e55ccc9d846110a8f8704966c0fdea",
+  "summary": {
+    "small": {
+      "baseline": {
+        "initialTreePssKiB": 343167,
+        "sampledWorkTreePssPeakKiB": 350257,
+        "sampledWorkPssGrowthKiB": 7090,
+        "sampledDrainTreePssPeakKiB": 347518,
+        "sampledWorkMainPssPeakKiB": 90183,
+        "sampledWorkRendererPssPeakKiB": 139890,
+        "drainSaves": 12,
+        "drainWrittenBytes": 55221,
+        "drainSynchronousSaveMs": 2.922662000000855,
+        "firstToLastDrainWriteMs": 13,
+        "workSamples": 56,
+        "rejectedSamples": 0
+      },
+      "bounded": {
+        "initialTreePssKiB": 340902,
+        "sampledWorkTreePssPeakKiB": 347896,
+        "sampledWorkPssGrowthKiB": 7131,
+        "sampledDrainTreePssPeakKiB": 346948,
+        "sampledWorkMainPssPeakKiB": 90270,
+        "sampledWorkRendererPssPeakKiB": 139221,
+        "drainSaves": 2,
+        "drainWrittenBytes": 9205,
+        "drainSynchronousSaveMs": 1.1634690000009869,
+        "firstToLastDrainWriteMs": 10,
+        "workSamples": 56,
+        "rejectedSamples": 0
+      }
+    },
+    "six-dirty-files": {
+      "baseline": {
+        "initialTreePssKiB": 410903,
+        "sampledWorkTreePssPeakKiB": 448555,
+        "sampledWorkPssGrowthKiB": 37652,
+        "sampledDrainTreePssPeakKiB": 448555,
+        "sampledWorkMainPssPeakKiB": 142994,
+        "sampledWorkRendererPssPeakKiB": 190740,
+        "drainSaves": 12,
+        "drainWrittenBytes": 59414433,
+        "drainSynchronousSaveMs": 141.3709499999968,
+        "firstToLastDrainWriteMs": 218,
+        "workSamples": 57,
+        "rejectedSamples": 1
+      },
+      "bounded": {
+        "initialTreePssKiB": 418882,
+        "sampledWorkTreePssPeakKiB": 424179,
+        "sampledWorkPssGrowthKiB": 4782,
+        "sampledDrainTreePssPeakKiB": 418464,
+        "sampledWorkMainPssPeakKiB": 110673,
+        "sampledWorkRendererPssPeakKiB": 196193,
+        "drainSaves": 2,
+        "drainWrittenBytes": 9902413,
+        "drainSynchronousSaveMs": 25.78802900000119,
+        "firstToLastDrainWriteMs": 41,
+        "workSamples": 57,
+        "rejectedSamples": 0
+      }
+    }
+  },
+  "differences": [
+    {
+      "workload": "small",
+      "repeat": 0,
+      "sampledWorkTreePssPeakKiB": -930,
+      "sampledWorkPssGrowthKiB": -734,
+      "drainSynchronousSaveMs": -2.587416000002122,
+      "drainWrittenBytes": -46016
+    },
+    {
+      "workload": "small",
+      "repeat": 1,
+      "sampledWorkTreePssPeakKiB": -4289,
+      "sampledWorkPssGrowthKiB": 3145,
+      "drainSynchronousSaveMs": -1.5300889999980427,
+      "drainWrittenBytes": -46016
+    },
+    {
+      "workload": "small",
+      "repeat": 2,
+      "sampledWorkTreePssPeakKiB": 165,
+      "sampledWorkPssGrowthKiB": 41,
+      "drainSynchronousSaveMs": -1.2821949999997742,
+      "drainWrittenBytes": -46020
+    },
+    {
+      "workload": "six-dirty-files",
+      "repeat": 0,
+      "sampledWorkTreePssPeakKiB": -30513,
+      "sampledWorkPssGrowthKiB": -30762,
+      "drainSynchronousSaveMs": -134.4415059999974,
+      "drainWrittenBytes": -49511996
+    },
+    {
+      "workload": "six-dirty-files",
+      "repeat": 1,
+      "sampledWorkTreePssPeakKiB": -14518,
+      "sampledWorkPssGrowthKiB": -26368,
+      "drainSynchronousSaveMs": -115.27095499999632,
+      "drainWrittenBytes": -49512056
+    },
+    {
+      "workload": "six-dirty-files",
+      "repeat": 2,
+      "sampledWorkTreePssPeakKiB": -24891,
+      "sampledWorkPssGrowthKiB": -32870,
+      "drainSynchronousSaveMs": -109.78686699999707,
+      "drainWrittenBytes": -49512020
+    }
+  ],
+  "rows": [
+    {
+      "workload": "small",
+      "repeat": 0,
+      "baseline": {
+        "initialTreePssKiB": 341098,
+        "sampledWorkTreePssPeakKiB": 348826,
+        "sampledWorkPssGrowthKiB": 7728,
+        "sampledDrainTreePssPeakKiB": 347518,
+        "sampledWorkMainPssPeakKiB": 90183,
+        "sampledWorkRendererPssPeakKiB": 139489,
+        "drainSaves": 12,
+        "drainWrittenBytes": 55221,
+        "drainSynchronousSaveMs": 3.750885000003109,
+        "firstToLastDrainWriteMs": 13,
+        "workSamples": 55,
+        "rejectedSamples": 0
+      },
+      "bounded": {
+        "initialTreePssKiB": 340902,
+        "sampledWorkTreePssPeakKiB": 347896,
+        "sampledWorkPssGrowthKiB": 6994,
+        "sampledDrainTreePssPeakKiB": 346948,
+        "sampledWorkMainPssPeakKiB": 90270,
+        "sampledWorkRendererPssPeakKiB": 138015,
+        "drainSaves": 2,
+        "drainWrittenBytes": 9205,
+        "drainSynchronousSaveMs": 1.1634690000009869,
+        "firstToLastDrainWriteMs": 10,
+        "workSamples": 56,
+        "rejectedSamples": 0
+      }
+    },
+    {
+      "workload": "small",
+      "repeat": 1,
+      "baseline": {
+        "initialTreePssKiB": 344855,
+        "sampledWorkTreePssPeakKiB": 350334,
+        "sampledWorkPssGrowthKiB": 5479,
+        "sampledDrainTreePssPeakKiB": 346655,
+        "sampledWorkMainPssPeakKiB": 89699,
+        "sampledWorkRendererPssPeakKiB": 140256,
+        "drainSaves": 12,
+        "drainWrittenBytes": 55221,
+        "drainSynchronousSaveMs": 2.641890999997486,
+        "firstToLastDrainWriteMs": 9,
+        "workSamples": 56,
+        "rejectedSamples": 0
+      },
+      "bounded": {
+        "initialTreePssKiB": 337421,
+        "sampledWorkTreePssPeakKiB": 346045,
+        "sampledWorkPssGrowthKiB": 8624,
+        "sampledDrainTreePssPeakKiB": 346045,
+        "sampledWorkMainPssPeakKiB": 89308,
+        "sampledWorkRendererPssPeakKiB": 139221,
+        "drainSaves": 2,
+        "drainWrittenBytes": 9205,
+        "drainSynchronousSaveMs": 1.111801999999443,
+        "firstToLastDrainWriteMs": 10,
+        "workSamples": 55,
+        "rejectedSamples": 0
+      }
+    },
+    {
+      "workload": "small",
+      "repeat": 2,
+      "baseline": {
+        "initialTreePssKiB": 343167,
+        "sampledWorkTreePssPeakKiB": 350257,
+        "sampledWorkPssGrowthKiB": 7090,
+        "sampledDrainTreePssPeakKiB": 348474,
+        "sampledWorkMainPssPeakKiB": 90758,
+        "sampledWorkRendererPssPeakKiB": 139890,
+        "drainSaves": 12,
+        "drainWrittenBytes": 55221,
+        "drainSynchronousSaveMs": 2.922662000000855,
+        "firstToLastDrainWriteMs": 14,
+        "workSamples": 56,
+        "rejectedSamples": 0
+      },
+      "bounded": {
+        "initialTreePssKiB": 343291,
+        "sampledWorkTreePssPeakKiB": 350422,
+        "sampledWorkPssGrowthKiB": 7131,
+        "sampledDrainTreePssPeakKiB": 348349,
+        "sampledWorkMainPssPeakKiB": 91018,
+        "sampledWorkRendererPssPeakKiB": 140501,
+        "drainSaves": 2,
+        "drainWrittenBytes": 9201,
+        "drainSynchronousSaveMs": 1.640467000001081,
+        "firstToLastDrainWriteMs": 10,
+        "workSamples": 57,
+        "rejectedSamples": 0
+      }
+    },
+    {
+      "workload": "six-dirty-files",
+      "repeat": 0,
+      "baseline": {
+        "initialTreePssKiB": 419969,
+        "sampledWorkTreePssPeakKiB": 454692,
+        "sampledWorkPssGrowthKiB": 34723,
+        "sampledDrainTreePssPeakKiB": 454692,
+        "sampledWorkMainPssPeakKiB": 142779,
+        "sampledWorkRendererPssPeakKiB": 196512,
+        "drainSaves": 12,
+        "drainWrittenBytes": 59414397,
+        "drainSynchronousSaveMs": 157.1979659999979,
+        "firstToLastDrainWriteMs": 259,
+        "workSamples": 58,
+        "rejectedSamples": 1
+      },
+      "bounded": {
+        "initialTreePssKiB": 420218,
+        "sampledWorkTreePssPeakKiB": 424179,
+        "sampledWorkPssGrowthKiB": 3961,
+        "sampledDrainTreePssPeakKiB": 417879,
+        "sampledWorkMainPssPeakKiB": 110673,
+        "sampledWorkRendererPssPeakKiB": 196193,
+        "drainSaves": 2,
+        "drainWrittenBytes": 9902401,
+        "drainSynchronousSaveMs": 22.756460000000516,
+        "firstToLastDrainWriteMs": 41,
+        "workSamples": 57,
+        "rejectedSamples": 0
+      }
+    },
+    {
+      "workload": "six-dirty-files",
+      "repeat": 1,
+      "baseline": {
+        "initialTreePssKiB": 406428,
+        "sampledWorkTreePssPeakKiB": 447876,
+        "sampledWorkPssGrowthKiB": 41448,
+        "sampledDrainTreePssPeakKiB": 447876,
+        "sampledWorkMainPssPeakKiB": 142994,
+        "sampledWorkRendererPssPeakKiB": 189291,
+        "drainSaves": 12,
+        "drainWrittenBytes": 59414469,
+        "drainSynchronousSaveMs": 141.3709499999968,
+        "firstToLastDrainWriteMs": 218,
+        "workSamples": 57,
+        "rejectedSamples": 1
+      },
+      "bounded": {
+        "initialTreePssKiB": 418278,
+        "sampledWorkTreePssPeakKiB": 433358,
+        "sampledWorkPssGrowthKiB": 15080,
+        "sampledDrainTreePssPeakKiB": 433358,
+        "sampledWorkMainPssPeakKiB": 125004,
+        "sampledWorkRendererPssPeakKiB": 195863,
+        "drainSaves": 2,
+        "drainWrittenBytes": 9902413,
+        "drainSynchronousSaveMs": 26.09999500000049,
+        "firstToLastDrainWriteMs": 41,
+        "workSamples": 58,
+        "rejectedSamples": 0
+      }
+    },
+    {
+      "workload": "six-dirty-files",
+      "repeat": 2,
+      "baseline": {
+        "initialTreePssKiB": 410903,
+        "sampledWorkTreePssPeakKiB": 448555,
+        "sampledWorkPssGrowthKiB": 37652,
+        "sampledDrainTreePssPeakKiB": 448555,
+        "sampledWorkMainPssPeakKiB": 143758,
+        "sampledWorkRendererPssPeakKiB": 190740,
+        "drainSaves": 12,
+        "drainWrittenBytes": 59414433,
+        "drainSynchronousSaveMs": 135.57489599999826,
+        "firstToLastDrainWriteMs": 211,
+        "workSamples": 56,
+        "rejectedSamples": 1
+      },
+      "bounded": {
+        "initialTreePssKiB": 418882,
+        "sampledWorkTreePssPeakKiB": 423664,
+        "sampledWorkPssGrowthKiB": 4782,
+        "sampledDrainTreePssPeakKiB": 418464,
+        "sampledWorkMainPssPeakKiB": 109725,
+        "sampledWorkRendererPssPeakKiB": 196662,
+        "drainSaves": 2,
+        "drainWrittenBytes": 9902413,
+        "drainSynchronousSaveMs": 25.78802900000119,
+        "firstToLastDrainWriteMs": 42,
+        "workSamples": 57,
+        "rejectedSamples": 0
+      }
+    }
+  ],
+  "scope": "Uses every accepted observation in both the stall and drain phases of all six pairs. Drain lasts through newest-snapshot persistence, a 600 ms wait and exit-flush navigation, until after stage publication; it is a completion boundary, not an equal-duration latency trial. Full input retains blocked-only peaks, all other observations and rejected attempts. Sampled maxima are lower bounds on continuous peaks; growth subtracts each run own before-phase median. No favorable repetition or phase is selected away. Save timing brackets actual synchronous core.saveDraft only; actual private-file sizes sum written bytes, not fsync/storage-device traffic. No startup/paint/general speed or STW-GC claim."
+}

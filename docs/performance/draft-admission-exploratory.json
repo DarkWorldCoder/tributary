@@ -1,0 +1,35 @@
+{
+  "scope": "These exploratory/pre-lifecycle files are retained locally and do not supply final table medians. Final reports have their own complete source/build hashes and all final samples.",
+  "cases": [
+    {
+      "localPath": "/tmp/tributary-draft-admission-before-tests.log",
+      "sha256": "56bc2b7e076e12a936b6b15e64d14d24a7d20f08167f38d583c1b8dce4724bda",
+      "bytes": 5300,
+      "note": "Unchanged helper fails five new pressure/lifecycle regressions; debounce remains correct."
+    },
+    {
+      "localPath": "/tmp/tributary-drafts-exploratory.json.failure.json",
+      "sha256": "e41f926419034e9f84ac90a2564a3b4287bc22e1cb14d78ec6374defb6c74629",
+      "bytes": 562397,
+      "note": "Immediate navigation before React delivered the final editor state to the writer failed final-marker check. Fixture now waits 100 ms, less than the 400 ms debounce, and documents that boundary."
+    },
+    {
+      "localPath": "/tmp/tributary-drafts-exploratory2.json",
+      "sha256": "867f3c9cea9d83cedf9bdce13277d992d4cba3c72fb8b36d488f40f31aa9ef36",
+      "bytes": 234129,
+      "note": "Functional pass; later teardown navigation avoids late requests during immediate process exit."
+    },
+    {
+      "localPath": "/tmp/tributary-draft-memory-before-lifecycle.json",
+      "sha256": "b3eff5602a659c28b45a76addb4049ba332a63eb1fb5f36e4fc09a381eed0d77",
+      "bytes": 3384150,
+      "note": "Complete first controlled matrix; cached-document lifecycle was subsequently corrected."
+    },
+    {
+      "localPath": "/tmp/tributary-draft-main-stall-before-lifecycle.json",
+      "sha256": "860a02f697fc4435511b92764647ecfff72a6369620d400e7b8902bb16620724",
+      "bytes": 3071347,
+      "note": "Complete first real-main-stall matrix; final lifecycle corrected and synchronous write bytes/timing added for the final matrix."
+    }
+  ]
+}

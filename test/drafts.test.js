@@ -105,3 +105,82 @@ test('draft writes wait for a pause in typing, and anything pending is written o
   failing.set({ tabs: [] }); failing.flush(); await new Promise((r) => setTimeout(r, 10));
   assert.deepEqual(errors, ['too large']);
 });
+
+test('slow draft saves keep one active write and only the latest pending snapshot', async () => {
+  const { draftWriter } = await lib; const calls = [], gates = [];
+  const writer = draftWriter({ call: (...args) => { calls.push(args); return new Promise(resolve => gates.push(resolve)); } }, 'files:/p', { delay: 60000 });
+  const first = { tabs: [{ rel: 'a.ts', text: 'first', base: 'disk' }] };
+  writer.set(first); writer.flush(); await null;
+  for (let i = 0; i < 400; i++) { writer.set({ tabs: [{ rel: 'a.ts', text: 'revision ' + i, base: 'disk' }] }); writer.flush(); }
+  await null; assert.equal(calls.length, 1, 'typing does not create concurrent IPC snapshots');
+  gates.shift()(); await new Promise(resolve => setImmediate(resolve));
+  assert.equal(calls.length, 2); assert.equal(calls[1][2].tabs[0].text, 'revision 399');
+  assert.equal(first.tabs[0].text, 'first');
+  gates.shift()(); await new Promise(resolve => setImmediate(resolve));
+  writer.flush(); assert.equal(calls.length, 2); writer.dispose();
+});
+
+test('closing submits the final draft immediately behind an active save, and is idempotent', async () => {
+  const { draftWriter } = await lib; const calls = [], gates = [];
+  const writer = draftWriter({ call: (...args) => { calls.push(args); return new Promise(resolve => gates.push(resolve)); } }, 'composer', { delay: 60000 });
+  writer.set('old'); writer.flush(); writer.set('new'); writer.flush(); writer.set(null);
+  writer.dispose(); writer.dispose(); writer.set('must not resurrect'); writer.flush();
+  assert.deepEqual(calls, [['saveDraft', 'composer', 'old'], ['saveDraft', 'composer', null]]);
+  for (const release of gates) release(); await new Promise(resolve => setImmediate(resolve));
+  assert.equal(calls.length, 2, 'late acknowledgements cannot submit old pending text');
+});
+
+test('draft failures release admission and report errors while a newer ready snapshot still saves', async () => {
+  const { draftWriter } = await lib; const calls = [], errors = []; let reject;
+  const writer = draftWriter({ call: (...args) => { calls.push(args); if (calls.length === 1) return new Promise((_, fail) => { reject = fail; }); if (calls.length === 2) throw Error('sync failure'); } }, 'composer', { delay: 60000, onError: error => errors.push(error.message) });
+  writer.set('one'); writer.flush(); writer.set('two'); writer.flush(); await null;
+  reject(Error('async failure')); await new Promise(resolve => setImmediate(resolve));
+  writer.set('three'); writer.flush(); await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(calls.map(call => call[2]), ['one', 'two', 'three']);
+  assert.deepEqual(errors, ['async failure', 'sync failure']); writer.dispose();
+});
+
+test('active acknowledgement does not bypass the newest typing debounce', async () => {
+  const { draftWriter } = await lib; const calls = []; let release;
+  const writer = draftWriter({ call: (...args) => { calls.push(args); return calls.length === 1 ? new Promise(resolve => { release = resolve; }) : undefined; } }, 'composer', { delay: 40 });
+  writer.set('one'); writer.flush(); await null; writer.set('two'); release();
+  await new Promise(resolve => setImmediate(resolve)); assert.equal(calls.length, 1);
+  await new Promise(resolve => setTimeout(resolve, 65)); assert.equal(calls.length, 2); assert.equal(calls[1][2], 'two'); writer.dispose();
+});
+
+test('reentrant draft updates are serialized and writers for different keys remain independent', async () => {
+  const { draftWriter } = await lib; const calls = []; let one, two, release;
+  const hub = { call(method, key, data) { calls.push([key, data]); if (data === 'first') { one.set('reentrant'); one.flush(); two.set('other'); two.flush(); return new Promise(resolve => { release = resolve; }); } } };
+  one = draftWriter(hub, 'one', { delay: 60000 }); two = draftWriter(hub, 'two', { delay: 60000 });
+  one.set('first'); one.flush(); await null;
+  assert.deepEqual(calls, [['one', 'first'], ['two', 'other']]);
+  release(); await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(calls, [['one', 'first'], ['two', 'other'], ['one', 'reentrant']]); one.dispose(); two.dispose();
+});
+
+test('pagehide submits the final snapshot before returning; explicit disposal removes the owner', async (t) => {
+  const { draftWriter } = await lib; const target = new EventTarget(); const calls = [], gates = [];
+  const oldAdd = globalThis.addEventListener, oldRemove = globalThis.removeEventListener;
+  globalThis.addEventListener = target.addEventListener.bind(target); globalThis.removeEventListener = target.removeEventListener.bind(target);
+  t.after(() => { if (oldAdd) globalThis.addEventListener = oldAdd; else delete globalThis.addEventListener; if (oldRemove) globalThis.removeEventListener = oldRemove; else delete globalThis.removeEventListener; });
+  const writer = draftWriter({ call: (...args) => { calls.push(args); return new Promise(resolve => gates.push(resolve)); } }, 'composer', { delay: 60000 });
+  writer.set('old'); writer.flush(); writer.set('last before reload'); target.dispatchEvent(new Event('pagehide'));
+  assert.deepEqual(calls.map(call => call[2]), ['old', 'last before reload']);
+  writer.dispose(); target.dispatchEvent(new Event('pagehide')); for (const release of gates) release();
+  await new Promise(resolve => setImmediate(resolve)); assert.equal(calls.length, 2);
+});
+
+
+test('a cached document can keep saving after pagehide while waiting for both earlier acknowledgements', async (t) => {
+  const { draftWriter } = await lib; const target = new EventTarget(), calls = [], gates = [];
+  const oldAdd = globalThis.addEventListener, oldRemove = globalThis.removeEventListener;
+  globalThis.addEventListener = target.addEventListener.bind(target); globalThis.removeEventListener = target.removeEventListener.bind(target);
+  t.after(() => { if (oldAdd) globalThis.addEventListener = oldAdd; else delete globalThis.addEventListener; if (oldRemove) globalThis.removeEventListener = oldRemove; else delete globalThis.removeEventListener; });
+  const writer = draftWriter({ call: (...args) => { calls.push(args); return new Promise(resolve => gates.push(resolve)); } }, 'composer', { delay: 60000 });
+  writer.set('one'); writer.flush(); writer.set('before cached'); target.dispatchEvent(new Event('pagehide'));
+  writer.set('after return'); writer.flush(); assert.equal(calls.length, 2);
+  gates.shift()(); await new Promise(resolve => setImmediate(resolve)); assert.equal(calls.length, 2);
+  gates.shift()(); await new Promise(resolve => setImmediate(resolve)); assert.deepEqual(calls.map(call => call[2]), ['one', 'before cached', 'after return']);
+  gates.shift()(); await new Promise(resolve => setImmediate(resolve)); writer.dispose();
+  target.dispatchEvent(new Event('pagehide')); assert.equal(calls.length, 3);
+});

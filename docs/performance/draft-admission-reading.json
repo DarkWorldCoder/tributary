@@ -1,0 +1,45 @@
+{
+  "accessed": "2026-11-06",
+  "sources": [
+    {
+      "title": "Operating Systems: Three Easy Pieces, Chapter 30: Condition Variables",
+      "url": "https://pages.cs.wisc.edu/~remzi/OSTEP/threads-cv.pdf",
+      "authors": [
+        "Remzi H. Arpaci-Dusseau",
+        "Andrea C. Arpaci-Dusseau"
+      ],
+      "versionShown": "1.10",
+      "pages": 19,
+      "readScope": "Complete extracted chapter text, all code listings, traces, references and homework questions (775 web-parsed lines; local extraction cross-check). Rendered PDF pages 13 and 14 inspected. Homework programs were not downloaded or executed; linked papers and other chapters were not read in this phase.",
+      "application": "Use explicit capacity and state at the asynchronous consumer boundary. Re-check current pending state when an active operation settles. Bound renderer draft admission and preserve only the latest complete pending snapshot.",
+      "limits": "The implementation is a JavaScript event-loop pipeline, not a pthread condition variable or native allocator. No mutex, spin loop, custom collector or memory-book-completion claim is derived from this chapter. Coalescing is valid here because each recovery write replaces a full snapshot, not because arbitrary queued work may be discarded.",
+      "pdfSha256": "77a2fb7913c44af3864afe3dc789b3ce0d875a82df20b9690bba1eb8bee94839",
+      "pdfBytes": 128770,
+      "localExtractedWordCount": 6423
+    },
+    {
+      "title": "WHATWG HTML Standard, PageTransitionEvent.persisted",
+      "url": "https://html.spec.whatwg.org/multipage/nav-history-apis.html#the-pagetransitionevent-interface",
+      "readScope": "Targeted persisted/pagehide/pageshow interface text only. The rest of the HTML Standard was not read.",
+      "application": "A pagehide notification can cache rather than destroy a document. Flush its newest snapshot, but reserve terminal disposal for explicit owner cleanup. A synthetic lifecycle regression covers continued saves; this is not browser back-forward-cache certification."
+    }
+  ],
+  "localSourceAudit": [
+    "ui/src/components/workspace-files.tsx: shared document owner, fileSession creation, recovery and save-conflict path",
+    "ui/src/store.tsx: composer writer and draft subscriber",
+    "ui/src/lib/drafts.mjs: debounce, flush, disposal and latest-value ownership",
+    "core/drafts.js: private atomic whole-snapshot replacement and existing size/expiry limits",
+    "core/hub.js: synchronous saveDraft forwarding",
+    "desktop/main.js and desktop/preload.js: actual invoke/acknowledgement boundary",
+    "vscode/extension.js: same synchronous host draft API used by the webview"
+  ],
+  "nonClaims": [
+    "All memory books read",
+    "Exact V8 heap byte cap",
+    "Global writer/project admission",
+    "Production forced GC",
+    "New Rust bridge",
+    "Actual physical-disk stall measured",
+    "All garbage-collection pauses measured"
+  ]
+}

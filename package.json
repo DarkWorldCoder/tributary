@@ -57,7 +57,10 @@
     "bench:local-engine-memory": "node scripts/performance/local-engine-memory.cjs",
     "bench:local-engine-desktop": "node scripts/performance/local-engine-desktop.cjs",
     "bench:transcript-memory": "node scripts/performance/transcript-retention.cjs",
-    "bench:transcript-bundles": "node scripts/performance/transcript-bundles.mjs"
+    "bench:transcript-bundles": "node scripts/performance/transcript-bundles.mjs",
+    "bench:draft-memory": "node scripts/performance/draft-admission.cjs",
+    "bench:draft-bundles": "node scripts/performance/draft-bundles.mjs",
+    "bench:draft-main-stall": "node scripts/performance/draft-main-stall.cjs"
   },
   "devDependencies": {
     "electron": "44.7.2",

@@ -1,19 +1,47 @@
 // Unsaved text the host keeps across a crash or restart (core/drafts.js).
 
-// Writes one draft after a short pause in typing, and straight away when the window closes.
+// One admitted save per writer while typing; intermediate complete snapshots can
+// be replaced by the newest one. Shutdown submits that final snapshot immediately
+// behind any admitted call, since its acknowledgement may outlive this document.
 export function draftWriter(hub, key, { delay = 400, onError } = {}) {
-  let timer; let pending = false; let value = null;
-  const flush = () => {
-    clearTimeout(timer); timer = undefined;
-    if (!pending) return;
-    pending = false;
-    Promise.resolve().then(() => hub.call('saveDraft', key, value ?? null)).catch((e) => onError?.(e));
+  let timer, value = null;
+  let pending = false, ready = false, active = 0, disposed = false;
+  const settle = () => { --active; drain(); };
+  const submit = () => {
+    let data = value; value = null; pending = false; ready = false; ++active;
+    let result;
+    // Invoke synchronously so an exit flush cannot overtake an admitted save.
+    try { result = hub.call('saveDraft', key, data ?? null); }
+    catch (error) { result = Promise.reject(error); }
+    data = null;
+    Promise.resolve(result).then(settle, (error) => { settle(); onError?.(error); });
   };
-  globalThis.addEventListener?.('pagehide', flush);
+  const drain = () => { if (!disposed && !active && pending && ready) submit(); };
+  const flush = () => {
+    if (disposed) return;
+    clearTimeout(timer); timer = undefined;
+    if (pending) { ready = true; drain(); }
+  };
+  const flushFinal = () => {
+    clearTimeout(timer); timer = undefined;
+    // Recovery is a whole-snapshot replacement, and the host writes each call
+    // synchronously. FIFO submission preserves the newest exit save/deletion.
+    if (pending) submit();
+  };
+  const pagehide = () => { if (!disposed) flushFinal(); };
+  const dispose = () => {
+    if (disposed) return;
+    disposed = true;
+    globalThis.removeEventListener?.('pagehide', pagehide);
+    flushFinal();
+  };
+  // pagehide may put a document in the browser's back/forward cache. Only an
+  // explicit owner disposal makes this writer terminal.
+  globalThis.addEventListener?.('pagehide', pagehide);
   return {
-    set(next) { value = next; pending = true; clearTimeout(timer); timer = setTimeout(flush, delay); },
+    set(next) { if (disposed) return; value = next; pending = true; ready = false; clearTimeout(timer); timer = setTimeout(flush, delay); },
     flush,
-    dispose() { flush(); globalThis.removeEventListener?.('pagehide', flush); },
+    dispose,
   };
 }
 
