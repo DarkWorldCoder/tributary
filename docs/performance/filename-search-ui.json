@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "checks": [
+    "21,001 real files counted; only 100 result rows retained in the picker",
+    "File beyond historical 20,000-entry cutoff opens with exact source and editor focus",
+    "Typing a newer query cancels the producer and only its result appears",
+    "Closing the picker releases all leases and active directory work",
+    "Renderer reload cancels producer and releases its owners",
+    "Hiding the Explorer cancels its own filename producer",
+    "Search and cancellation never modify source files"
+  ],
+  "fixtureFiles": 21002,
+  "target": "src/source-021000.ts",
+  "cancelled": 4,
+  "scope": "Linux source Electron, real local files, real CodeMirror and IPC; held scans inject a cancellable wait to exercise lifecycle. No installer or cross-editor performance claim."
+}

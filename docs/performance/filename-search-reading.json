@@ -1,0 +1,17 @@
+{
+  "url": "https://gameprogrammingpatterns.com/event-queue.html",
+  "title": "Game Programming Patterns: Event Queue",
+  "captureSha256": "e7f8016e6acb2c282c63ea695a221ccd5fae4704643a822ee630c6748bfe3d68",
+  "bytes": 34983,
+  "lines": 519,
+  "words": 5452,
+  "read": "Complete captured prose and C++ listings, lines 1-519, in bounded excerpts; retried excerpts where tool output truncated.",
+  "notReadOrExecuted": "Chapter images not visually inspected; C++ not compiled; linked resources and whole book not read in this pass.",
+  "application": [
+    "Bound request admission and storage",
+    "Discard superseded queued requests and cooperatively cancel active work",
+    "Tie requests and directory handles to explicit UI owners",
+    "Preserve response semantics and stale-result guards"
+  ],
+  "limits": "C++ contiguous arrays and audio scheduling do not establish V8 layout, cache-miss reductions or end-to-end editor speed."
+}

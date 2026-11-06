@@ -48,23 +48,8 @@ async function createEntry(root, rel, kind) {
   else { const handle = await fs.open(target, 'wx', 0o600); await handle.close(); }
   return { rel: path.relative(await fs.realpath(root), target).split(path.sep).join('/'), kind };
 }
-async function findFiles(root, query, { showHidden = true } = {}) {
-  if (typeof query !== 'string' || query.length > 512) throw new Error('Invalid file search.');
-  const needle = query.trim().toLowerCase(); if (!needle) return [];
-  const base = await fs.realpath(root); const pending = ['']; const found = [];
-  const skip = new Set(['.git', 'node_modules', '.venv', 'venv', 'target', 'dist', 'build', '.next']); let visited = 0;
-  while (pending.length && visited < 20000 && found.length < 2000) {
-    const rel = pending.pop(); let entries;
-    try { entries = await fs.readdir(path.join(base, rel), { withFileTypes: true }); } catch { continue; }
-    for (const entry of entries) {
-      if (++visited > 20000 || found.length >= 2000) break;
-      if (entry.isSymbolicLink() || skip.has(entry.name) || !showHidden && entry.name.startsWith('.')) continue;
-      const name = rel ? `${rel}/${entry.name}` : entry.name;
-      if (entry.isDirectory()) { if (name.split('/').length < 20) pending.push(name); }
-      else if (entry.isFile() && name.toLowerCase().includes(needle)) found.push(name);
-    }
-  }
-  return found.sort();
+async function findFiles(root, query, options) {
+  return (await require('./filename-search').scanFileNames(root, query, options)).files;
 }
 async function searchProject(root, query, options = {}) {
   options = options && typeof options === 'object' ? options : {};

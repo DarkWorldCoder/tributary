@@ -287,7 +287,7 @@ class Hub extends EventEmitter {
     for (const folder of folders) if (!fs.existsSync(folder) || !fs.statSync(folder).isDirectory()) throw new Error(`Not a folder: ${folder}`);
     const clean = [...new Set(folders.map((f) => fs.realpathSync(f)))].filter((f) => f !== fs.realpathSync(p.path));
     for (const f of clean) if (!fs.existsSync(f) || !fs.statSync(f).isDirectory()) throw new Error(`Not a folder: ${f}`);
-    p.folders = clean; this.store.save(); this.emit('state');
+    p.folders = clean; this.closeInvalidFileSearches(); this.store.save(); this.emit('state');
     return clean;
   }
   importWorkspace(filename) {
@@ -307,6 +307,7 @@ class Hub extends EventEmitter {
   removeProject(dir) {
     const d = this.store.data;
     d.projects = d.projects.filter((p) => p.path !== dir);
+    this.closeInvalidFileSearches();
     this.store.save(); this.emit('state');
   }
   project(dir) { return this.store.data.projects.find((p) => p.path === dir); }
@@ -873,7 +874,23 @@ class Hub extends EventEmitter {
   formatDiff(dir, token, rel) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.projectFormatter.diff(dir, token, rel); }
   applyFormat(dir, token, selected, exclude, undo) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.projectFormatter.apply(dir, token, selected, exclude, undo === true); }
   async createEntry(dir, rel, kind) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return folderFiles.createEntry(dir, rel, kind); }
-  async findFiles(dir, query, options) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return folderFiles.findFiles(dir, query, options); }
+  get fileSearches() { return this._fileSearches ||= new (require('./filename-search').FileSearches)(); }
+  fileSearchAcquire(dir) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.fileSearches.acquire(dir); }
+  fileSearch(owner, query, options) {
+    const lease = this._fileSearches?.owners.get(owner);
+    if (!lease || !this.isWorkspace(lease.root)) throw new Error('Unknown or closed file search');
+    return this._fileSearches.search(owner, query, options).catch(error => {
+      if (error.name !== 'AbortError') throw error;
+      return { cancelled: true }; // Expected cancellation must not become an IPC error log.
+    });
+  }
+  fileSearchClose(owner) { this._fileSearches?.close(owner); }
+  closeInvalidFileSearches() { for (const [owner, lease] of this._fileSearches?.owners || []) if (!this.isWorkspace(lease.root)) this._fileSearches.close(owner); }
+  async findFiles(dir, query, options) {
+    const owner = this.fileSearchAcquire(dir);
+    try { return (await this.fileSearches.search(owner, query, options)).files; }
+    finally { this.fileSearchClose(owner); }
+  }
   async searchProject(dir, query, options) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return folderFiles.searchProject(dir, query, options); }
   async readDirectory(dir, rel, options) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return folderFiles.readDirectory(dir, rel, options); }
   async readFile(dir, rel) {

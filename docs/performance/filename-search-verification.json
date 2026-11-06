@@ -1,0 +1,42 @@
+{
+  "unitRegression": {
+    "passed": 656,
+    "log": "/tmp/tributary-filename-full-tests.log",
+    "scope": "Full suite; followed by 27 focused file/search/VS Code checks after the final compatibility API cleanup."
+  },
+  "focused": {
+    "passed": 27,
+    "log": "/tmp/tributary-filename-focused-final.log"
+  },
+  "typecheck": {
+    "passed": true,
+    "log": "/tmp/tributary-filename-typecheck.log"
+  },
+  "productionUiBuild": {
+    "passed": true,
+    "log": "/tmp/tributary-filename-build.log"
+  },
+  "nativeFocus": {
+    "passed": true,
+    "reopenCycles": 18,
+    "log": "/tmp/tributary-filename-native-focus.log"
+  },
+  "nativeSearch": {
+    "passed": true,
+    "checks": [
+      "21,001 real files counted; only 100 result rows retained in the picker",
+      "File beyond historical 20,000-entry cutoff opens with exact source and editor focus",
+      "Typing a newer query cancels the producer and only its result appears",
+      "Closing the picker releases all leases and active directory work",
+      "Renderer reload cancels producer and releases its owners",
+      "Hiding the Explorer cancels its own filename producer",
+      "Search and cancellation never modify source files"
+    ],
+    "fixtureFiles": 21002,
+    "target": "src/source-021000.ts",
+    "cancelled": 4,
+    "scope": "Linux source Electron, real local files, real CodeMirror and IPC; held scans inject a cancellable wait to exercise lifecycle. No installer or cross-editor performance claim."
+  },
+  "performance": "filename-search-benchmark.json",
+  "scope": "Source Linux Electron and isolated Node file-search workloads. Six-platform packaged verification is performed separately by Distribution CI; no physical installer/device or whole-app performance claim."
+}

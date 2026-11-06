@@ -252,6 +252,9 @@ const API = {
   readAttachment: (id) => hub.readAttachment(id),
   readFile: (p, rel) => hub.readFile(p, rel),
   createEntry: (p, rel, kind) => hub.createEntry(p, rel, kind),
+  fileSearchAcquire: (p) => hub.fileSearchAcquire(p),
+  fileSearch: (owner, query, options) => hub.fileSearch(owner, query, options),
+  fileSearchClose: (owner) => hub.fileSearchClose(owner),
   findFiles: (p, query, options) => hub.findFiles(p, query, options),
   searchProject: (p, query, options) => hub.searchProject(p, query, options),
   readDirectory: (p, rel, options) => hub.readDirectory(p, rel, options),
@@ -390,10 +393,10 @@ function createWindow() {
   win.webContents.on('will-navigate', (ev) => ev.preventDefault());
   // A replaced/crashed renderer cannot release its pane leases itself. The
   // desktop's single application renderer owns all of this host's LSP leases.
-  win.webContents.on('did-start-navigation', (details) => { if (details.isMainFrame && !details.isSameDocument) { transport.reset(); hub?._languageTools?.stopAll(); hub?._eslintTools?.stopAll(); terminals.detachAll(); } });
+  win.webContents.on('did-start-navigation', (details) => { if (details.isMainFrame && !details.isSameDocument) { transport.reset(); hub?._languageTools?.stopAll(); hub?._eslintTools?.stopAll(); hub?._fileSearches?.stopAll(); terminals.detachAll(); } });
   contents.on('render-process-gone', () => transport.reset());
   contents.on('destroyed', () => transport.close());
-  for (const event of ['render-process-gone', 'destroyed']) win.webContents.on(event, () => { hub?._languageTools?.stopAll(); hub?._eslintTools?.stopAll(); terminals.detachAll(); });
+  for (const event of ['render-process-gone', 'destroyed']) win.webContents.on(event, () => { hub?._languageTools?.stopAll(); hub?._eslintTools?.stopAll(); hub?._fileSearches?.stopAll(); terminals.detachAll(); });
   // Smoke runs stay hidden so they never take keyboard focus from whatever you are typing in.
   win.once('ready-to-show', () => { if (!SMOKE) win.show(); });
   win.loadFile(path.join(__dirname, '..', 'ui', 'dist', 'index.html'));
@@ -536,5 +539,5 @@ app.on('before-quit', (event) => {
   event.preventDefault();
   lanHost.stop().catch((e) => console.error(`Could not stop hosting: ${e.message}`)).finally(() => { stoppedHostingForQuit = true; app.quit(); });
 });
-app.on('will-quit', () => { disposeMessages?.(); messageTransport?.close(); updates?.dispose(); hub?._qaResults?.stopAll(); hub?._languageTools?.stopAll(); hub?._eslintTools?.stopAll(); hub?.debugger?.stopAll(); hub?.projectChecks.stopAll(); try { hub?.store.close(); } catch (e) { console.error(`Could not save on quit: ${e.message}`); } });
-app.on('window-all-closed', () => { if (hub) { hub._qaResults?.stopAll(); hub._languageTools?.stopAll(); hub._eslintTools?.stopAll(); hub.debugger?.stopAll(); hub.projectChecks.stopAll(); for (const id of hub.running.keys()) hub.stop(id); hub.collaborationClient?.disconnect(); hub.fileWatches.close(); } previewServers.stopAll(); terminals.killAll(); if (process.platform !== 'darwin' || SMOKE) app.quit(); });
+app.on('will-quit', () => { disposeMessages?.(); messageTransport?.close(); updates?.dispose(); hub?._qaResults?.stopAll(); hub?._languageTools?.stopAll(); hub?._eslintTools?.stopAll(); hub?._fileSearches?.stopAll(); hub?.debugger?.stopAll(); hub?.projectChecks.stopAll(); try { hub?.store.close(); } catch (e) { console.error(`Could not save on quit: ${e.message}`); } });
+app.on('window-all-closed', () => { if (hub) { hub._qaResults?.stopAll(); hub._languageTools?.stopAll(); hub._eslintTools?.stopAll(); hub._fileSearches?.stopAll(); hub.debugger?.stopAll(); hub.projectChecks.stopAll(); for (const id of hub.running.keys()) hub.stop(id); hub.collaborationClient?.disconnect(); hub.fileWatches.close(); } previewServers.stopAll(); terminals.killAll(); if (process.platform !== 'darwin' || SMOKE) app.quit(); });

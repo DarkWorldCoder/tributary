@@ -1,3 +1,4 @@
+import { fileSearch, type FileSearchResult } from '@/lib/file-search.mjs';
 import type { EditorCommand } from '@/components/agent-workbench';
 import { editorGroups, selectGroupFile, focusEditorGroupAt, splitEditorGroup, moveGroupFile, closeGroupFiles, joinEditorGroup, restoreEditorGroups, type EditorGroup, type EditorGroups } from '@/lib/editor-groups.mjs';
 import { createDirectorySession, type DirectorySession } from '@/lib/directory-session.mjs';
@@ -134,17 +135,12 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
   const [watchRevision, setWatchRevision] = React.useState(0);
   const [filter, setFilter] = React.useState('');
   const [searchOpen, setSearchOpen] = React.useState(false);
+  const [fileSearchStatus, setFileSearchStatus] = React.useState<{ result?: FileSearchResult; error?: string } | null>(null);
   const [hidden, setHiddenState] = React.useState(() => { try { return localStorage.getItem('tributary.showHiddenFiles') !== 'false'; } catch { return true; } });
   const setHidden = (value: boolean) => { setHiddenState(value); try { localStorage.setItem('tributary.showHiddenFiles', String(value)); } catch {} };
   const [creation, setCreation] = React.useState<{ project: string; kind: 'file' | 'folder'; name: string } | null>(null);
   const [creationBusy, setCreationBusy] = React.useState(false);
   const [creationError, setCreationError] = React.useState('');
-  React.useEffect(() => {
-    let alive = true; const { token, changed } = index.beginSearch(); if (changed) bumpIndex();
-    if (!warm || !filter.trim()) return;
-    const timer = setTimeout(() => { if (!indexWarm.current) return; void s.hub.call<string[]>('findFiles', project, filter, { showHidden: hidden }).then((items) => { if (alive && indexWarm.current && index.acceptMatches(token, items)) bumpIndex(); }).catch(() => {}); }, 150);
-    return () => { alive = false; clearTimeout(timer); };
-  }, [project, filter, hidden, s.hub, directoryRevision, warm, index]);
   const [checksOpen, setChecksOpen] = React.useState(false);
   const [formatAllOpen, setFormatAllOpen] = React.useState(false);
   const [comparisonRel, setComparison] = React.useState<string | null>(null);
@@ -189,6 +185,12 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
   const [comparing, setComparing] = React.useState<{ rel: string; diff: string | null } | null>(null);
   const [restoring, setRestoring] = React.useState(true);
   const [small, setSmall] = React.useState(() => window.innerWidth < 640);
+  React.useEffect(() => {
+    let alive = true; let cancel: (() => void) | undefined; const { token, changed } = index.beginSearch(); if (changed) bumpIndex(); setFileSearchStatus(null);
+    if (!warm || !visible || collapsed || small && !browse || s.searchFilesOpen || debugVisible || !filter.trim()) return;
+    const timer = setTimeout(() => { if (!indexWarm.current) return; const search = fileSearch(s.hub, project, filter, { showHidden: hidden }); cancel = search.cancel; void search.result.then((result) => { if (alive && indexWarm.current && index.acceptMatches(token, result.files)) { setFileSearchStatus({ result }); bumpIndex(); } }).catch((error: Error) => { if (alive) setFileSearchStatus({ error: error.message }); }); }, 150);
+    return () => { alive = false; clearTimeout(timer); cancel?.(); };
+  }, [project, filter, hidden, s.hub, directoryRevision, warm, index, visible, collapsed, small, browse, s.searchFilesOpen, debugVisible]);
   const treeSessions = React.useRef(new Map<string, DirectorySession>());
   const directorySession = (folder: string) => { let session = treeSessions.current.get(folder); if (!session) { session = createDirectorySession(); treeSessions.current.set(folder, session); } return session; };
   const treeViewport = useTreeViewport(visible && warm && !s.searchFilesOpen && !debugVisible && (small ? browse : !collapsed), `${active || ''}\0${filter}`);
@@ -748,6 +750,7 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
               </section>) : <DirectoryTree session={directorySession(project)} createEntry={(parent, kind) => startCreation(project, parent, kind)} bridge={s.hub} project={project} active={active} openFile={openDoc} revision={directoryRevision} expanded={open} toggle={toggle} loading={opening} hidden={hidden} compact={s.compactFolders} sticky={s.stickyFolders} chains={index.chains} decorations={decorations} reviewFile={reviewSaved} />
                 : index.files == null ? <div className="grid place-items-center p-6"><Spinner /></div>
                   : index.tree.map((node) => <TreeNode key={node.path} n={node} depth={0} open={open} active={active} onOpen={openDoc} toggle={toggle} loading={opening} decorations={decorations} />)}
+              {filter.trim() && fileSearchStatus && (fileSearchStatus.error || fileSearchStatus.result?.limited || fileSearchStatus.result?.unreadable) ? <p role="status" className="px-3 py-1 text-xs text-muted-foreground">{fileSearchStatus.error || `${fileSearchStatus.result!.files.length} of ${fileSearchStatus.result!.total} files${fileSearchStatus.result!.unreadable ? ` · ${fileSearchStatus.result!.unreadable} folders unavailable` : ''}. Refine the filename to narrow results.`}</p> : null}
               {filter.trim() && index.files && !index.shown.length && <p className="p-3 text-xs text-muted-foreground">No matching files.</p>}
               </>}
             </div>

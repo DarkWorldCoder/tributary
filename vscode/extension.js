@@ -143,6 +143,9 @@ const API = {
   readAttachment: (id) => hub.readAttachment(id),
   readFile: (p, rel) => hub.readFile(p, rel),
   createEntry: (p, rel, kind) => hub.createEntry(p, rel, kind),
+  fileSearchAcquire: (p) => hub.fileSearchAcquire(p),
+  fileSearch: (owner, query, options) => hub.fileSearch(owner, query, options),
+  fileSearchClose: (owner) => hub.fileSearchClose(owner),
   findFiles: (p, query, options) => hub.findFiles(p, query, options),
   searchProject: (p, query, options) => hub.searchProject(p, query, options),
   readDirectory: (p, rel, options) => hub.readDirectory(p, rel, options),
@@ -225,7 +228,7 @@ function html(webview, extUri) {
 }
 
 function attach(webview, extUri) {
-  const fileWatches = new Set(); const languageOwners = new Set(); const eslintOwners = new Set(); let disposed = false;
+  const fileWatches = new Set(); const languageOwners = new Set(); const eslintOwners = new Set(); const searchOwners = new Set(); let disposed = false;
   webview.options = { enableScripts: true, localResourceRoots: [vscode.Uri.joinPath(extUri, 'dist')] };
   webview.html = html(webview, extUri);
   webviews.add(webview);
@@ -234,7 +237,10 @@ function attach(webview, extUri) {
     try {
       await hub.withHistoryOperation(async () => {
       if (!Object.prototype.hasOwnProperty.call(API, msg.method)) throw new Error(`Unknown method ${msg.method}`);
+      if (['fileSearch', 'fileSearchClose'].includes(msg.method) && !searchOwners.has(msg.args?.[0])) throw new Error('Unknown file search owner');
       const result = await API[msg.method](...(msg.args || []));
+      if (msg.method === 'fileSearchAcquire') { if (disposed) hub.fileSearchClose(result); else searchOwners.add(result); }
+      if (msg.method === 'fileSearchClose') searchOwners.delete(msg.args?.[0]);
       if (msg.method === 'watchFiles') { if (disposed) hub.unwatchFiles(result); else fileWatches.add(result); }
       if (msg.method === 'unwatchFiles') fileWatches.delete(msg.args?.[0]);
       if (msg.method === 'languageAcquire') { if (disposed) hub._languageTools?.release(result); else languageOwners.add(result); }
@@ -245,7 +251,7 @@ function attach(webview, extUri) {
       });
     } catch (e) { webview.postMessage({ type: 'result', id: msg.id, error: e.message || String(e) }); }
   });
-  return () => { disposed = true; webviews.delete(webview); for (const id of fileWatches) hub.unwatchFiles(id); fileWatches.clear(); for (const owner of languageOwners) hub._languageTools?.release(owner); languageOwners.clear(); for (const owner of eslintOwners) hub._eslintTools?.releaseOwner(owner); eslintOwners.clear(); };
+  return () => { disposed = true; webviews.delete(webview); for (const owner of searchOwners) hub.fileSearchClose(owner); searchOwners.clear(); for (const id of fileWatches) hub.unwatchFiles(id); fileWatches.clear(); for (const owner of languageOwners) hub._languageTools?.release(owner); languageOwners.clear(); for (const owner of eslintOwners) hub._eslintTools?.releaseOwner(owner); eslintOwners.clear(); };
 }
 
 class ChatView {
@@ -322,10 +328,10 @@ async function activate(context) {
       const pick = await vscode.window.showQuickPick(g.changed.map((c) => ({ label: c.path, description: c.code })), { placeHolder: 'Pick a changed file to see its diff' });
       if (pick) await API.openDiff(p, path.relative(p, path.join(g.root, pick.label)));
     }),
-    { dispose: () => { hub._qaResults?.stopAll(); hub._languageTools?.stopAll(); hub._eslintTools?.stopAll(); hub.debugger?.stopAll(); hub.projectChecks.stopAll(); for (const id of hub.running.keys()) hub.stop(id); } },
+    { dispose: () => { hub._qaResults?.stopAll(); hub._languageTools?.stopAll(); hub._eslintTools?.stopAll(); hub._fileSearches?.stopAll(); hub.debugger?.stopAll(); hub.projectChecks.stopAll(); for (const id of hub.running.keys()) hub.stop(id); } },
   );
 }
 
-function deactivate() { disposeMessages?.(); if (hub) { hub._qaResults?.stopAll(); hub._languageTools?.stopAll(); hub._eslintTools?.stopAll(); hub.debugger?.stopAll(); hub.projectChecks.stopAll(); for (const id of hub.running.keys()) hub.stop(id); hub.collaborationClient?.disconnect(); hub.fileWatches.close(); try { hub.store.close(); } catch {} } }
+function deactivate() { disposeMessages?.(); if (hub) { hub._qaResults?.stopAll(); hub._languageTools?.stopAll(); hub._eslintTools?.stopAll(); hub._fileSearches?.stopAll(); hub.debugger?.stopAll(); hub.projectChecks.stopAll(); for (const id of hub.running.keys()) hub.stop(id); hub.collaborationClient?.disconnect(); hub.fileWatches.close(); try { hub.store.close(); } catch {} } }
 
 module.exports = { activate, deactivate };

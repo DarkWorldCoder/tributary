@@ -1,0 +1,1076 @@
+{
+  "date": "2026-11-06T11:24:37.853Z",
+  "baseline": "7b3c95fa2bda87d33bc592ada0e3ed190b175f1f",
+  "scope": "Three alternating fresh Node subprocess pairs per fixture, real local files, no concurrent builds/tests. The 16,000-entry fixture compares equal complete results/traversal. The 60,000-entry fixture fixes missing results: old scans only 20,000 entries and is not equal work. Timer sampling can miss short heap peaks; peak RSS includes runtime and native memory. No whole-app, cross-editor or model-memory claim. Initial/final diagnostic GC only, outside timed searches.",
+  "sourceHashes": {
+    "core/filename-search.js": "ceaf11c92d08609c17487129b837baadb33793bf71f13a3697163814ab6ec589",
+    "core/files.js": "81d84d501e8aea84a64cbb152cc44a4c3f13b927fd2c189ee5167e2ad108c497",
+    "core/hub.js": "0ddefcb477b34851e309028094e71ef0fbadccb19bd5b0bdc88476a27de800ce",
+    "desktop/main.js": "7065ec294c3fc484846ca544c1836393a1ca7a92ff103b67bb7b63911cf3787e",
+    "vscode/extension.js": "3d59619faf8c1da3685092d61705d825660761a0f0fd0380995fcee660c1a86c",
+    "ui/src/lib/file-search.mjs": "fd1984a7696ff3d80be530eed316cf91c2d61d376c33f8237e22b112fc8d9090",
+    "ui/src/components/quick-open.tsx": "45f1cae81c05e1e93fde392c45f1b1acca57463de73955a43fd4e918f3bd65da",
+    "ui/src/components/workspace-files.tsx": "3a4387d0aa6d8cd2a1d4453a5ef3ffccd64c70855a9f4cf8d0a2224e221463b0",
+    "scripts/performance/filename-search.cjs": "0a56205ab79411d1550fb45e7681e1683d6deb36b6d027f0046900119c8a9eeb"
+  },
+  "medians": {
+    "equalCoverage": {
+      "baseline": {
+        "wallMs": 22.574365999999998,
+        "observedHeapUsedHighWaterBytes": 7406128,
+        "processPeakRssBytes": 64790528
+      },
+      "stream": {
+        "wallMs": 70.993394,
+        "observedHeapUsedHighWaterBytes": 6718440,
+        "processPeakRssBytes": 64901120
+      }
+    },
+    "largeCoverage": {
+      "baseline": {
+        "wallMs": 79.22622999999999,
+        "observedHeapUsedHighWaterBytes": 12131632,
+        "processPeakRssBytes": 75755520
+      },
+      "stream": {
+        "wallMs": 107.080949,
+        "observedHeapUsedHighWaterBytes": 6966968,
+        "processPeakRssBytes": 65347584
+      }
+    }
+  },
+  "runs": [
+    {
+      "name": "equalCoverage",
+      "count": 16000,
+      "query": "source-015999.ts",
+      "repeat": 0,
+      "equalTraversal": true,
+      "baseline": {
+        "mode": "baseline",
+        "wallMs": 21.676316999999997,
+        "cpuMicroseconds": {
+          "user": 21368,
+          "system": 8778
+        },
+        "before": {
+          "rss": 53567488,
+          "heapTotal": 7905280,
+          "heapUsed": 5040104,
+          "external": 2428302,
+          "arrayBuffers": 143611
+        },
+        "after": {
+          "rss": 64667648,
+          "heapTotal": 11313152,
+          "heapUsed": 7411424,
+          "external": 2482086,
+          "arrayBuffers": 143627
+        },
+        "observedHeapUsedHighWaterBytes": 7411424,
+        "processPeakRssBytes": 64667648,
+        "timer": {
+          "intervalMs": 2,
+          "ticks": 5,
+          "longestObservedGapMs": 11.178402000000006
+        },
+        "files": [
+          "source-015999.ts"
+        ],
+        "versions": {
+          "node": "24.21.0",
+          "acorn": "8.18.0",
+          "ada": "4.0.0",
+          "amaro": "1.1.11",
+          "ares": "1.34.8",
+          "brotli": "1.2.0",
+          "cldr": "48.0",
+          "icu": "78.3",
+          "llhttp": "9.4.3",
+          "merve": "1.2.2",
+          "modules": "137",
+          "napi": "10",
+          "nbytes": "0.1.4",
+          "ncrypto": "0.0.1",
+          "nghttp2": "1.70.0",
+          "nghttp3": "",
+          "ngtcp2": "",
+          "openssl": "3.5.8",
+          "simdjson": "4.6.7",
+          "simdutf": "6.4.0",
+          "sqlite": "3.53.4",
+          "tz": "2026c",
+          "undici": "7.29.1",
+          "unicode": "17.0",
+          "uv": "1.52.1",
+          "uvwasi": "0.0.23",
+          "v8": "13.6.233.17-node.53",
+          "zlib": "1.3.2.1-motley-8002e91",
+          "zstd": "1.5.7"
+        },
+        "retained": {
+          "rss": 64929792,
+          "heapTotal": 15769600,
+          "heapUsed": 6686976,
+          "external": 2482086,
+          "arrayBuffers": 143627
+        },
+        "sourceHashes": {
+          "core/filename-search.js": "ceaf11c92d08609c17487129b837baadb33793bf71f13a3697163814ab6ec589",
+          "core/files.js": "81d84d501e8aea84a64cbb152cc44a4c3f13b927fd2c189ee5167e2ad108c497",
+          "core/hub.js": "0ddefcb477b34851e309028094e71ef0fbadccb19bd5b0bdc88476a27de800ce",
+          "desktop/main.js": "7065ec294c3fc484846ca544c1836393a1ca7a92ff103b67bb7b63911cf3787e",
+          "vscode/extension.js": "3d59619faf8c1da3685092d61705d825660761a0f0fd0380995fcee660c1a86c",
+          "ui/src/lib/file-search.mjs": "fd1984a7696ff3d80be530eed316cf91c2d61d376c33f8237e22b112fc8d9090",
+          "ui/src/components/quick-open.tsx": "45f1cae81c05e1e93fde392c45f1b1acca57463de73955a43fd4e918f3bd65da",
+          "ui/src/components/workspace-files.tsx": "3a4387d0aa6d8cd2a1d4453a5ef3ffccd64c70855a9f4cf8d0a2224e221463b0",
+          "scripts/performance/filename-search.cjs": "0a56205ab79411d1550fb45e7681e1683d6deb36b6d027f0046900119c8a9eeb"
+        }
+      },
+      "stream": {
+        "mode": "stream",
+        "wallMs": 71.01495999999999,
+        "cpuMicroseconds": {
+          "user": 95556,
+          "system": 13514
+        },
+        "before": {
+          "rss": 53313536,
+          "heapTotal": 8167424,
+          "heapUsed": 5360600,
+          "external": 2428302,
+          "arrayBuffers": 143611
+        },
+        "after": {
+          "rss": 64901120,
+          "heapTotal": 8953856,
+          "heapUsed": 5596680,
+          "external": 2482086,
+          "arrayBuffers": 143627
+        },
+        "observedHeapUsedHighWaterBytes": 6776952,
+        "processPeakRssBytes": 64901120,
+        "timer": {
+          "intervalMs": 2,
+          "ticks": 30,
+          "longestObservedGapMs": 5.192757999999998
+        },
+        "files": [
+          "source-015999.ts"
+        ],
+        "total": 1,
+        "visited": 16000,
+        "limited": false,
+        "unreadable": 0,
+        "versions": {
+          "node": "24.21.0",
+          "acorn": "8.18.0",
+          "ada": "4.0.0",
+          "amaro": "1.1.11",
+          "ares": "1.34.8",
+          "brotli": "1.2.0",
+          "cldr": "48.0",
+          "icu": "78.3",
+          "llhttp": "9.4.3",
+          "merve": "1.2.2",
+          "modules": "137",
+          "napi": "10",
+          "nbytes": "0.1.4",
+          "ncrypto": "0.0.1",
+          "nghttp2": "1.70.0",
+          "nghttp3": "",
+          "ngtcp2": "",
+          "openssl": "3.5.8",
+          "simdjson": "4.6.7",
+          "simdutf": "6.4.0",
+          "sqlite": "3.53.4",
+          "tz": "2026c",
+          "undici": "7.29.1",
+          "unicode": "17.0",
+          "uv": "1.52.1",
+          "uvwasi": "0.0.23",
+          "v8": "13.6.233.17-node.53",
+          "zlib": "1.3.2.1-motley-8002e91",
+          "zstd": "1.5.7"
+        },
+        "retained": {
+          "rss": 65069056,
+          "heapTotal": 8167424,
+          "heapUsed": 5282728,
+          "external": 2482086,
+          "arrayBuffers": 143627
+        },
+        "sourceHashes": {
+          "core/filename-search.js": "ceaf11c92d08609c17487129b837baadb33793bf71f13a3697163814ab6ec589",
+          "core/files.js": "81d84d501e8aea84a64cbb152cc44a4c3f13b927fd2c189ee5167e2ad108c497",
+          "core/hub.js": "0ddefcb477b34851e309028094e71ef0fbadccb19bd5b0bdc88476a27de800ce",
+          "desktop/main.js": "7065ec294c3fc484846ca544c1836393a1ca7a92ff103b67bb7b63911cf3787e",
+          "vscode/extension.js": "3d59619faf8c1da3685092d61705d825660761a0f0fd0380995fcee660c1a86c",
+          "ui/src/lib/file-search.mjs": "fd1984a7696ff3d80be530eed316cf91c2d61d376c33f8237e22b112fc8d9090",
+          "ui/src/components/quick-open.tsx": "45f1cae81c05e1e93fde392c45f1b1acca57463de73955a43fd4e918f3bd65da",
+          "ui/src/components/workspace-files.tsx": "3a4387d0aa6d8cd2a1d4453a5ef3ffccd64c70855a9f4cf8d0a2224e221463b0",
+          "scripts/performance/filename-search.cjs": "0a56205ab79411d1550fb45e7681e1683d6deb36b6d027f0046900119c8a9eeb"
+        }
+      }
+    },
+    {
+      "name": "equalCoverage",
+      "count": 16000,
+      "query": "source-015999.ts",
+      "repeat": 1,
+      "equalTraversal": true,
+      "stream": {
+        "mode": "stream",
+        "wallMs": 70.993394,
+        "cpuMicroseconds": {
+          "user": 98559,
+          "system": 19923
+        },
+        "before": {
+          "rss": 53526528,
+          "heapTotal": 8167424,
+          "heapUsed": 5026408,
+          "external": 2428302,
+          "arrayBuffers": 143611
+        },
+        "after": {
+          "rss": 65236992,
+          "heapTotal": 8953856,
+          "heapUsed": 5594312,
+          "external": 2482086,
+          "arrayBuffers": 143627
+        },
+        "observedHeapUsedHighWaterBytes": 6718440,
+        "processPeakRssBytes": 65236992,
+        "timer": {
+          "intervalMs": 2,
+          "ticks": 30,
+          "longestObservedGapMs": 4.661330000000007
+        },
+        "files": [
+          "source-015999.ts"
+        ],
+        "total": 1,
+        "visited": 16000,
+        "limited": false,
+        "unreadable": 0,
+        "versions": {
+          "node": "24.21.0",
+          "acorn": "8.18.0",
+          "ada": "4.0.0",
+          "amaro": "1.1.11",
+          "ares": "1.34.8",
+          "brotli": "1.2.0",
+          "cldr": "48.0",
+          "icu": "78.3",
+          "llhttp": "9.4.3",
+          "merve": "1.2.2",
+          "modules": "137",
+          "napi": "10",
+          "nbytes": "0.1.4",
+          "ncrypto": "0.0.1",
+          "nghttp2": "1.70.0",
+          "nghttp3": "",
+          "ngtcp2": "",
+          "openssl": "3.5.8",
+          "simdjson": "4.6.7",
+          "simdutf": "6.4.0",
+          "sqlite": "3.53.4",
+          "tz": "2026c",
+          "undici": "7.29.1",
+          "unicode": "17.0",
+          "uv": "1.52.1",
+          "uvwasi": "0.0.23",
+          "v8": "13.6.233.17-node.53",
+          "zlib": "1.3.2.1-motley-8002e91",
+          "zstd": "1.5.7"
+        },
+        "retained": {
+          "rss": 65236992,
+          "heapTotal": 8167424,
+          "heapUsed": 5280288,
+          "external": 2482086,
+          "arrayBuffers": 143627
+        },
+        "sourceHashes": {
+          "core/filename-search.js": "ceaf11c92d08609c17487129b837baadb33793bf71f13a3697163814ab6ec589",
+          "core/files.js": "81d84d501e8aea84a64cbb152cc44a4c3f13b927fd2c189ee5167e2ad108c497",
+          "core/hub.js": "0ddefcb477b34851e309028094e71ef0fbadccb19bd5b0bdc88476a27de800ce",
+          "desktop/main.js": "7065ec294c3fc484846ca544c1836393a1ca7a92ff103b67bb7b63911cf3787e",
+          "vscode/extension.js": "3d59619faf8c1da3685092d61705d825660761a0f0fd0380995fcee660c1a86c",
+          "ui/src/lib/file-search.mjs": "fd1984a7696ff3d80be530eed316cf91c2d61d376c33f8237e22b112fc8d9090",
+          "ui/src/components/quick-open.tsx": "45f1cae81c05e1e93fde392c45f1b1acca57463de73955a43fd4e918f3bd65da",
+          "ui/src/components/workspace-files.tsx": "3a4387d0aa6d8cd2a1d4453a5ef3ffccd64c70855a9f4cf8d0a2224e221463b0",
+          "scripts/performance/filename-search.cjs": "0a56205ab79411d1550fb45e7681e1683d6deb36b6d027f0046900119c8a9eeb"
+        }
+      },
+      "baseline": {
+        "mode": "baseline",
+        "wallMs": 29.31337599999999,
+        "cpuMicroseconds": {
+          "user": 23377,
+          "system": 15219
+        },
+        "before": {
+          "rss": 53473280,
+          "heapTotal": 8167424,
+          "heapUsed": 5040176,
+          "external": 2428302,
+          "arrayBuffers": 143611
+        },
+        "after": {
+          "rss": 64790528,
+          "heapTotal": 11575296,
+          "heapUsed": 7382312,
+          "external": 2482086,
+          "arrayBuffers": 143627
+        },
+        "observedHeapUsedHighWaterBytes": 7382312,
+        "processPeakRssBytes": 64790528,
+        "timer": {
+          "intervalMs": 2,
+          "ticks": 6,
+          "longestObservedGapMs": 15.422061
+        },
+        "files": [
+          "source-015999.ts"
+        ],
+        "versions": {
+          "node": "24.21.0",
+          "acorn": "8.18.0",
+          "ada": "4.0.0",
+          "amaro": "1.1.11",
+          "ares": "1.34.8",
+          "brotli": "1.2.0",
+          "cldr": "48.0",
+          "icu": "78.3",
+          "llhttp": "9.4.3",
+          "merve": "1.2.2",
+          "modules": "137",
+          "napi": "10",
+          "nbytes": "0.1.4",
+          "ncrypto": "0.0.1",
+          "nghttp2": "1.70.0",
+          "nghttp3": "",
+          "ngtcp2": "",
+          "openssl": "3.5.8",
+          "simdjson": "4.6.7",
+          "simdutf": "6.4.0",
+          "sqlite": "3.53.4",
+          "tz": "2026c",
+          "undici": "7.29.1",
+          "unicode": "17.0",
+          "uv": "1.52.1",
+          "uvwasi": "0.0.23",
+          "v8": "13.6.233.17-node.53",
+          "zlib": "1.3.2.1-motley-8002e91",
+          "zstd": "1.5.7"
+        },
+        "retained": {
+          "rss": 65052672,
+          "heapTotal": 16031744,
+          "heapUsed": 6690216,
+          "external": 2482086,
+          "arrayBuffers": 143627
+        },
+        "sourceHashes": {
+          "core/filename-search.js": "ceaf11c92d08609c17487129b837baadb33793bf71f13a3697163814ab6ec589",
+          "core/files.js": "81d84d501e8aea84a64cbb152cc44a4c3f13b927fd2c189ee5167e2ad108c497",
+          "core/hub.js": "0ddefcb477b34851e309028094e71ef0fbadccb19bd5b0bdc88476a27de800ce",
+          "desktop/main.js": "7065ec294c3fc484846ca544c1836393a1ca7a92ff103b67bb7b63911cf3787e",
+          "vscode/extension.js": "3d59619faf8c1da3685092d61705d825660761a0f0fd0380995fcee660c1a86c",
+          "ui/src/lib/file-search.mjs": "fd1984a7696ff3d80be530eed316cf91c2d61d376c33f8237e22b112fc8d9090",
+          "ui/src/components/quick-open.tsx": "45f1cae81c05e1e93fde392c45f1b1acca57463de73955a43fd4e918f3bd65da",
+          "ui/src/components/workspace-files.tsx": "3a4387d0aa6d8cd2a1d4453a5ef3ffccd64c70855a9f4cf8d0a2224e221463b0",
+          "scripts/performance/filename-search.cjs": "0a56205ab79411d1550fb45e7681e1683d6deb36b6d027f0046900119c8a9eeb"
+        }
+      }
+    },
+    {
+      "name": "equalCoverage",
+      "count": 16000,
+      "query": "source-015999.ts",
+      "repeat": 2,
+      "equalTraversal": true,
+      "baseline": {
+        "mode": "baseline",
+        "wallMs": 22.574365999999998,
+        "cpuMicroseconds": {
+          "user": 22702,
+          "system": 8295
+        },
+        "before": {
+          "rss": 53157888,
+          "heapTotal": 7905280,
+          "heapUsed": 5040104,
+          "external": 2428302,
+          "arrayBuffers": 143611
+        },
+        "after": {
+          "rss": 64872448,
+          "heapTotal": 11575296,
+          "heapUsed": 7406128,
+          "external": 2482086,
+          "arrayBuffers": 143627
+        },
+        "observedHeapUsedHighWaterBytes": 7406128,
+        "processPeakRssBytes": 64872448,
+        "timer": {
+          "intervalMs": 2,
+          "ticks": 5,
+          "longestObservedGapMs": 10.841499999999996
+        },
+        "files": [
+          "source-015999.ts"
+        ],
+        "versions": {
+          "node": "24.21.0",
+          "acorn": "8.18.0",
+          "ada": "4.0.0",
+          "amaro": "1.1.11",
+          "ares": "1.34.8",
+          "brotli": "1.2.0",
+          "cldr": "48.0",
+          "icu": "78.3",
+          "llhttp": "9.4.3",
+          "merve": "1.2.2",
+          "modules": "137",
+          "napi": "10",
+          "nbytes": "0.1.4",
+          "ncrypto": "0.0.1",
+          "nghttp2": "1.70.0",
+          "nghttp3": "",
+          "ngtcp2": "",
+          "openssl": "3.5.8",
+          "simdjson": "4.6.7",
+          "simdutf": "6.4.0",
+          "sqlite": "3.53.4",
+          "tz": "2026c",
+          "undici": "7.29.1",
+          "unicode": "17.0",
+          "uv": "1.52.1",
+          "uvwasi": "0.0.23",
+          "v8": "13.6.233.17-node.53",
+          "zlib": "1.3.2.1-motley-8002e91",
+          "zstd": "1.5.7"
+        },
+        "retained": {
+          "rss": 65134592,
+          "heapTotal": 16031744,
+          "heapUsed": 6687848,
+          "external": 2482086,
+          "arrayBuffers": 143627
+        },
+        "sourceHashes": {
+          "core/filename-search.js": "ceaf11c92d08609c17487129b837baadb33793bf71f13a3697163814ab6ec589",
+          "core/files.js": "81d84d501e8aea84a64cbb152cc44a4c3f13b927fd2c189ee5167e2ad108c497",
+          "core/hub.js": "0ddefcb477b34851e309028094e71ef0fbadccb19bd5b0bdc88476a27de800ce",
+          "desktop/main.js": "7065ec294c3fc484846ca544c1836393a1ca7a92ff103b67bb7b63911cf3787e",
+          "vscode/extension.js": "3d59619faf8c1da3685092d61705d825660761a0f0fd0380995fcee660c1a86c",
+          "ui/src/lib/file-search.mjs": "fd1984a7696ff3d80be530eed316cf91c2d61d376c33f8237e22b112fc8d9090",
+          "ui/src/components/quick-open.tsx": "45f1cae81c05e1e93fde392c45f1b1acca57463de73955a43fd4e918f3bd65da",
+          "ui/src/components/workspace-files.tsx": "3a4387d0aa6d8cd2a1d4453a5ef3ffccd64c70855a9f4cf8d0a2224e221463b0",
+          "scripts/performance/filename-search.cjs": "0a56205ab79411d1550fb45e7681e1683d6deb36b6d027f0046900119c8a9eeb"
+        }
+      },
+      "stream": {
+        "mode": "stream",
+        "wallMs": 54.578924,
+        "cpuMicroseconds": {
+          "user": 76830,
+          "system": 13974
+        },
+        "before": {
+          "rss": 53248000,
+          "heapTotal": 7643136,
+          "heapUsed": 5310080,
+          "external": 2428302,
+          "arrayBuffers": 143611
+        },
+        "after": {
+          "rss": 63352832,
+          "heapTotal": 8167424,
+          "heapUsed": 5444016,
+          "external": 2482086,
+          "arrayBuffers": 143627
+        },
+        "observedHeapUsedHighWaterBytes": 6601488,
+        "processPeakRssBytes": 63565824,
+        "timer": {
+          "intervalMs": 2,
+          "ticks": 24,
+          "longestObservedGapMs": 4.971704000000003
+        },
+        "files": [
+          "source-015999.ts"
+        ],
+        "total": 1,
+        "visited": 16000,
+        "limited": false,
+        "unreadable": 0,
+        "versions": {
+          "node": "24.21.0",
+          "acorn": "8.18.0",
+          "ada": "4.0.0",
+          "amaro": "1.1.11",
+          "ares": "1.34.8",
+          "brotli": "1.2.0",
+          "cldr": "48.0",
+          "icu": "78.3",
+          "llhttp": "9.4.3",
+          "merve": "1.2.2",
+          "modules": "137",
+          "napi": "10",
+          "nbytes": "0.1.4",
+          "ncrypto": "0.0.1",
+          "nghttp2": "1.70.0",
+          "nghttp3": "",
+          "ngtcp2": "",
+          "openssl": "3.5.8",
+          "simdjson": "4.6.7",
+          "simdutf": "6.4.0",
+          "sqlite": "3.53.4",
+          "tz": "2026c",
+          "undici": "7.29.1",
+          "unicode": "17.0",
+          "uv": "1.52.1",
+          "uvwasi": "0.0.23",
+          "v8": "13.6.233.17-node.53",
+          "zlib": "1.3.2.1-motley-8002e91",
+          "zstd": "1.5.7"
+        },
+        "retained": {
+          "rss": 63483904,
+          "heapTotal": 8429568,
+          "heapUsed": 5279656,
+          "external": 2482086,
+          "arrayBuffers": 143627
+        },
+        "sourceHashes": {
+          "core/filename-search.js": "ceaf11c92d08609c17487129b837baadb33793bf71f13a3697163814ab6ec589",
+          "core/files.js": "81d84d501e8aea84a64cbb152cc44a4c3f13b927fd2c189ee5167e2ad108c497",
+          "core/hub.js": "0ddefcb477b34851e309028094e71ef0fbadccb19bd5b0bdc88476a27de800ce",
+          "desktop/main.js": "7065ec294c3fc484846ca544c1836393a1ca7a92ff103b67bb7b63911cf3787e",
+          "vscode/extension.js": "3d59619faf8c1da3685092d61705d825660761a0f0fd0380995fcee660c1a86c",
+          "ui/src/lib/file-search.mjs": "fd1984a7696ff3d80be530eed316cf91c2d61d376c33f8237e22b112fc8d9090",
+          "ui/src/components/quick-open.tsx": "45f1cae81c05e1e93fde392c45f1b1acca57463de73955a43fd4e918f3bd65da",
+          "ui/src/components/workspace-files.tsx": "3a4387d0aa6d8cd2a1d4453a5ef3ffccd64c70855a9f4cf8d0a2224e221463b0",
+          "scripts/performance/filename-search.cjs": "0a56205ab79411d1550fb45e7681e1683d6deb36b6d027f0046900119c8a9eeb"
+        }
+      }
+    },
+    {
+      "name": "largeCoverage",
+      "count": 60000,
+      "query": "source-040000.ts",
+      "repeat": 0,
+      "equalTraversal": false,
+      "baseline": {
+        "mode": "baseline",
+        "wallMs": 66.532369,
+        "cpuMicroseconds": {
+          "user": 52298,
+          "system": 26409
+        },
+        "before": {
+          "rss": 53411840,
+          "heapTotal": 7905280,
+          "heapUsed": 5040104,
+          "external": 2428302,
+          "arrayBuffers": 143611
+        },
+        "after": {
+          "rss": 75771904,
+          "heapTotal": 18046976,
+          "heapUsed": 12098968,
+          "external": 2482086,
+          "arrayBuffers": 143627
+        },
+        "observedHeapUsedHighWaterBytes": 12098968,
+        "processPeakRssBytes": 75771904,
+        "timer": {
+          "intervalMs": 2,
+          "ticks": 19,
+          "longestObservedGapMs": 25.269927999999993
+        },
+        "files": [],
+        "versions": {
+          "node": "24.21.0",
+          "acorn": "8.18.0",
+          "ada": "4.0.0",
+          "amaro": "1.1.11",
+          "ares": "1.34.8",
+          "brotli": "1.2.0",
+          "cldr": "48.0",
+          "icu": "78.3",
+          "llhttp": "9.4.3",
+          "merve": "1.2.2",
+          "modules": "137",
+          "napi": "10",
+          "nbytes": "0.1.4",
+          "ncrypto": "0.0.1",
+          "nghttp2": "1.70.0",
+          "nghttp3": "",
+          "ngtcp2": "",
+          "openssl": "3.5.8",
+          "simdjson": "4.6.7",
+          "simdutf": "6.4.0",
+          "sqlite": "3.53.4",
+          "tz": "2026c",
+          "undici": "7.29.1",
+          "unicode": "17.0",
+          "uv": "1.52.1",
+          "uvwasi": "0.0.23",
+          "v8": "13.6.233.17-node.53",
+          "zlib": "1.3.2.1-motley-8002e91",
+          "zstd": "1.5.7"
+        },
+        "retained": {
+          "rss": 75288576,
+          "heapTotal": 28532736,
+          "heapUsed": 10943632,
+          "external": 2482086,
+          "arrayBuffers": 143627
+        },
+        "sourceHashes": {
+          "core/filename-search.js": "ceaf11c92d08609c17487129b837baadb33793bf71f13a3697163814ab6ec589",
+          "core/files.js": "81d84d501e8aea84a64cbb152cc44a4c3f13b927fd2c189ee5167e2ad108c497",
+          "core/hub.js": "0ddefcb477b34851e309028094e71ef0fbadccb19bd5b0bdc88476a27de800ce",
+          "desktop/main.js": "7065ec294c3fc484846ca544c1836393a1ca7a92ff103b67bb7b63911cf3787e",
+          "vscode/extension.js": "3d59619faf8c1da3685092d61705d825660761a0f0fd0380995fcee660c1a86c",
+          "ui/src/lib/file-search.mjs": "fd1984a7696ff3d80be530eed316cf91c2d61d376c33f8237e22b112fc8d9090",
+          "ui/src/components/quick-open.tsx": "45f1cae81c05e1e93fde392c45f1b1acca57463de73955a43fd4e918f3bd65da",
+          "ui/src/components/workspace-files.tsx": "3a4387d0aa6d8cd2a1d4453a5ef3ffccd64c70855a9f4cf8d0a2224e221463b0",
+          "scripts/performance/filename-search.cjs": "0a56205ab79411d1550fb45e7681e1683d6deb36b6d027f0046900119c8a9eeb"
+        }
+      },
+      "stream": {
+        "mode": "stream",
+        "wallMs": 113.498408,
+        "cpuMicroseconds": {
+          "user": 125061,
+          "system": 34215
+        },
+        "before": {
+          "rss": 53407744,
+          "heapTotal": 7905280,
+          "heapUsed": 5336800,
+          "external": 2428302,
+          "arrayBuffers": 143611
+        },
+        "after": {
+          "rss": 65277952,
+          "heapTotal": 10526720,
+          "heapUsed": 5597848,
+          "external": 2482086,
+          "arrayBuffers": 143627
+        },
+        "observedHeapUsedHighWaterBytes": 6966968,
+        "processPeakRssBytes": 65277952,
+        "timer": {
+          "intervalMs": 2,
+          "ticks": 54,
+          "longestObservedGapMs": 4.334579000000005
+        },
+        "files": [
+          "source-040000.ts"
+        ],
+        "total": 1,
+        "visited": 60000,
+        "limited": false,
+        "unreadable": 0,
+        "versions": {
+          "node": "24.21.0",
+          "acorn": "8.18.0",
+          "ada": "4.0.0",
+          "amaro": "1.1.11",
+          "ares": "1.34.8",
+          "brotli": "1.2.0",
+          "cldr": "48.0",
+          "icu": "78.3",
+          "llhttp": "9.4.3",
+          "merve": "1.2.2",
+          "modules": "137",
+          "napi": "10",
+          "nbytes": "0.1.4",
+          "ncrypto": "0.0.1",
+          "nghttp2": "1.70.0",
+          "nghttp3": "",
+          "ngtcp2": "",
+          "openssl": "3.5.8",
+          "simdjson": "4.6.7",
+          "simdutf": "6.4.0",
+          "sqlite": "3.53.4",
+          "tz": "2026c",
+          "undici": "7.29.1",
+          "unicode": "17.0",
+          "uv": "1.52.1",
+          "uvwasi": "0.0.23",
+          "v8": "13.6.233.17-node.53",
+          "zlib": "1.3.2.1-motley-8002e91",
+          "zstd": "1.5.7"
+        },
+        "retained": {
+          "rss": 65277952,
+          "heapTotal": 10526720,
+          "heapUsed": 5267072,
+          "external": 2482086,
+          "arrayBuffers": 143627
+        },
+        "sourceHashes": {
+          "core/filename-search.js": "ceaf11c92d08609c17487129b837baadb33793bf71f13a3697163814ab6ec589",
+          "core/files.js": "81d84d501e8aea84a64cbb152cc44a4c3f13b927fd2c189ee5167e2ad108c497",
+          "core/hub.js": "0ddefcb477b34851e309028094e71ef0fbadccb19bd5b0bdc88476a27de800ce",
+          "desktop/main.js": "7065ec294c3fc484846ca544c1836393a1ca7a92ff103b67bb7b63911cf3787e",
+          "vscode/extension.js": "3d59619faf8c1da3685092d61705d825660761a0f0fd0380995fcee660c1a86c",
+          "ui/src/lib/file-search.mjs": "fd1984a7696ff3d80be530eed316cf91c2d61d376c33f8237e22b112fc8d9090",
+          "ui/src/components/quick-open.tsx": "45f1cae81c05e1e93fde392c45f1b1acca57463de73955a43fd4e918f3bd65da",
+          "ui/src/components/workspace-files.tsx": "3a4387d0aa6d8cd2a1d4453a5ef3ffccd64c70855a9f4cf8d0a2224e221463b0",
+          "scripts/performance/filename-search.cjs": "0a56205ab79411d1550fb45e7681e1683d6deb36b6d027f0046900119c8a9eeb"
+        }
+      }
+    },
+    {
+      "name": "largeCoverage",
+      "count": 60000,
+      "query": "source-040000.ts",
+      "repeat": 1,
+      "equalTraversal": false,
+      "stream": {
+        "mode": "stream",
+        "wallMs": 107.080949,
+        "cpuMicroseconds": {
+          "user": 121182,
+          "system": 33676
+        },
+        "before": {
+          "rss": 53407744,
+          "heapTotal": 8167424,
+          "heapUsed": 5099392,
+          "external": 2428302,
+          "arrayBuffers": 143611
+        },
+        "after": {
+          "rss": 66306048,
+          "heapTotal": 11051008,
+          "heapUsed": 5468424,
+          "external": 2482086,
+          "arrayBuffers": 143627
+        },
+        "observedHeapUsedHighWaterBytes": 7030448,
+        "processPeakRssBytes": 66306048,
+        "timer": {
+          "intervalMs": 2,
+          "ticks": 51,
+          "longestObservedGapMs": 5.445481999999998
+        },
+        "files": [
+          "source-040000.ts"
+        ],
+        "total": 1,
+        "visited": 60000,
+        "limited": false,
+        "unreadable": 0,
+        "versions": {
+          "node": "24.21.0",
+          "acorn": "8.18.0",
+          "ada": "4.0.0",
+          "amaro": "1.1.11",
+          "ares": "1.34.8",
+          "brotli": "1.2.0",
+          "cldr": "48.0",
+          "icu": "78.3",
+          "llhttp": "9.4.3",
+          "merve": "1.2.2",
+          "modules": "137",
+          "napi": "10",
+          "nbytes": "0.1.4",
+          "ncrypto": "0.0.1",
+          "nghttp2": "1.70.0",
+          "nghttp3": "",
+          "ngtcp2": "",
+          "openssl": "3.5.8",
+          "simdjson": "4.6.7",
+          "simdutf": "6.4.0",
+          "sqlite": "3.53.4",
+          "tz": "2026c",
+          "undici": "7.29.1",
+          "unicode": "17.0",
+          "uv": "1.52.1",
+          "uvwasi": "0.0.23",
+          "v8": "13.6.233.17-node.53",
+          "zlib": "1.3.2.1-motley-8002e91",
+          "zstd": "1.5.7"
+        },
+        "retained": {
+          "rss": 66306048,
+          "heapTotal": 10526720,
+          "heapUsed": 5266104,
+          "external": 2482086,
+          "arrayBuffers": 143627
+        },
+        "sourceHashes": {
+          "core/filename-search.js": "ceaf11c92d08609c17487129b837baadb33793bf71f13a3697163814ab6ec589",
+          "core/files.js": "81d84d501e8aea84a64cbb152cc44a4c3f13b927fd2c189ee5167e2ad108c497",
+          "core/hub.js": "0ddefcb477b34851e309028094e71ef0fbadccb19bd5b0bdc88476a27de800ce",
+          "desktop/main.js": "7065ec294c3fc484846ca544c1836393a1ca7a92ff103b67bb7b63911cf3787e",
+          "vscode/extension.js": "3d59619faf8c1da3685092d61705d825660761a0f0fd0380995fcee660c1a86c",
+          "ui/src/lib/file-search.mjs": "fd1984a7696ff3d80be530eed316cf91c2d61d376c33f8237e22b112fc8d9090",
+          "ui/src/components/quick-open.tsx": "45f1cae81c05e1e93fde392c45f1b1acca57463de73955a43fd4e918f3bd65da",
+          "ui/src/components/workspace-files.tsx": "3a4387d0aa6d8cd2a1d4453a5ef3ffccd64c70855a9f4cf8d0a2224e221463b0",
+          "scripts/performance/filename-search.cjs": "0a56205ab79411d1550fb45e7681e1683d6deb36b6d027f0046900119c8a9eeb"
+        }
+      },
+      "baseline": {
+        "mode": "baseline",
+        "wallMs": 79.22622999999999,
+        "cpuMicroseconds": {
+          "user": 60156,
+          "system": 32908
+        },
+        "before": {
+          "rss": 53481472,
+          "heapTotal": 7905280,
+          "heapUsed": 5040176,
+          "external": 2428302,
+          "arrayBuffers": 143611
+        },
+        "after": {
+          "rss": 75755520,
+          "heapTotal": 17784832,
+          "heapUsed": 12131632,
+          "external": 2482086,
+          "arrayBuffers": 143627
+        },
+        "observedHeapUsedHighWaterBytes": 12131632,
+        "processPeakRssBytes": 75755520,
+        "timer": {
+          "intervalMs": 2,
+          "ticks": 23,
+          "longestObservedGapMs": 32.42214999999999
+        },
+        "files": [],
+        "versions": {
+          "node": "24.21.0",
+          "acorn": "8.18.0",
+          "ada": "4.0.0",
+          "amaro": "1.1.11",
+          "ares": "1.34.8",
+          "brotli": "1.2.0",
+          "cldr": "48.0",
+          "icu": "78.3",
+          "llhttp": "9.4.3",
+          "merve": "1.2.2",
+          "modules": "137",
+          "napi": "10",
+          "nbytes": "0.1.4",
+          "ncrypto": "0.0.1",
+          "nghttp2": "1.70.0",
+          "nghttp3": "",
+          "ngtcp2": "",
+          "openssl": "3.5.8",
+          "simdjson": "4.6.7",
+          "simdutf": "6.4.0",
+          "sqlite": "3.53.4",
+          "tz": "2026c",
+          "undici": "7.29.1",
+          "unicode": "17.0",
+          "uv": "1.52.1",
+          "uvwasi": "0.0.23",
+          "v8": "13.6.233.17-node.53",
+          "zlib": "1.3.2.1-motley-8002e91",
+          "zstd": "1.5.7"
+        },
+        "retained": {
+          "rss": 75177984,
+          "heapTotal": 28532736,
+          "heapUsed": 10938888,
+          "external": 2482086,
+          "arrayBuffers": 143627
+        },
+        "sourceHashes": {
+          "core/filename-search.js": "ceaf11c92d08609c17487129b837baadb33793bf71f13a3697163814ab6ec589",
+          "core/files.js": "81d84d501e8aea84a64cbb152cc44a4c3f13b927fd2c189ee5167e2ad108c497",
+          "core/hub.js": "0ddefcb477b34851e309028094e71ef0fbadccb19bd5b0bdc88476a27de800ce",
+          "desktop/main.js": "7065ec294c3fc484846ca544c1836393a1ca7a92ff103b67bb7b63911cf3787e",
+          "vscode/extension.js": "3d59619faf8c1da3685092d61705d825660761a0f0fd0380995fcee660c1a86c",
+          "ui/src/lib/file-search.mjs": "fd1984a7696ff3d80be530eed316cf91c2d61d376c33f8237e22b112fc8d9090",
+          "ui/src/components/quick-open.tsx": "45f1cae81c05e1e93fde392c45f1b1acca57463de73955a43fd4e918f3bd65da",
+          "ui/src/components/workspace-files.tsx": "3a4387d0aa6d8cd2a1d4453a5ef3ffccd64c70855a9f4cf8d0a2224e221463b0",
+          "scripts/performance/filename-search.cjs": "0a56205ab79411d1550fb45e7681e1683d6deb36b6d027f0046900119c8a9eeb"
+        }
+      }
+    },
+    {
+      "name": "largeCoverage",
+      "count": 60000,
+      "query": "source-040000.ts",
+      "repeat": 2,
+      "equalTraversal": false,
+      "baseline": {
+        "mode": "baseline",
+        "wallMs": 82.618729,
+        "cpuMicroseconds": {
+          "user": 63475,
+          "system": 33428
+        },
+        "before": {
+          "rss": 53362688,
+          "heapTotal": 7905280,
+          "heapUsed": 5040104,
+          "external": 2428302,
+          "arrayBuffers": 143611
+        },
+        "after": {
+          "rss": 74887168,
+          "heapTotal": 17784832,
+          "heapUsed": 12135080,
+          "external": 2482086,
+          "arrayBuffers": 143627
+        },
+        "observedHeapUsedHighWaterBytes": 12135080,
+        "processPeakRssBytes": 74887168,
+        "timer": {
+          "intervalMs": 2,
+          "ticks": 24,
+          "longestObservedGapMs": 29.259625999999997
+        },
+        "files": [],
+        "versions": {
+          "node": "24.21.0",
+          "acorn": "8.18.0",
+          "ada": "4.0.0",
+          "amaro": "1.1.11",
+          "ares": "1.34.8",
+          "brotli": "1.2.0",
+          "cldr": "48.0",
+          "icu": "78.3",
+          "llhttp": "9.4.3",
+          "merve": "1.2.2",
+          "modules": "137",
+          "napi": "10",
+          "nbytes": "0.1.4",
+          "ncrypto": "0.0.1",
+          "nghttp2": "1.70.0",
+          "nghttp3": "",
+          "ngtcp2": "",
+          "openssl": "3.5.8",
+          "simdjson": "4.6.7",
+          "simdutf": "6.4.0",
+          "sqlite": "3.53.4",
+          "tz": "2026c",
+          "undici": "7.29.1",
+          "unicode": "17.0",
+          "uv": "1.52.1",
+          "uvwasi": "0.0.23",
+          "v8": "13.6.233.17-node.53",
+          "zlib": "1.3.2.1-motley-8002e91",
+          "zstd": "1.5.7"
+        },
+        "retained": {
+          "rss": 74985472,
+          "heapTotal": 28532736,
+          "heapUsed": 10939344,
+          "external": 2482086,
+          "arrayBuffers": 143627
+        },
+        "sourceHashes": {
+          "core/filename-search.js": "ceaf11c92d08609c17487129b837baadb33793bf71f13a3697163814ab6ec589",
+          "core/files.js": "81d84d501e8aea84a64cbb152cc44a4c3f13b927fd2c189ee5167e2ad108c497",
+          "core/hub.js": "0ddefcb477b34851e309028094e71ef0fbadccb19bd5b0bdc88476a27de800ce",
+          "desktop/main.js": "7065ec294c3fc484846ca544c1836393a1ca7a92ff103b67bb7b63911cf3787e",
+          "vscode/extension.js": "3d59619faf8c1da3685092d61705d825660761a0f0fd0380995fcee660c1a86c",
+          "ui/src/lib/file-search.mjs": "fd1984a7696ff3d80be530eed316cf91c2d61d376c33f8237e22b112fc8d9090",
+          "ui/src/components/quick-open.tsx": "45f1cae81c05e1e93fde392c45f1b1acca57463de73955a43fd4e918f3bd65da",
+          "ui/src/components/workspace-files.tsx": "3a4387d0aa6d8cd2a1d4453a5ef3ffccd64c70855a9f4cf8d0a2224e221463b0",
+          "scripts/performance/filename-search.cjs": "0a56205ab79411d1550fb45e7681e1683d6deb36b6d027f0046900119c8a9eeb"
+        }
+      },
+      "stream": {
+        "mode": "stream",
+        "wallMs": 86.590784,
+        "cpuMicroseconds": {
+          "user": 90583,
+          "system": 33015
+        },
+        "before": {
+          "rss": 53288960,
+          "heapTotal": 8167424,
+          "heapUsed": 5311728,
+          "external": 2428302,
+          "arrayBuffers": 143611
+        },
+        "after": {
+          "rss": 65347584,
+          "heapTotal": 10526720,
+          "heapUsed": 6776056,
+          "external": 2482086,
+          "arrayBuffers": 143627
+        },
+        "observedHeapUsedHighWaterBytes": 6959408,
+        "processPeakRssBytes": 65347584,
+        "timer": {
+          "intervalMs": 2,
+          "ticks": 42,
+          "longestObservedGapMs": 3.3237649999999945
+        },
+        "files": [
+          "source-040000.ts"
+        ],
+        "total": 1,
+        "visited": 60000,
+        "limited": false,
+        "unreadable": 0,
+        "versions": {
+          "node": "24.21.0",
+          "acorn": "8.18.0",
+          "ada": "4.0.0",
+          "amaro": "1.1.11",
+          "ares": "1.34.8",
+          "brotli": "1.2.0",
+          "cldr": "48.0",
+          "icu": "78.3",
+          "llhttp": "9.4.3",
+          "merve": "1.2.2",
+          "modules": "137",
+          "napi": "10",
+          "nbytes": "0.1.4",
+          "ncrypto": "0.0.1",
+          "nghttp2": "1.70.0",
+          "nghttp3": "",
+          "ngtcp2": "",
+          "openssl": "3.5.8",
+          "simdjson": "4.6.7",
+          "simdutf": "6.4.0",
+          "sqlite": "3.53.4",
+          "tz": "2026c",
+          "undici": "7.29.1",
+          "unicode": "17.0",
+          "uv": "1.52.1",
+          "uvwasi": "0.0.23",
+          "v8": "13.6.233.17-node.53",
+          "zlib": "1.3.2.1-motley-8002e91",
+          "zstd": "1.5.7"
+        },
+        "retained": {
+          "rss": 65478656,
+          "heapTotal": 10264576,
+          "heapUsed": 5264848,
+          "external": 2482086,
+          "arrayBuffers": 143627
+        },
+        "sourceHashes": {
+          "core/filename-search.js": "ceaf11c92d08609c17487129b837baadb33793bf71f13a3697163814ab6ec589",
+          "core/files.js": "81d84d501e8aea84a64cbb152cc44a4c3f13b927fd2c189ee5167e2ad108c497",
+          "core/hub.js": "0ddefcb477b34851e309028094e71ef0fbadccb19bd5b0bdc88476a27de800ce",
+          "desktop/main.js": "7065ec294c3fc484846ca544c1836393a1ca7a92ff103b67bb7b63911cf3787e",
+          "vscode/extension.js": "3d59619faf8c1da3685092d61705d825660761a0f0fd0380995fcee660c1a86c",
+          "ui/src/lib/file-search.mjs": "fd1984a7696ff3d80be530eed316cf91c2d61d376c33f8237e22b112fc8d9090",
+          "ui/src/components/quick-open.tsx": "45f1cae81c05e1e93fde392c45f1b1acca57463de73955a43fd4e918f3bd65da",
+          "ui/src/components/workspace-files.tsx": "3a4387d0aa6d8cd2a1d4453a5ef3ffccd64c70855a9f4cf8d0a2224e221463b0",
+          "scripts/performance/filename-search.cjs": "0a56205ab79411d1550fb45e7681e1683d6deb36b6d027f0046900119c8a9eeb"
+        }
+      }
+    }
+  ]
+}

@@ -20,6 +20,7 @@ core.Hub=class extends Base{
  async init(){this.agents=[];this.scanningAgents=false;this.emit('state');return this;}
  async gitInfo(){return{branch:'fixture',changed:[],stat:''};}
  async listFiles(project){const call={phase,project,method:'listFiles',done:false};calls.push(call);const result=await super.listFiles(project);if(gate&&!gate.started&&project===gate.project){gate.started=true;await new Promise(resolve=>{gate.release=resolve;});}call.done=true;call.count=result.length;return result;}
+ async fileSearch(owner,query,options){calls.push({phase,project:this._fileSearches?.owners.get(owner)?.root,method:'findFiles',query});return super.fileSearch(owner,query,options);}
  async findFiles(...args){calls.push({phase,project:args[0],method:'findFiles',query:args[1]});return super.findFiles(...args);}
 };
 const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));const until=async(fn,label)=>{const end=Date.now()+30000;while(!await fn()){if(Date.now()>end)throw Error('Timed out: '+label);await delay(25);}};const arg=JSON.stringify;
