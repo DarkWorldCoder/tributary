@@ -41,7 +41,8 @@ export async function languageFor(path: string, text = ''): Promise<Extension | 
 const undoKey = typeof navigator !== 'undefined' && /Mac/.test(navigator.platform) ? '⌘⌥Z' : 'Ctrl+Alt+Z';
 
 export type { EditorTransfer };
-export type EditorHistory = { path: string; canUndo: boolean; canRedo: boolean; undo: () => void; redo: () => void; format: (automatic?: boolean) => Promise<string | null>; text: () => string | null; snapshot: () => EditorTransfer | null };
+export type EditorInspection = { path: string; revision: string; startLine: number; totalLines: number; content: string; truncated: boolean; line: number; column: number; canUndo: boolean; canRedo: boolean };
+export type EditorHistory = { path: string; canUndo: boolean; canRedo: boolean; undo: () => void; redo: () => void; format: (automatic?: boolean, valid?: () => boolean) => Promise<string | null>; text: () => string | null; snapshot: () => EditorTransfer | null; inspect: (start?: number, count?: number) => EditorInspection; agentEdit: (revision: string, oldText: string, newText: string) => void };
 
 /** A real code editor (CodeMirror 6): multi-cursor, search, folding, bracket matching, undo history. */
 export function CodeEditor({ project: documentProject, active = true, keepAlive = false, path, value, onChange, onSave, readOnly, line, column, wrap = false, onCursorChange, onToggleWrap, diagnostics = [], onDiagnostics, onNavigate, onHistoryChange, onChangeStats, followChanges = false, onReview, takeTransfer }: {
@@ -73,8 +74,8 @@ export function CodeEditor({ project: documentProject, active = true, keepAlive 
   const [formatting, setFormatting] = React.useState(false);
   const serverCompletion = React.useRef(new Compartment());
   const formatBusy = React.useRef(false);
-  const format = React.useRef<(automatic?: boolean) => Promise<string | null>>(async () => null);
-  format.current = async (automatic = false) => {
+  const format = React.useRef<(automatic?: boolean, valid?: () => boolean) => Promise<string | null>>(async () => null);
+  format.current = async (automatic = false, valid) => {
     const v = view.current; if (!v || readOnly || formatBusy.current || !(formatParser(path) || nativeFormatTool(path) || configuredLanguage(store.current.st?.settings.languageServers, path))) return null;
     const original = v.state.doc.toString(); formatBusy.current = true; setFormatting(true);
     try {
@@ -83,7 +84,7 @@ export function CodeEditor({ project: documentProject, active = true, keepAlive 
       // also offers whitespace edits that leave compact blocks on one line.
       const serverEdits = !formatParser(path) && configured && languageOwner ? await store.current.hub.call<LspEdit[] | null>('languageFormat', workspace, path, original, { tabSize: editorSpacing(path, original).tabSize, insertSpaces: !editorSpacing(path, original).useTabs }, languageOwner) : null;
       const text = serverEdits ? applyLspEdits(original, serverEdits) : formatParser(path) && store.current.hub.platform === 'mock' ? await formatInWorker(path, original) : await store.current.hub.call<string>('formatSource', workspace, path, original, automatic);
-      if (view.current !== v) return null;
+      if (view.current !== v || valid && !valid()) return null;
       if (v.state.doc.toString() !== original) { toast.message('Draft changed while formatting. Try again.'); return null; }
       const change = minimalChange(original, text);
       if (change) v.dispatch({ changes: change, annotations: [Transaction.userEvent.of('input.format'), isolateHistory.of('full')] });
@@ -121,13 +122,26 @@ export function CodeEditor({ project: documentProject, active = true, keepAlive 
   React.useEffect(() => {
     if (parked.current && (parked.current.path !== path || parked.current.workspace !== workspace)) parked.current = null;
     if (!needsView) return;
-    let historyKey = '';
+    let historyKey = ''; let revision = 0; const revisionOwner = crypto.randomUUID();
     const reportHistory = (v: EditorView) => {
       const canUndo = !v.state.readOnly && undoDepth(v.state) > 0;
       const canRedo = !v.state.readOnly && redoDepth(v.state) > 0;
       const key = `${canUndo}:${canRedo}`; if (key === historyKey) return; historyKey = key;
       const run = (command: typeof undoEdit) => { if (view.current === v && !v.state.readOnly) { command(v); v.focus(); } };
-      cb.current.onHistoryChange?.({ path, canUndo, canRedo, undo: () => run(undoEdit), redo: () => run(redoEdit), format: (automatic) => format.current(automatic), text: () => (view.current?.state ?? parked.current?.state)?.doc.toString() ?? null, snapshot: () => view.current === v ? captureEditorTransfer(v) : null });
+      cb.current.onHistoryChange?.({ path, canUndo, canRedo, undo: () => run(undoEdit), redo: () => run(redoEdit), format: (automatic, valid) => format.current(automatic, valid), text: () => (view.current?.state ?? parked.current?.state)?.doc.toString() ?? null,
+        inspect: (start = 1, count = 200) => {
+          if (view.current !== v) throw new Error('The editor is no longer active.');
+          const doc = v.state.doc, from = doc.line(Math.min(start, doc.lines)).from, to = doc.line(Math.min(start + count - 1, doc.lines)).to;
+          const head = v.state.selection.main.head, line = doc.lineAt(head);
+          return { path, revision: `${revisionOwner}:${revision}`, startLine: Math.min(start, doc.lines), totalLines: doc.lines, content: doc.sliceString(from, Math.min(to, from + 12000)), truncated: from > 0 || to < doc.length || to - from > 12000, line: line.number, column: head - line.from + 1, canUndo: undoDepth(v.state) > 0, canRedo: redoDepth(v.state) > 0 };
+        },
+        agentEdit: (expected, oldText, newText) => {
+          if (view.current !== v || v.state.readOnly || v.composing) throw new Error('The editor cannot be changed right now.');
+          if (expected !== `${revisionOwner}:${revision}`) throw new Error('The editor changed. Read its current revision before editing.');
+          const text = v.state.doc.toString(), from = text.indexOf(oldText);
+          if (!oldText || from < 0 || text.indexOf(oldText, from + oldText.length) !== -1) throw new Error('old_text must match exactly one occurrence in the editor.');
+          v.dispatch({ changes: { from, to: from + oldText.length, insert: newText }, annotations: [Transaction.userEvent.of('input.agent'), isolateHistory.of('full')] });
+        }, snapshot: () => view.current === v ? captureEditorTransfer(v) : null });
     };
     const memento = parked.current;
     let transferred = memento ? null : takeTransfer?.();
@@ -147,6 +161,7 @@ export function CodeEditor({ project: documentProject, active = true, keepAlive 
           wrapping.current.of(wrap ? EditorView.lineWrapping : []),
           EditorView.updateListener.of((u) => {
             if (latestScroll.current && u.docChanged) for (const transaction of u.transactions) latestScroll.current = latestScroll.current?.map(transaction.changes);
+            if (u.docChanged) ++revision;
             reportHistory(u.view);
             if (u.docChanged && u.transactions.some((transaction) => !transaction.annotation(Transaction.remote))) cb.current.onChange?.(u.state.doc.toString());
             if (u.selectionSet && u.transactions.some((transaction) => transaction.isUserEvent('select'))) cb.current.onNavigate?.();

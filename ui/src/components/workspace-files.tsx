@@ -1,3 +1,4 @@
+import type { EditorCommand } from '@/components/agent-workbench';
 import { editorGroups, selectGroupFile, focusEditorGroupAt, splitEditorGroup, moveGroupFile, closeGroupFiles, joinEditorGroup, restoreEditorGroups, type EditorGroup, type EditorGroups } from '@/lib/editor-groups.mjs';
 import { createDirectorySession, type DirectorySession } from '@/lib/directory-session.mjs';
 import { useTreeViewport } from '@/hooks/use-tree-viewport';
@@ -107,6 +108,11 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
   const selected = roots.includes(root) ? root : project;
   const choose = (next: string) => { setRoot(next); setKept((all) => all.includes(next) ? all : [...all, next]); };
   React.useEffect(() => { const target = s.fileToOpen?.project; if (target && roots.includes(target)) choose(target); }, [s.fileToOpen]);
+  React.useEffect(() => {
+    if (!visible || selected === project) return;
+    const selectAgentRoot = (event: Event) => { const request = (event as CustomEvent<EditorCommand>).detail; if (!request.claimed && request.project === project && request.valid()) choose(project); };
+    window.addEventListener('tributary:agent-editor', selectAgentRoot); return () => window.removeEventListener('tributary:agent-editor', selectAgentRoot);
+  }, [visible, selected, project]);
   return <div className="flex h-full min-h-0 flex-col">
     {removedFolder && <div role="status" aria-label="Folder removed" className="flex shrink-0 flex-wrap items-center gap-2 border-b bg-muted/30 px-3 py-2 text-xs"><span className="min-w-0 flex-1 truncate" title={removedFolder.folder}>{removedFolder.folder.split(/[\\/]/).at(-1)} removed. Files and drafts kept.</span><Button size="xs" variant="outline" disabled={undoingRemoval} onClick={async () => { setUndoingRemoval(true); try { await removedFolder.restore(); setRemovedFolder(null); } catch (e) { toast.error((e as Error).message); } finally { setUndoingRemoval(false); } }}>Undo</Button><Button size="icon-xs" variant="ghost" aria-label="Dismiss folder removal" disabled={undoingRemoval} onClick={() => setRemovedFolder(null)}><X /></Button></div>}
     {roots.length > 1 && <div className="flex min-h-8 shrink-0 items-center gap-2 border-b px-2 py-1"><label className="shrink-0 text-xs text-muted-foreground" htmlFor={folderSelectId}>Folder</label><NativeSelect id={folderSelectId} aria-label="Workspace folder" value={selected} className="min-w-0 flex-1" onChange={(event) => choose(event.target.value)}>{roots.map((folder) => <NativeSelectOption key={folder} value={folder}>{folder.split(/[\\/]/).filter(Boolean).at(-1)}{folder === project ? ' (main)' : ''}</NativeSelectOption>)}</NativeSelect><ProjectMenu projectPath={owner?.path || project}><Button size="xs" variant="ghost">Folders</Button></ProjectMenu></div>}
@@ -366,7 +372,7 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
   const doc = docs.find(item => item.rel === active) ?? null;
   const decorations = React.useMemo(() => explorerDecorations(project, repository.git, docs.filter((item) => item.dirty).map((item) => item.rel)), [project, repository.git, docs]);
   const pin = (rel: string) => setDocs((all) => all.map((doc) => doc.rel === rel ? { ...doc, pinned: true } : doc));
-  const saveDocument = async (doc: Doc | null, editorHistory: EditorHistory | null) => {
+  const saveDocument = async (doc: Doc | null, editorHistory: EditorHistory | null, strict = false, valid?: () => boolean) => {
     const canFormat = !!doc && !!(formatParser(doc.rel) || nativeFormatTool(doc.rel) || configuredLanguage(s.st?.settings.languageServers, doc.rel));
     if (!doc || doc.binary || doc.truncated || saveBusy.current) return;
     saveBusy.current = true; setSaving(true);
@@ -385,17 +391,19 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
         }
         if (available) {
           if (saveProject.current !== project || editor.text() !== doc.text) { toast.message('Draft changed. Save again.'); return; }
-          const formatted = await editor.format(true);
+          const formatted = await editor.format(true, valid);
           if (formatted === null) return;
           text = formatted;
         }
       }
+      if (valid && !valid()) return;
       if (saveProject.current !== project || editor && editor.text() !== text) { toast.message('Draft changed. Save again.'); return; }
       const result = await s.hub.call<{ mtime: number }>('writeFile', project, doc.rel, text, doc.mtime);
       if (saveProject.current !== project) return;
       setDocs((all) => all.map((item) => item.rel === doc.rel ? { ...item, mtime: result.mtime, dirty: item.text !== text, content: text, diskChanged: false, diskError: false } : item));
       s.refreshGit(project);
-    } catch (e) { toast.error((e as Error).message); }
+      return { saved: true, path: doc.rel, mtime: result.mtime };
+    } catch (e) { if (strict) throw e; toast.error((e as Error).message); }
     finally { saveBusy.current = false; setSaving(false); }
   };
   const reload = async (rel: string) => {
@@ -523,6 +531,45 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
     window.addEventListener('tributary:focus-editor-group', focus);
     return () => { window.removeEventListener('tributary:move-editor', move); window.removeEventListener('tributary:split-editor', split); window.removeEventListener('tributary:focus-editor-group', focus); };
   }, [visible]);
+  const agentCommand = React.useRef<(request: EditorCommand) => Promise<unknown>>(async () => null);
+  agentCommand.current = async (request) => {
+    const { action, input } = request;
+    const ensure = () => { if (!request.valid() || !visible || s.workdir !== project || saveBusy.current) throw new Error('The editor is unavailable or busy.'); };
+    ensure(); s.pauseFollowing();
+    if (action === 'status') return { project, focused: groupsRef.current.focused, groups: groupsRef.current.groups.map(group => ({ id: group.id, active: group.active, files: group.paths })), files: docsRef.current.map(doc => ({ path: doc.rel, dirty: doc.dirty, readOnly: !!(doc.binary || doc.truncated) })) };
+    if (action === 'open_file') {
+      await openDoc(input.path!, 'pinned', input.line, input.column, false, true);
+      const deadline = Date.now() + 5000;
+      for (;;) {
+        await new Promise<void>(resolve => requestAnimationFrame(() => resolve())); ensure();
+        const group = groupsRef.current.groups.find(group => group.id === groupsRef.current.focused);
+        const editor = group && historiesRef.current[group.id];
+        if (group?.active === input.path && editor && editor.path === input.path) return editor.inspect(input.start_line, input.count);
+        if (Date.now() > deadline) throw new Error('The file could not be opened as an editable code file.');
+      }
+    }
+    if (action === 'split_editor') { splitGroup(input.direction === 'down' ? 'vertical' : 'horizontal'); return { groups: groupsRef.current.groups.length, focused: groupsRef.current.focused }; }
+    if (action === 'focus_group') { focusAtIndex((input.group || 1) - 1); return { focused: groupsRef.current.focused }; }
+    const group = groupsRef.current.groups.find(group => group.id === groupsRef.current.focused);
+    const doc = docsRef.current.find(doc => doc.rel === group?.active);
+    const editor = group && historiesRef.current[group.id];
+    if (!doc || !editor || editor.path !== doc.rel || input.path && input.path !== doc.rel) throw new Error('Open the intended code file first.');
+    if (action === 'read_editor') return editor.inspect(input.start_line, input.count);
+    if (doc.binary || doc.truncated || editor.inspect().revision !== input.revision) throw new Error('The editor changed or is read-only. Read its current revision first.');
+    if (action === 'edit_editor') editor.agentEdit(input.revision!, input.old_text!, input.new_text!);
+    else if (action === 'undo') editor.undo();
+    else if (action === 'redo') editor.redo();
+    else if (action === 'format') { if (await editor.format(false, request.valid) === null) throw new Error('Formatting did not complete.'); }
+    else if (action === 'save_editor') { const result = await saveDocument(doc, editor, true, request.valid); if (!result) throw new Error('The file was not saved. Inspect the current draft and retry.'); return result; }
+    else throw new Error('Unsupported editor command.');
+    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+    ensure(); return editor.inspect(input.start_line, input.count);
+  };
+  React.useEffect(() => {
+    if (!visible || restoring) return;
+    const handle = (event: Event) => { const request = (event as CustomEvent<EditorCommand>).detail; if (request.claimed || request.project !== project) return; request.claimed = true; void agentCommand.current(request).then(request.resolve, request.reject); };
+    window.addEventListener('tributary:agent-editor', handle); return () => window.removeEventListener('tributary:agent-editor', handle);
+  }, [visible, restoring, project]);
   const allDocs = docs;
   const renderGroup = (group: EditorGroup) => {
     const docs = allDocs.filter(item => group.paths.includes(item.rel));
@@ -558,7 +605,7 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
               </ContextMenuContent></ContextMenu><Button variant="ghost" size="icon-sm" className={cn(iconButton, "absolute right-0 top-0")} aria-label={`Close ${item.rel}`} onClick={() => close([item.rel], false, group.id)}><X /></Button></div>)}
           </TabsList>
         </div>
-        <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" className={iconButton} aria-label="Split editor right" disabled={!doc} onClick={() => splitGroup('horizontal', group.id)}><Columns2 /></Button></TooltipTrigger><TooltipContent>Split editor right <ShortcutLabel action="split-editor" /></TooltipContent></Tooltip>
+        <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" className={iconButton} aria-label="Split editor right" disabled={!doc} onClick={(event) => splitGroup(event.altKey ? 'vertical' : 'horizontal', group.id)}><Columns2 /></Button></TooltipTrigger><TooltipContent>Split editor right <ShortcutLabel action="split-editor" /><span className="block text-xs text-muted-foreground">Alt-click to split down</span></TooltipContent></Tooltip>
         {groupLayout.groups.length > 1 && <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" className={iconButton} aria-label="Close editor group" onClick={() => joinGroup(group.id)}><X /></Button></TooltipTrigger><TooltipContent>Close group · keep open files</TooltipContent></Tooltip>}
         <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon-sm" className={iconButton} aria-label="Open files menu" aria-busy={busy}>{showOpening ? <Spinner /> : <Ellipsis />}</Button></DropdownMenuTrigger>
           <DropdownMenuContent onCloseAutoFocus={event => { if (pendingGroupFocus.current || groupsRef.current.focused !== group.id) { event.preventDefault(); focusEditorGroup(); } }} align="end" className="max-h-[70dvh] max-w-[calc(100vw-16px)] overflow-y-auto max-sm:[&_[role=menuitem]]:min-h-11">

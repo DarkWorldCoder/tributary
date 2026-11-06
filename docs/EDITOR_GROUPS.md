@@ -1,6 +1,6 @@
 # Split editors
 
-Use **Ctrl+\** on Windows/Linux or **⌘+\** on Mac to split the current file to the right. The binding is listed in Keyboard shortcuts and can be customized. Each editor tab bar has a split button. Its menu, the command palette and tab right-click menu offer **Split right** and **Split down**.
+Use **Ctrl+\** on Windows/Linux or **⌘+\** on Mac to split the current file to the right. The binding is listed in Keyboard shortcuts and can be customized. Each editor tab bar has a split button; Alt-click it to split down. Its menu, the command palette and tab right-click menu offer **Split right** and **Split down**.
 
 Each group has independent tabs and a selected file. Click inside a group before opening a file from Explorer or Quick Open. Ctrl+Tab switches files in that group and restores keyboard focus there. Drag the divider, or focus it and use the arrow keys, to resize groups. The active group's selected tab has an accent edge.
 
@@ -35,3 +35,5 @@ The extended Linux Electron fixture passes 15 grouped checks, including native t
 The move interaction was checked against `moveCopyEditorsToGroup` and destination `focus()` in the same Microsoft source blob cited above. This is an adaptation to Tributary's existing editor, not a complete VS Code workbench implementation.
 
 [Move checks](performance/editor-group-move-verification.json) · [Tab context menu](performance/editor-group-move-menu.png) · [Split panes](performance/editor-group-move-right.png).
+
+The toolbar split button also accepts Alt-click to split down. The current isolated desktop run passes 16 grouped checks, including this action and the existing move, undo, save, recovery and narrow-layout checks. [Current checks](performance/editor-split-controls-verification.json).

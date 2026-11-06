@@ -547,13 +547,17 @@ class Hub extends EventEmitter {
       this.emit('event', { threadId, messageId: msg.id, event: e, message: msg });
       this.store.save(false, t.id, msg.id); // do not serialize unchanged messages while tokens stream
     };
-    let delegation; let result;
+    let delegation; let workbench; let result;
     try {
+      if (!t.task && agent.protocol !== 'direct-chat' && proj.trusted !== false) {
+        try { workbench = await require('./workbench').openWorkbench(this, t, msg, { mode, signal: ac.signal }); }
+        catch { msg.notices.push('Editor controls unavailable for this turn.'); }
+      }
       if (mode !== 'read' && !team && !t.task && !t.delegation && proj.trusted !== false && git && this.store.data.settings.agentDelegation !== false) {
         try { delegation = await require('./delegation').openDelegation(this, t, msg, { mode, signal: ac.signal }); }
         catch { msg.notices.push('Background worker commands unavailable for this turn.'); }
       }
-      const r = result = await runTurn({ agent, cwd: dir, prompt: delegation && agent.protocol !== 'local-agent' ? `${delegation.prompt}\n\n${p.prompt}` : p.prompt, env: { ...shared.env, ...mcpEnv, ...this.workspaceEnv(t), ...delegation?.env }, images, mode, research: !!researchOnly, resumeId: p.resumeId, gateway, model, fallbackPrompt: p.resumeId && (agent.protocol === 'acp' || agent.controlProtocol === 'gemini-acp') ? plan({ thread: { ...prior, agentSessions: {} }, agentId, text: request, names: this.names(), git }).prompt : undefined, trusted: proj.trusted !== false, extraDirs: proj.folders || [], onEvent, signal: ac.signal, delegate: delegation?.call, continuation });
+      const r = result = await runTurn({ agent, cwd: dir, prompt: agent.protocol !== 'local-agent' ? [workbench?.prompt, delegation?.prompt, p.prompt].filter(Boolean).join('\n\n') : p.prompt, env: { ...shared.env, ...mcpEnv, ...this.workspaceEnv(t), ...delegation?.env, ...workbench?.env }, images, mode, research: !!researchOnly, resumeId: p.resumeId, gateway, model, fallbackPrompt: p.resumeId && (agent.protocol === 'acp' || agent.controlProtocol === 'gemini-acp') ? plan({ thread: { ...prior, agentSessions: {} }, agentId, text: request, names: this.names(), git }).prompt : undefined, trusted: proj.trusted !== false, extraDirs: proj.folders || [], onEvent, signal: ac.signal, delegate: delegation?.call, workbench: workbench?.call, continuation });
       if (r.sessionId) t.agentSessions = { ...t.agentSessions, [sessKey]: r.sessionId };
       msg.ok = r.ok;
     } catch (e) {
@@ -569,7 +573,7 @@ class Hub extends EventEmitter {
           else msg.networkInterrupted = false;
         }
       } else if (agent.protocol === 'local-agent') recovery.remove(this.dataDir, threadId);
-      delegation?.close();
+      delegation?.close(); workbench?.close();
       // An agent that ended its turn (or crashed) while asking no longer needs an answer.
       for (const [id, p] of this.pendingPermissions) if (p.messageId === msg.id) p.settle('cancelled', null);
       // Gemini can save MCP secrets over their placeholders (core/mcp.js restoreGeminiPlaceholders); before the end checkpoint.

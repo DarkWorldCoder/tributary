@@ -1,0 +1,57 @@
+{
+  "passed": true,
+  "date": "2026-11-06T06:06:37.422Z",
+  "checks": [
+    "Ctrl+backslash creates independent groups without replacing the existing editor",
+    "same-file edits and undo synchronize; Ctrl+S saves the focused group",
+    "Ctrl+Tab switches files inside the focused group and returns keyboard focus there",
+    "Quick Open and toolbar save target their group; other file remains unchanged",
+    "keyboard-accessible divider resizes editor groups",
+    "split down creates rows; closing a group keeps its unsaved document",
+    "restart restores editor groups, selected files and unsaved text",
+    "closing the last dirty view asks before discarding",
+    "narrow layout fits; joining releases the extra editor without losing text",
+    "native right-click tab menu splits the selected file and focuses its new group",
+    "numbered shortcuts focus visual groups, create the next empty group, preserve it on restart and route Quick Open there",
+    "command palette group navigation restores keyboard focus to the chosen editor",
+    "native tab submenu moves an unsaved file into an empty group, preserves draft text and undo/redo, and saves the correct file",
+    "palette moves to an existing group without duplicate tabs; restart restores moved membership and the empty source group",
+    "editor toolbar submenu offers the same keyboard-accessible move action",
+    "Alt-click on the split toolbar button opens the same file below and focuses it"
+  ],
+  "boxes": [
+    {
+      "x": 225,
+      "y": 32,
+      "width": 1215,
+      "height": 305.34375
+    },
+    {
+      "x": 225,
+      "y": 338.34375,
+      "width": 1215,
+      "height": 305.328125
+    },
+    {
+      "x": 225,
+      "y": 644.671875,
+      "width": 1215,
+      "height": 305.328125
+    }
+  ],
+  "sourceHashes": {
+    "ui/src/components/code-editor.tsx": "97c64c9e10a7e126db3b91bf35d37b6180cd552d5beda701904883b4a0b94aa7",
+    "ui/src/components/deferred-code-editor.tsx": "5f1c68dca7ef127def7fffa2e0a1867fb797f7ded5526d95153df3d17502e9a1",
+    "ui/src/lib/editor-memento.mjs": "ded82b2dc1b084cdaeeb8d98e2a69c4447717c45a5ef0028c756201c7d5f8119",
+    "ui/src/components/workspace-files.tsx": "fe66aa7e98e286dcfa985bb07e77c6322fb61de512b0ce65b5a34316afff5401",
+    "ui/src/components/file-switcher.tsx": "ca398def534cc3ef152bf774a01d88e9835817f0a12ad4a8723549d4ee360023",
+    "ui/src/lib/editor-groups.mjs": "f25e5d27e1e18b97045c2226bad0af12756e6a212445cd0313dafafb8510ff5c",
+    "ui/src/components/keyboard-shortcuts.tsx": "efc40e1b159e25e62887a2297914edf6212aff49654d0b66b74c7b495fc2f6e2",
+    "core/shortcuts.mjs": "5b55fc0b3db1c518ecefcadefd9f3dd4393fd2d876e7b9b6246f79b4348c5bc0",
+    "ui/src/components/command-palette.tsx": "1524f2d633f3d24f3086fb7fd3d96fbde8618490914711394fe60da516ad5d9d",
+    "ui/src/components/desktop-titlebar.tsx": "b1a1a471ee2a4453ff826c20cdd5ffc24587aa640e5ac2f8f733f047bf9e19bc",
+    "ui/src/index.css": "3ac0df7ca29be99252e396b357029c00561e0f2d6bc0d2cdba69e83e24a39f43",
+    "test/e2e/editor-split.cjs": "1b2d007be0e3a341806ec186df787796e5ac81a7efba7fa3e67c04b3dc3776f0"
+  },
+  "scope": "Linux Electron source build, real CodeMirror instances and temporary files/drafts. Agent discovery disabled. No native Windows/macOS or installer verification."
+}

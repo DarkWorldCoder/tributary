@@ -9,6 +9,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { AppSidebar } from '@/components/app-sidebar';
 import { DeveloperEntry, DeveloperRail } from '@/components/developer-rail';
 import { KeyboardShortcuts } from '@/components/keyboard-shortcuts';
+import { AgentWorkbench } from '@/components/agent-workbench';
 import { CommandPalette } from '@/components/command-palette';
 import { ProjectSearchLauncher } from '@/components/project-search';
 import { QuickOpen } from '@/components/quick-open';
@@ -120,6 +121,7 @@ function WorkbenchApp() {
       <AppUpdateNotice />
       <DeferredSurface active={s.teamOpen} name="Agent teams" close={() => s.setTeamOpen(false)}><TeamDialog /></DeferredSurface>
       <DeferredSurface active={s.roomOpen} name="Project room" close={() => s.setRoomOpen(false)}><CollaborationDialog /></DeferredSurface>
+      <AgentWorkbench />
       <CommandPalette />
       <ProjectSearchLauncher />
       <QuickOpen />

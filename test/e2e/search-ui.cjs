@@ -42,6 +42,7 @@ const checks = [], check = name => checks.push(name); let started = false;
 const deadline = setTimeout(() => { console.error('Search UI deadline'); app.exit(1); }, 120000);
 app.on('browser-window-created', (_event, win) => {
   win.setSize(1280, 850); const web = win.webContents, run = code => web.executeJavaScript(code);
+  web.on('console-message', (_event, details) => { if (details.level === 'error') console.error('Renderer:', details.message); });
   const key = async (keyCode, modifiers = []) => {
     web.sendInputEvent({ type: 'keyDown', keyCode, modifiers });
     if (keyCode === 'Enter') web.sendInputEvent({ type: 'char', keyCode: '\r', modifiers });
@@ -61,6 +62,10 @@ app.on('browser-window-created', (_event, win) => {
     const loaded = new Promise(resolve => web.once('did-finish-load', resolve)); web.reload(); await loaded;
     await until(() => run(`!!document.querySelector('.cm-content')`), 'editor');
     await run(`document.querySelector('[aria-label="Projects and chats"][aria-expanded="true"]')?.click();true`);
+    await click('.titlebar-command-center');
+    await until(() => run(`!!document.querySelector('.file-picker input')`), 'title bar Quick Open');
+    assert.equal(await run(`document.querySelector('.titlebar-command-center [data-slot=\"kbd\"]:last-child')?.textContent`), 'P');
+    await key('Escape'); check('title bar command center opens Quick Open and displays its shortcut');
     await key('f', ['control', 'shift']);
     await until(() => run(`document.activeElement?.getAttribute('aria-label') === 'Search project text'`), 'Search shortcut');
     await query('greeting'); await status('4 results in 2 files'); check('Ctrl+Shift+F and search on type over real files');
@@ -197,7 +202,7 @@ app.on('browser-window-created', (_event, win) => {
     assert.equal(await run(`document.documentElement.style.getPropertyValue('--finder-background')`), '');
     assert.equal(await run(`document.documentElement.style.getPropertyValue('--search-input-background')`), '');
     check('declarative theme colors reach palette, keyboard badges, Search and editor Find; removing the theme restores defaults');
-    const sources = ['ui/src/components/project-search.tsx', 'ui/src/lib/editor-search.ts', 'ui/src/components/command-palette.tsx', 'ui/src/components/quick-open.tsx', 'ui/src/components/search-label.tsx', 'ui/src/lib/search-label.mjs', 'ui/src/lib/quick-open-query.mjs', 'ui/src/lib/extension-theme-variables.mjs', 'ui/src/index.css', 'test/e2e/search-ui.cjs'];
+    const sources = ['ui/src/components/desktop-titlebar.tsx', 'ui/src/components/project-search.tsx', 'ui/src/lib/editor-search.ts', 'ui/src/components/command-palette.tsx', 'ui/src/components/quick-open.tsx', 'ui/src/components/search-label.tsx', 'ui/src/lib/search-label.mjs', 'ui/src/lib/quick-open-query.mjs', 'ui/src/lib/extension-theme-variables.mjs', 'ui/src/index.css', 'test/e2e/search-ui.cjs'];
     const sourceHashes = Object.fromEntries(sources.map(file => [file, crypto.createHash('sha256').update(fs.readFileSync(path.join(repo, file))).digest('hex')]));
     fs.writeFileSync(output, JSON.stringify({ date: new Date().toISOString(), passed: true, checks, layouts, maxConcurrentSearches: maxRunning, requests: calls, sourceHashes, scope: 'Linux Electron source build; isolated real files and actual search worker. Agent discovery disabled; two search replies deliberately held to exercise races. Native minimum width reduced only in this fixture for 390/320 pixel renderer checks. No live provider or installer claim.' }, null, 2) + '\n');
     console.log(JSON.stringify({ passed: true, checks })); clearTimeout(deadline); app.quit();

@@ -33,7 +33,7 @@ function send(name, data) { if (win && !win.isDestroyed()) win.webContents.send(
 let disposeMessages;
 function wireEvents() {
   disposeMessages = require('../core/message-delivery').bindMessageDelivery(hub, (name, data) => messageTransport?.deliver(name, data) ?? false, 80, { maxInFlight: MAX_REPLY_PACKETS });
-  for (const n of ['state', 'threads', 'running', 'notification', 'collaboration', 'language-diagnostics', 'files-changed', 'debugger']) hub.on(n, (d) => send(n, d));
+  for (const n of ['state', 'threads', 'running', 'notification', 'collaboration', 'language-diagnostics', 'files-changed', 'debugger', 'workbench']) hub.on(n, (d) => send(n, d));
   hub.on('activity', (d) => send('activity', d)); // the live view
   // System notification when something finishes while the window is in the background.
   hub.on('notification', (n) => {
@@ -61,6 +61,7 @@ let editors = [];
 const knownProject = (p) => { if (!hub.isWorkspace(p)) throw new Error('Unknown project'); return p; };
 
 const API = {
+  workbenchReply: (id, result, error) => require('../core/workbench').replyWorkbench(hub, id, result, error),
   updateState: () => updates.state(),
   checkForUpdates: () => updates.check(),
   downloadUpdate: () => updates.download(),

@@ -4,8 +4,8 @@ Implemented against the existing cmdk/Radix controls, using the [VS Code interfa
 
 | Entry point | Behavior |
 | --- | --- |
-| Ctrl/Cmd + Shift + P, F1, title-bar search button | Top command palette with fuzzy search, shortcuts, categorized names and six recently used commands |
-| Ctrl/Cmd + P | Top Quick Open dialog searches filenames in the current working folder, including hidden files |
+| Ctrl/Cmd + Shift + P, F1 | Top command palette with fuzzy search, shortcuts, categorized names and six recently used commands |
+| Ctrl/Cmd + P, title-bar search button (with a project open) | Top Quick Open dialog searches filenames in the current working folder, including hidden files |
 | Ctrl/Cmd + Shift + F | Search sidebar with grouped, highlighted results and file filters |
 | Ctrl/Cmd + F, Edit → Find in file | Search at the top of the focused code editor |
 | Ctrl + H / Cmd + Option + F, Edit → Replace in file | Focus replacement text in the code editor |
@@ -133,3 +133,9 @@ Command groups now label their first rendered result after filtering, rather tha
 Validation: focused label/location, shortcut and navigation test files, TypeScript, the production UI build and VS Code bundle build pass. The isolated Linux Electron regression passes 14 grouped checks with real temporary files/search workers, exact caret positioning, delayed replies, IME input, Find/Replace and undo, installed-theme color application/removal, and 320–1280 px layouts. Screenshots were inspected. An initial screenshot exposed crowded group labels at 320 px; the final check verifies they are hidden. No live provider, full VS Code runtime or installer was exercised. Existing local-engine work remains outside this change.
 
 [Verification](performance/search-locations-verification.json) · [Quick Open location](performance/search-location.png) · [Filtered command](performance/search-filtered-command.png) · [320 px picker](performance/search-locations-narrow.png).
+
+## Desktop controls refinement
+
+The title-bar command center opens Quick Open for the current project and shows Ctrl/Cmd+P. Ctrl/Cmd+Shift+P and F1 continue to open the command palette. With no project, the title-bar entry falls back to commands. Picker sizing retains VS Code's controller rule of 62% of the viewport capped at 600 px, with the existing narrow/touch layout. This was checked against `quickInputController.ts` blob `bafd7f1a050998b63eba02bf9b3a746f68057bee` and `quickInput.css` blob `4dcc37b522e3da3ace08111d46e64d2c3e2121ac` from the Microsoft source links above.
+
+The updated isolated desktop fixture passes 15 grouped checks, including the title-bar entry, shortcuts, search races, Find/Replace with undo, theme colors and 320–1280 px layouts. [Current checks](performance/editor-search-controls-verification.json).

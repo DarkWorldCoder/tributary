@@ -94,6 +94,7 @@ export interface Thread { id: string; project: string; title: string; messages: 
 export interface GitInfo { root: string; branch: string; changed: { code: string; path: string; from?: string; added?: number; removed?: number; binary?: boolean }[]; stat?: string }
 
 export interface HubEvents {
+  workbench: import('./components/agent-workbench').WorkbenchRequest;
   'app-update': import('./lib/update-types').AppUpdateState;
   'show-updates': undefined;
   'preview-server': { project: string; status: 'idle' | 'starting' | 'running' | 'stopping' | 'stopped' | 'failed'; command: string; url: string; output: string; error: string; code: number | null };

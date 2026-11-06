@@ -178,6 +178,13 @@ app.on('browser-window-created', (_event, win) => {
     await run(`[...document.querySelectorAll('[role="menuitem"]')].find(e=>e.textContent==='Group 4').focus();true`); await key('Enter');
     await until(()=>run(`!!document.activeElement?.closest('${group(4)} .cm-editor') && !document.querySelector('${group(3)} [data-file-path="src/helper.ts"]')`),'group menu moved file');
     checks.push('editor toolbar submenu offers the same keyboard-accessible move action');
+    await run(`document.querySelector('${group(4)} [aria-label="Split editor right"]').dispatchEvent(new MouseEvent('click',{bubbles:true,altKey:true}));true`);
+    await until(()=>run(`document.querySelectorAll('[data-editor-group]').length===5 && !!document.querySelector('${group(5)} .cm-content')`),'Alt-click downward split');
+    const altBoxes = await run(`[...document.querySelectorAll('[data-editor-group]')].map(e=>{const r=e.getBoundingClientRect();return {x:r.x,y:r.y};})`);
+    assert.ok(altBoxes[4].y > altBoxes[3].y);
+    await until(()=>run(`!!document.activeElement?.closest('${group(5)} .cm-editor')`),'Alt-click focuses downward split');
+    checks.push('Alt-click on the split toolbar button opens the same file below and focuses it');
+    await shot('.alt-down');
     const sources = ['ui/src/components/code-editor.tsx','ui/src/components/deferred-code-editor.tsx','ui/src/lib/editor-memento.mjs','ui/src/components/workspace-files.tsx','ui/src/components/file-switcher.tsx','ui/src/lib/editor-groups.mjs','ui/src/components/keyboard-shortcuts.tsx','core/shortcuts.mjs','ui/src/components/command-palette.tsx','ui/src/components/desktop-titlebar.tsx','ui/src/index.css','test/e2e/editor-split.cjs'];
     const hashes = Object.fromEntries(sources.map(file => [file, crypto.createHash('sha256').update(fs.readFileSync(path.join(repo, file))).digest('hex')]));
     fs.writeFileSync(output, JSON.stringify({passed:true,date:new Date().toISOString(),checks,boxes,sourceHashes:hashes,scope:'Linux Electron source build, real CodeMirror instances and temporary files/drafts. Agent discovery disabled. No native Windows/macOS or installer verification.'},null,2)+'\n');
