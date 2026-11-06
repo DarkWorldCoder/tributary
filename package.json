@@ -1,7 +1,7 @@
 {
   "name": "tributary",
   "productName": "Tributary",
-  "version": "0.1.4",
+  "version": "0.1.10",
   "description": "Every coding agent, one stream of work. Run Claude Code, Codex, Gemini, Antigravity and other local agents from one place.",
   "main": "desktop/main.js",
   "bin": {
