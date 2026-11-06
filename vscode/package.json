@@ -2,39 +2,98 @@
   "name": "tributary",
   "displayName": "Tributary",
   "description": "Every coding agent, one stream of work. Run Claude Code, Codex, Gemini, Antigravity and other local agents side by side, with handoff, races, checkpoints and shared memory.",
-  "version": "0.1.0",
+  "version": "0.1.5",
   "publisher": "tributary",
   "license": "MIT",
   "icon": "media/icon.png",
-  "engines": { "vscode": "^1.90.0" },
-  "categories": ["AI", "Other"],
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "AI",
+    "Other"
+  ],
   "main": "./extension.js",
-  "activationEvents": ["onStartupFinished"],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "contributes": {
     "viewsContainers": {
-      "activitybar": [{ "id": "tributary", "title": "Tributary", "icon": "media/mark.svg" }]
+      "activitybar": [
+        {
+          "id": "tributary",
+          "title": "Tributary",
+          "icon": "media/mark.svg"
+        }
+      ]
     },
     "views": {
-      "tributary": [{ "type": "webview", "id": "tributary.chat", "name": "Agents" }]
+      "tributary": [
+        {
+          "type": "webview",
+          "id": "tributary.chat",
+          "name": "Agents"
+        }
+      ]
     },
     "commands": [
-      { "command": "tributary.open", "title": "Tributary: Open in Editor Tab" },
-      { "command": "tributary.focus", "title": "Tributary: Show Agents" },
-      { "command": "tributary.askSelection", "title": "Tributary: Ask an Agent About Selection" },
-      { "command": "tributary.addFile", "title": "Tributary: Mention This File" },
-      { "command": "tributary.reviewChanges", "title": "Tributary: Review Uncommitted Changes" },
-      { "command": "tributary.newThread", "title": "Tributary: New Thread" }
+      {
+        "command": "tributary.open",
+        "title": "Tributary: Open in Editor Tab"
+      },
+      {
+        "command": "tributary.focus",
+        "title": "Tributary: Show Agents"
+      },
+      {
+        "command": "tributary.askSelection",
+        "title": "Tributary: Ask an Agent About Selection"
+      },
+      {
+        "command": "tributary.addFile",
+        "title": "Tributary: Mention This File"
+      },
+      {
+        "command": "tributary.reviewChanges",
+        "title": "Tributary: Review Uncommitted Changes"
+      },
+      {
+        "command": "tributary.newThread",
+        "title": "Tributary: New Thread"
+      }
     ],
     "menus": {
       "editor/context": [
-        { "command": "tributary.askSelection", "when": "editorHasSelection", "group": "navigation@90" },
-        { "command": "tributary.addFile", "group": "navigation@91" }
+        {
+          "command": "tributary.askSelection",
+          "when": "editorHasSelection",
+          "group": "navigation@90"
+        },
+        {
+          "command": "tributary.addFile",
+          "group": "navigation@91"
+        }
       ],
-      "explorer/context": [{ "command": "tributary.addFile", "when": "!explorerResourceIsFolder", "group": "navigation@90" }]
+      "explorer/context": [
+        {
+          "command": "tributary.addFile",
+          "when": "!explorerResourceIsFolder",
+          "group": "navigation@90"
+        }
+      ]
     },
     "keybindings": [
-      { "command": "tributary.askSelection", "key": "ctrl+alt+i", "mac": "cmd+alt+i", "when": "editorHasSelection" },
-      { "command": "tributary.focus", "key": "ctrl+alt+t", "mac": "cmd+alt+t" }
+      {
+        "command": "tributary.askSelection",
+        "key": "ctrl+alt+i",
+        "mac": "cmd+alt+i",
+        "when": "editorHasSelection"
+      },
+      {
+        "command": "tributary.focus",
+        "key": "ctrl+alt+t",
+        "mac": "cmd+alt+t"
+      }
     ]
   }
 }
