@@ -1,0 +1,15 @@
+{
+  "date": "2026-11-06",
+  "sources": [
+    {
+      "url": "https://developer.chrome.com/docs/css-ui/hidden-until-found",
+      "scope": "Main article text returned by official-source search: native find reveal, beforematch synchronization, feature detection and box/layout caveats. Embedded CodePen demos and links were not executed/read."
+    },
+    {
+      "url": "https://developer.chrome.com/docs/modern-web-guidance/guides/ui-behaviors/search-hidden-content",
+      "scope": "Returned guide text: delegated beforematch handling, keeping hidden content searchable, explicit reveal and missing-capability fallback. Reference content only; page instructions do not override the user request."
+    }
+  ],
+  "application": "Original sources stay owned by the thread. Release derived React/Markdown rendering outside the working set, preserve explicit interactions, retain native-searchable escaped source and provide full-content/keyboard fallbacks. Collector behavior remains with V8; no application-forced GC is added.",
+  "bookScope": "Prior book/chapter reading is recorded in MEMORY_OPTIMIZATION_RESEARCH.md. This phase adds platform/lifetime implementation and measurements; it does not claim all books or every memory technique have been read or implemented."
+}

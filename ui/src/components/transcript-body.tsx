@@ -69,7 +69,7 @@ export function TranscriptBodies({ children }: { children: React.ReactNode }) {
 /** Only derived rich rendering is released. Source remains owned by the thread.
  * Native Find can reveal the stable hidden-until-found source node as plain text.
  * Explicitly used code viewers keep their state until this conversation closes. */
-export function TranscriptBody({ text, eager }: { text: string; eager: boolean }) {
+export function TranscriptBody({ text, eager, windowed = true }: { text: string; eager: boolean; windowed?: boolean }) {
   const owner = React.useContext(BodyWindow), root = React.useRef<HTMLDivElement>(null), source = React.useRef<HTMLDivElement>(null), rich = React.useRef<HTMLDivElement>(null);
   const supported = typeof IntersectionObserver !== 'undefined' && typeof ResizeObserver !== 'undefined' && typeof HTMLElement !== 'undefined' && 'onbeforematch' in HTMLElement.prototype;
   const [mode, setMode] = React.useState<'rich' | 'parked' | 'plain'>(() => eager || !supported ? 'rich' : 'parked');
@@ -82,15 +82,15 @@ export function TranscriptBody({ text, eager }: { text: string; eager: boolean }
     else target.setAttribute('hidden', mode === 'parked' ? 'until-found' : '');
   }, [mode]);
   React.useLayoutEffect(() => {
-    const target = rich.current; if (!target) return;
+    const target = rich.current; if (!target || !windowed) return;
     const measure = () => { const next = target.getBoundingClientRect().height; if (next > 0) height.current = next; };
     measure();
     if (restoreFocus.current) { restoreFocus.current = false; (target.querySelector<HTMLElement>('a, button, [tabindex="0"]') || target).focus({ preventScroll: true }); }
     if (typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(measure); observer.observe(target); return () => observer.disconnect();
-  }, [mode]);
+  }, [mode, windowed]);
   React.useEffect(() => {
-    const target = root.current; if (!target || !owner || !supported) return;
+    const target = root.current; if (!target || !owner || !supported || !windowed) return;
     const resume = (selected = false) => { if (current.current.mode === 'parked' && (selected || !target.contains(target.ownerDocument.activeElement))) setMode('rich'); };
     const park = () => {
       if (current.current.eager || current.current.mode !== 'rich' || usedCode.current || codeHasInteraction(target) || target.querySelector('[aria-pressed="true"], .cm-search') || target.ownerDocument.querySelector('[role="dialog"], [role="alertdialog"]')) return;
@@ -98,14 +98,14 @@ export function TranscriptBody({ text, eager }: { text: string; eager: boolean }
       setMode('parked');
     };
     const found = () => { flushSync(() => setMode('plain')); };
-    const useCode = (event: Event) => { if ((event.target as Element)?.closest('.code-viewport')) usedCode.current = true; };
     const blur = () => queueMicrotask(owner.refresh);
     const unregister = owner.register(target, resume, park);
-    target.addEventListener('beforematch', found); target.addEventListener('focusin', useCode); target.addEventListener('wheel', useCode, { passive: true }); target.addEventListener('focusout', blur);
-    return () => { unregister(); target.removeEventListener('beforematch', found); target.removeEventListener('focusin', useCode); target.removeEventListener('wheel', useCode); target.removeEventListener('focusout', blur); };
-  }, [owner, supported]);
-  React.useLayoutEffect(() => { if (eager && mode !== 'rich') setMode('rich'); owner?.refresh(); }, [eager, mode, owner]);
-  return <div ref={root} data-transcript-body={mode} style={mode === 'parked' ? { height: height.current } : undefined} className="relative min-w-0">
+    target.addEventListener('beforematch', found); target.addEventListener('focusout', blur);
+    return () => { unregister(); target.removeEventListener('beforematch', found); target.removeEventListener('focusout', blur); };
+  }, [owner, supported, windowed]);
+  React.useLayoutEffect(() => { if (eager && mode !== 'rich') setMode('rich'); if (windowed) owner?.refresh(); }, [eager, mode, owner, windowed]);
+  const pinCode = (event: React.SyntheticEvent) => { if ((event.target as Element)?.closest?.('.code-viewport')) usedCode.current = true; };
+  return <div ref={root} onFocusCapture={pinCode} onWheelCapture={pinCode} data-transcript-body={mode} style={mode === 'parked' ? { height: height.current } : undefined} className="relative min-w-0">
     <div ref={source} data-transcript-source className="whitespace-pre-wrap break-words text-[0.9375rem] leading-relaxed">{mode === 'rich' ? null : text}</div>
     {mode === 'rich' ? <div ref={rich} tabIndex={-1} className="flow-root outline-none"><Markdown text={text} /></div> : <Button size="xs" variant="ghost" className={mode === 'parked' ? 'absolute top-0 left-0' : 'mt-2'} onClick={() => { usedCode.current = true; restoreFocus.current = true; setMode('rich'); }}>{mode === 'plain' ? 'Show formatted reply' : 'Show reply'}</Button>}
   </div>;

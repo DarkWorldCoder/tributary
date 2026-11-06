@@ -47,12 +47,12 @@ app.on('browser-window-created', (_event, win) => {
     await delay(150);
   };
   web.once('did-finish-load', () => { if (started) return; started = true; (async () => {
-    if (process.env.TRIBUTARY_TRANSCRIPT_FALLBACK==='1') { web.debugger.attach('1.3'); await web.debugger.sendCommand('Page.addScriptToEvaluateOnNewDocument',{source:"for(let p=HTMLElement.prototype;p;p=Object.getPrototypeOf(p))if(Object.prototype.hasOwnProperty.call(p,'onbeforematch'))delete p.onbeforematch;"}); web.debugger.detach(); }
+    if (process.env.TRIBUTARY_TRANSCRIPT_FALLBACK==='1') { web.debugger.attach('1.3'); await web.debugger.sendCommand('Page.enable'); await web.debugger.sendCommand('Page.addScriptToEvaluateOnNewDocument',{source:"for(let p=HTMLElement.prototype;p;p=Object.getPrototypeOf(p))if(Object.prototype.hasOwnProperty.call(p,'onbeforematch'))delete p.onbeforematch;"}); }
     await run(`localStorage.setItem('tributary.project',${JSON.stringify(JSON.stringify(project))});localStorage.setItem('tributary.thread',${JSON.stringify(JSON.stringify(thread.id))});localStorage.setItem('tributary.workspaceViews.v1',JSON.stringify({[${JSON.stringify(project)}]:{layout:'chat',expanded:false,panel:{open:false,tab:'files'}}}));true`);
     const loaded = new Promise(resolve => web.once('did-finish-load', resolve)); const began = performance.now(); web.reload(); await loaded;
     await until(() => run(`document.querySelector(${JSON.stringify(selector(count - 1) + ' .prose-reply')})?.textContent.endsWith('TRANSCRIPT_END_${count - 1}')`), 'latest reply');
     const readyMs = performance.now() - began;
-    web.debugger.attach('1.3'); await delay(750); await snapshot('initial-bottom');
+    if (!web.debugger.isAttached()) web.debugger.attach('1.3'); await delay(750); await snapshot('initial-bottom');
     await reveal(0); await snapshot('at-start');
     await reveal(Math.floor(count / 2)); await snapshot('at-middle');
     await reveal(count - 1); await snapshot('returned-bottom');
@@ -127,6 +127,28 @@ app.on('browser-window-created', (_event, win) => {
       checks.closedConversationReleasesAllBodyRoots = true; web.send('hub-event','open-thread',thread.id);
       await until(() => run(`document.querySelector('${selector(count-1)} .prose-reply')?.textContent.endsWith('TRANSCRIPT_END_${count-1}')`),'conversation reopens from durable text');
       checks.reopenRestoresConversation = true; await reveal(count - 1);
+      const growing = hub.createThread(project,'Growth threshold fixture');
+      const original = hub.thread(thread.id).messages.find(m=>m.id==='reply-0');
+      const growingReply={...original,id:'growth-reply'};
+      growing.messages.push({id:'growth-user',role:'user',target:'claude',text:'Growing conversation',ts:1},growingReply);hub.store.save(true);web.send('hub-event','open-thread',growing.id);
+      await until(()=>run(`!!document.querySelector('[data-message-id="growth-reply"] .prose-reply')`),'small conversation reply');
+      await run(`document.querySelector('[data-message-id="growth-reply"] .code-viewport').scrollIntoView({block:'center'});true`);
+      await until(()=>run(`!!document.querySelector('[data-message-id="growth-reply"] .cm-content')`),'small conversation code viewer');
+      await run(`window.__growthView=new WeakRef(document.querySelector('[data-message-id="growth-reply"] .cm-content').cmTile.root.view);window.__growthView.deref().focus();true`);
+      web.sendInputEvent({type:'keyDown',keyCode:'f',modifiers:['control']});web.sendInputEvent({type:'keyUp',keyCode:'f',modifiers:['control']});
+      await until(()=>run(`!!document.querySelector('[data-message-id="growth-reply"] .cm-search')`),'small viewer Find');
+      for(let n=0;n<24;n++){const reply={...original,id:'growth-'+n,text:'Growth paragraph '+n};growing.messages.push(reply);hub.emit('message',{threadId:growing.id,message:reply});}
+      await until(()=>run(`document.querySelectorAll('[data-transcript-body="parked"]').length>0`),'adaptive history window activates');
+      assert.equal(await run(`window.__growthView.deref()===document.querySelector('[data-message-id="growth-reply"] .cm-content').cmTile.root.view`),true);
+      assert.equal(await run(`!!document.querySelector('[data-message-id="growth-reply"] .cm-search')`),true);
+      checks.growingConversationPreservesExistingViewer = true;web.send('hub-event','open-thread',thread.id);await until(()=>run(`!!document.querySelector('${selector(count-1)} .prose-reply')`),'return after growth check');await reveal(count-1);
+      const byteThread=hub.createThread(project,'Text budget fixture');byteThread.messages.push({id:'byte-user',role:'user',target:'claude',text:'Source volume trigger',ts:1});
+      for(let n=0;n<13;n++)byteThread.messages.push({...original,id:'byte-'+n,text:('Source volume paragraph '+n+'. ').repeat(700)});
+      assert.ok(byteThread.messages.length<=24 && byteThread.messages.reduce((sum,m)=>sum+m.text.length,0)>128*1024);hub.store.save(true);web.send('hub-event','open-thread',byteThread.id);
+      await until(()=>run(`document.querySelector('[data-message-id="byte-12"] .prose-reply') && document.querySelectorAll('[data-transcript-body="parked"]').length>0`),'source-volume trigger below message threshold');checks.sourceVolumeThresholdActivatesIndependently=true;
+      web.send('hub-event','open-thread',thread.id);await until(()=>run(`!!document.querySelector('${selector(count-1)} .prose-reply')`),'return after source budget check');await reveal(count-1);
+
+
 
     }
     fs.writeFileSync(output + '.png', (await web.capturePage()).toPNG()); web.debugger.detach();

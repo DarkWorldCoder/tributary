@@ -1,0 +1,62 @@
+{
+  "passed": true,
+  "date": "2026-11-06T04:37:05.290Z",
+  "sourceHashes": {
+    "ui/src/components/conversation.tsx": "7a85a6642dad4ed0c529b044e413eb07403f47fda04f6e27b406855a3c088292",
+    "ui/src/components/transcript-body.tsx": "ed653187689e640ff0952b55d4eb44fdf9bfdb6c7e8edd8ec6304833e7311e67",
+    "ui/src/components/ui/message-scroller.tsx": "2a15a6fafc9a96687caa61f95d647c58e329cbf5cd915a949e607e475ecbd749",
+    "ui/src/components/thread-header.tsx": "7e30d2acef098e83868d21f5333b23d333fdc7c1cf055a485ed799e3aaab155c",
+    "ui/src/store.tsx": "1ad7e07c53731acadc3e61928fc38a38f4765ed2e8a8f95e56f19c40e8232e6d",
+    "ui/src/components/markdown.tsx": "b872cbe21b6e8ee7cb7f3fffa593f956cb8f578ea4fde81378ac2f9b25f206eb",
+    "ui/src/components/code-viewport.tsx": "96978cdf77b31026a51948929a716eaa148037634457e38dd13bf3f085777294",
+    "core/hub.js": "5aa7a815611d33b1caec807a60242d360d4dbe1ce16681104843f400f63c0761",
+    "desktop/main.js": "1876c07a78b45264df0924fcf89b2b005a3809d835a8242819960cb67727650e",
+    "scripts/performance/native-transcript-retention.cjs": "391c266bd7f91c0b58151c7345880c6351b9d7c41c9b51552f2181d2dbff259d",
+    "scripts/performance/transcript-retention.cjs": "2506b9ae16c59c4e78d804c2d78095fca3f8399c1e364283e7aac32f541e6454"
+  },
+  "uiHashes": {
+    "baseline": "94d3948de437b122200d827009016cd05d33cbd329e70d71701481d5869ba7e8",
+    "windowed": "e44412f260c553880588271004e9069a7d22119bb428d97e1db07383175c3402"
+  },
+  "pairedDesktopCases": 12,
+  "completeProcessTreeSamples": 288,
+  "rejectedFinalSamples": 0,
+  "nativeBehaviorChecks": {
+    "allSourcesKept": true,
+    "nativeFindRevealsExactSource": true,
+    "offscreenNativeSelectionPreserved": true,
+    "selectionReleaseParksBody": true,
+    "explicitCodeViewerStatePreserved": true,
+    "selectAllIncludesOldReplyText": true,
+    "narrowView": true,
+    "printRestoresAllBodies": true,
+    "keyboardRevealKeepsFocus": true,
+    "fullTranscriptSettingWorksByKeyboard": true,
+    "closedConversationReleasesAllBodyRoots": true,
+    "reopenRestoresConversation": true,
+    "growingConversationPreservesExistingViewer": true,
+    "sourceVolumeThresholdActivatesIndependently": true
+  },
+  "longConversationCapabilityFallback": {
+    "allSourcesKept": true,
+    "unsupportedBrowserKeepsFullRichContent": true
+  },
+  "fullRegression": {
+    "tests": 598,
+    "pass": 598,
+    "fail": 0,
+    "skip": 0,
+    "timing": "After all final memory cases; no overlap."
+  },
+  "typescript": "passed",
+  "productionUiBuild": "passed",
+  "vscodeBundleBuild": "passed via full-suite pretest",
+  "bundleDelta": {
+    "coldChatBytes": 4574,
+    "coldChatGzipBytes": 1485,
+    "shippedJavaScriptBytes": 4574
+  },
+  "measurement": "Retained renderer heap/DOM and app-tree PSS after diagnostic renderer GC; not production forced collection or natural peaks/pauses.",
+  "preliminaryRuns": "Non-adaptive pairs and earlier fixture failures are excluded; final adaptive cases use frozen matching source/build hashes. Native keyboard, viewport location and browser-capability override lifetime assumptions were corrected before final checks.",
+  "limits": "Linux source desktop, saved synthetic history and controlled missing-capability browser case. No native Windows/macOS, installer, provider or screen-reader certification. Source/header metadata and explicitly pinned views still grow."
+}
