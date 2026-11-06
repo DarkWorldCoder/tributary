@@ -50,7 +50,8 @@ test('a release remains a draft until every installer and checksum is uploaded; 
   const dir = downloads(t), calls = []; let state = null;
   const run = args => {
     calls.push(args);
-    if (args[0] === 'api') { if (!state) throw Error('HTTP 404 Not Found'); return JSON.stringify(state); }
+    if (args[1] === 'view') { if (!state) throw Error('release not found'); return JSON.stringify({ apiUrl: 'https://api.github.com/repos/example/tributary/releases/42' }); }
+    if (args[0] === 'api') { assert.equal(args[1], 'https://api.github.com/repos/example/tributary/releases/42', 'tag lookup cannot read drafts'); return JSON.stringify(state); }
     if (args[1] === 'create') state = { draft: true, prerelease: true, assets: [], html_url: 'https://example.test/release' };
     if (args[1] === 'upload') state.assets = fs.readdirSync(dir).map(name => ({ name, state: 'uploaded', size: fs.statSync(path.join(dir, name)).size }));
     if (args[1] === 'edit') state.draft = false;
@@ -59,12 +60,28 @@ test('a release remains a draft until every installer and checksum is uploaded; 
   assert.equal(publishRelease(dir, packageTag, run).alreadyPublished, false);
   assert.equal(state.assets.length, 15); assert.ok(calls.find(call => call[1] === 'create').includes('--draft'));
   const before = calls.length; assert.equal(publishRelease(dir, packageTag, run).alreadyPublished, true);
-  assert.equal(calls.length, before + 1);
+  assert.equal(calls.length, before + 2);
   state.assets.pop(); assert.throws(() => publishRelease(dir, packageTag, run), /incomplete/);
 });
 test('failed uploads never publish and unexpected API failures are not treated as absent releases', t => {
   const dir = downloads(t); let edited = false;
-  const run = args => { if (args[0] === 'api') return JSON.stringify({ draft: true, prerelease: true, assets: [] }); if (args[1] === 'edit') edited = true; return ''; };
+  const run = args => { if (args[1] === 'view') return JSON.stringify({ apiUrl: 'https://api.github.com/repos/example/tributary/releases/42' }); if (args[0] === 'api') return JSON.stringify({ draft: true, prerelease: true, assets: [] }); if (args[1] === 'edit') edited = true; return ''; };
   assert.throws(() => publishRelease(dir, packageTag, run), /incomplete/); assert.equal(edited, false);
   assert.throws(() => publishRelease(dir, packageTag, () => { throw Error('HTTP 403 Forbidden'); }), /403/);
+});
+test('an existing uploaded draft is resolved by numeric API URL and resumed without recreation', t => {
+  const dir = downloads(t), calls = [];
+  const state = { draft: true, prerelease: true, assets: fs.readdirSync(dir).map(name => ({ name, state: 'uploaded', size: fs.statSync(path.join(dir, name)).size })) };
+  const run = args => {
+    calls.push(args);
+    if (args[1] === 'view') return JSON.stringify({ apiUrl: 'https://api.github.com/repos/example/tributary/releases/42' });
+    if (args[0] === 'api') { assert.equal(args[1], 'https://api.github.com/repos/example/tributary/releases/42'); return JSON.stringify(state); }
+    if (args[1] === 'create') throw Error('Draft already exists');
+    if (args[1] === 'edit') state.draft = false;
+    return '';
+  };
+  assert.equal(publishRelease(dir, packageTag, run).alreadyPublished, false);
+  assert.equal(state.draft, false); assert.ok(!calls.some(args => args[1] === 'create'));
+  state.draft = true;
+  assert.throws(() => publishRelease(dir, packageTag, args => args[1] === 'edit' ? '' : run(args)), /remains a draft/);
 });
