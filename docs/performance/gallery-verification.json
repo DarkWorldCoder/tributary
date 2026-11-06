@@ -1,0 +1,4678 @@
+{
+  "fingerprints": {
+    "baseline": {
+      "ui/src/components/markdown-image.tsx": "8507989296316afbf5f43b55a3bf024a5c33dae9287f10b611ebe58b1d4afc1c",
+      "ui/src/lib/image-resources.mjs": "bdac97c736dfbf64b8bfe185b6edcf5e1a4741a2e52edd7afff1b8b83659aee3",
+      "ui/src/hooks/use-image-resource.ts": "226c2fd0e5fe9f2152aa8947c62e9529ae214b5590e3a9a377746cd872bd0dd0",
+      "ui/dist/assets/app.js": "b8d9ac0caa67e0b8eeb2ef6ab1a2a5996203c1216a3791d917f886d84579ee8a",
+      "ui/dist/assets/chevron-right-CIo6dSn6.js": "f88eb4120044755245816cde6c0b7d15da18aff81f7ae229cb95336decb4be3f",
+      "ui/dist/assets/circle-cJJXqcWx.js": "25fe4be2f37330b48d2022eee9901276a76146a6d9add6ac76fdf4dfa681a3c4",
+      "ui/dist/assets/clike-C2M2Cbvf.js": "8753685128e25a5b83495d2c12ac38765032b5ebe2058145df7173a1b1343909",
+      "ui/dist/assets/cmake-84nbDH0I.js": "b04b2d247760958ea0055bc5f2e6b71768ce16eb6c4c9ef107f9756832a49fbf",
+      "ui/dist/assets/code-editor-D0IrlGIP.js": "662e252d28a9a38ca198d8de1654426464ee57ec3f99c2bcd22d9bd9814587fe",
+      "ui/dist/assets/code-viewport-Bx7PnuXF.js": "192122632d3aa8135ff444bf7839a2ec9c6e5f4f0311b270707940db04333461",
+      "ui/dist/assets/code-viewport-DK6iDEqd.js": "5891bc1abab5f22aa2acd66a007821b3db7123cf647293bd26b4f3d3d99d99fc",
+      "ui/dist/assets/collaboration-dialog-Cp_gmQ_M.js": "5536268a4fecceb6ac8f0aa2d4575c84b201c3a66c31a27807bdd8e6310ee29f",
+      "ui/dist/assets/collaboration-web-BIhIJ9xU.js": "8592b900600ac1cf3dcac7b47361eabb43ed88d38ebf2eea0c0a987e51d831c6",
+      "ui/dist/assets/context-menu-DFCshhAm.js": "36c953fb205763b55dddb6a5e9eecb69c58ac78a42c0c546e47e29c60eee4a65",
+      "ui/dist/assets/core-DWp-hk2C.js": "ae14df441fc2b1dde961f48070577258dfc6f682f6cff9b11bf5d39a6acf7dac",
+      "ui/dist/assets/css-BGIxQoYs.js": "8e762ca7ede2a05f2a0984ffb6cb1f515da8f704f1d39bfc550d6325562967cc",
+      "ui/dist/assets/css-DgaLhXQH.js": "b1dd12b636e645f65871e8ea347f0f8e93979161cbffcef0670b5d27cdddb3dc",
+      "ui/dist/assets/debug-panel-B2YxBRTt.js": "8dd5c091fcb6c4b25cfe39efc68c75e93c58c3d268a7207cfe5ea3492fef511e",
+      "ui/dist/assets/dialog-DlGxCpFC.js": "7eb6b25b9e9e9a4173d7b8515fb5b41d585304a8acc1df9e0473013cbf61bd20",
+      "ui/dist/assets/diff-ChtP43wD.js": "cf4c32c773b4aec08498fd170b7f74733a695fdbcbb18170413e05c8d64d4848",
+      "ui/dist/assets/diff-woXpYk--.js": "80befa61827dedd8e1a37e5521dd2ef55fad173bbbd9f36db966fc0b088079e6",
+      "ui/dist/assets/dist--hdZl-xu.js": "fa3de9f47d0115287a9fe91695981ee119d42e9077e6671f8166d53afd045b07",
+      "ui/dist/assets/dist-6WNNvkM4.js": "b30f8186ea977b1cf8214c914734dcbc33666206090e6a7f69c4c50417ee293f",
+      "ui/dist/assets/dist-9_TiSLOh.js": "12b9a01d99d3ad03f3c5b792c51cf6adeb69a227f06a6c9850372ff1d724a77a",
+      "ui/dist/assets/dist-BBz6tnJk.js": "9a9e149e2e321ff452c0bdf736d25f429bc9c5df9f3c8663e25816a0964fb774",
+      "ui/dist/assets/dist-BH-f6rrq.js": "24ee4b374dc640899a88a8a97e8bb47822296fb43b167bc96e332c91a2f36bb5",
+      "ui/dist/assets/dist-BIDTLCHB.js": "3ef57d93e77f1b3c61ba1569020a8a939fb16385b2ca3862cfe29da5f63ea0ba",
+      "ui/dist/assets/dist-BIg70Vvj.js": "a121625797cc9b6dd6e6b7d92113aee89d39bd8337b90d93f9a36956eea85f6d",
+      "ui/dist/assets/dist-BM2gUak-.js": "bbd38d2da05b9486651571cbd24f856e9b0ad4627d2210bac292368e6638dd8c",
+      "ui/dist/assets/dist-BXfZG7RS.js": "41f775cd972efb7e12063daf4e653a76a9c8724fb53d9054e8dc8f62d71bdf39",
+      "ui/dist/assets/dist-BfnOkjdz.js": "2b226d7c02bcea023bfd67688397fefc8307cdffdc7f922494d088bd57bec9d0",
+      "ui/dist/assets/dist-Bnpp7cOW.js": "91f5bfb35bf2894187c7079ec62cd7f1b07e0dd7708a1074df51596e2930d6fb",
+      "ui/dist/assets/dist-Bv5hryYT.js": "d8202e57d56598fba4324c40f29e9b70cd3a44a2eb34fd0f28625960f72903eb",
+      "ui/dist/assets/dist-BxW_Xh0A.js": "76450e33afae3927f983ff841d7207059af62cf760a0d8a980ccdf725a6e985a",
+      "ui/dist/assets/dist-D1JI_ikE.js": "407314e585c90ec671d409eaea780722e00af0e2b2ef3ca6e3fec45352f1c47f",
+      "ui/dist/assets/dist-D32v2gzM.js": "38e2ab9f56b19fa9eb8f99198f27aa79afb49062f5575f2068ff2b9f8228b147",
+      "ui/dist/assets/dist-D_Zn-F8V.js": "df855d3b72b632067c8c4d37cdc8b3f3867a340e82bdeda85b2833321f33577d",
+      "ui/dist/assets/dist-Dgyn_Z3c.js": "264250e814085de55c85a3ed1ebf84a9410487d59e9c354b144e0aa723d0c78e",
+      "ui/dist/assets/dist-Dkww3_eR.js": "9fdca6a897cc63298b3ac084e5173359983792acd0068b03a88f7bbc0566e2e0",
+      "ui/dist/assets/dist-YYQR4uW1.js": "6ba7abf6c1ad4c76bd32d047d7ffdb657199515222e1d8eba82937f6298aead3",
+      "ui/dist/assets/dist-yZhEl1M-.js": "e3b9a772a1cb6fc89ca4aad548699ce58dc13fa6ec0822569b9220840e276fe5",
+      "ui/dist/assets/dockerfile-BDePf5PZ.js": "910e002b7be59eb335007c02ab897aa4f64982061a9f391ce0038de2ab7d593e",
+      "ui/dist/assets/document-panel-UQ1MlaK7.js": "712619d29671669ae582d5fbd8bdf6510ba00592d8556b3a3cc27f79e5d92e0c",
+      "ui/dist/assets/dotenv-CuH5my32.js": "d76dc3fd773b987ca5901c59ee0bc06df41649353083ebf17efb822fce70c9e1",
+      "ui/dist/assets/dotenv-language-kwtdnn7Q.js": "0d1da4d812cfecc76ecf04869954433bba958f0ee0627db1f3e971b8fa84b28e",
+      "ui/dist/assets/dropdown-menu-WEPw46I9.js": "6eda44eadc4d7d758af8c8fa14b98e2cb52bb062e8e0883155aae6f4c77b5256",
+      "ui/dist/assets/editor-search-CIgUK0i6.js": "673fc3abb518dee722c874896cedbcbf1a998252508da4e0378e19e5d8346391",
+      "ui/dist/assets/elm-Cshzl8qu.js": "7dc9b8c8a1289df3800c9ca773519840019d47deefb03dca7f7302b9882f12e9",
+      "ui/dist/assets/engine-javascript-C30F4iNc.js": "a730e95b314bf69e239c65f3baa3852c2bee5cd766c87474d54ee8425bb32cd2",
+      "ui/dist/assets/erlang-BV0c4Hdn.js": "17d201413a70fc04906b3d0265bc6b80e7d8f176c38f46979c366ecbea144e77",
+      "ui/dist/assets/format-worker-BcjjmJ4U.js": "dcb32977003ce6d154e21b219ac1343724a0f345ad07c3e7e425825e6a67b410",
+      "ui/dist/assets/github-dark-C-LZuMrd.js": "4b20a66425669986c784d2f948aab0f38add042b7b167a2245d0c86a781706e1",
+      "ui/dist/assets/github-light-EUqPIrTm.js": "b41057cac4d9e62754f5d64f241ec9153a0c3d53f5eaa2464d3acf9a644e8852",
+      "ui/dist/assets/groovy-CUrWKPia.js": "16f67c3049122d437e325ca5e80eea28368331f9f6f42d9865aa337276747e00",
+      "ui/dist/assets/haskell-BRsoo5mP.js": "868e8b21da5021140b51775df3d9ebb51bf5aa0925b2dba75b9923e71a717e6d",
+      "ui/dist/assets/html-CvFb5cGI.js": "f2aaa50bc67d66313483f5d43e28e6850e57c180df254b3a0482bc3e129ac8ca",
+      "ui/dist/assets/javascript-BzbQS41l.js": "4914f43c4495fd0c8375e5d78993533a679e0579010f602fb75cc33a763e6f1c",
+      "ui/dist/assets/javascript-CpIGwZ_Y.js": "1d2d85c02908c8e7ae2f784bd5b01ae410172ddf30822801c667727cf72465ff",
+      "ui/dist/assets/javascript-dHfrH00f.js": "177b20e219321c5445cc45a56ea39d59a5ab6e0851fa2df22185e3aa78b78939",
+      "ui/dist/assets/json-qhed-kSA.js": "cde89b6485baf9a68c80f28098ff191e7ba063cd0c5c50d2f9abf57f5e4be826",
+      "ui/dist/assets/jsx-Bz0zcwM4.js": "e2b4114d3baef8c939630fafbcdbc4b2ea14f796c4d453ff322da0beb47f41f1",
+      "ui/dist/assets/language-worker-BYYojUbb.js": "6ed4b9d293f89d53b47c008a4ebe76271c7c03b6366f7133f10e712a55631919",
+      "ui/dist/assets/lib-DiDhCJ4b.js": "0834f589534ae79850ed2de680383c3f26c7b1120bff5211e802afd5439234d0",
+      "ui/dist/assets/lua-DPCEkfD_.js": "2f4183f6b44b5ad6d9e5fe805a843c7d9336a4e95ef811b7bff81a03562295d6",
+      "ui/dist/assets/markdown-BYOwaDjH.js": "024bf1ea6f860d9477d5ef72a2553f1ae4b0ff3d07f5d24d2e270e4f4f5a9b95",
+      "ui/dist/assets/markdown-DV5pOQSP.js": "375c5cae202224eb94c13e8851cbd09ff59fd5db5ac11800cbfee62fcff2fbc2",
+      "ui/dist/assets/perl-BkSkiI9m.js": "efd47f9ae8043b2e00b8ac2ecf12d5b3916d049fd230d4e2de748e79c633d125",
+      "ui/dist/assets/powershell-D8WpQPaX.js": "19fed4e3b21edac914eba6a26cbc7e476a94ea6028dcc22e9b77600f4a618f8f",
+      "ui/dist/assets/project-room-x3Lmx8aU.js": "74318c8051657a3d745bc437e12869ec5156f806220292a65b150760e70601be",
+      "ui/dist/assets/properties-C357ku5U.js": "265cd5a3bc8e8e1426825db6da7dfd6398db08f4ca5dc266b3f432a982868452",
+      "ui/dist/assets/python-gzcpVVnB.js": "be0bae300e9d8dbae905d9faa24b84adc622796c87170848bf0460d01ad4049c",
+      "ui/dist/assets/rolldown-runtime-XKyaHtl9.js": "548d1dbf321e7d2ae804fcc158b588706a7c52f8ca175de1490c6ccb4dbe55b7",
+      "ui/dist/assets/ruby-ChfNwlCY.js": "bf7640300ec2fcda90331b55594a232b76d5a3542be898d4b6565b6cb3a61ce7",
+      "ui/dist/assets/server-DoMx36Oq.js": "954cd3af666de389d5a215959e7280e3db6aaad6d01d061d6ade4eb5a70e6405",
+      "ui/dist/assets/settings-dialog-QJZVkv2H.js": "77699be2f969ccf4ef66b9f8011748dc1a3690282acdccb35852588595cb8c02",
+      "ui/dist/assets/shell-DwuoZtxw.js": "eada594fb1134cc2dfb8874e055a8db889b2685fa6aa6342841343be30038937",
+      "ui/dist/assets/shellscript-CLZ0U2zV.js": "c1988bee5cd7a3ecc9f95a549ca16e93e6932d81684caf08d004346df88d1f7c",
+      "ui/dist/assets/skeleton-DrdQom55.js": "6bdd2d183ed5e1269dbef37feb0974673e794777f4c73e58d19a2170f93fa9e2",
+      "ui/dist/assets/source-grammar-CmJPpjvS.js": "b180d0799d38f6e3e23727b657eaf759200b7301dfb22fb51c351d1ebfb83f54",
+      "ui/dist/assets/source-language-TmxZz5PI.js": "6e838694274c66377273954c5eae5faef407e0d39ec3c144760a6d13cf9f7d16",
+      "ui/dist/assets/spinner-DxYRdzik.js": "aea0ffd46b3930f14a681cb3ffe94717bd17e8bbd4ce1e1e5f58aa248694cbcd",
+      "ui/dist/assets/sql-CEbI0hMM.js": "d24bf09f14609073d7faa41f010fa7bc81a620d20efbf5da5878e109a308df2c",
+      "ui/dist/assets/stex-DNzd62Q_.js": "f12ad11c2bff04c45c80f79d02250c76f0b1d01b254d04da7b195f4ad15b556f",
+      "ui/dist/assets/swift-DKB6_1j6.js": "f0835c04896ba11cf7884b2175e31574762723655d4e6461ce6ec7046479eaa3",
+      "ui/dist/assets/tabs-C4O8nl-o.js": "c519fa3e4400da3eef6a3b58f62150e04931c41a5a87cdd7a4a85e66ad70c90f",
+      "ui/dist/assets/team-dialog-CYeE0AXH.js": "f5c8ba432ca06bd64bdb8f2b1adf87a8fb4236b4de9773415e6a3daf4b7abea7",
+      "ui/dist/assets/terminal-DFA3lC9h.js": "1773db6dcfbf3c0e19e6239448bb1a0aed5a0ec81321ea47d6ac6aa071c828ec",
+      "ui/dist/assets/terminal-links-CenV2cxd.js": "df43e07d3b4fded2db03dacd3c208f5af21e99b21f98382632c0ab11dbe66a66",
+      "ui/dist/assets/terminal-panel-COfC25kE.js": "88ca7d29b868fa7b92f46d6088b993071d9c763535dc07395500aed40ac0ff58",
+      "ui/dist/assets/toggle-group-CrGUQTVN.js": "d6895cccd0b4cb0bf03809fa5e6a1c248f012f14d0617e54d8dd7711c4b3fe65",
+      "ui/dist/assets/toml-BPTmHmyx.js": "55c50c3d69b919264e6f1d9e6d9279d381d88c1c9a9e1cd4a75c82abe9680de8",
+      "ui/dist/assets/tooltip-DrEhpk5M.js": "8fe649548dcefae23a9ceed80c6c4b374ab1022a8c43c8ff2308ed1e19ae388e",
+      "ui/dist/assets/tsx-udAQXfEw.js": "9fc069255af55a76568fef90e87c0e2fa53f6ae74ed8eb8b364f5e6f9a61fee7",
+      "ui/dist/assets/typescript-bsJCZSQ-.js": "95d1a5778c7f670197b7bb6cb0e95faa400d09f66c34486b4ba54a3fd597e3a1",
+      "ui/dist/assets/use-mobile-DTMR8nGD.js": "db0fb0109bf5e19ef683ad49ac2f5eb3ec82b0f6e17df4816dc4f65607043537",
+      "ui/dist/assets/workspace-app-UYmBQS7V.js": "77a4212e62c269b26e512d4d2105fa57064719e5e46135b78c2a139d71fc6257",
+      "ui/dist/assets/workspace-panel-CiIx8VFq.js": "7adbb22e7ba774f302a3539c16224a44b7ec60de3cffe1cbbcb413c0c7574e71",
+      "ui/dist/assets/yaml-rwi0_p6S.js": "db14bd07972e830c86a4c8109530090c59def0c02864c923507b272d069b41a0"
+    },
+    "optimized": {
+      "ui/src/components/markdown-image.tsx": "9a897b8aefd533ccb52173b0252598c6cc370bebf52550bd998e4ff85cfe1ba7",
+      "ui/src/lib/image-resources.mjs": "5d7da13952560ce910fca0a6590081fbf9bdec011a90e44e062cb6cc2c518157",
+      "ui/src/hooks/use-image-resource.ts": "226c2fd0e5fe9f2152aa8947c62e9529ae214b5590e3a9a377746cd872bd0dd0",
+      "ui/src/lib/image-visibility.mjs": "2435d37e2903f92437e872b7a2b6c47548a25415a75f8424eeeb4908d98feb9e",
+      "ui/dist/assets/app.js": "b2ef606e7b06cea6efadb44445774349d5649857b0316bdd0e4798eb620843bf",
+      "ui/dist/assets/chevron-right-CIo6dSn6.js": "f88eb4120044755245816cde6c0b7d15da18aff81f7ae229cb95336decb4be3f",
+      "ui/dist/assets/circle-cJJXqcWx.js": "25fe4be2f37330b48d2022eee9901276a76146a6d9add6ac76fdf4dfa681a3c4",
+      "ui/dist/assets/clike-C2M2Cbvf.js": "8753685128e25a5b83495d2c12ac38765032b5ebe2058145df7173a1b1343909",
+      "ui/dist/assets/cmake-84nbDH0I.js": "b04b2d247760958ea0055bc5f2e6b71768ce16eb6c4c9ef107f9756832a49fbf",
+      "ui/dist/assets/code-editor-C8lCnrhX.js": "c5799abd9c54a09b3a49aa61fbf51b3de770ec652f213f386787f4790b020dee",
+      "ui/dist/assets/code-viewport-Bx7PnuXF.js": "192122632d3aa8135ff444bf7839a2ec9c6e5f4f0311b270707940db04333461",
+      "ui/dist/assets/code-viewport-DK6iDEqd.js": "5891bc1abab5f22aa2acd66a007821b3db7123cf647293bd26b4f3d3d99d99fc",
+      "ui/dist/assets/collaboration-dialog-Cp_gmQ_M.js": "5536268a4fecceb6ac8f0aa2d4575c84b201c3a66c31a27807bdd8e6310ee29f",
+      "ui/dist/assets/collaboration-web-BIhIJ9xU.js": "8592b900600ac1cf3dcac7b47361eabb43ed88d38ebf2eea0c0a987e51d831c6",
+      "ui/dist/assets/context-menu-DFCshhAm.js": "36c953fb205763b55dddb6a5e9eecb69c58ac78a42c0c546e47e29c60eee4a65",
+      "ui/dist/assets/core-DWp-hk2C.js": "ae14df441fc2b1dde961f48070577258dfc6f682f6cff9b11bf5d39a6acf7dac",
+      "ui/dist/assets/css-BGIxQoYs.js": "8e762ca7ede2a05f2a0984ffb6cb1f515da8f704f1d39bfc550d6325562967cc",
+      "ui/dist/assets/css-DgaLhXQH.js": "b1dd12b636e645f65871e8ea347f0f8e93979161cbffcef0670b5d27cdddb3dc",
+      "ui/dist/assets/debug-panel-nJwAdK9f.js": "6bb7cf7751b5f7de964ec7f1f207951da49f80dd9f4a3d7fd1b3981e5754e66d",
+      "ui/dist/assets/dialog-DlGxCpFC.js": "7eb6b25b9e9e9a4173d7b8515fb5b41d585304a8acc1df9e0473013cbf61bd20",
+      "ui/dist/assets/diff-ChtP43wD.js": "cf4c32c773b4aec08498fd170b7f74733a695fdbcbb18170413e05c8d64d4848",
+      "ui/dist/assets/diff-woXpYk--.js": "80befa61827dedd8e1a37e5521dd2ef55fad173bbbd9f36db966fc0b088079e6",
+      "ui/dist/assets/dist--hdZl-xu.js": "fa3de9f47d0115287a9fe91695981ee119d42e9077e6671f8166d53afd045b07",
+      "ui/dist/assets/dist-6WNNvkM4.js": "b30f8186ea977b1cf8214c914734dcbc33666206090e6a7f69c4c50417ee293f",
+      "ui/dist/assets/dist-9_TiSLOh.js": "12b9a01d99d3ad03f3c5b792c51cf6adeb69a227f06a6c9850372ff1d724a77a",
+      "ui/dist/assets/dist-BBz6tnJk.js": "9a9e149e2e321ff452c0bdf736d25f429bc9c5df9f3c8663e25816a0964fb774",
+      "ui/dist/assets/dist-BH-f6rrq.js": "24ee4b374dc640899a88a8a97e8bb47822296fb43b167bc96e332c91a2f36bb5",
+      "ui/dist/assets/dist-BIDTLCHB.js": "3ef57d93e77f1b3c61ba1569020a8a939fb16385b2ca3862cfe29da5f63ea0ba",
+      "ui/dist/assets/dist-BIg70Vvj.js": "a121625797cc9b6dd6e6b7d92113aee89d39bd8337b90d93f9a36956eea85f6d",
+      "ui/dist/assets/dist-BM2gUak-.js": "bbd38d2da05b9486651571cbd24f856e9b0ad4627d2210bac292368e6638dd8c",
+      "ui/dist/assets/dist-BXfZG7RS.js": "41f775cd972efb7e12063daf4e653a76a9c8724fb53d9054e8dc8f62d71bdf39",
+      "ui/dist/assets/dist-BfnOkjdz.js": "2b226d7c02bcea023bfd67688397fefc8307cdffdc7f922494d088bd57bec9d0",
+      "ui/dist/assets/dist-Bnpp7cOW.js": "91f5bfb35bf2894187c7079ec62cd7f1b07e0dd7708a1074df51596e2930d6fb",
+      "ui/dist/assets/dist-Bv5hryYT.js": "d8202e57d56598fba4324c40f29e9b70cd3a44a2eb34fd0f28625960f72903eb",
+      "ui/dist/assets/dist-BxW_Xh0A.js": "76450e33afae3927f983ff841d7207059af62cf760a0d8a980ccdf725a6e985a",
+      "ui/dist/assets/dist-D1JI_ikE.js": "407314e585c90ec671d409eaea780722e00af0e2b2ef3ca6e3fec45352f1c47f",
+      "ui/dist/assets/dist-D32v2gzM.js": "38e2ab9f56b19fa9eb8f99198f27aa79afb49062f5575f2068ff2b9f8228b147",
+      "ui/dist/assets/dist-D_Zn-F8V.js": "df855d3b72b632067c8c4d37cdc8b3f3867a340e82bdeda85b2833321f33577d",
+      "ui/dist/assets/dist-Dgyn_Z3c.js": "264250e814085de55c85a3ed1ebf84a9410487d59e9c354b144e0aa723d0c78e",
+      "ui/dist/assets/dist-Dkww3_eR.js": "9fdca6a897cc63298b3ac084e5173359983792acd0068b03a88f7bbc0566e2e0",
+      "ui/dist/assets/dist-YYQR4uW1.js": "6ba7abf6c1ad4c76bd32d047d7ffdb657199515222e1d8eba82937f6298aead3",
+      "ui/dist/assets/dist-yZhEl1M-.js": "e3b9a772a1cb6fc89ca4aad548699ce58dc13fa6ec0822569b9220840e276fe5",
+      "ui/dist/assets/dockerfile-BDePf5PZ.js": "910e002b7be59eb335007c02ab897aa4f64982061a9f391ce0038de2ab7d593e",
+      "ui/dist/assets/document-panel-DA5fC29B.js": "9afc79d9a02baee75d4d6d4121c5dbc80efbe2cfb9a3a7aeae067d07f0b50004",
+      "ui/dist/assets/dotenv-CuH5my32.js": "d76dc3fd773b987ca5901c59ee0bc06df41649353083ebf17efb822fce70c9e1",
+      "ui/dist/assets/dotenv-language-kwtdnn7Q.js": "0d1da4d812cfecc76ecf04869954433bba958f0ee0627db1f3e971b8fa84b28e",
+      "ui/dist/assets/dropdown-menu-WEPw46I9.js": "6eda44eadc4d7d758af8c8fa14b98e2cb52bb062e8e0883155aae6f4c77b5256",
+      "ui/dist/assets/editor-search-CIgUK0i6.js": "673fc3abb518dee722c874896cedbcbf1a998252508da4e0378e19e5d8346391",
+      "ui/dist/assets/elm-Cshzl8qu.js": "7dc9b8c8a1289df3800c9ca773519840019d47deefb03dca7f7302b9882f12e9",
+      "ui/dist/assets/engine-javascript-C30F4iNc.js": "a730e95b314bf69e239c65f3baa3852c2bee5cd766c87474d54ee8425bb32cd2",
+      "ui/dist/assets/erlang-BV0c4Hdn.js": "17d201413a70fc04906b3d0265bc6b80e7d8f176c38f46979c366ecbea144e77",
+      "ui/dist/assets/format-worker-BcjjmJ4U.js": "dcb32977003ce6d154e21b219ac1343724a0f345ad07c3e7e425825e6a67b410",
+      "ui/dist/assets/github-dark-C-LZuMrd.js": "4b20a66425669986c784d2f948aab0f38add042b7b167a2245d0c86a781706e1",
+      "ui/dist/assets/github-light-EUqPIrTm.js": "b41057cac4d9e62754f5d64f241ec9153a0c3d53f5eaa2464d3acf9a644e8852",
+      "ui/dist/assets/groovy-CUrWKPia.js": "16f67c3049122d437e325ca5e80eea28368331f9f6f42d9865aa337276747e00",
+      "ui/dist/assets/haskell-BRsoo5mP.js": "868e8b21da5021140b51775df3d9ebb51bf5aa0925b2dba75b9923e71a717e6d",
+      "ui/dist/assets/html-CvFb5cGI.js": "f2aaa50bc67d66313483f5d43e28e6850e57c180df254b3a0482bc3e129ac8ca",
+      "ui/dist/assets/javascript-BzbQS41l.js": "4914f43c4495fd0c8375e5d78993533a679e0579010f602fb75cc33a763e6f1c",
+      "ui/dist/assets/javascript-CpIGwZ_Y.js": "1d2d85c02908c8e7ae2f784bd5b01ae410172ddf30822801c667727cf72465ff",
+      "ui/dist/assets/javascript-dHfrH00f.js": "177b20e219321c5445cc45a56ea39d59a5ab6e0851fa2df22185e3aa78b78939",
+      "ui/dist/assets/json-qhed-kSA.js": "cde89b6485baf9a68c80f28098ff191e7ba063cd0c5c50d2f9abf57f5e4be826",
+      "ui/dist/assets/jsx-Bz0zcwM4.js": "e2b4114d3baef8c939630fafbcdbc4b2ea14f796c4d453ff322da0beb47f41f1",
+      "ui/dist/assets/language-worker-BYYojUbb.js": "6ed4b9d293f89d53b47c008a4ebe76271c7c03b6366f7133f10e712a55631919",
+      "ui/dist/assets/lib-DiDhCJ4b.js": "0834f589534ae79850ed2de680383c3f26c7b1120bff5211e802afd5439234d0",
+      "ui/dist/assets/lua-DPCEkfD_.js": "2f4183f6b44b5ad6d9e5fe805a843c7d9336a4e95ef811b7bff81a03562295d6",
+      "ui/dist/assets/markdown-BYOwaDjH.js": "024bf1ea6f860d9477d5ef72a2553f1ae4b0ff3d07f5d24d2e270e4f4f5a9b95",
+      "ui/dist/assets/markdown-DQhIN2m0.js": "d1be8655d3e16adccfdedca4229ef460d3314d211120ef520c86f2d4822c6947",
+      "ui/dist/assets/perl-BkSkiI9m.js": "efd47f9ae8043b2e00b8ac2ecf12d5b3916d049fd230d4e2de748e79c633d125",
+      "ui/dist/assets/powershell-D8WpQPaX.js": "19fed4e3b21edac914eba6a26cbc7e476a94ea6028dcc22e9b77600f4a618f8f",
+      "ui/dist/assets/project-room-x3Lmx8aU.js": "74318c8051657a3d745bc437e12869ec5156f806220292a65b150760e70601be",
+      "ui/dist/assets/properties-C357ku5U.js": "265cd5a3bc8e8e1426825db6da7dfd6398db08f4ca5dc266b3f432a982868452",
+      "ui/dist/assets/python-gzcpVVnB.js": "be0bae300e9d8dbae905d9faa24b84adc622796c87170848bf0460d01ad4049c",
+      "ui/dist/assets/rolldown-runtime-XKyaHtl9.js": "548d1dbf321e7d2ae804fcc158b588706a7c52f8ca175de1490c6ccb4dbe55b7",
+      "ui/dist/assets/ruby-ChfNwlCY.js": "bf7640300ec2fcda90331b55594a232b76d5a3542be898d4b6565b6cb3a61ce7",
+      "ui/dist/assets/server-DoMx36Oq.js": "954cd3af666de389d5a215959e7280e3db6aaad6d01d061d6ade4eb5a70e6405",
+      "ui/dist/assets/settings-dialog-CAQV_On3.js": "3630f6e1e04d8961aa583761d2c5b78e1f4f4e50e94f2c1956d63401db09dfe4",
+      "ui/dist/assets/shell-DwuoZtxw.js": "eada594fb1134cc2dfb8874e055a8db889b2685fa6aa6342841343be30038937",
+      "ui/dist/assets/shellscript-CLZ0U2zV.js": "c1988bee5cd7a3ecc9f95a549ca16e93e6932d81684caf08d004346df88d1f7c",
+      "ui/dist/assets/skeleton-DrdQom55.js": "6bdd2d183ed5e1269dbef37feb0974673e794777f4c73e58d19a2170f93fa9e2",
+      "ui/dist/assets/source-grammar-CmJPpjvS.js": "b180d0799d38f6e3e23727b657eaf759200b7301dfb22fb51c351d1ebfb83f54",
+      "ui/dist/assets/source-language-TmxZz5PI.js": "6e838694274c66377273954c5eae5faef407e0d39ec3c144760a6d13cf9f7d16",
+      "ui/dist/assets/spinner-DxYRdzik.js": "aea0ffd46b3930f14a681cb3ffe94717bd17e8bbd4ce1e1e5f58aa248694cbcd",
+      "ui/dist/assets/sql-CEbI0hMM.js": "d24bf09f14609073d7faa41f010fa7bc81a620d20efbf5da5878e109a308df2c",
+      "ui/dist/assets/stex-DNzd62Q_.js": "f12ad11c2bff04c45c80f79d02250c76f0b1d01b254d04da7b195f4ad15b556f",
+      "ui/dist/assets/swift-DKB6_1j6.js": "f0835c04896ba11cf7884b2175e31574762723655d4e6461ce6ec7046479eaa3",
+      "ui/dist/assets/tabs-C4O8nl-o.js": "c519fa3e4400da3eef6a3b58f62150e04931c41a5a87cdd7a4a85e66ad70c90f",
+      "ui/dist/assets/team-dialog-BpdjCbPB.js": "024d9620c480cdc73bda65f7b30bef08197d5468a70f697167f3e2da8422e3f9",
+      "ui/dist/assets/terminal-DFA3lC9h.js": "1773db6dcfbf3c0e19e6239448bb1a0aed5a0ec81321ea47d6ac6aa071c828ec",
+      "ui/dist/assets/terminal-links-CenV2cxd.js": "df43e07d3b4fded2db03dacd3c208f5af21e99b21f98382632c0ab11dbe66a66",
+      "ui/dist/assets/terminal-panel-DiyoRhJr.js": "5669dcf9b3b3f794f16213d17f85be8d6e8db53a5be35b1489bfd4b978a9e5b2",
+      "ui/dist/assets/toggle-group-CYMOuQ1E.js": "dfbe43d22409dfb710eeaefa6332383f48b73cb2df052c81b44fb60ace245bf7",
+      "ui/dist/assets/toml-BPTmHmyx.js": "55c50c3d69b919264e6f1d9e6d9279d381d88c1c9a9e1cd4a75c82abe9680de8",
+      "ui/dist/assets/tooltip-DrEhpk5M.js": "8fe649548dcefae23a9ceed80c6c4b374ab1022a8c43c8ff2308ed1e19ae388e",
+      "ui/dist/assets/tsx-udAQXfEw.js": "9fc069255af55a76568fef90e87c0e2fa53f6ae74ed8eb8b364f5e6f9a61fee7",
+      "ui/dist/assets/typescript-bsJCZSQ-.js": "95d1a5778c7f670197b7bb6cb0e95faa400d09f66c34486b4ba54a3fd597e3a1",
+      "ui/dist/assets/use-mobile-DTMR8nGD.js": "db0fb0109bf5e19ef683ad49ac2f5eb3ec82b0f6e17df4816dc4f65607043537",
+      "ui/dist/assets/workspace-app-uzirQT8M.js": "d713c85d593fadf80b4f69a245df9e0ad61eb7a0c469dc6232a3510961e0cf10",
+      "ui/dist/assets/workspace-panel-D-IHGUEs.js": "e5752f6b6220027d1e65bbf113a873fc8d37ec157074b215839e47890985ea49",
+      "ui/dist/assets/yaml-rwi0_p6S.js": "db14bd07972e830c86a4c8109530090c59def0c02864c923507b272d069b41a0"
+    }
+  },
+  "harnessHashes": {
+    "gallery-images.cjs": "d1b1e337f297f1c0307ea1eca33cb82df16c4c33d13287830ea022991aea2ee0",
+    "native-gallery-images.cjs": "d6b4c6aa9bb7851332c7c064655adccfef20f5efffac3b56f9c6c48121f199a1",
+    "app-memory.cjs": "f2fb589461bd80861abd2ecc1d4824abcff5dd7b6be1af7cc9f91e7049af1043"
+  },
+  "runs": [
+    {
+      "scenario": {
+        "surface": "chat",
+        "count": 16,
+        "diagnostic": false
+      },
+      "repeat": 0,
+      "optimized": {
+        "config": {
+          "surface": "chat",
+          "count": 16,
+          "diagnostic": false,
+          "verify": true,
+          "repo": "/home/ayushniroula/Desktop/projects/tributary",
+          "project": "/tmp/tributary-gallery-matrix-jXhvrm/project",
+          "images": [
+            {
+              "rel": "image-0.png",
+              "width": 1536,
+              "height": 1536,
+              "pixel": [
+                65,
+                105,
+                98,
+                255
+              ]
+            },
+            {
+              "rel": "image-1.png",
+              "width": 2048,
+              "height": 512,
+              "pixel": [
+                246,
+                155,
+                157,
+                255
+              ]
+            },
+            {
+              "rel": "image-2.png",
+              "width": 512,
+              "height": 2048,
+              "pixel": [
+                159,
+                90,
+                3,
+                255
+              ]
+            },
+            {
+              "rel": "image-3.png",
+              "width": 32,
+              "height": 32,
+              "pixel": [
+                14,
+                53,
+                116,
+                255
+              ]
+            },
+            {
+              "rel": "image-4.png",
+              "width": 1536,
+              "height": 1536,
+              "pixel": [
+                176,
+                39,
+                157,
+                255
+              ]
+            },
+            {
+              "rel": "image-5.png",
+              "width": 2048,
+              "height": 512,
+              "pixel": [
+                117,
+                104,
+                242,
+                255
+              ]
+            },
+            {
+              "rel": "image-6.png",
+              "width": 512,
+              "height": 2048,
+              "pixel": [
+                204,
+                200,
+                154,
+                255
+              ]
+            },
+            {
+              "rel": "image-7.png",
+              "width": 32,
+              "height": 32,
+              "pixel": [
+                53,
+                188,
+                16,
+                255
+              ]
+            },
+            {
+              "rel": "image-8.png",
+              "width": 1536,
+              "height": 1536,
+              "pixel": [
+                16,
+                234,
+                82,
+                255
+              ]
+            },
+            {
+              "rel": "image-9.png",
+              "width": 2048,
+              "height": 512,
+              "pixel": [
+                140,
+                154,
+                241,
+                255
+              ]
+            },
+            {
+              "rel": "image-10.png",
+              "width": 512,
+              "height": 2048,
+              "pixel": [
+                22,
+                253,
+                77,
+                255
+              ]
+            },
+            {
+              "rel": "image-11.png",
+              "width": 32,
+              "height": 32,
+              "pixel": [
+                72,
+                64,
+                10,
+                255
+              ]
+            },
+            {
+              "rel": "image-12.png",
+              "width": 1536,
+              "height": 1536,
+              "pixel": [
+                60,
+                222,
+                68,
+                255
+              ]
+            },
+            {
+              "rel": "image-13.png",
+              "width": 2048,
+              "height": 512,
+              "pixel": [
+                61,
+                89,
+                49,
+                255
+              ]
+            },
+            {
+              "rel": "image-14.png",
+              "width": 512,
+              "height": 2048,
+              "pixel": [
+                147,
+                147,
+                237,
+                255
+              ]
+            },
+            {
+              "rel": "image-15.png",
+              "width": 32,
+              "height": 32,
+              "pixel": [
+                223,
+                9,
+                110,
+                255
+              ]
+            }
+          ],
+          "profile": "/tmp/tributary-gallery-matrix-jXhvrm/profile",
+          "optimized": true,
+          "output": "/tmp/tributary-gallery-matrix-jXhvrm/result.json",
+          "failureOutput": "/tmp/tributary-gallery-verify-final.json.failure.json",
+          "evidence": "/tmp/tributary-gallery-verify-final-chat-16-observer.png"
+        },
+        "versions": {
+          "node": "24.21.0",
+          "acorn": "8.18.0",
+          "ada": "4.0.0",
+          "amaro": "1.1.11",
+          "ares": "1.34.8",
+          "brotli": "1.2.0",
+          "cldr": "48.0",
+          "icu": "78.2",
+          "llhttp": "9.4.3",
+          "merve": "1.2.2",
+          "modules": "149",
+          "napi": "10",
+          "nbytes": "0.1.4",
+          "ncrypto": "0.0.1",
+          "nghttp2": "1.70.0",
+          "nghttp3": "",
+          "ngtcp2": "",
+          "openssl": "0.0.0",
+          "simdjson": "4.6.7",
+          "simdutf": "7.7.0",
+          "sqlite": "3.53.4",
+          "tz": "2026d",
+          "undici": "7.29.1",
+          "unicode": "17.0",
+          "uv": "1.52.1",
+          "uvwasi": "0.0.23",
+          "v8": "15.2.124.37-electron.0",
+          "zlib": "1.3.2.1-motley",
+          "zstd": "1.6.0",
+          "electron": "44.7.2",
+          "chrome": "152.0.7977.149"
+        },
+        "phases": [
+          {
+            "label": "initial",
+            "natural": {
+              "heap": {
+                "backingStorageSize": 5017212,
+                "embedderHeapUsedSize": 7587072,
+                "totalSize": 52461568,
+                "usedSize": 41076936
+              },
+              "processTree": {
+                "startedAt": 1793972886057,
+                "finishedAt": 1793972886090,
+                "rootPid": 631637,
+                "rootStarted": "1839135",
+                "complete": true,
+                "processTreeChanged": false,
+                "issues": [],
+                "processes": [
+                  {
+                    "pid": 631637,
+                    "ppid": 631630,
+                    "started": "1839135",
+                    "role": "main",
+                    "rssKiB": 207060,
+                    "pssKiB": 126278,
+                    "privateKiB": 97640,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 631640,
+                    "ppid": 631637,
+                    "started": "1839138",
+                    "role": "zygote",
+                    "rssKiB": 55104,
+                    "pssKiB": 12897,
+                    "privateKiB": 792,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 631641,
+                    "ppid": 631637,
+                    "started": "1839138",
+                    "role": "zygote",
+                    "rssKiB": 55828,
+                    "pssKiB": 11249,
+                    "privateKiB": 228,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 631674,
+                    "ppid": 631637,
+                    "started": "1839159",
+                    "role": "utility",
+                    "rssKiB": 81296,
+                    "pssKiB": 27613,
+                    "privateKiB": 13808,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 631672,
+                    "ppid": 631640,
+                    "started": "1839159",
+                    "role": "gpu-process",
+                    "rssKiB": 181192,
+                    "pssKiB": 86715,
+                    "privateKiB": 31984,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 631643,
+                    "ppid": 631641,
+                    "started": "1839141",
+                    "role": "zygote",
+                    "rssKiB": 14012,
+                    "pssKiB": 4187,
+                    "privateKiB": 264,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 631714,
+                    "ppid": 631643,
+                    "started": "1839167",
+                    "role": "renderer",
+                    "rssKiB": 267548,
+                    "pssKiB": 196876,
+                    "privateKiB": 155560,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  }
+                ],
+                "totals": {
+                  "rssKiB": 862040,
+                  "pssKiB": 465815,
+                  "privateKiB": 300276,
+                  "privateHugetlbKiB": 0,
+                  "sharedHugetlbKiB": 0,
+                  "swapPssKiB": 0
+                },
+                "observedTotals": {
+                  "rssKiB": 862040,
+                  "pssKiB": 465815,
+                  "privateKiB": 300276,
+                  "privateHugetlbKiB": 0,
+                  "sharedHugetlbKiB": 0,
+                  "swapPssKiB": 0
+                },
+                "scope": "Linux process-tree sample, not atomic. PSS apportions shared pages; summed RSS double-counts sharing. Hugetlb is separate. Detached/reparented helpers, external model runtimes and display-server/GPU-driver allocations outside these processes are excluded. No forced GC."
+              },
+              "state": {
+                "fileObjects": 0,
+                "base64Chars": 0,
+                "dataUrlChars": 0,
+                "liveUrls": 3,
+                "createdUrls": 5,
+                "revokedUrls": 2,
+                "imageElements": 3,
+                "tiles": 16
+              },
+              "geometry": {
+                "top": 2018,
+                "height": 2694,
+                "tiles": [
+                  {
+                    "label": "Expand image: gallery-0",
+                    "width": 96,
+                    "height": 96,
+                    "top": 240.5
+                  },
+                  {
+                    "label": "Expand image: gallery-1",
+                    "width": 96,
+                    "height": 96,
+                    "top": 368.5
+                  },
+                  {
+                    "label": "Expand image: gallery-2",
+                    "width": 96,
+                    "height": 96,
+                    "top": 496.5
+                  },
+                  {
+                    "label": "Expand image: gallery-3",
+                    "width": 96,
+                    "height": 96,
+                    "top": 624.5
+                  },
+                  {
+                    "label": "Expand image: gallery-4",
+                    "width": 96,
+                    "height": 96,
+                    "top": 752.5
+                  },
+                  {
+                    "label": "Expand image: gallery-5",
+                    "width": 96,
+                    "height": 96,
+                    "top": 880.5
+                  },
+                  {
+                    "label": "Expand image: gallery-6",
+                    "width": 96,
+                    "height": 96,
+                    "top": 1008.5
+                  },
+                  {
+                    "label": "Expand image: gallery-7",
+                    "width": 96,
+                    "height": 96,
+                    "top": 1136.5
+                  },
+                  {
+                    "label": "Expand image: gallery-8",
+                    "width": 96,
+                    "height": 96,
+                    "top": 1264.5
+                  },
+                  {
+                    "label": "Expand image: gallery-9",
+                    "width": 96,
+                    "height": 96,
+                    "top": 1392.5
+                  },
+                  {
+                    "label": "Expand image: gallery-10",
+                    "width": 96,
+                    "height": 96,
+                    "top": 1520.5
+                  },
+                  {
+                    "label": "Expand image: gallery-11",
+                    "width": 96,
+                    "height": 96,
+                    "top": 1648.5
+                  },
+                  {
+                    "label": "Expand image: gallery-12",
+                    "width": 256,
+                    "height": 256,
+                    "top": 1776.5
+                  },
+                  {
+                    "label": "Expand image: gallery-13",
+                    "width": 614,
+                    "height": 153.5,
+                    "top": 2064.5
+                  },
+                  {
+                    "label": "Expand image: gallery-14",
+                    "width": 96,
+                    "height": 256,
+                    "top": 2250
+                  },
+                  {
+                    "label": "Expand image: gallery-15",
+                    "width": 96,
+                    "height": 96,
+                    "top": 2538
+                  }
+                ]
+              }
+            },
+            "retained": null
+          },
+          {
+            "label": "walked-forward",
+            "natural": {
+              "heap": {
+                "backingStorageSize": 18105010,
+                "embedderHeapUsedSize": 9181200,
+                "totalSize": 105488384,
+                "usedSize": 92662920
+              },
+              "processTree": {
+                "startedAt": 1793972888918,
+                "finishedAt": 1793972888967,
+                "rootPid": 631637,
+                "rootStarted": "1839135",
+                "complete": true,
+                "processTreeChanged": false,
+                "issues": [],
+                "processes": [
+                  {
+                    "pid": 631637,
+                    "ppid": 631630,
+                    "started": "1839135",
+                    "role": "main",
+                    "rssKiB": 209608,
+                    "pssKiB": 128345,
+                    "privateKiB": 99356,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 631640,
+                    "ppid": 631637,
+                    "started": "1839138",
+                    "role": "zygote",
+                    "rssKiB": 55104,
+                    "pssKiB": 12897,
+                    "privateKiB": 792,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 631641,
+                    "ppid": 631637,
+                    "started": "1839138",
+                    "role": "zygote",
+                    "rssKiB": 55828,
+                    "pssKiB": 11245,
+                    "privateKiB": 228,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 631674,
+                    "ppid": 631637,
+                    "started": "1839159",
+                    "role": "utility",
+                    "rssKiB": 81296,
+                    "pssKiB": 27601,
+                    "privateKiB": 13808,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 631672,
+                    "ppid": 631640,
+                    "started": "1839159",
+                    "role": "gpu-process",
+                    "rssKiB": 182144,
+                    "pssKiB": 87132,
+                    "privateKiB": 32012,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 631643,
+                    "ppid": 631641,
+                    "started": "1839141",
+                    "role": "zygote",
+                    "rssKiB": 14012,
+                    "pssKiB": 4187,
+                    "privateKiB": 264,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 631714,
+                    "ppid": 631643,
+                    "started": "1839167",
+                    "role": "renderer",
+                    "rssKiB": 499124,
+                    "pssKiB": 427735,
+                    "privateKiB": 385820,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  }
+                ],
+                "totals": {
+                  "rssKiB": 1097116,
+                  "pssKiB": 699142,
+                  "privateKiB": 532280,
+                  "privateHugetlbKiB": 0,
+                  "sharedHugetlbKiB": 0,
+                  "swapPssKiB": 0
+                },
+                "observedTotals": {
+                  "rssKiB": 1097116,
+                  "pssKiB": 699142,
+                  "privateKiB": 532280,
+                  "privateHugetlbKiB": 0,
+                  "sharedHugetlbKiB": 0,
+                  "swapPssKiB": 0
+                },
+                "scope": "Linux process-tree sample, not atomic. PSS apportions shared pages; summed RSS double-counts sharing. Hugetlb is separate. Detached/reparented helpers, external model runtimes and display-server/GPU-driver allocations outside these processes are excluded. No forced GC."
+              },
+              "state": {
+                "fileObjects": 0,
+                "base64Chars": 0,
+                "dataUrlChars": 0,
+                "liveUrls": 3,
+                "createdUrls": 25,
+                "revokedUrls": 22,
+                "imageElements": 3,
+                "tiles": 16
+              },
+              "geometry": {
+                "top": 3151,
+                "height": 3827,
+                "tiles": [
+                  {
+                    "label": "Expand image: gallery-0",
+                    "width": 256,
+                    "height": 256,
+                    "top": 240.5
+                  },
+                  {
+                    "label": "Expand image: gallery-1",
+                    "width": 614,
+                    "height": 153.5,
+                    "top": 528.5
+                  },
+                  {
+                    "label": "Expand image: gallery-2",
+                    "width": 96,
+                    "height": 256,
+                    "top": 714
+                  },
+                  {
+                    "label": "Expand image: gallery-3",
+                    "width": 96,
+                    "height": 96,
+                    "top": 1002
+                  },
+                  {
+                    "label": "Expand image: gallery-4",
+                    "width": 256,
+                    "height": 256,
+                    "top": 1130
+                  },
+                  {
+                    "label": "Expand image: gallery-5",
+                    "width": 614,
+                    "height": 153.5,
+                    "top": 1418
+                  },
+                  {
+                    "label": "Expand image: gallery-6",
+                    "width": 96,
+                    "height": 256,
+                    "top": 1603.5
+                  },
+                  {
+                    "label": "Expand image: gallery-7",
+                    "width": 96,
+                    "height": 96,
+                    "top": 1891.5
+                  },
+                  {
+                    "label": "Expand image: gallery-8",
+                    "width": 256,
+                    "height": 256,
+                    "top": 2019.5
+                  },
+                  {
+                    "label": "Expand image: gallery-9",
+                    "width": 614,
+                    "height": 153.5,
+                    "top": 2307.5
+                  },
+                  {
+                    "label": "Expand image: gallery-10",
+                    "width": 96,
+                    "height": 256,
+                    "top": 2493
+                  },
+                  {
+                    "label": "Expand image: gallery-11",
+                    "width": 96,
+                    "height": 96,
+                    "top": 2781
+                  },
+                  {
+                    "label": "Expand image: gallery-12",
+                    "width": 256,
+                    "height": 256,
+                    "top": 2909
+                  },
+                  {
+                    "label": "Expand image: gallery-13",
+                    "width": 614,
+                    "height": 153.5,
+                    "top": 3197
+                  },
+                  {
+                    "label": "Expand image: gallery-14",
+                    "width": 96,
+                    "height": 256,
+                    "top": 3382.5
+                  },
+                  {
+                    "label": "Expand image: gallery-15",
+                    "width": 96,
+                    "height": 96,
+                    "top": 3670.5
+                  }
+                ]
+              }
+            },
+            "retained": null
+          },
+          {
+            "label": "returned-start",
+            "natural": {
+              "heap": {
+                "backingStorageSize": 38572300,
+                "embedderHeapUsedSize": 11984992,
+                "totalSize": 106004480,
+                "usedSize": 93693164
+              },
+              "processTree": {
+                "startedAt": 1793972891660,
+                "finishedAt": 1793972891691,
+                "rootPid": 631637,
+                "rootStarted": "1839135",
+                "complete": true,
+                "processTreeChanged": false,
+                "issues": [],
+                "processes": [
+                  {
+                    "pid": 631637,
+                    "ppid": 631630,
+                    "started": "1839135",
+                    "role": "main",
+                    "rssKiB": 206708,
+                    "pssKiB": 125288,
+                    "privateKiB": 96196,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 631640,
+                    "ppid": 631637,
+                    "started": "1839138",
+                    "role": "zygote",
+                    "rssKiB": 55104,
+                    "pssKiB": 12893,
+                    "privateKiB": 792,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 631641,
+                    "ppid": 631637,
+                    "started": "1839138",
+                    "role": "zygote",
+                    "rssKiB": 55828,
+                    "pssKiB": 11242,
+                    "privateKiB": 228,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 631674,
+                    "ppid": 631637,
+                    "started": "1839159",
+                    "role": "utility",
+                    "rssKiB": 81620,
+                    "pssKiB": 27690,
+                    "privateKiB": 13796,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 631672,
+                    "ppid": 631640,
+                    "started": "1839159",
+                    "role": "gpu-process",
+                    "rssKiB": 170448,
+                    "pssKiB": 82305,
+                    "privateKiB": 34080,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 631643,
+                    "ppid": 631641,
+                    "started": "1839141",
+                    "role": "zygote",
+                    "rssKiB": 14012,
+                    "pssKiB": 4187,
+                    "privateKiB": 264,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 631714,
+                    "ppid": 631643,
+                    "started": "1839167",
+                    "role": "renderer",
+                    "rssKiB": 624348,
+                    "pssKiB": 559736,
+                    "privateKiB": 524648,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  }
+                ],
+                "totals": {
+                  "rssKiB": 1208068,
+                  "pssKiB": 823341,
+                  "privateKiB": 670004,
+                  "privateHugetlbKiB": 0,
+                  "sharedHugetlbKiB": 0,
+                  "swapPssKiB": 0
+                },
+                "observedTotals": {
+                  "rssKiB": 1208068,
+                  "pssKiB": 823341,
+                  "privateKiB": 670004,
+                  "privateHugetlbKiB": 0,
+                  "sharedHugetlbKiB": 0,
+                  "swapPssKiB": 0
+                },
+                "scope": "Linux process-tree sample, not atomic. PSS apportions shared pages; summed RSS double-counts sharing. Hugetlb is separate. Detached/reparented helpers, external model runtimes and display-server/GPU-driver allocations outside these processes are excluded. No forced GC."
+              },
+              "state": {
+                "fileObjects": 0,
+                "base64Chars": 0,
+                "dataUrlChars": 0,
+                "liveUrls": 3,
+                "createdUrls": 38,
+                "revokedUrls": 35,
+                "imageElements": 3,
+                "tiles": 16
+              },
+              "geometry": {
+                "top": 0,
+                "height": 3827,
+                "tiles": [
+                  {
+                    "label": "Expand image: gallery-0",
+                    "width": 256,
+                    "height": 256,
+                    "top": 240.5
+                  },
+                  {
+                    "label": "Expand image: gallery-1",
+                    "width": 614,
+                    "height": 153.5,
+                    "top": 528.5
+                  },
+                  {
+                    "label": "Expand image: gallery-2",
+                    "width": 96,
+                    "height": 256,
+                    "top": 714
+                  },
+                  {
+                    "label": "Expand image: gallery-3",
+                    "width": 96,
+                    "height": 96,
+                    "top": 1002
+                  },
+                  {
+                    "label": "Expand image: gallery-4",
+                    "width": 256,
+                    "height": 256,
+                    "top": 1130
+                  },
+                  {
+                    "label": "Expand image: gallery-5",
+                    "width": 614,
+                    "height": 153.5,
+                    "top": 1418
+                  },
+                  {
+                    "label": "Expand image: gallery-6",
+                    "width": 96,
+                    "height": 256,
+                    "top": 1603.5
+                  },
+                  {
+                    "label": "Expand image: gallery-7",
+                    "width": 96,
+                    "height": 96,
+                    "top": 1891.5
+                  },
+                  {
+                    "label": "Expand image: gallery-8",
+                    "width": 256,
+                    "height": 256,
+                    "top": 2019.5
+                  },
+                  {
+                    "label": "Expand image: gallery-9",
+                    "width": 614,
+                    "height": 153.5,
+                    "top": 2307.5
+                  },
+                  {
+                    "label": "Expand image: gallery-10",
+                    "width": 96,
+                    "height": 256,
+                    "top": 2493
+                  },
+                  {
+                    "label": "Expand image: gallery-11",
+                    "width": 96,
+                    "height": 96,
+                    "top": 2781
+                  },
+                  {
+                    "label": "Expand image: gallery-12",
+                    "width": 256,
+                    "height": 256,
+                    "top": 2909
+                  },
+                  {
+                    "label": "Expand image: gallery-13",
+                    "width": 614,
+                    "height": 153.5,
+                    "top": 3197
+                  },
+                  {
+                    "label": "Expand image: gallery-14",
+                    "width": 96,
+                    "height": 256,
+                    "top": 3382.5
+                  },
+                  {
+                    "label": "Expand image: gallery-15",
+                    "width": 96,
+                    "height": 96,
+                    "top": 3670.5
+                  }
+                ]
+              }
+            },
+            "retained": null
+          },
+          {
+            "label": "returned-bottom",
+            "natural": {
+              "heap": {
+                "backingStorageSize": 44875919,
+                "embedderHeapUsedSize": 13344960,
+                "totalSize": 114405376,
+                "usedSize": 103796700
+              },
+              "processTree": {
+                "startedAt": 1793972892485,
+                "finishedAt": 1793972892538,
+                "rootPid": 631637,
+                "rootStarted": "1839135",
+                "complete": true,
+                "processTreeChanged": false,
+                "issues": [],
+                "processes": [
+                  {
+                    "pid": 631637,
+                    "ppid": 631630,
+                    "started": "1839135",
+                    "role": "main",
+                    "rssKiB": 228628,
+                    "pssKiB": 147204,
+                    "privateKiB": 118108,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 631640,
+                    "ppid": 631637,
+                    "started": "1839138",
+                    "role": "zygote",
+                    "rssKiB": 55104,
+                    "pssKiB": 12893,
+                    "privateKiB": 792,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 631641,
+                    "ppid": 631637,
+                    "started": "1839138",
+                    "role": "zygote",
+                    "rssKiB": 55828,
+                    "pssKiB": 11242,
+                    "privateKiB": 228,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 631674,
+                    "ppid": 631637,
+                    "started": "1839159",
+                    "role": "utility",
+                    "rssKiB": 81620,
+                    "pssKiB": 27690,
+                    "privateKiB": 13796,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 631672,
+                    "ppid": 631640,
+                    "started": "1839159",
+                    "role": "gpu-process",
+                    "rssKiB": 168608,
+                    "pssKiB": 80687,
+                    "privateKiB": 32684,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 631643,
+                    "ppid": 631641,
+                    "started": "1839141",
+                    "role": "zygote",
+                    "rssKiB": 14012,
+                    "pssKiB": 4187,
+                    "privateKiB": 264,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 631714,
+                    "ppid": 631643,
+                    "started": "1839167",
+                    "role": "renderer",
+                    "rssKiB": 652992,
+                    "pssKiB": 588598,
+                    "privateKiB": 553728,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  }
+                ],
+                "totals": {
+                  "rssKiB": 1256792,
+                  "pssKiB": 872501,
+                  "privateKiB": 719600,
+                  "privateHugetlbKiB": 0,
+                  "sharedHugetlbKiB": 0,
+                  "swapPssKiB": 0
+                },
+                "observedTotals": {
+                  "rssKiB": 1256792,
+                  "pssKiB": 872501,
+                  "privateKiB": 719600,
+                  "privateHugetlbKiB": 0,
+                  "sharedHugetlbKiB": 0,
+                  "swapPssKiB": 0
+                },
+                "scope": "Linux process-tree sample, not atomic. PSS apportions shared pages; summed RSS double-counts sharing. Hugetlb is separate. Detached/reparented helpers, external model runtimes and display-server/GPU-driver allocations outside these processes are excluded. No forced GC."
+              },
+              "state": {
+                "fileObjects": 0,
+                "base64Chars": 0,
+                "dataUrlChars": 0,
+                "liveUrls": 3,
+                "createdUrls": 41,
+                "revokedUrls": 38,
+                "imageElements": 3,
+                "tiles": 16
+              },
+              "geometry": {
+                "top": 3151,
+                "height": 3827,
+                "tiles": [
+                  {
+                    "label": "Expand image: gallery-0",
+                    "width": 256,
+                    "height": 256,
+                    "top": 240.5
+                  },
+                  {
+                    "label": "Expand image: gallery-1",
+                    "width": 614,
+                    "height": 153.5,
+                    "top": 528.5
+                  },
+                  {
+                    "label": "Expand image: gallery-2",
+                    "width": 96,
+                    "height": 256,
+                    "top": 714
+                  },
+                  {
+                    "label": "Expand image: gallery-3",
+                    "width": 96,
+                    "height": 96,
+                    "top": 1002
+                  },
+                  {
+                    "label": "Expand image: gallery-4",
+                    "width": 256,
+                    "height": 256,
+                    "top": 1130
+                  },
+                  {
+                    "label": "Expand image: gallery-5",
+                    "width": 614,
+                    "height": 153.5,
+                    "top": 1418
+                  },
+                  {
+                    "label": "Expand image: gallery-6",
+                    "width": 96,
+                    "height": 256,
+                    "top": 1603.5
+                  },
+                  {
+                    "label": "Expand image: gallery-7",
+                    "width": 96,
+                    "height": 96,
+                    "top": 1891.5
+                  },
+                  {
+                    "label": "Expand image: gallery-8",
+                    "width": 256,
+                    "height": 256,
+                    "top": 2019.5
+                  },
+                  {
+                    "label": "Expand image: gallery-9",
+                    "width": 614,
+                    "height": 153.5,
+                    "top": 2307.5
+                  },
+                  {
+                    "label": "Expand image: gallery-10",
+                    "width": 96,
+                    "height": 256,
+                    "top": 2493
+                  },
+                  {
+                    "label": "Expand image: gallery-11",
+                    "width": 96,
+                    "height": 96,
+                    "top": 2781
+                  },
+                  {
+                    "label": "Expand image: gallery-12",
+                    "width": 256,
+                    "height": 256,
+                    "top": 2909
+                  },
+                  {
+                    "label": "Expand image: gallery-13",
+                    "width": 614,
+                    "height": 153.5,
+                    "top": 3197
+                  },
+                  {
+                    "label": "Expand image: gallery-14",
+                    "width": 96,
+                    "height": 256,
+                    "top": 3382.5
+                  },
+                  {
+                    "label": "Expand image: gallery-15",
+                    "width": 96,
+                    "height": 96,
+                    "top": 3670.5
+                  }
+                ]
+              }
+            },
+            "retained": null
+          }
+        ],
+        "checks": [
+          "Every real PNG decodes with exact reference pixel/dimensions on forward and reverse gallery walks; known tile geometry stays stable.",
+          "Offscreen image payloads/URLs release while every gallery tile remains.",
+          "Native Tab reaches the next image and restores its decoded content.",
+          "Open dialog and returned keyboard focus keep the shared image alive offscreen; blur permits release.",
+          "Known placeholders match decoded image geometry at narrow and wide native window sizes.",
+          "Duplicate local references share one Blob; removing one reference preserves the other.",
+          "Changing the source closes the old dialog, releases its resource and decodes the new source.",
+          "A missing file reports a local error; Retry reads the repaired file and renders it.",
+          "Each explicit Retry is fresh even while another duplicate reference holds a failed attempt.",
+          "Closing a pending preview and leaving its tile discards the late file response without recreating a Blob.",
+          "Remote image references remain explicit external-open buttons and create no remote image element.",
+          "Local SVG references decode through an owned Blob URL rather than a retained text/data URL."
+        ],
+        "visits": [
+          {
+            "walk": "forward",
+            "index": 0,
+            "decodedMs": 130.92999400000008
+          },
+          {
+            "walk": "forward",
+            "index": 1,
+            "decodedMs": 9.171639000000141
+          },
+          {
+            "walk": "forward",
+            "index": 2,
+            "decodedMs": 8.488835999999992
+          },
+          {
+            "walk": "forward",
+            "index": 3,
+            "decodedMs": 6.7123750000000655
+          },
+          {
+            "walk": "forward",
+            "index": 4,
+            "decodedMs": 17.00770199999988
+          },
+          {
+            "walk": "forward",
+            "index": 5,
+            "decodedMs": 10.43233199999986
+          },
+          {
+            "walk": "forward",
+            "index": 6,
+            "decodedMs": 12.91475599999967
+          },
+          {
+            "walk": "forward",
+            "index": 7,
+            "decodedMs": 2.920984000000317
+          },
+          {
+            "walk": "forward",
+            "index": 8,
+            "decodedMs": 16.94616700000006
+          },
+          {
+            "walk": "forward",
+            "index": 9,
+            "decodedMs": 12.5179320000002
+          },
+          {
+            "walk": "forward",
+            "index": 10,
+            "decodedMs": 13.32235700000001
+          },
+          {
+            "walk": "forward",
+            "index": 11,
+            "decodedMs": 3.657622000000174
+          },
+          {
+            "walk": "forward",
+            "index": 12,
+            "decodedMs": 21.397155999999995
+          },
+          {
+            "walk": "forward",
+            "index": 13,
+            "decodedMs": 8.997447000000193
+          },
+          {
+            "walk": "forward",
+            "index": 14,
+            "decodedMs": 9.167359000000033
+          },
+          {
+            "walk": "forward",
+            "index": 15,
+            "decodedMs": 5.181393999999727
+          },
+          {
+            "walk": "reverse",
+            "index": 15,
+            "decodedMs": 2.7614119999998366
+          },
+          {
+            "walk": "reverse",
+            "index": 14,
+            "decodedMs": 4.238172999999733
+          },
+          {
+            "walk": "reverse",
+            "index": 13,
+            "decodedMs": 2.0615429999998014
+          },
+          {
+            "walk": "reverse",
+            "index": 12,
+            "decodedMs": 18.746240999999827
+          },
+          {
+            "walk": "reverse",
+            "index": 11,
+            "decodedMs": 2.2235630000004676
+          },
+          {
+            "walk": "reverse",
+            "index": 10,
+            "decodedMs": 17.422378999999637
+          },
+          {
+            "walk": "reverse",
+            "index": 9,
+            "decodedMs": 9.021859999999833
+          },
+          {
+            "walk": "reverse",
+            "index": 8,
+            "decodedMs": 17.70679999999993
+          },
+          {
+            "walk": "reverse",
+            "index": 7,
+            "decodedMs": 2.4146700000001147
+          },
+          {
+            "walk": "reverse",
+            "index": 6,
+            "decodedMs": 11.067525999999816
+          },
+          {
+            "walk": "reverse",
+            "index": 5,
+            "decodedMs": 12.990440999999919
+          },
+          {
+            "walk": "reverse",
+            "index": 4,
+            "decodedMs": 19.66642800000045
+          },
+          {
+            "walk": "reverse",
+            "index": 3,
+            "decodedMs": 2.0601329999999507
+          },
+          {
+            "walk": "reverse",
+            "index": 2,
+            "decodedMs": 9.159076999999343
+          },
+          {
+            "walk": "reverse",
+            "index": 1,
+            "decodedMs": 11.074759000000086
+          },
+          {
+            "walk": "reverse",
+            "index": 0,
+            "decodedMs": 15.635535000000345
+          },
+          {
+            "walk": "return",
+            "index": 15,
+            "decodedMs": 68.44541800000025
+          },
+          {
+            "walk": "verification",
+            "index": 0,
+            "decodedMs": 137.5330240000003
+          },
+          {
+            "walk": "verification",
+            "index": 0,
+            "decodedMs": 1.9323879999992641
+          },
+          {
+            "walk": "verification",
+            "index": 0,
+            "decodedMs": 154.3512439999995
+          },
+          {
+            "walk": "verification",
+            "index": 1,
+            "decodedMs": 8.359051000001273
+          },
+          {
+            "walk": "verification",
+            "index": 2,
+            "decodedMs": 9.156934000000547
+          },
+          {
+            "walk": "verification",
+            "index": 3,
+            "decodedMs": 2.3836510000001
+          },
+          {
+            "walk": "verification",
+            "index": 0,
+            "decodedMs": 115.83742200000052
+          },
+          {
+            "walk": "verification",
+            "index": 1,
+            "decodedMs": 13.030526000000464
+          },
+          {
+            "walk": "verification",
+            "index": 2,
+            "decodedMs": 1.790487000000212
+          },
+          {
+            "walk": "verification",
+            "index": 3,
+            "decodedMs": 2.5639220000011846
+          }
+        ],
+        "reads": [
+          {
+            "rel": "image-1.png",
+            "chars": 4196412
+          },
+          {
+            "rel": "image-0.png",
+            "chars": 9442344
+          },
+          {
+            "rel": "image-11.png",
+            "chars": 4232
+          },
+          {
+            "rel": "image-13.png",
+            "chars": 4196412
+          },
+          {
+            "rel": "image-12.png",
+            "chars": 9442344
+          },
+          {
+            "rel": "image-14.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-15.png",
+            "chars": 4232
+          },
+          {
+            "rel": "image-1.png",
+            "chars": 4196412
+          },
+          {
+            "rel": "image-0.png",
+            "chars": 9442344
+          },
+          {
+            "rel": "image-2.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-3.png",
+            "chars": 4232
+          },
+          {
+            "rel": "image-3.png",
+            "chars": 4232
+          },
+          {
+            "rel": "image-3.png",
+            "chars": 4232
+          },
+          {
+            "rel": "image-4.png",
+            "chars": 9442344
+          },
+          {
+            "rel": "image-5.png",
+            "chars": 4196412
+          },
+          {
+            "rel": "image-6.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-6.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-7.png",
+            "chars": 4232
+          },
+          {
+            "rel": "image-8.png",
+            "chars": 9442344
+          },
+          {
+            "rel": "image-9.png",
+            "chars": 4196412
+          },
+          {
+            "rel": "image-10.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-10.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-11.png",
+            "chars": 4232
+          },
+          {
+            "rel": "image-12.png",
+            "chars": 9442344
+          },
+          {
+            "rel": "image-13.png",
+            "chars": 4196412
+          },
+          {
+            "rel": "image-14.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-15.png",
+            "chars": 4232
+          },
+          {
+            "rel": "image-12.png",
+            "chars": 9442344
+          },
+          {
+            "rel": "image-11.png",
+            "chars": 4232
+          },
+          {
+            "rel": "image-10.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-9.png",
+            "chars": 4196412
+          },
+          {
+            "rel": "image-8.png",
+            "chars": 9442344
+          },
+          {
+            "rel": "image-7.png",
+            "chars": 4232
+          },
+          {
+            "rel": "image-6.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-5.png",
+            "chars": 4196412
+          },
+          {
+            "rel": "image-4.png",
+            "chars": 9442344
+          },
+          {
+            "rel": "image-3.png",
+            "chars": 4232
+          },
+          {
+            "rel": "image-2.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-1.png",
+            "chars": 4196412
+          },
+          {
+            "rel": "image-0.png",
+            "chars": 9442344
+          },
+          {
+            "rel": "image-13.png",
+            "chars": 4196412
+          },
+          {
+            "rel": "image-14.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-15.png",
+            "chars": 4232
+          },
+          {
+            "rel": "image-1.png",
+            "chars": 4196412
+          },
+          {
+            "rel": "image-0.png",
+            "chars": 9442344
+          },
+          {
+            "rel": "image-2.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-14.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-13.png",
+            "chars": 4196412
+          },
+          {
+            "rel": "image-15.png",
+            "chars": 4232
+          },
+          {
+            "rel": "image-1.png",
+            "chars": 4196412
+          },
+          {
+            "rel": "image-0.png",
+            "chars": 9442344
+          },
+          {
+            "rel": "image-2.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-3.png",
+            "chars": 4232
+          },
+          {
+            "rel": "image-4.png",
+            "chars": 9442344
+          },
+          {
+            "rel": "image-1.png",
+            "chars": 4196412
+          },
+          {
+            "rel": "image-0.png",
+            "chars": 9442344
+          },
+          {
+            "rel": "image-3.png",
+            "chars": 4232
+          },
+          {
+            "rel": "image-4.png",
+            "chars": 9442344
+          },
+          {
+            "rel": "image-15.png",
+            "chars": 4232
+          },
+          {
+            "rel": "image-14.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-3.png",
+            "chars": 4232
+          },
+          {
+            "rel": "image-0.png",
+            "chars": 9442344
+          },
+          {
+            "rel": "repair.png",
+            "chars": 4232
+          },
+          {
+            "rel": "image-13.png",
+            "chars": 4196412
+          },
+          {
+            "rel": "duplicate-missing.png",
+            "chars": 4232
+          },
+          {
+            "rel": "slow.png",
+            "chars": 4232
+          },
+          {
+            "rel": "image-13.png",
+            "chars": 4196412
+          },
+          {
+            "rel": "image-14.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-15.png",
+            "chars": 4232
+          },
+          {
+            "rel": "vector.svg",
+            "chars": 0
+          }
+        ],
+        "requests": [
+          {
+            "rel": "image-0.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-1.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-11.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-12.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-13.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-14.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-15.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-0.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-1.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-2.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-3.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-3.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-3.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-4.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-5.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-6.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-6.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-7.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-8.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-9.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-10.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-10.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-11.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-12.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-13.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-14.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-15.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-12.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-10.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-11.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-9.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-8.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-6.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-7.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-5.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-4.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-2.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-3.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-1.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-0.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-13.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-14.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-15.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-0.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-1.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-2.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-13.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-14.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-15.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-0.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-1.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-2.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-3.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-4.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-1.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-0.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-3.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-4.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-14.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-15.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-3.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-0.png",
+            "metadata": false
+          },
+          {
+            "rel": "repair.png",
+            "metadata": false
+          },
+          {
+            "rel": "repair.png",
+            "metadata": false
+          },
+          {
+            "rel": "duplicate-missing.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-13.png",
+            "metadata": false
+          },
+          {
+            "rel": "duplicate-missing.png",
+            "metadata": false
+          },
+          {
+            "rel": "duplicate-missing.png",
+            "metadata": false
+          },
+          {
+            "rel": "slow.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-13.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-14.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-15.png",
+            "metadata": false
+          },
+          {
+            "rel": "vector.svg",
+            "metadata": false
+          }
+        ],
+        "maximumReads": 2,
+        "scope": "Private Linux source Electron. Scroll request to decoded/pixel-checked DOM includes IPC/polling/canvas verification; not physical input-to-paint. Fixed settling waits are outside visit times. Natural and explicit diagnostic cohorts are separate processes. Complete app-tree PSS only; no model/GPU-driver memory claim."
+      }
+    },
+    {
+      "scenario": {
+        "surface": "file",
+        "count": 16,
+        "diagnostic": false
+      },
+      "repeat": 0,
+      "optimized": {
+        "config": {
+          "surface": "file",
+          "count": 16,
+          "diagnostic": false,
+          "verify": true,
+          "repo": "/home/ayushniroula/Desktop/projects/tributary",
+          "project": "/tmp/tributary-gallery-matrix-jXhvrm/project",
+          "images": [
+            {
+              "rel": "image-0.png",
+              "width": 1536,
+              "height": 1536,
+              "pixel": [
+                65,
+                105,
+                98,
+                255
+              ]
+            },
+            {
+              "rel": "image-1.png",
+              "width": 2048,
+              "height": 512,
+              "pixel": [
+                246,
+                155,
+                157,
+                255
+              ]
+            },
+            {
+              "rel": "image-2.png",
+              "width": 512,
+              "height": 2048,
+              "pixel": [
+                159,
+                90,
+                3,
+                255
+              ]
+            },
+            {
+              "rel": "image-3.png",
+              "width": 32,
+              "height": 32,
+              "pixel": [
+                14,
+                53,
+                116,
+                255
+              ]
+            },
+            {
+              "rel": "image-4.png",
+              "width": 1536,
+              "height": 1536,
+              "pixel": [
+                176,
+                39,
+                157,
+                255
+              ]
+            },
+            {
+              "rel": "image-5.png",
+              "width": 2048,
+              "height": 512,
+              "pixel": [
+                117,
+                104,
+                242,
+                255
+              ]
+            },
+            {
+              "rel": "image-6.png",
+              "width": 512,
+              "height": 2048,
+              "pixel": [
+                204,
+                200,
+                154,
+                255
+              ]
+            },
+            {
+              "rel": "image-7.png",
+              "width": 32,
+              "height": 32,
+              "pixel": [
+                53,
+                188,
+                16,
+                255
+              ]
+            },
+            {
+              "rel": "image-8.png",
+              "width": 1536,
+              "height": 1536,
+              "pixel": [
+                16,
+                234,
+                82,
+                255
+              ]
+            },
+            {
+              "rel": "image-9.png",
+              "width": 2048,
+              "height": 512,
+              "pixel": [
+                140,
+                154,
+                241,
+                255
+              ]
+            },
+            {
+              "rel": "image-10.png",
+              "width": 512,
+              "height": 2048,
+              "pixel": [
+                22,
+                253,
+                77,
+                255
+              ]
+            },
+            {
+              "rel": "image-11.png",
+              "width": 32,
+              "height": 32,
+              "pixel": [
+                72,
+                64,
+                10,
+                255
+              ]
+            },
+            {
+              "rel": "image-12.png",
+              "width": 1536,
+              "height": 1536,
+              "pixel": [
+                60,
+                222,
+                68,
+                255
+              ]
+            },
+            {
+              "rel": "image-13.png",
+              "width": 2048,
+              "height": 512,
+              "pixel": [
+                61,
+                89,
+                49,
+                255
+              ]
+            },
+            {
+              "rel": "image-14.png",
+              "width": 512,
+              "height": 2048,
+              "pixel": [
+                147,
+                147,
+                237,
+                255
+              ]
+            },
+            {
+              "rel": "image-15.png",
+              "width": 32,
+              "height": 32,
+              "pixel": [
+                223,
+                9,
+                110,
+                255
+              ]
+            }
+          ],
+          "profile": "/tmp/tributary-gallery-matrix-jXhvrm/profile",
+          "optimized": true,
+          "output": "/tmp/tributary-gallery-matrix-jXhvrm/result.json",
+          "failureOutput": "/tmp/tributary-gallery-verify-final.json.failure.json",
+          "evidence": "/tmp/tributary-gallery-verify-final-file-16-observer.png"
+        },
+        "versions": {
+          "node": "24.21.0",
+          "acorn": "8.18.0",
+          "ada": "4.0.0",
+          "amaro": "1.1.11",
+          "ares": "1.34.8",
+          "brotli": "1.2.0",
+          "cldr": "48.0",
+          "icu": "78.2",
+          "llhttp": "9.4.3",
+          "merve": "1.2.2",
+          "modules": "149",
+          "napi": "10",
+          "nbytes": "0.1.4",
+          "ncrypto": "0.0.1",
+          "nghttp2": "1.70.0",
+          "nghttp3": "",
+          "ngtcp2": "",
+          "openssl": "0.0.0",
+          "simdjson": "4.6.7",
+          "simdutf": "7.7.0",
+          "sqlite": "3.53.4",
+          "tz": "2026d",
+          "undici": "7.29.1",
+          "unicode": "17.0",
+          "uv": "1.52.1",
+          "uvwasi": "0.0.23",
+          "v8": "15.2.124.37-electron.0",
+          "zlib": "1.3.2.1-motley",
+          "zstd": "1.6.0",
+          "electron": "44.7.2",
+          "chrome": "152.0.7977.149"
+        },
+        "phases": [
+          {
+            "label": "initial",
+            "natural": {
+              "heap": {
+                "backingStorageSize": 12361207,
+                "embedderHeapUsedSize": 8779464,
+                "totalSize": 65306624,
+                "usedSize": 44545156
+              },
+              "processTree": {
+                "startedAt": 1793972899031,
+                "finishedAt": 1793972899073,
+                "rootPid": 632083,
+                "rootStarted": "1840417",
+                "complete": true,
+                "processTreeChanged": false,
+                "issues": [],
+                "processes": [
+                  {
+                    "pid": 632083,
+                    "ppid": 632076,
+                    "started": "1840417",
+                    "role": "main",
+                    "rssKiB": 227156,
+                    "pssKiB": 144672,
+                    "privateKiB": 114684,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632086,
+                    "ppid": 632083,
+                    "started": "1840419",
+                    "role": "zygote",
+                    "rssKiB": 55804,
+                    "pssKiB": 13216,
+                    "privateKiB": 908,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632087,
+                    "ppid": 632083,
+                    "started": "1840419",
+                    "role": "zygote",
+                    "rssKiB": 56084,
+                    "pssKiB": 11345,
+                    "privateKiB": 280,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632118,
+                    "ppid": 632083,
+                    "started": "1840453",
+                    "role": "utility",
+                    "rssKiB": 81492,
+                    "pssKiB": 27839,
+                    "privateKiB": 14076,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632115,
+                    "ppid": 632086,
+                    "started": "1840453",
+                    "role": "gpu-process",
+                    "rssKiB": 158724,
+                    "pssKiB": 74622,
+                    "privateKiB": 30084,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632089,
+                    "ppid": 632087,
+                    "started": "1840422",
+                    "role": "zygote",
+                    "rssKiB": 13852,
+                    "pssKiB": 4174,
+                    "privateKiB": 268,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632134,
+                    "ppid": 632089,
+                    "started": "1840460",
+                    "role": "renderer",
+                    "rssKiB": 287820,
+                    "pssKiB": 225713,
+                    "privateKiB": 193036,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  }
+                ],
+                "totals": {
+                  "rssKiB": 880932,
+                  "pssKiB": 501581,
+                  "privateKiB": 353336,
+                  "privateHugetlbKiB": 0,
+                  "sharedHugetlbKiB": 0,
+                  "swapPssKiB": 0
+                },
+                "observedTotals": {
+                  "rssKiB": 880932,
+                  "pssKiB": 501581,
+                  "privateKiB": 353336,
+                  "privateHugetlbKiB": 0,
+                  "sharedHugetlbKiB": 0,
+                  "swapPssKiB": 0
+                },
+                "scope": "Linux process-tree sample, not atomic. PSS apportions shared pages; summed RSS double-counts sharing. Hugetlb is separate. Detached/reparented helpers, external model runtimes and display-server/GPU-driver allocations outside these processes are excluded. No forced GC."
+              },
+              "state": {
+                "fileObjects": 0,
+                "base64Chars": 0,
+                "dataUrlChars": 0,
+                "liveUrls": 3,
+                "createdUrls": 6,
+                "revokedUrls": 3,
+                "imageElements": 3,
+                "tiles": 16
+              },
+              "geometry": {
+                "top": 0,
+                "height": 2583,
+                "tiles": [
+                  {
+                    "label": "Expand image: gallery-0",
+                    "width": 256,
+                    "height": 256,
+                    "top": 116
+                  },
+                  {
+                    "label": "Expand image: gallery-1",
+                    "width": 1009,
+                    "height": 252.25,
+                    "top": 404
+                  },
+                  {
+                    "label": "Expand image: gallery-2",
+                    "width": 96,
+                    "height": 256,
+                    "top": 688.25
+                  },
+                  {
+                    "label": "Expand image: gallery-3",
+                    "width": 96,
+                    "height": 96,
+                    "top": 976.25
+                  },
+                  {
+                    "label": "Expand image: gallery-4",
+                    "width": 96,
+                    "height": 96,
+                    "top": 1104.25
+                  },
+                  {
+                    "label": "Expand image: gallery-5",
+                    "width": 96,
+                    "height": 96,
+                    "top": 1232.25
+                  },
+                  {
+                    "label": "Expand image: gallery-6",
+                    "width": 96,
+                    "height": 96,
+                    "top": 1360.25
+                  },
+                  {
+                    "label": "Expand image: gallery-7",
+                    "width": 96,
+                    "height": 96,
+                    "top": 1488.25
+                  },
+                  {
+                    "label": "Expand image: gallery-8",
+                    "width": 96,
+                    "height": 96,
+                    "top": 1616.25
+                  },
+                  {
+                    "label": "Expand image: gallery-9",
+                    "width": 96,
+                    "height": 96,
+                    "top": 1744.25
+                  },
+                  {
+                    "label": "Expand image: gallery-10",
+                    "width": 96,
+                    "height": 96,
+                    "top": 1872.25
+                  },
+                  {
+                    "label": "Expand image: gallery-11",
+                    "width": 96,
+                    "height": 96,
+                    "top": 2000.25
+                  },
+                  {
+                    "label": "Expand image: gallery-12",
+                    "width": 96,
+                    "height": 96,
+                    "top": 2128.25
+                  },
+                  {
+                    "label": "Expand image: gallery-13",
+                    "width": 96,
+                    "height": 96,
+                    "top": 2256.25
+                  },
+                  {
+                    "label": "Expand image: gallery-14",
+                    "width": 96,
+                    "height": 96,
+                    "top": 2384.25
+                  },
+                  {
+                    "label": "Expand image: gallery-15",
+                    "width": 96,
+                    "height": 96,
+                    "top": 2512.25
+                  }
+                ]
+              }
+            },
+            "retained": null
+          },
+          {
+            "label": "walked-forward",
+            "natural": {
+              "heap": {
+                "backingStorageSize": 11285374,
+                "embedderHeapUsedSize": 7572704,
+                "totalSize": 113606656,
+                "usedSize": 92638572
+              },
+              "processTree": {
+                "startedAt": 1793972901796,
+                "finishedAt": 1793972901834,
+                "rootPid": 632083,
+                "rootStarted": "1840417",
+                "complete": true,
+                "processTreeChanged": false,
+                "issues": [],
+                "processes": [
+                  {
+                    "pid": 632083,
+                    "ppid": 632076,
+                    "started": "1840417",
+                    "role": "main",
+                    "rssKiB": 181120,
+                    "pssKiB": 98194,
+                    "privateKiB": 67916,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632086,
+                    "ppid": 632083,
+                    "started": "1840419",
+                    "role": "zygote",
+                    "rssKiB": 55804,
+                    "pssKiB": 13213,
+                    "privateKiB": 908,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632087,
+                    "ppid": 632083,
+                    "started": "1840419",
+                    "role": "zygote",
+                    "rssKiB": 56084,
+                    "pssKiB": 11341,
+                    "privateKiB": 280,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632118,
+                    "ppid": 632083,
+                    "started": "1840453",
+                    "role": "utility",
+                    "rssKiB": 81492,
+                    "pssKiB": 27824,
+                    "privateKiB": 14076,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632115,
+                    "ppid": 632086,
+                    "started": "1840453",
+                    "role": "gpu-process",
+                    "rssKiB": 159304,
+                    "pssKiB": 74749,
+                    "privateKiB": 29876,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632089,
+                    "ppid": 632087,
+                    "started": "1840422",
+                    "role": "zygote",
+                    "rssKiB": 13852,
+                    "pssKiB": 4174,
+                    "privateKiB": 268,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632134,
+                    "ppid": 632089,
+                    "started": "1840460",
+                    "role": "renderer",
+                    "rssKiB": 486008,
+                    "pssKiB": 423101,
+                    "privateKiB": 389804,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  }
+                ],
+                "totals": {
+                  "rssKiB": 1033664,
+                  "pssKiB": 652596,
+                  "privateKiB": 503128,
+                  "privateHugetlbKiB": 0,
+                  "sharedHugetlbKiB": 0,
+                  "swapPssKiB": 0
+                },
+                "observedTotals": {
+                  "rssKiB": 1033664,
+                  "pssKiB": 652596,
+                  "privateKiB": 503128,
+                  "privateHugetlbKiB": 0,
+                  "sharedHugetlbKiB": 0,
+                  "swapPssKiB": 0
+                },
+                "scope": "Linux process-tree sample, not atomic. PSS apportions shared pages; summed RSS double-counts sharing. Hugetlb is separate. Detached/reparented helpers, external model runtimes and display-server/GPU-driver allocations outside these processes are excluded. No forced GC."
+              },
+              "state": {
+                "fileObjects": 0,
+                "base64Chars": 0,
+                "dataUrlChars": 0,
+                "liveUrls": 3,
+                "createdUrls": 22,
+                "revokedUrls": 19,
+                "imageElements": 3,
+                "tiles": 16
+              },
+              "geometry": {
+                "top": 3281,
+                "height": 4011,
+                "tiles": [
+                  {
+                    "label": "Expand image: gallery-0",
+                    "width": 256,
+                    "height": 256,
+                    "top": 116
+                  },
+                  {
+                    "label": "Expand image: gallery-1",
+                    "width": 1009,
+                    "height": 252.25,
+                    "top": 404
+                  },
+                  {
+                    "label": "Expand image: gallery-2",
+                    "width": 96,
+                    "height": 256,
+                    "top": 688.25
+                  },
+                  {
+                    "label": "Expand image: gallery-3",
+                    "width": 96,
+                    "height": 96,
+                    "top": 976.25
+                  },
+                  {
+                    "label": "Expand image: gallery-4",
+                    "width": 256,
+                    "height": 256,
+                    "top": 1104.25
+                  },
+                  {
+                    "label": "Expand image: gallery-5",
+                    "width": 1009,
+                    "height": 252.25,
+                    "top": 1392.25
+                  },
+                  {
+                    "label": "Expand image: gallery-6",
+                    "width": 96,
+                    "height": 256,
+                    "top": 1676.5
+                  },
+                  {
+                    "label": "Expand image: gallery-7",
+                    "width": 96,
+                    "height": 96,
+                    "top": 1964.5
+                  },
+                  {
+                    "label": "Expand image: gallery-8",
+                    "width": 256,
+                    "height": 256,
+                    "top": 2092.5
+                  },
+                  {
+                    "label": "Expand image: gallery-9",
+                    "width": 1009,
+                    "height": 252.25,
+                    "top": 2380.5
+                  },
+                  {
+                    "label": "Expand image: gallery-10",
+                    "width": 96,
+                    "height": 256,
+                    "top": 2664.75
+                  },
+                  {
+                    "label": "Expand image: gallery-11",
+                    "width": 96,
+                    "height": 96,
+                    "top": 2952.75
+                  },
+                  {
+                    "label": "Expand image: gallery-12",
+                    "width": 256,
+                    "height": 256,
+                    "top": 3080.75
+                  },
+                  {
+                    "label": "Expand image: gallery-13",
+                    "width": 1009,
+                    "height": 252.25,
+                    "top": 3368.75
+                  },
+                  {
+                    "label": "Expand image: gallery-14",
+                    "width": 96,
+                    "height": 256,
+                    "top": 3653
+                  },
+                  {
+                    "label": "Expand image: gallery-15",
+                    "width": 96,
+                    "height": 96,
+                    "top": 3941
+                  }
+                ]
+              }
+            },
+            "retained": null
+          },
+          {
+            "label": "returned-start",
+            "natural": {
+              "heap": {
+                "backingStorageSize": 58529302,
+                "embedderHeapUsedSize": 20607928,
+                "totalSize": 176590848,
+                "usedSize": 156430828
+              },
+              "processTree": {
+                "startedAt": 1793972904515,
+                "finishedAt": 1793972904556,
+                "rootPid": 632083,
+                "rootStarted": "1840417",
+                "complete": true,
+                "processTreeChanged": false,
+                "issues": [],
+                "processes": [
+                  {
+                    "pid": 632083,
+                    "ppid": 632076,
+                    "started": "1840417",
+                    "role": "main",
+                    "rssKiB": 228200,
+                    "pssKiB": 145142,
+                    "privateKiB": 114796,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632086,
+                    "ppid": 632083,
+                    "started": "1840419",
+                    "role": "zygote",
+                    "rssKiB": 55804,
+                    "pssKiB": 13212,
+                    "privateKiB": 908,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632087,
+                    "ppid": 632083,
+                    "started": "1840419",
+                    "role": "zygote",
+                    "rssKiB": 56084,
+                    "pssKiB": 11338,
+                    "privateKiB": 280,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632118,
+                    "ppid": 632083,
+                    "started": "1840453",
+                    "role": "utility",
+                    "rssKiB": 81596,
+                    "pssKiB": 27705,
+                    "privateKiB": 13868,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632115,
+                    "ppid": 632086,
+                    "started": "1840453",
+                    "role": "gpu-process",
+                    "rssKiB": 158428,
+                    "pssKiB": 74340,
+                    "privateKiB": 29976,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632089,
+                    "ppid": 632087,
+                    "started": "1840422",
+                    "role": "zygote",
+                    "rssKiB": 13852,
+                    "pssKiB": 4174,
+                    "privateKiB": 268,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632134,
+                    "ppid": 632089,
+                    "started": "1840460",
+                    "role": "renderer",
+                    "rssKiB": 751600,
+                    "pssKiB": 689105,
+                    "privateKiB": 656268,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  }
+                ],
+                "totals": {
+                  "rssKiB": 1345564,
+                  "pssKiB": 965016,
+                  "privateKiB": 816364,
+                  "privateHugetlbKiB": 0,
+                  "sharedHugetlbKiB": 0,
+                  "swapPssKiB": 0
+                },
+                "observedTotals": {
+                  "rssKiB": 1345564,
+                  "pssKiB": 965016,
+                  "privateKiB": 816364,
+                  "privateHugetlbKiB": 0,
+                  "sharedHugetlbKiB": 0,
+                  "swapPssKiB": 0
+                },
+                "scope": "Linux process-tree sample, not atomic. PSS apportions shared pages; summed RSS double-counts sharing. Hugetlb is separate. Detached/reparented helpers, external model runtimes and display-server/GPU-driver allocations outside these processes are excluded. No forced GC."
+              },
+              "state": {
+                "fileObjects": 0,
+                "base64Chars": 0,
+                "dataUrlChars": 0,
+                "liveUrls": 3,
+                "createdUrls": 35,
+                "revokedUrls": 32,
+                "imageElements": 3,
+                "tiles": 16
+              },
+              "geometry": {
+                "top": 0,
+                "height": 4011,
+                "tiles": [
+                  {
+                    "label": "Expand image: gallery-0",
+                    "width": 256,
+                    "height": 256,
+                    "top": 116
+                  },
+                  {
+                    "label": "Expand image: gallery-1",
+                    "width": 1009,
+                    "height": 252.25,
+                    "top": 404
+                  },
+                  {
+                    "label": "Expand image: gallery-2",
+                    "width": 96,
+                    "height": 256,
+                    "top": 688.25
+                  },
+                  {
+                    "label": "Expand image: gallery-3",
+                    "width": 96,
+                    "height": 96,
+                    "top": 976.25
+                  },
+                  {
+                    "label": "Expand image: gallery-4",
+                    "width": 256,
+                    "height": 256,
+                    "top": 1104.25
+                  },
+                  {
+                    "label": "Expand image: gallery-5",
+                    "width": 1009,
+                    "height": 252.25,
+                    "top": 1392.25
+                  },
+                  {
+                    "label": "Expand image: gallery-6",
+                    "width": 96,
+                    "height": 256,
+                    "top": 1676.5
+                  },
+                  {
+                    "label": "Expand image: gallery-7",
+                    "width": 96,
+                    "height": 96,
+                    "top": 1964.5
+                  },
+                  {
+                    "label": "Expand image: gallery-8",
+                    "width": 256,
+                    "height": 256,
+                    "top": 2092.5
+                  },
+                  {
+                    "label": "Expand image: gallery-9",
+                    "width": 1009,
+                    "height": 252.25,
+                    "top": 2380.5
+                  },
+                  {
+                    "label": "Expand image: gallery-10",
+                    "width": 96,
+                    "height": 256,
+                    "top": 2664.75
+                  },
+                  {
+                    "label": "Expand image: gallery-11",
+                    "width": 96,
+                    "height": 96,
+                    "top": 2952.75
+                  },
+                  {
+                    "label": "Expand image: gallery-12",
+                    "width": 256,
+                    "height": 256,
+                    "top": 3080.75
+                  },
+                  {
+                    "label": "Expand image: gallery-13",
+                    "width": 1009,
+                    "height": 252.25,
+                    "top": 3368.75
+                  },
+                  {
+                    "label": "Expand image: gallery-14",
+                    "width": 96,
+                    "height": 256,
+                    "top": 3653
+                  },
+                  {
+                    "label": "Expand image: gallery-15",
+                    "width": 96,
+                    "height": 96,
+                    "top": 3941
+                  }
+                ]
+              }
+            },
+            "retained": null
+          },
+          {
+            "label": "returned-bottom",
+            "natural": {
+              "heap": {
+                "backingStorageSize": 64832953,
+                "embedderHeapUsedSize": 22474680,
+                "totalSize": 184991744,
+                "usedSize": 167832956
+              },
+              "processTree": {
+                "startedAt": 1793972905398,
+                "finishedAt": 1793972905450,
+                "rootPid": 632083,
+                "rootStarted": "1840417",
+                "complete": true,
+                "processTreeChanged": false,
+                "issues": [],
+                "processes": [
+                  {
+                    "pid": 632083,
+                    "ppid": 632076,
+                    "started": "1840417",
+                    "role": "main",
+                    "rssKiB": 250380,
+                    "pssKiB": 167317,
+                    "privateKiB": 136968,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632086,
+                    "ppid": 632083,
+                    "started": "1840419",
+                    "role": "zygote",
+                    "rssKiB": 55804,
+                    "pssKiB": 13212,
+                    "privateKiB": 908,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632087,
+                    "ppid": 632083,
+                    "started": "1840419",
+                    "role": "zygote",
+                    "rssKiB": 56084,
+                    "pssKiB": 11338,
+                    "privateKiB": 280,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632118,
+                    "ppid": 632083,
+                    "started": "1840453",
+                    "role": "utility",
+                    "rssKiB": 81596,
+                    "pssKiB": 27705,
+                    "privateKiB": 13868,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632115,
+                    "ppid": 632086,
+                    "started": "1840453",
+                    "role": "gpu-process",
+                    "rssKiB": 158356,
+                    "pssKiB": 74396,
+                    "privateKiB": 30160,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632089,
+                    "ppid": 632087,
+                    "started": "1840422",
+                    "role": "zygote",
+                    "rssKiB": 13852,
+                    "pssKiB": 4174,
+                    "privateKiB": 268,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632134,
+                    "ppid": 632089,
+                    "started": "1840460",
+                    "role": "renderer",
+                    "rssKiB": 746864,
+                    "pssKiB": 684493,
+                    "privateKiB": 651780,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  }
+                ],
+                "totals": {
+                  "rssKiB": 1362936,
+                  "pssKiB": 982635,
+                  "privateKiB": 834232,
+                  "privateHugetlbKiB": 0,
+                  "sharedHugetlbKiB": 0,
+                  "swapPssKiB": 0
+                },
+                "observedTotals": {
+                  "rssKiB": 1362936,
+                  "pssKiB": 982635,
+                  "privateKiB": 834232,
+                  "privateHugetlbKiB": 0,
+                  "sharedHugetlbKiB": 0,
+                  "swapPssKiB": 0
+                },
+                "scope": "Linux process-tree sample, not atomic. PSS apportions shared pages; summed RSS double-counts sharing. Hugetlb is separate. Detached/reparented helpers, external model runtimes and display-server/GPU-driver allocations outside these processes are excluded. No forced GC."
+              },
+              "state": {
+                "fileObjects": 0,
+                "base64Chars": 0,
+                "dataUrlChars": 0,
+                "liveUrls": 3,
+                "createdUrls": 38,
+                "revokedUrls": 35,
+                "imageElements": 3,
+                "tiles": 16
+              },
+              "geometry": {
+                "top": 3281,
+                "height": 4011,
+                "tiles": [
+                  {
+                    "label": "Expand image: gallery-0",
+                    "width": 256,
+                    "height": 256,
+                    "top": 116
+                  },
+                  {
+                    "label": "Expand image: gallery-1",
+                    "width": 1009,
+                    "height": 252.25,
+                    "top": 404
+                  },
+                  {
+                    "label": "Expand image: gallery-2",
+                    "width": 96,
+                    "height": 256,
+                    "top": 688.25
+                  },
+                  {
+                    "label": "Expand image: gallery-3",
+                    "width": 96,
+                    "height": 96,
+                    "top": 976.25
+                  },
+                  {
+                    "label": "Expand image: gallery-4",
+                    "width": 256,
+                    "height": 256,
+                    "top": 1104.25
+                  },
+                  {
+                    "label": "Expand image: gallery-5",
+                    "width": 1009,
+                    "height": 252.25,
+                    "top": 1392.25
+                  },
+                  {
+                    "label": "Expand image: gallery-6",
+                    "width": 96,
+                    "height": 256,
+                    "top": 1676.5
+                  },
+                  {
+                    "label": "Expand image: gallery-7",
+                    "width": 96,
+                    "height": 96,
+                    "top": 1964.5
+                  },
+                  {
+                    "label": "Expand image: gallery-8",
+                    "width": 256,
+                    "height": 256,
+                    "top": 2092.5
+                  },
+                  {
+                    "label": "Expand image: gallery-9",
+                    "width": 1009,
+                    "height": 252.25,
+                    "top": 2380.5
+                  },
+                  {
+                    "label": "Expand image: gallery-10",
+                    "width": 96,
+                    "height": 256,
+                    "top": 2664.75
+                  },
+                  {
+                    "label": "Expand image: gallery-11",
+                    "width": 96,
+                    "height": 96,
+                    "top": 2952.75
+                  },
+                  {
+                    "label": "Expand image: gallery-12",
+                    "width": 256,
+                    "height": 256,
+                    "top": 3080.75
+                  },
+                  {
+                    "label": "Expand image: gallery-13",
+                    "width": 1009,
+                    "height": 252.25,
+                    "top": 3368.75
+                  },
+                  {
+                    "label": "Expand image: gallery-14",
+                    "width": 96,
+                    "height": 256,
+                    "top": 3653
+                  },
+                  {
+                    "label": "Expand image: gallery-15",
+                    "width": 96,
+                    "height": 96,
+                    "top": 3941
+                  }
+                ]
+              }
+            },
+            "retained": null
+          }
+        ],
+        "checks": [
+          "Every real PNG decodes with exact reference pixel/dimensions on forward and reverse gallery walks; known tile geometry stays stable.",
+          "Offscreen image payloads/URLs release while every gallery tile remains.",
+          "Native Tab reaches the next image and restores its decoded content.",
+          "Open dialog and returned keyboard focus keep the shared image alive offscreen; blur permits release.",
+          "Hidden Markdown file preview releases all its image resources."
+        ],
+        "visits": [
+          {
+            "walk": "forward",
+            "index": 0,
+            "decodedMs": 17.60828700000002
+          },
+          {
+            "walk": "forward",
+            "index": 1,
+            "decodedMs": 10.173957999999857
+          },
+          {
+            "walk": "forward",
+            "index": 2,
+            "decodedMs": 10.90697100000034
+          },
+          {
+            "walk": "forward",
+            "index": 3,
+            "decodedMs": 2.579613999999765
+          },
+          {
+            "walk": "forward",
+            "index": 4,
+            "decodedMs": 17.310119000000213
+          },
+          {
+            "walk": "forward",
+            "index": 5,
+            "decodedMs": 12.33257599999979
+          },
+          {
+            "walk": "forward",
+            "index": 6,
+            "decodedMs": 11.849729000000025
+          },
+          {
+            "walk": "forward",
+            "index": 7,
+            "decodedMs": 2.075912000000244
+          },
+          {
+            "walk": "forward",
+            "index": 8,
+            "decodedMs": 23.402524000000085
+          },
+          {
+            "walk": "forward",
+            "index": 9,
+            "decodedMs": 12.394685000000209
+          },
+          {
+            "walk": "forward",
+            "index": 10,
+            "decodedMs": 14.93911399999979
+          },
+          {
+            "walk": "forward",
+            "index": 11,
+            "decodedMs": 7.317955999999867
+          },
+          {
+            "walk": "forward",
+            "index": 12,
+            "decodedMs": 26.899402999999893
+          },
+          {
+            "walk": "forward",
+            "index": 13,
+            "decodedMs": 8.132931000000099
+          },
+          {
+            "walk": "forward",
+            "index": 14,
+            "decodedMs": 11.367469000000256
+          },
+          {
+            "walk": "forward",
+            "index": 15,
+            "decodedMs": 2.3826099999996586
+          },
+          {
+            "walk": "reverse",
+            "index": 15,
+            "decodedMs": 1.5687610000004497
+          },
+          {
+            "walk": "reverse",
+            "index": 14,
+            "decodedMs": 3.9838360000003377
+          },
+          {
+            "walk": "reverse",
+            "index": 13,
+            "decodedMs": 7.227014000000054
+          },
+          {
+            "walk": "reverse",
+            "index": 12,
+            "decodedMs": 14.608194999999796
+          },
+          {
+            "walk": "reverse",
+            "index": 11,
+            "decodedMs": 1.918482999999469
+          },
+          {
+            "walk": "reverse",
+            "index": 10,
+            "decodedMs": 11.248285000000578
+          },
+          {
+            "walk": "reverse",
+            "index": 9,
+            "decodedMs": 8.840594999999666
+          },
+          {
+            "walk": "reverse",
+            "index": 8,
+            "decodedMs": 19.54306600000018
+          },
+          {
+            "walk": "reverse",
+            "index": 7,
+            "decodedMs": 4.362852000000203
+          },
+          {
+            "walk": "reverse",
+            "index": 6,
+            "decodedMs": 14.202694999999949
+          },
+          {
+            "walk": "reverse",
+            "index": 5,
+            "decodedMs": 6.580810000000383
+          },
+          {
+            "walk": "reverse",
+            "index": 4,
+            "decodedMs": 17.775611000000026
+          },
+          {
+            "walk": "reverse",
+            "index": 3,
+            "decodedMs": 2.1420140000000174
+          },
+          {
+            "walk": "reverse",
+            "index": 2,
+            "decodedMs": 11.246023000000605
+          },
+          {
+            "walk": "reverse",
+            "index": 1,
+            "decodedMs": 9.971918000000187
+          },
+          {
+            "walk": "reverse",
+            "index": 0,
+            "decodedMs": 13.629880000000412
+          },
+          {
+            "walk": "return",
+            "index": 15,
+            "decodedMs": 113.91835900000024
+          },
+          {
+            "walk": "verification",
+            "index": 0,
+            "decodedMs": 256.83242600000085
+          },
+          {
+            "walk": "verification",
+            "index": 0,
+            "decodedMs": 4.173102000000654
+          }
+        ],
+        "reads": [
+          {
+            "rel": "README.md",
+            "chars": 0
+          },
+          {
+            "rel": "README.md",
+            "chars": 0
+          },
+          {
+            "rel": "README.md",
+            "chars": 0
+          },
+          {
+            "rel": "image-1.png",
+            "chars": 4196412
+          },
+          {
+            "rel": "image-0.png",
+            "chars": 9442344
+          },
+          {
+            "rel": "image-2.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-3.png",
+            "chars": 4232
+          },
+          {
+            "rel": "image-4.png",
+            "chars": 9442344
+          },
+          {
+            "rel": "image-5.png",
+            "chars": 4196412
+          },
+          {
+            "rel": "image-3.png",
+            "chars": 4232
+          },
+          {
+            "rel": "image-4.png",
+            "chars": 9442344
+          },
+          {
+            "rel": "image-5.png",
+            "chars": 4196412
+          },
+          {
+            "rel": "image-6.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-6.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-7.png",
+            "chars": 4232
+          },
+          {
+            "rel": "image-8.png",
+            "chars": 9442344
+          },
+          {
+            "rel": "image-9.png",
+            "chars": 4196412
+          },
+          {
+            "rel": "image-10.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-10.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-11.png",
+            "chars": 4232
+          },
+          {
+            "rel": "image-12.png",
+            "chars": 9442344
+          },
+          {
+            "rel": "image-14.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-13.png",
+            "chars": 4196412
+          },
+          {
+            "rel": "image-14.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-15.png",
+            "chars": 4232
+          },
+          {
+            "rel": "image-12.png",
+            "chars": 9442344
+          },
+          {
+            "rel": "image-11.png",
+            "chars": 4232
+          },
+          {
+            "rel": "image-10.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-9.png",
+            "chars": 4196412
+          },
+          {
+            "rel": "image-8.png",
+            "chars": 9442344
+          },
+          {
+            "rel": "image-7.png",
+            "chars": 4232
+          },
+          {
+            "rel": "image-6.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-5.png",
+            "chars": 4196412
+          },
+          {
+            "rel": "image-4.png",
+            "chars": 9442344
+          },
+          {
+            "rel": "image-3.png",
+            "chars": 4232
+          },
+          {
+            "rel": "image-2.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-1.png",
+            "chars": 4196412
+          },
+          {
+            "rel": "image-0.png",
+            "chars": 9442344
+          },
+          {
+            "rel": "image-13.png",
+            "chars": 4196412
+          },
+          {
+            "rel": "image-14.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-15.png",
+            "chars": 4232
+          },
+          {
+            "rel": "image-1.png",
+            "chars": 4196412
+          },
+          {
+            "rel": "image-0.png",
+            "chars": 9442344
+          },
+          {
+            "rel": "image-2.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-14.png",
+            "chars": 4198516
+          },
+          {
+            "rel": "image-13.png",
+            "chars": 4196412
+          },
+          {
+            "rel": "image-15.png",
+            "chars": 4232
+          }
+        ],
+        "requests": [
+          {
+            "rel": "README.md",
+            "metadata": false
+          },
+          {
+            "rel": "README.md",
+            "metadata": false
+          },
+          {
+            "rel": "README.md",
+            "metadata": false
+          },
+          {
+            "rel": "image-0.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-1.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-2.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-3.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-4.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-5.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-3.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-4.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-5.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-6.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-6.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-7.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-8.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-9.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-10.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-10.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-11.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-12.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-13.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-14.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-14.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-15.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-12.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-10.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-11.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-9.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-8.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-6.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-7.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-5.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-4.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-2.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-3.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-1.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-0.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-13.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-14.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-15.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-0.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-1.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-2.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-13.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-14.png",
+            "metadata": false
+          },
+          {
+            "rel": "image-15.png",
+            "metadata": false
+          }
+        ],
+        "maximumReads": 2,
+        "scope": "Private Linux source Electron. Scroll request to decoded/pixel-checked DOM includes IPC/polling/canvas verification; not physical input-to-paint. Fixed settling waits are outside visit times. Natural and explicit diagnostic cohorts are separate processes. Complete app-tree PSS only; no model/GPU-driver memory claim."
+      }
+    },
+    {
+      "scenario": {
+        "surface": "chat",
+        "count": 1,
+        "diagnostic": false,
+        "noObserver": true
+      },
+      "repeat": 0,
+      "optimized": {
+        "config": {
+          "surface": "chat",
+          "count": 1,
+          "diagnostic": false,
+          "noObserver": true,
+          "verify": true,
+          "repo": "/home/ayushniroula/Desktop/projects/tributary",
+          "project": "/tmp/tributary-gallery-matrix-jXhvrm/project",
+          "images": [
+            {
+              "rel": "image-3.png",
+              "width": 32,
+              "height": 32,
+              "pixel": [
+                14,
+                53,
+                116,
+                255
+              ]
+            }
+          ],
+          "profile": "/tmp/tributary-gallery-matrix-jXhvrm/profile",
+          "optimized": true,
+          "output": "/tmp/tributary-gallery-matrix-jXhvrm/result.json",
+          "failureOutput": "/tmp/tributary-gallery-verify-final.json.failure.json",
+          "evidence": "/tmp/tributary-gallery-verify-final-chat-1-fallback.png"
+        },
+        "versions": {
+          "node": "24.21.0",
+          "acorn": "8.18.0",
+          "ada": "4.0.0",
+          "amaro": "1.1.11",
+          "ares": "1.34.8",
+          "brotli": "1.2.0",
+          "cldr": "48.0",
+          "icu": "78.2",
+          "llhttp": "9.4.3",
+          "merve": "1.2.2",
+          "modules": "149",
+          "napi": "10",
+          "nbytes": "0.1.4",
+          "ncrypto": "0.0.1",
+          "nghttp2": "1.70.0",
+          "nghttp3": "",
+          "ngtcp2": "",
+          "openssl": "0.0.0",
+          "simdjson": "4.6.7",
+          "simdutf": "7.7.0",
+          "sqlite": "3.53.4",
+          "tz": "2026d",
+          "undici": "7.29.1",
+          "unicode": "17.0",
+          "uv": "1.52.1",
+          "uvwasi": "0.0.23",
+          "v8": "15.2.124.37-electron.0",
+          "zlib": "1.3.2.1-motley",
+          "zstd": "1.6.0",
+          "electron": "44.7.2",
+          "chrome": "152.0.7977.149"
+        },
+        "phases": [
+          {
+            "label": "initial",
+            "natural": {
+              "heap": {
+                "backingStorageSize": 2014357,
+                "embedderHeapUsedSize": 9858744,
+                "totalSize": 19398656,
+                "usedSize": 10566580
+              },
+              "processTree": {
+                "startedAt": 1793972908822,
+                "finishedAt": 1793972908868,
+                "rootPid": 632432,
+                "rootStarted": "1841411",
+                "complete": true,
+                "processTreeChanged": false,
+                "issues": [],
+                "processes": [
+                  {
+                    "pid": 632432,
+                    "ppid": 632421,
+                    "started": "1841411",
+                    "role": "main",
+                    "rssKiB": 169832,
+                    "pssKiB": 89483,
+                    "privateKiB": 61544,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632435,
+                    "ppid": 632432,
+                    "started": "1841415",
+                    "role": "zygote",
+                    "rssKiB": 55832,
+                    "pssKiB": 12898,
+                    "privateKiB": 788,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632436,
+                    "ppid": 632432,
+                    "started": "1841415",
+                    "role": "zygote",
+                    "rssKiB": 56460,
+                    "pssKiB": 11350,
+                    "privateKiB": 284,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632472,
+                    "ppid": 632432,
+                    "started": "1841437",
+                    "role": "utility",
+                    "rssKiB": 81032,
+                    "pssKiB": 27355,
+                    "privateKiB": 13820,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632469,
+                    "ppid": 632435,
+                    "started": "1841437",
+                    "role": "gpu-process",
+                    "rssKiB": 187800,
+                    "pssKiB": 89009,
+                    "privateKiB": 30244,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632443,
+                    "ppid": 632436,
+                    "started": "1841418",
+                    "role": "zygote",
+                    "rssKiB": 14076,
+                    "pssKiB": 4214,
+                    "privateKiB": 268,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632513,
+                    "ppid": 632443,
+                    "started": "1841444",
+                    "role": "renderer",
+                    "rssKiB": 198164,
+                    "pssKiB": 124082,
+                    "privateKiB": 79160,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  }
+                ],
+                "totals": {
+                  "rssKiB": 763196,
+                  "pssKiB": 358391,
+                  "privateKiB": 186108,
+                  "privateHugetlbKiB": 0,
+                  "sharedHugetlbKiB": 0,
+                  "swapPssKiB": 0
+                },
+                "observedTotals": {
+                  "rssKiB": 763196,
+                  "pssKiB": 358391,
+                  "privateKiB": 186108,
+                  "privateHugetlbKiB": 0,
+                  "sharedHugetlbKiB": 0,
+                  "swapPssKiB": 0
+                },
+                "scope": "Linux process-tree sample, not atomic. PSS apportions shared pages; summed RSS double-counts sharing. Hugetlb is separate. Detached/reparented helpers, external model runtimes and display-server/GPU-driver allocations outside these processes are excluded. No forced GC."
+              },
+              "state": {
+                "fileObjects": 0,
+                "base64Chars": 0,
+                "dataUrlChars": 0,
+                "liveUrls": 1,
+                "createdUrls": 1,
+                "revokedUrls": 0,
+                "imageElements": 1,
+                "tiles": 1
+              },
+              "geometry": {
+                "top": 0,
+                "height": 676,
+                "tiles": [
+                  {
+                    "label": "Expand image: gallery-0",
+                    "width": 96,
+                    "height": 96,
+                    "top": 240.5
+                  }
+                ]
+              }
+            },
+            "retained": null
+          },
+          {
+            "label": "walked-forward",
+            "natural": {
+              "heap": {
+                "backingStorageSize": 2017059,
+                "embedderHeapUsedSize": 9945440,
+                "totalSize": 19398656,
+                "usedSize": 11722640
+              },
+              "processTree": {
+                "startedAt": 1793972909602,
+                "finishedAt": 1793972909627,
+                "rootPid": 632432,
+                "rootStarted": "1841411",
+                "complete": true,
+                "processTreeChanged": false,
+                "issues": [],
+                "processes": [
+                  {
+                    "pid": 632432,
+                    "ppid": 632421,
+                    "started": "1841411",
+                    "role": "main",
+                    "rssKiB": 170892,
+                    "pssKiB": 90335,
+                    "privateKiB": 62232,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632435,
+                    "ppid": 632432,
+                    "started": "1841415",
+                    "role": "zygote",
+                    "rssKiB": 55832,
+                    "pssKiB": 12898,
+                    "privateKiB": 788,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632436,
+                    "ppid": 632432,
+                    "started": "1841415",
+                    "role": "zygote",
+                    "rssKiB": 56460,
+                    "pssKiB": 11348,
+                    "privateKiB": 284,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632472,
+                    "ppid": 632432,
+                    "started": "1841437",
+                    "role": "utility",
+                    "rssKiB": 81044,
+                    "pssKiB": 27351,
+                    "privateKiB": 13884,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632469,
+                    "ppid": 632435,
+                    "started": "1841437",
+                    "role": "gpu-process",
+                    "rssKiB": 187800,
+                    "pssKiB": 88974,
+                    "privateKiB": 30192,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632443,
+                    "ppid": 632436,
+                    "started": "1841418",
+                    "role": "zygote",
+                    "rssKiB": 14076,
+                    "pssKiB": 4214,
+                    "privateKiB": 268,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632513,
+                    "ppid": 632443,
+                    "started": "1841444",
+                    "role": "renderer",
+                    "rssKiB": 198060,
+                    "pssKiB": 123749,
+                    "privateKiB": 78640,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  }
+                ],
+                "totals": {
+                  "rssKiB": 764164,
+                  "pssKiB": 358869,
+                  "privateKiB": 186288,
+                  "privateHugetlbKiB": 0,
+                  "sharedHugetlbKiB": 0,
+                  "swapPssKiB": 0
+                },
+                "observedTotals": {
+                  "rssKiB": 764164,
+                  "pssKiB": 358869,
+                  "privateKiB": 186288,
+                  "privateHugetlbKiB": 0,
+                  "sharedHugetlbKiB": 0,
+                  "swapPssKiB": 0
+                },
+                "scope": "Linux process-tree sample, not atomic. PSS apportions shared pages; summed RSS double-counts sharing. Hugetlb is separate. Detached/reparented helpers, external model runtimes and display-server/GPU-driver allocations outside these processes are excluded. No forced GC."
+              },
+              "state": {
+                "fileObjects": 0,
+                "base64Chars": 0,
+                "dataUrlChars": 0,
+                "liveUrls": 1,
+                "createdUrls": 1,
+                "revokedUrls": 0,
+                "imageElements": 1,
+                "tiles": 1
+              },
+              "geometry": {
+                "top": 0,
+                "height": 676,
+                "tiles": [
+                  {
+                    "label": "Expand image: gallery-0",
+                    "width": 96,
+                    "height": 96,
+                    "top": 240.5
+                  }
+                ]
+              }
+            },
+            "retained": null
+          },
+          {
+            "label": "returned-start",
+            "natural": {
+              "heap": {
+                "backingStorageSize": 2019894,
+                "embedderHeapUsedSize": 10076376,
+                "totalSize": 20447232,
+                "usedSize": 10217752
+              },
+              "processTree": {
+                "startedAt": 1793972910354,
+                "finishedAt": 1793972910382,
+                "rootPid": 632432,
+                "rootStarted": "1841411",
+                "complete": true,
+                "processTreeChanged": false,
+                "issues": [],
+                "processes": [
+                  {
+                    "pid": 632432,
+                    "ppid": 632421,
+                    "started": "1841411",
+                    "role": "main",
+                    "rssKiB": 169764,
+                    "pssKiB": 89207,
+                    "privateKiB": 61104,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632435,
+                    "ppid": 632432,
+                    "started": "1841415",
+                    "role": "zygote",
+                    "rssKiB": 55832,
+                    "pssKiB": 12898,
+                    "privateKiB": 788,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632436,
+                    "ppid": 632432,
+                    "started": "1841415",
+                    "role": "zygote",
+                    "rssKiB": 56460,
+                    "pssKiB": 11348,
+                    "privateKiB": 284,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632472,
+                    "ppid": 632432,
+                    "started": "1841437",
+                    "role": "utility",
+                    "rssKiB": 81044,
+                    "pssKiB": 27350,
+                    "privateKiB": 13884,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632469,
+                    "ppid": 632435,
+                    "started": "1841437",
+                    "role": "gpu-process",
+                    "rssKiB": 187800,
+                    "pssKiB": 88973,
+                    "privateKiB": 30192,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632443,
+                    "ppid": 632436,
+                    "started": "1841418",
+                    "role": "zygote",
+                    "rssKiB": 14076,
+                    "pssKiB": 4214,
+                    "privateKiB": 268,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632513,
+                    "ppid": 632443,
+                    "started": "1841444",
+                    "role": "renderer",
+                    "rssKiB": 199236,
+                    "pssKiB": 124925,
+                    "privateKiB": 79816,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  }
+                ],
+                "totals": {
+                  "rssKiB": 764212,
+                  "pssKiB": 358915,
+                  "privateKiB": 186336,
+                  "privateHugetlbKiB": 0,
+                  "sharedHugetlbKiB": 0,
+                  "swapPssKiB": 0
+                },
+                "observedTotals": {
+                  "rssKiB": 764212,
+                  "pssKiB": 358915,
+                  "privateKiB": 186336,
+                  "privateHugetlbKiB": 0,
+                  "sharedHugetlbKiB": 0,
+                  "swapPssKiB": 0
+                },
+                "scope": "Linux process-tree sample, not atomic. PSS apportions shared pages; summed RSS double-counts sharing. Hugetlb is separate. Detached/reparented helpers, external model runtimes and display-server/GPU-driver allocations outside these processes are excluded. No forced GC."
+              },
+              "state": {
+                "fileObjects": 0,
+                "base64Chars": 0,
+                "dataUrlChars": 0,
+                "liveUrls": 1,
+                "createdUrls": 1,
+                "revokedUrls": 0,
+                "imageElements": 1,
+                "tiles": 1
+              },
+              "geometry": {
+                "top": 0,
+                "height": 676,
+                "tiles": [
+                  {
+                    "label": "Expand image: gallery-0",
+                    "width": 96,
+                    "height": 96,
+                    "top": 240.5
+                  }
+                ]
+              }
+            },
+            "retained": null
+          },
+          {
+            "label": "returned-bottom",
+            "natural": {
+              "heap": {
+                "backingStorageSize": 2022729,
+                "embedderHeapUsedSize": 10103176,
+                "totalSize": 20447232,
+                "usedSize": 11334580
+              },
+              "processTree": {
+                "startedAt": 1793972911110,
+                "finishedAt": 1793972911136,
+                "rootPid": 632432,
+                "rootStarted": "1841411",
+                "complete": true,
+                "processTreeChanged": false,
+                "issues": [],
+                "processes": [
+                  {
+                    "pid": 632432,
+                    "ppid": 632421,
+                    "started": "1841411",
+                    "role": "main",
+                    "rssKiB": 169764,
+                    "pssKiB": 89207,
+                    "privateKiB": 61104,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632435,
+                    "ppid": 632432,
+                    "started": "1841415",
+                    "role": "zygote",
+                    "rssKiB": 55832,
+                    "pssKiB": 12898,
+                    "privateKiB": 788,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632436,
+                    "ppid": 632432,
+                    "started": "1841415",
+                    "role": "zygote",
+                    "rssKiB": 56460,
+                    "pssKiB": 11348,
+                    "privateKiB": 284,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632472,
+                    "ppid": 632432,
+                    "started": "1841437",
+                    "role": "utility",
+                    "rssKiB": 81044,
+                    "pssKiB": 27350,
+                    "privateKiB": 13884,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632469,
+                    "ppid": 632435,
+                    "started": "1841437",
+                    "role": "gpu-process",
+                    "rssKiB": 187800,
+                    "pssKiB": 88973,
+                    "privateKiB": 30192,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632443,
+                    "ppid": 632436,
+                    "started": "1841418",
+                    "role": "zygote",
+                    "rssKiB": 14076,
+                    "pssKiB": 4214,
+                    "privateKiB": 268,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  },
+                  {
+                    "pid": 632513,
+                    "ppid": 632443,
+                    "started": "1841444",
+                    "role": "renderer",
+                    "rssKiB": 199296,
+                    "pssKiB": 124985,
+                    "privateKiB": 79876,
+                    "privateHugetlbKiB": 0,
+                    "sharedHugetlbKiB": 0,
+                    "swapPssKiB": 0
+                  }
+                ],
+                "totals": {
+                  "rssKiB": 764272,
+                  "pssKiB": 358975,
+                  "privateKiB": 186396,
+                  "privateHugetlbKiB": 0,
+                  "sharedHugetlbKiB": 0,
+                  "swapPssKiB": 0
+                },
+                "observedTotals": {
+                  "rssKiB": 764272,
+                  "pssKiB": 358975,
+                  "privateKiB": 186396,
+                  "privateHugetlbKiB": 0,
+                  "sharedHugetlbKiB": 0,
+                  "swapPssKiB": 0
+                },
+                "scope": "Linux process-tree sample, not atomic. PSS apportions shared pages; summed RSS double-counts sharing. Hugetlb is separate. Detached/reparented helpers, external model runtimes and display-server/GPU-driver allocations outside these processes are excluded. No forced GC."
+              },
+              "state": {
+                "fileObjects": 0,
+                "base64Chars": 0,
+                "dataUrlChars": 0,
+                "liveUrls": 1,
+                "createdUrls": 1,
+                "revokedUrls": 0,
+                "imageElements": 1,
+                "tiles": 1
+              },
+              "geometry": {
+                "top": 0,
+                "height": 676,
+                "tiles": [
+                  {
+                    "label": "Expand image: gallery-0",
+                    "width": 96,
+                    "height": 96,
+                    "top": 240.5
+                  }
+                ]
+              }
+            },
+            "retained": null
+          }
+        ],
+        "checks": [
+          "Every real PNG decodes with exact reference pixel/dimensions on forward and reverse gallery walks; known tile geometry stays stable.",
+          "Open dialog and returned keyboard focus keep the shared image alive offscreen; blur permits release."
+        ],
+        "visits": [
+          {
+            "walk": "forward",
+            "index": 0,
+            "decodedMs": 4.0387419999999565
+          },
+          {
+            "walk": "reverse",
+            "index": 0,
+            "decodedMs": 1.7404809999998179
+          },
+          {
+            "walk": "return",
+            "index": 0,
+            "decodedMs": 1.519101999999748
+          },
+          {
+            "walk": "verification",
+            "index": 0,
+            "decodedMs": 2.037282000000232
+          }
+        ],
+        "reads": [
+          {
+            "rel": "image-3.png",
+            "chars": 4232
+          }
+        ],
+        "requests": [
+          {
+            "rel": "image-3.png",
+            "metadata": false
+          }
+        ],
+        "maximumReads": 1,
+        "scope": "Private Linux source Electron. Scroll request to decoded/pixel-checked DOM includes IPC/polling/canvas verification; not physical input-to-paint. Fixed settling waits are outside visit times. Natural and explicit diagnostic cohorts are separate processes. Complete app-tree PSS only; no model/GPU-driver memory claim."
+      }
+    }
+  ],
+  "scope": "Fresh serial source-app pairs with identical files and dependencies. Three alternating pairs per memory scenario, or explicit native functional scenarios. Profiles are removed after child exit. Source and all built JS hashes must stay fixed. Checkpoints are not continuous peaks or GC pauses.",
+  "visualEvidence": [
+    {
+      "surface": {
+        "surface": "chat",
+        "count": 16,
+        "diagnostic": false
+      },
+      "screenshotSha256": "24b247415c3c9b5f9cb6010f379f7a71c0b781638b49678bf52a91f68e0785af",
+      "bytes": 481332,
+      "scope": "Private synthetic-gallery screenshot; visually inspected native rendering, not a latency or memory measurement."
+    },
+    {
+      "surface": {
+        "surface": "file",
+        "count": 16,
+        "diagnostic": false
+      },
+      "screenshotSha256": "cf6b0270957f24e73d0dfe8404704e4a3de4bab5f2b0d9b8d3476b27f88603e1",
+      "bytes": 904556,
+      "scope": "Private synthetic-gallery screenshot; visually inspected native rendering, not a latency or memory measurement."
+    },
+    {
+      "surface": {
+        "surface": "chat",
+        "count": 1,
+        "diagnostic": false,
+        "noObserver": true
+      },
+      "screenshotSha256": "936c5ecb2cf60623bf02319c552af2d898c6f1946090e608acf858f06e19de8d",
+      "bytes": 74232,
+      "scope": "Private synthetic-gallery screenshot; visually inspected native rendering, not a latency or memory measurement."
+    }
+  ]
+}

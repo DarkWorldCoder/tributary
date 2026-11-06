@@ -2,41 +2,63 @@ import * as React from 'react';
 import { Image as ImageIcon, ImageOff, Maximize2 } from 'lucide-react';
 import { ImageDialog } from '@/components/image-preview';
 import { Spinner } from '@/components/ui/spinner';
-import { imageSource, projectImagePath } from '@/lib/image-preview.mjs';
+import { projectImagePath } from '@/lib/image-preview.mjs';
+import { createImageVisibility, imagePlaceholder } from '@/lib/image-visibility.mjs';
+import { useImageResource } from '@/hooks/use-image-resource';
 import { useStore } from '@/store';
-import type { FileContent } from '@/types';
+import { cn } from '@/lib/utils';
+import type { HubBridge } from '@/types';
+
+const documents = new WeakMap<Document, ReturnType<typeof createImageVisibility>>();
+let attemptSequence = 0;
+function observe(element: Element, listener: (near: boolean) => void) {
+  const document = element.ownerDocument;
+  let visibility = documents.get(document);
+  if (!visibility) { visibility = createImageVisibility(); documents.set(document, visibility); }
+  return visibility.observe(element, listener);
+}
 
 export function MarkdownImage({ source, alt, baseFile, project: previewProject }: { source: string; alt?: string; baseFile?: string; project?: string }) {
-  const s = useStore(); const project = previewProject ?? s.workdir; const host = React.useRef<HTMLSpanElement>(null);
-  const returnFocus = React.useRef<HTMLElement | null>(null);
-  const [visible, setVisible] = React.useState(false); const [open, setOpen] = React.useState(false);
-  const [file, setFile] = React.useState<FileContent | null>(null); const [failed, setFailed] = React.useState(false);
-  const [loaded, setLoaded] = React.useState(false); const [attempt, setAttempt] = React.useState(0);
-  const remote = /^https?:\/\//i.test(source);
-  const rel = remote ? null : projectImagePath(source, project, baseFile);
+  const s = useStore(); const project = previewProject ?? s.workdir;
+  if (/^https?:\/\//i.test(source)) return <span className="my-2 inline-flex max-w-full items-center gap-2 rounded-lg border px-3 py-1 text-xs"><ImageIcon className="size-4 shrink-0 text-muted-foreground" /><button type="button" className="min-h-8 truncate text-left underline underline-offset-4 max-sm:min-h-11" onClick={() => s.hub.call('openExternal', source)}>{alt || 'Open image'}</button></span>;
+  return <LocalImage source={source} alt={alt} project={project} rel={projectImagePath(source, project, baseFile)} hub={s.hub} />;
+}
+
+function LocalImage({ source, alt, project, rel, hub }: { source: string; alt?: string; project: string | null; rel: string | null; hub: HubBridge }) {
+  const host = React.useRef<HTMLSpanElement>(null), returnFocus = React.useRef<HTMLElement | null>(null);
+  // Object identity avoids duplicating a possibly huge URI in a React key.
+  const scope = React.useMemo(() => ({}), [source, project, rel, hub]);
+  const [nearby, setNearby] = React.useState<{ scope: object; value: boolean } | null>(null);
+  const [focused, setFocused] = React.useState(false);
+  const [dialog, setDialog] = React.useState<{ scope: object; value: boolean } | null>(null);
+  const [retry, setRetry] = React.useState<{ scope: object; value: number } | null>(null);
+  const [decoded, setDecoded] = React.useState<{ scope: object; src: string; width: number; height: number } | null>(null);
+  const [failure, setFailure] = React.useState<{ scope: object; attempt: number; src: string | null; error: string } | null>(null);
+  const near = nearby?.scope === scope && nearby.value, open = dialog?.scope === scope && dialog.value;
+  const attempt = retry?.scope === scope ? retry.value : 0, enabled = !!rel && (near || focused || open);
+  // A retry must not reuse another reference's earlier failed attempt.
+  const retryImage = () => setRetry({ scope, value: ++attemptSequence });
+  const image = useImageResource(hub, project, rel, `markdown:${attempt}`, enabled);
+  const current = React.useRef({ scope, src: image.src }); current.current = { scope, src: image.src };
   React.useEffect(() => {
-    if (!host.current) return;
-    const observer = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect(); } }, { rootMargin: '200px' });
-    observer.observe(host.current); return () => observer.disconnect();
-  }, [source]);
-  React.useEffect(() => {
-    setFailed(false); setLoaded(false); setFile(null); setOpen(false);
-    if (!visible || remote) return;
-    if (!rel) { setFailed(true); return; }
-    let current = true;
-    s.hub.call<FileContent>('readFile', project, rel).then((result) => { if (current) { setFile(result); if (!imageSource(result)) setFailed(true); } }).catch(() => { if (current) setFailed(true); });
-    return () => { current = false; };
-  }, [source, rel, project, s.hub, visible, remote, attempt]);
-  const src = React.useMemo(() => file ? imageSource(file) : null, [file]);
+    const element = host.current; if (!element) return;
+    let active = true;
+    const off = observe(element, value => { if (active) setNearby({ scope, value }); });
+    return () => { active = false; off(); };
+  }, [scope]);
+  React.useEffect(() => { if (image.error) setFailure({ scope, attempt, src: image.src, error: image.error }); }, [scope, attempt, image.error, image.src]);
+  const error = !rel ? 'Image unavailable' : image.error || (failure?.scope === scope && failure.attempt === attempt && (!image.src || failure.src === image.src) ? failure.error : '');
+  const loaded = !!image.src && decoded?.scope === scope && decoded.src === image.src && !error;
+  const dimensions = decoded?.scope === scope ? imagePlaceholder(decoded.width, decoded.height) : null;
   const name = alt || rel?.split('/').pop() || 'Image';
-  if (remote) return <span className="my-2 inline-flex max-w-full items-center gap-2 rounded-lg border px-3 py-1 text-xs"><ImageIcon className="size-4 shrink-0 text-muted-foreground" /><button type="button" className="min-h-8 truncate text-left underline underline-offset-4 max-sm:min-h-11" onClick={() => s.hub.call('openExternal', source)}>{alt || 'Open image'}</button></span>;
-  return <span ref={host} className="my-2 inline-flex max-w-full flex-col align-top">
-    {failed ? <span role="status" className="flex items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-xs text-muted-foreground"><ImageOff className="size-4 shrink-0" /><span className="min-w-0 truncate">{file?.truncated ? 'Image exceeds preview limit.' : 'Image unavailable'}</span><button type="button" className="min-h-8 shrink-0 rounded px-1 underline underline-offset-4 max-sm:min-h-11" onClick={() => setAttempt((value) => value + 1)}>Retry</button></span>
-      : <button type="button" className="group/image relative inline-flex min-h-24 min-w-24 max-w-full items-center justify-center overflow-hidden rounded-lg bg-muted/20 outline-none focus-visible:ring-2 focus-visible:ring-ring" disabled={!loaded} aria-label={`Expand image: ${name}`} onClick={(event) => { returnFocus.current = event.currentTarget; setOpen(true); }}>
-        {src && visible && <img key={attempt} src={src} alt={alt || rel || 'Image'} loading="lazy" decoding="async" referrerPolicy="no-referrer" className="m-0 max-h-64 max-w-full rounded-none object-contain" onLoad={() => setLoaded(true)} onError={() => setFailed(true)} />}
-        {!loaded && <Spinner className="absolute size-4" aria-label="Loading image" />}
+  return <span ref={host} className="my-2 inline-flex max-w-full flex-col align-top" onFocusCapture={() => setFocused(true)} onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false); }}>
+    {error ? <span role="status" className="flex items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-xs text-muted-foreground"><ImageOff className="size-4 shrink-0" /><span className="min-w-0 truncate">{error.includes('limit') ? 'Image exceeds preview limit.' : error.includes('Too many') ? error : 'Image unavailable'}</span><button type="button" className="min-h-8 shrink-0 rounded px-1 underline underline-offset-4 max-sm:min-h-11" onClick={retryImage}>Retry</button></span>
+      : <button type="button" className="group/image relative inline-flex min-h-24 min-w-24 max-w-full items-center justify-center overflow-hidden rounded-lg bg-muted/20 outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-busy={enabled && !loaded} aria-label={`Expand image: ${name}`} onClick={event => { returnFocus.current = event.currentTarget; setDialog({ scope, value: true }); }}>
+        {!loaded && dimensions && <svg {...dimensions} aria-hidden="true" focusable="false" className="m-0 max-h-64 max-w-full" style={{ height: 'auto' }} />}
+        {image.src && enabled && <img key={image.src} src={image.src} alt={alt || rel || 'Image'} loading="lazy" decoding="async" referrerPolicy="no-referrer" className={cn('m-0 max-h-64 max-w-full rounded-none object-contain', !loaded && !!dimensions && 'absolute opacity-0')} onLoad={event => { if (current.current.scope === scope && current.current.src === image.src) setDecoded({ scope, src: image.src!, width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight }); }} onError={() => { if (current.current.scope === scope && current.current.src === image.src) setFailure({ scope, attempt, src: image.src, error: 'Image unavailable' }); }} />}
+        {enabled && !loaded && <Spinner className="absolute size-4" aria-label="Loading image" />}
         {loaded && <span className="pointer-events-none absolute top-2 right-2 rounded-md bg-background/90 p-1.5 text-foreground opacity-0 transition-opacity group-hover/image:opacity-100 group-focus-visible/image:opacity-100 max-sm:opacity-100"><Maximize2 className="size-4" /></span>}
       </button>}
-    <ImageDialog src={src} name={rel || name} size={file?.size} open={open} onOpenChange={setOpen} returnFocus={returnFocus} />
+    <ImageDialog src={image.src} name={rel || name} size={image.size} revision={`markdown:${attempt}`} loading={image.loading} unavailable={error ? error.includes('limit') ? 'Image exceeds preview limit.' : 'Image unavailable' : undefined} onRetry={retryImage} open={open} onOpenChange={value => setDialog({ scope, value })} returnFocus={returnFocus} />
   </span>;
 }

@@ -1,0 +1,17 @@
+{
+  "sources": [
+    {
+      "url": "https://doc.rust-lang.org/book/ch15-04-rc.html",
+      "retrievedDate": "2026-11-06",
+      "captureSha256": "a119f621c945934b92e60ce30ea1a79825fc42bdf5efe250ffd2f9e3c6677c10",
+      "captureBytes": 23858,
+      "scope": "Complete substantive chapter text/listings read at capture lines 148-324; book navigation and linked chapters are not reading coverage. Images were not inspected, Rust examples not compiled, entire book not read."
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/Intersection_Observer_API",
+      "retrievedDate": "2026-11-06",
+      "scope": "Read overview, concepts, options, queued callbacks/time ordering and root-margin discussion. Not the entire article or linked specifications."
+    }
+  ],
+  "application": "Shared owner-counted Blob resources; ongoing visibility with owner/generation cleanup; bounded read/decode admission; numeric geometry retained instead of file payloads. JavaScript effects do not inherit Rust compiler drop guarantees."
+}

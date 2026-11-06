@@ -55,7 +55,7 @@ export function createImageResources(read, create = imageBlobUrl, revoke = url =
     acquire(project, rel, revision) {
       const key = JSON.stringify([project, rel, revision]); let entry = entries.get(key);
       if (!entry) {
-        if (entries.size >= 128) throw new Error('Too many image previews. Close an unused editor group.');
+        if (entries.size >= 128) throw new Error('Too many image previews. Close an unused preview.');
         entry = { key, project, rel, refs: 0, src: null, listeners: new Set(), snapshot: { src: null, loading: true, error: '' } };
         entries.set(key, entry); queue.push(entry);
       }
