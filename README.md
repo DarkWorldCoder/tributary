@@ -59,6 +59,8 @@ Tributary uses the agent’s supported local CLI or protocol. Your provider acco
 
 Use the explorer’s hide button or the editor’s sidebar button to make room. Your tabs, drafts and undo history stay open. [More shortcuts](docs/KEYBOARD_SHORTCUTS.md), [formatting](docs/WORKSPACE_FORMATTING.md), [agent editor controls](docs/AGENT_EDITOR_CONTROL.md) and [QA workflows](docs/QA_RESULTS.md).
 
+**Project-local tools:** read `.vscode/settings.json`, Prettier and EditorConfig; show live ESLint problems, apply undoable fixes, and configure formatting separately from fix-on-save. Set up ESLint for each workspace folder in **Settings → Language tools**. [Setup and supported settings](docs/PROJECT_ESLINT.md).
+
 ## Compare the same large-project workload
 
 ![Tributary, VS Code and Zed in the same controlled large-project navigation test](docs/media/editor-comparison.svg)

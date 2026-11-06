@@ -13,9 +13,9 @@ import { toast } from 'sonner';
 type Location = { rel: string; line: number; column: number };
 type Navigation = 'definition' | 'typeDefinition' | 'implementation' | 'references';
 
-export function EditorContextMenu({ children, editor, project, path, languageOwner, format, canFormat, hasServer, wrap, toggleWrap }: {
+export function EditorContextMenu({ children, editor, project, path, languageOwner, format, canFormat, fixEslint, hasServer, wrap, toggleWrap }: {
   children: React.ReactElement; editor: React.RefObject<EditorView | null>; project: string | null;
-  path: string; languageOwner: string | null; format: () => void; canFormat: boolean; hasServer: boolean; wrap: boolean; toggleWrap?: () => void;
+  path: string; languageOwner: string | null; format: () => void; canFormat: boolean; fixEslint?: () => void; hasServer: boolean; wrap: boolean; toggleWrap?: () => void;
 }) {
   const s = useStore(); const { platform } = useShortcutPreferences();
   const currentProject = React.useRef(s.workdir); currentProject.current = s.workdir;
@@ -89,6 +89,7 @@ export function EditorContextMenu({ children, editor, project, path, languageOwn
         {!hasServer && item('Set up language tools…', () => { returnFocus.current = false; s.openSettings('language-tools'); })}
         <ContextMenuSeparator />
         {item('Format document', format, ['Shift', 'Alt', 'F'], !canFormat || state.readOnly)}
+        {fixEslint && item('Fix ESLint problems', fixEslint, undefined, state.readOnly)}
         {item(wrap ? 'Turn off line wrapping' : 'Wrap lines', () => toggleWrap?.(), ['Alt', 'Z'], !toggleWrap)}
         {item('Find in file', () => command(openSearchPanel), ['Mod', 'F'])}
         {item('Replace in file', () => command((view) => openEditorFind(view, true)), platform === 'mac' ? ['Mod', 'Alt', 'F'] : ['Mod', 'H'], state.readOnly)}

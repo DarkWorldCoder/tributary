@@ -16,6 +16,7 @@ import { lintGutter, lintKeymap, setDiagnostics } from '@codemirror/lint';
 import { autocompletion } from '@codemirror/autocomplete';
 import { liveValidation, languageCompletions } from '@/lib/language-assistance';
 import { useLanguageOwner } from '@/hooks/use-language-owner';
+import { eslintCandidate, type EslintResult, type EditorFileSettings } from '@/lib/editor-tools';
 import { documentLanguage } from '@/lib/document-language-support.mjs';
 import { formatInWorker } from '@/lib/formatter';
 import { formatParser, nativeFormatTool } from '@/lib/format-document.mjs';
@@ -69,6 +70,7 @@ export function CodeEditor({ project: documentProject, active = true, keepAlive 
   const serverRevision = JSON.stringify(s.st?.settings.languageServers || []);
   const { owner: languageOwner, error: ownerError } = useLanguageOwner(s.hub, workspace, path, serverRevision, active && hasServer);
   const currentOwner = React.useRef(languageOwner); currentOwner.current = languageOwner;
+  const { owner: eslintOwner, error: eslintOwnerError } = useLanguageOwner(s.hub, workspace, path, '', active && !readOnly && eslintCandidate(path) && s.hub.platform !== 'mock', 'eslint');
   const isActive = React.useRef(active); isActive.current = active;
   const debug = useDebugger(workspace, active); const debugRef = React.useRef(debug); debugRef.current = debug;
   const toggleBreakpoint = React.useRef((line: number) => {});
@@ -80,21 +82,48 @@ export function CodeEditor({ project: documentProject, active = true, keepAlive 
   const formatBusy = React.useRef(false);
   const format = React.useRef<(automatic?: boolean, valid?: () => boolean) => Promise<string | null>>(async () => null);
   format.current = async (automatic = false, valid) => {
-    const v = view.current; if (!v || readOnly || formatBusy.current || !(formatParser(path) || nativeFormatTool(path) || configuredLanguage(store.current.st?.settings.languageServers, path))) return null;
+    const v = view.current; if (!v || readOnly || formatBusy.current || !automatic && !(formatParser(path) || nativeFormatTool(path) || configuredLanguage(store.current.st?.settings.languageServers, path))) return null;
     const original = v.state.doc.toString(); formatBusy.current = true; setFormatting(true);
     try {
       const configured = configuredLanguage(store.current.st?.settings.languageServers, path);
       // Web languages use the project-aware formatter consistently, even when an LSP
       // also offers whitespace edits that leave compact blocks on one line.
-      const serverEdits = !formatParser(path) && configured && languageOwner ? await store.current.hub.call<LspEdit[] | null>('languageFormat', workspace, path, original, { tabSize: editorSpacing(path, original).tabSize, insertSpaces: !editorSpacing(path, original).useTabs }, languageOwner) : null;
-      const text = serverEdits ? applyLspEdits(original, serverEdits) : formatParser(path) && store.current.hub.platform === 'mock' ? await formatInWorker(path, original) : await store.current.hub.call<string>('formatSource', workspace, path, original, automatic);
-      if (view.current !== v || valid && !valid()) return null;
+      let serverEdits: LspEdit[] | null = null;
+      try {
+        const policy = !formatParser(path) && configured && languageOwner ? await store.current.hub.call<EditorFileSettings>('editorFileSettings', workspace, path) : null;
+        if (policy && !policy.defaultFormatter && (!automatic || policy.formatOnSave)) serverEdits = await store.current.hub.call<LspEdit[] | null>('languageFormat', workspace, path, original, { tabSize: editorSpacing(path, original).tabSize, insertSpaces: !editorSpacing(path, original).useTabs }, languageOwner);
+      } catch (error) { if (!automatic) throw error; toast.warning('Language-server formatting was skipped', { id: `editor-save-lsp:${workspace}:${path}`, description: (error as Error).message.slice(0, 240) }); }
+      let text: string;
+      if (store.current.hub.platform === 'mock') text = formatParser(path) ? await formatInWorker(path, original) : original;
+      else if (automatic) {
+        const result = await store.current.hub.call<{ text: string; warnings: string[] }>('prepareEditorSave', workspace, path, serverEdits ? applyLspEdits(original, serverEdits) : original, !!serverEdits);
+        text = result.text;
+        if (result.warnings.length) toast.warning('Some save actions were skipped', { id: `editor-save-tools:${workspace}:${path}`, description: result.warnings.join(' ').slice(0, 240) });
+      } else text = serverEdits ? applyLspEdits(original, serverEdits) : await store.current.hub.call<string>('formatSource', workspace, path, original, false);
+      if (view.current !== v || v.state.readOnly || valid && !valid()) return null;
       if (v.state.doc.toString() !== original) { toast.message('Draft changed while formatting. Try again.'); return null; }
       const change = minimalChange(original, editorText(text));
       if (change) v.dispatch({ changes: change, annotations: [Transaction.userEvent.of('input.format'), isolateHistory.of('full')] });
       if (isActive.current) v.focus();
       return text;
     } catch (error) { if (view.current === v) toast.error('Could not format document', { description: (error as Error).message.slice(0, 220) }); return null; }
+    finally { formatBusy.current = false; if (view.current === v) setFormatting(false); }
+  };
+  const fixEslint = async () => {
+    const v = view.current; if (!v || !workspace || readOnly || formatBusy.current) return;
+    const original = v.state.doc; formatBusy.current = true; setFormatting(true);
+    try {
+      const result = await s.hub.call<EslintResult>('eslintFix', workspace, path, original.toString());
+      if (view.current !== v || v.state.readOnly) return;
+      if (v.state.doc !== original) { toast.message('Draft changed. Run ESLint fixes again.'); return; }
+      if (result.status === 'not-installed') { s.openSettings('language-tools'); return; }
+      if (result.status === 'disabled' || result.status === 'ignored') { toast.message(`ESLint ${result.status === 'disabled' ? 'is disabled for' : 'ignores'} this file.`); return; }
+      const change = result.output == null ? null : minimalChange(original.toString(), editorText(result.output));
+      if (change) v.dispatch({ changes: change, annotations: [Transaction.userEvent.of('input.lint'), isolateHistory.of('full')] });
+      else toast.message('No automatic ESLint fixes available.');
+      window.dispatchEvent(new CustomEvent('tributary:eslint-check', { detail: { project: workspace, path, reason: 'manual' } }));
+      if (isActive.current) v.focus();
+    } catch (error) { if (view.current === v) toast.error('Could not apply ESLint fixes', { description: (error as Error).message.slice(0, 240) }); }
     finally { formatBusy.current = false; if (view.current === v) setFormatting(false); }
   };
   React.useEffect(() => {
@@ -247,6 +276,29 @@ export function CodeEditor({ project: documentProject, active = true, keepAlive 
     return () => { current = false; clearTimeout(timer); };
   }, [workspace, path, value, languageOwner, s.hub]);
 
+  const [eslintDiagnostics, setEslintDiagnostics] = React.useState<{ text: string; items: ProjectDiagnostic[] } | null>(null);
+  const [eslintError, setEslintError] = React.useState('');
+  const eslintOpened = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (!eslintOwner || !workspace) { setEslintDiagnostics(null); setEslintError(''); return; }
+    let current = true; let request = 0;
+    const check = (reason: string) => {
+      const ticket = ++request; const text = currentText.current;
+      void s.hub.call<EslintResult>('eslintDocument', workspace, path, text, eslintOwner, reason).then(result => {
+        if (!current || request !== ticket || currentText.current !== text || result.status === 'cancelled' || result.status === 'on-save') return;
+        setEslintDiagnostics({ text, items: result.diagnostics });
+        setEslintError(result.status === 'not-installed' && result.configured ? 'Project ESLint is not installed' : '');
+      }).catch(error => { if (current && request === ticket && currentText.current === text) { setEslintDiagnostics(null); setEslintError(error.message.replace(/^Error invoking remote method '[^']*': (Error: )?/, '')); } });
+    };
+    const first = eslintOpened.current !== eslintOwner; eslintOpened.current = eslintOwner;
+    const timer = setTimeout(() => check(first ? 'open' : 'type'), 600);
+    const focus = () => check('manual');
+    const event = (event: Event) => { const target = (event as CustomEvent).detail; if (target?.project === workspace && target.path === path) check(target.reason || 'manual'); };
+    const off = s.hub.on('eslint-revalidate', event => { if (event.project === workspace) check('manual'); });
+    window.addEventListener('focus', focus); window.addEventListener('tributary:eslint-check', event);
+    return () => { current = false; clearTimeout(timer); window.removeEventListener('focus', focus); window.removeEventListener('tributary:eslint-check', event); if (typeof off === 'function') off(); };
+  }, [workspace, path, value, eslintOwner, s.hub]);
+
   const sourceId = sourceLanguage(path, value).id;
   React.useEffect(() => {
     const editor = view.current; if (!editor) return;
@@ -308,7 +360,7 @@ export function CodeEditor({ project: documentProject, active = true, keepAlive 
     }, 300);
     return () => { current = false; clearTimeout(timer); controller.abort(); };
   }, [path, value, readOnly, active]);
-  const allDiagnostics = active ? [...diagnostics, ...(serverDiagnostics?.text === value ? serverDiagnostics.items : []), ...(liveDiagnostics?.path === path && liveDiagnostics.text === value ? liveDiagnostics.items : [])] : [];
+  const allDiagnostics = active ? [...diagnostics, ...(eslintDiagnostics?.text === value ? eslintDiagnostics.items : []), ...(serverDiagnostics?.text === value ? serverDiagnostics.items : []), ...(liveDiagnostics?.path === path && liveDiagnostics.text === value ? liveDiagnostics.items : [])] : [];
   const diagnosticKey = JSON.stringify(allDiagnostics);
   React.useEffect(() => {
     const v = view.current; if (!v) return;
@@ -316,7 +368,9 @@ export function CodeEditor({ project: documentProject, active = true, keepAlive 
     v.dispatch(setDiagnostics(v.state, allDiagnostics.map((d) => {
       const row = v.state.doc.line(Math.min(v.state.doc.lines, Math.max(1, d.line)));
       const from = Math.min(row.to, row.from + Math.max(0, d.column - 1));
-      return { from, to: Math.min(v.state.doc.length, Math.max(from, Math.min(row.to, from + 1))), severity: d.severity, message: d.message, source: d.source || undefined };
+      const end = v.state.doc.line(Math.min(v.state.doc.lines, Math.max(1, d.endLine || d.line)));
+      const to = d.endColumn ? Math.min(end.to, end.from + Math.max(0, d.endColumn - 1)) : Math.min(row.to, from + 1);
+      return { from, to: Math.max(from, to), severity: d.severity, message: d.message, source: d.source || undefined };
     })));
     // Diagnostics are value data; equivalent arrays must not dispatch on every cursor update.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -356,7 +410,8 @@ export function CodeEditor({ project: documentProject, active = true, keepAlive 
 
   return (
     <div className="relative h-full min-h-0 overflow-hidden">
-      <EditorContextMenu editor={view} project={workspace} path={path} languageOwner={languageOwner} format={() => void format.current()} canFormat={!!(formatParser(path) || nativeFormatTool(path) || hasServer)} hasServer={hasServer} wrap={wrap} toggleWrap={onToggleWrap}><div ref={host} className="h-full min-h-0" /></EditorContextMenu>
+      <EditorContextMenu editor={view} project={workspace} path={path} languageOwner={languageOwner} format={() => void format.current()} canFormat={!!(formatParser(path) || nativeFormatTool(path) || hasServer)} fixEslint={eslintOwner ? () => void fixEslint() : undefined} hasServer={hasServer} wrap={wrap} toggleWrap={onToggleWrap}><div ref={host} className="h-full min-h-0" /></EditorContextMenu>
+      {(eslintError || eslintOwnerError) && <button type="button" className="absolute left-3 bottom-3 max-w-[calc(100%-24px)] truncate rounded border bg-popover px-2 py-1 text-left text-xs text-muted-foreground" title={eslintError || eslintOwnerError} onClick={() => s.openSettings('language-tools')}>ESLint needs attention · Language tools</button>}
       {(serverError || ownerError) && <button type="button" className="absolute right-3 bottom-3 max-w-[calc(100%-24px)] truncate rounded border bg-popover px-2 py-1 text-left text-xs text-muted-foreground" title={serverError || ownerError} onClick={() => s.openSettings('language-tools')}>Language server unavailable · Settings</button>}
       {formatting && <span role="status" className="pointer-events-none absolute right-3 bottom-3 rounded bg-popover px-2 py-1 text-xs text-muted-foreground">Formatting…</span>}
       {editing.length > 0 && (

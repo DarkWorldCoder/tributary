@@ -110,6 +110,14 @@ const API = {
   projectCheckState: (p) => hub.projectCheckState(p),
   runProjectCheck: (p, id) => hub.runProjectCheck(p, id),
   languageToolCatalog: () => hub.languageToolCatalog(),
+  projectEditorTools: (p) => hub.projectEditorTools(p),
+  editorFileSettings: (p, rel) => hub.editorFileSettings(p, rel),
+  prepareEditorSave: (p, rel, text, skipFormat) => hub.prepareEditorSave(p, rel, text, skipFormat),
+  eslintAcquire: (p, rel) => hub.eslintAcquire(p, rel),
+  eslintDocument: (p, rel, text, owner, reason) => hub.eslintDocument(p, rel, text, owner, reason),
+  eslintClose: (p, rel, owner) => hub.eslintClose(p, rel, owner),
+  eslintFix: (p, rel, text) => hub.eslintFix(p, rel, text),
+  restartEslint: (p) => hub.restartEslint(p),
   configureLanguageTools: (input) => hub.configureLanguageTools(input),
   languageAcquire: (p, rel) => hub.languageAcquire(p, rel),
   languageDocument: (p, rel, text, owner) => hub.languageDocument(p, rel, text, owner),
@@ -217,7 +225,7 @@ function html(webview, extUri) {
 }
 
 function attach(webview, extUri) {
-  const fileWatches = new Set(); const languageOwners = new Set(); let disposed = false;
+  const fileWatches = new Set(); const languageOwners = new Set(); const eslintOwners = new Set(); let disposed = false;
   webview.options = { enableScripts: true, localResourceRoots: [vscode.Uri.joinPath(extUri, 'dist')] };
   webview.html = html(webview, extUri);
   webviews.add(webview);
@@ -231,11 +239,13 @@ function attach(webview, extUri) {
       if (msg.method === 'unwatchFiles') fileWatches.delete(msg.args?.[0]);
       if (msg.method === 'languageAcquire') { if (disposed) hub._languageTools?.release(result); else languageOwners.add(result); }
       if (msg.method === 'languageClose') languageOwners.delete(msg.args?.[2]);
+      if (msg.method === 'eslintAcquire') { if (disposed) hub._eslintTools?.releaseOwner(result); else eslintOwners.add(result); }
+      if (msg.method === 'eslintClose') eslintOwners.delete(msg.args?.[2]);
       await webview.postMessage({ type: 'result', id: msg.id, result: result === undefined ? null : result });
       });
     } catch (e) { webview.postMessage({ type: 'result', id: msg.id, error: e.message || String(e) }); }
   });
-  return () => { disposed = true; webviews.delete(webview); for (const id of fileWatches) hub.unwatchFiles(id); fileWatches.clear(); for (const owner of languageOwners) hub._languageTools?.release(owner); languageOwners.clear(); };
+  return () => { disposed = true; webviews.delete(webview); for (const id of fileWatches) hub.unwatchFiles(id); fileWatches.clear(); for (const owner of languageOwners) hub._languageTools?.release(owner); languageOwners.clear(); for (const owner of eslintOwners) hub._eslintTools?.releaseOwner(owner); eslintOwners.clear(); };
 }
 
 class ChatView {
@@ -258,7 +268,7 @@ async function activate(context) {
 
   // Stream updates to the UI, coalesced so long replies do not flood the webview.
   disposeMessages = bindMessageDelivery(hub, post);
-  for (const n of ['state', 'threads', 'running', 'notification', 'collaboration', 'language-diagnostics', 'files-changed', 'debugger']) hub.on(n, (d) => post(n, d));
+  for (const n of ['state', 'threads', 'running', 'notification', 'collaboration', 'language-diagnostics', 'eslint-revalidate', 'files-changed', 'debugger']) hub.on(n, (d) => post(n, d));
   hub.on('activity', (d) => post('activity', d)); // the live view
 
   const status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50);
@@ -312,10 +322,10 @@ async function activate(context) {
       const pick = await vscode.window.showQuickPick(g.changed.map((c) => ({ label: c.path, description: c.code })), { placeHolder: 'Pick a changed file to see its diff' });
       if (pick) await API.openDiff(p, path.relative(p, path.join(g.root, pick.label)));
     }),
-    { dispose: () => { hub._qaResults?.stopAll(); hub._languageTools?.stopAll(); hub.debugger?.stopAll(); hub.projectChecks.stopAll(); for (const id of hub.running.keys()) hub.stop(id); } },
+    { dispose: () => { hub._qaResults?.stopAll(); hub._languageTools?.stopAll(); hub._eslintTools?.stopAll(); hub.debugger?.stopAll(); hub.projectChecks.stopAll(); for (const id of hub.running.keys()) hub.stop(id); } },
   );
 }
 
-function deactivate() { disposeMessages?.(); if (hub) { hub._qaResults?.stopAll(); hub._languageTools?.stopAll(); hub.debugger?.stopAll(); hub.projectChecks.stopAll(); for (const id of hub.running.keys()) hub.stop(id); hub.collaborationClient?.disconnect(); hub.fileWatches.close(); try { hub.store.close(); } catch {} } }
+function deactivate() { disposeMessages?.(); if (hub) { hub._qaResults?.stopAll(); hub._languageTools?.stopAll(); hub._eslintTools?.stopAll(); hub.debugger?.stopAll(); hub.projectChecks.stopAll(); for (const id of hub.running.keys()) hub.stop(id); hub.collaborationClient?.disconnect(); hub.fileWatches.close(); try { hub.store.close(); } catch {} } }
 
 module.exports = { activate, deactivate };

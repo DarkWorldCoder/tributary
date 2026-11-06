@@ -33,7 +33,7 @@ function send(name, data) { if (win && !win.isDestroyed()) win.webContents.send(
 let disposeMessages;
 function wireEvents() {
   disposeMessages = require('../core/message-delivery').bindMessageDelivery(hub, (name, data) => messageTransport?.deliver(name, data) ?? false, 80, { maxInFlight: MAX_REPLY_PACKETS });
-  for (const n of ['state', 'threads', 'running', 'notification', 'collaboration', 'language-diagnostics', 'files-changed', 'debugger', 'workbench']) hub.on(n, (d) => send(n, d));
+  for (const n of ['state', 'threads', 'running', 'notification', 'collaboration', 'language-diagnostics', 'eslint-revalidate', 'files-changed', 'debugger', 'workbench']) hub.on(n, (d) => send(n, d));
   hub.on('activity', (d) => send('activity', d)); // the live view
   // System notification when something finishes while the window is in the background.
   hub.on('notification', (n) => {
@@ -219,6 +219,14 @@ const API = {
   projectCheckState: (p) => hub.projectCheckState(p),
   runProjectCheck: (p, id) => hub.runProjectCheck(p, id),
   languageToolCatalog: () => hub.languageToolCatalog(),
+  projectEditorTools: (p) => hub.projectEditorTools(p),
+  editorFileSettings: (p, rel) => hub.editorFileSettings(p, rel),
+  prepareEditorSave: (p, rel, text, skipFormat) => hub.prepareEditorSave(p, rel, text, skipFormat),
+  eslintAcquire: (p, rel) => hub.eslintAcquire(p, rel),
+  eslintDocument: (p, rel, text, owner, reason) => hub.eslintDocument(p, rel, text, owner, reason),
+  eslintClose: (p, rel, owner) => hub.eslintClose(p, rel, owner),
+  eslintFix: (p, rel, text) => hub.eslintFix(p, rel, text),
+  restartEslint: (p) => hub.restartEslint(p),
   configureLanguageTools: (input) => hub.configureLanguageTools(input),
   languageAcquire: (p, rel) => hub.languageAcquire(p, rel),
   languageDocument: (p, rel, text, owner) => hub.languageDocument(p, rel, text, owner),
@@ -382,10 +390,10 @@ function createWindow() {
   win.webContents.on('will-navigate', (ev) => ev.preventDefault());
   // A replaced/crashed renderer cannot release its pane leases itself. The
   // desktop's single application renderer owns all of this host's LSP leases.
-  win.webContents.on('did-start-navigation', (details) => { if (details.isMainFrame && !details.isSameDocument) { transport.reset(); hub?._languageTools?.stopAll(); terminals.detachAll(); } });
+  win.webContents.on('did-start-navigation', (details) => { if (details.isMainFrame && !details.isSameDocument) { transport.reset(); hub?._languageTools?.stopAll(); hub?._eslintTools?.stopAll(); terminals.detachAll(); } });
   contents.on('render-process-gone', () => transport.reset());
   contents.on('destroyed', () => transport.close());
-  for (const event of ['render-process-gone', 'destroyed']) win.webContents.on(event, () => { hub?._languageTools?.stopAll(); terminals.detachAll(); });
+  for (const event of ['render-process-gone', 'destroyed']) win.webContents.on(event, () => { hub?._languageTools?.stopAll(); hub?._eslintTools?.stopAll(); terminals.detachAll(); });
   // Smoke runs stay hidden so they never take keyboard focus from whatever you are typing in.
   win.once('ready-to-show', () => { if (!SMOKE) win.show(); });
   win.loadFile(path.join(__dirname, '..', 'ui', 'dist', 'index.html'));
@@ -528,5 +536,5 @@ app.on('before-quit', (event) => {
   event.preventDefault();
   lanHost.stop().catch((e) => console.error(`Could not stop hosting: ${e.message}`)).finally(() => { stoppedHostingForQuit = true; app.quit(); });
 });
-app.on('will-quit', () => { disposeMessages?.(); messageTransport?.close(); updates?.dispose(); hub?._qaResults?.stopAll(); hub?._languageTools?.stopAll(); hub?.debugger?.stopAll(); hub?.projectChecks.stopAll(); try { hub?.store.close(); } catch (e) { console.error(`Could not save on quit: ${e.message}`); } });
-app.on('window-all-closed', () => { if (hub) { hub._qaResults?.stopAll(); hub._languageTools?.stopAll(); hub.debugger?.stopAll(); hub.projectChecks.stopAll(); for (const id of hub.running.keys()) hub.stop(id); hub.collaborationClient?.disconnect(); hub.fileWatches.close(); } previewServers.stopAll(); terminals.killAll(); if (process.platform !== 'darwin' || SMOKE) app.quit(); });
+app.on('will-quit', () => { disposeMessages?.(); messageTransport?.close(); updates?.dispose(); hub?._qaResults?.stopAll(); hub?._languageTools?.stopAll(); hub?._eslintTools?.stopAll(); hub?.debugger?.stopAll(); hub?.projectChecks.stopAll(); try { hub?.store.close(); } catch (e) { console.error(`Could not save on quit: ${e.message}`); } });
+app.on('window-all-closed', () => { if (hub) { hub._qaResults?.stopAll(); hub._languageTools?.stopAll(); hub._eslintTools?.stopAll(); hub.debugger?.stopAll(); hub.projectChecks.stopAll(); for (const id of hub.running.keys()) hub.stop(id); hub.collaborationClient?.disconnect(); hub.fileWatches.close(); } previewServers.stopAll(); terminals.killAll(); if (process.platform !== 'darwin' || SMOKE) app.quit(); });

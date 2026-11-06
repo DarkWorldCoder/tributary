@@ -3,7 +3,7 @@ const test = require('node:test'), assert = require('node:assert/strict'), fs = 
 const { execFileSync } = require('node:child_process');
 const { nextVersion, applyVersion, planRelease, tagRelease, manifests } = require('../scripts/release-version.cjs');
 const { publishRelease } = require('../scripts/publish-release.cjs');
-const { releaseAssets } = require('../scripts/release-assets.cjs');
+const { releaseAssets, hashFile } = require('../scripts/release-assets.cjs');
 const packageTag = 'v' + require('../package.json').version;
 const git = (root, ...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
 function fixture(t) {
@@ -53,7 +53,7 @@ test('a release remains a draft until every installer and checksum is uploaded; 
     if (args[1] === 'view') { if (!state) throw Error('release not found'); return JSON.stringify({ apiUrl: 'https://api.github.com/repos/example/tributary/releases/42' }); }
     if (args[0] === 'api') { assert.equal(args[1], 'https://api.github.com/repos/example/tributary/releases/42', 'tag lookup cannot read drafts'); return JSON.stringify(state); }
     if (args[1] === 'create') state = { draft: true, prerelease: true, assets: [], html_url: 'https://example.test/release' };
-    if (args[1] === 'upload') state.assets = fs.readdirSync(dir).map(name => ({ name, state: 'uploaded', size: fs.statSync(path.join(dir, name)).size }));
+    if (args[1] === 'upload') state.assets = fs.readdirSync(dir).map(name => ({ name, state: 'uploaded', size: fs.statSync(path.join(dir, name)).size, digest: 'sha256:' + hashFile(path.join(dir, name)) }));
     if (args[1] === 'edit') state.draft = false;
     return '';
   };
@@ -71,7 +71,7 @@ test('failed uploads never publish and unexpected API failures are not treated a
 });
 test('an existing uploaded draft is resolved by numeric API URL and resumed without recreation', t => {
   const dir = downloads(t), calls = [];
-  const state = { draft: true, prerelease: true, assets: fs.readdirSync(dir).map(name => ({ name, state: 'uploaded', size: fs.statSync(path.join(dir, name)).size })) };
+  const state = { draft: true, prerelease: true, assets: fs.readdirSync(dir).map(name => ({ name, state: 'uploaded', size: fs.statSync(path.join(dir, name)).size, digest: 'sha256:' + hashFile(path.join(dir, name)) })) };
   const run = args => {
     calls.push(args);
     if (args[1] === 'view') return JSON.stringify({ apiUrl: 'https://api.github.com/repos/example/tributary/releases/42' });
@@ -84,4 +84,18 @@ test('an existing uploaded draft is resolved by numeric API URL and resumed with
   assert.equal(state.draft, false); assert.ok(!calls.some(args => args[1] === 'create'));
   state.draft = true;
   assert.throws(() => publishRelease(dir, packageTag, args => args[1] === 'edit' ? '' : run(args)), /remains a draft/);
+});
+test('same-size corrupted or unverifiable uploads cannot be published or accepted on retry', t => {
+  const dir = downloads(t); let edits = 0;
+  const state = { draft: true, prerelease: true, assets: fs.readdirSync(dir).map(name => ({ name, state: 'uploaded', size: fs.statSync(path.join(dir, name)).size, digest: 'sha256:' + hashFile(path.join(dir, name)) })) };
+  const run = args => {
+    if (args[1] === 'view') return JSON.stringify({ apiUrl: 'https://api.github.com/repos/example/tributary/releases/42' });
+    if (args[0] === 'api') return JSON.stringify(state);
+    if (args[1] === 'edit') edits++;
+    return '';
+  };
+  state.assets[0].digest = 'sha256:' + '0'.repeat(64);
+  assert.throws(() => publishRelease(dir, packageTag, run), /checksums/); assert.equal(edits, 0);
+  state.draft = false; assert.throws(() => publishRelease(dir, packageTag, run), /checksums/); assert.equal(edits, 0);
+  delete state.assets[0].digest; assert.throws(() => publishRelease(dir, packageTag, run), /checksums/);
 });

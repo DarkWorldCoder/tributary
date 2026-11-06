@@ -29,10 +29,13 @@ function runFormatter(root, files, trusted, timeoutMs = 60000) {
     });
   });
 }
-async function formatProjectSource(root, rel, text, trusted, automatic = false) {
+async function formatProjectResult(root, rel, text, trusted) {
   if (typeof text !== 'string' || Buffer.byteLength(text) > 1024 * 1024 || text.includes('\0')) throw new Error('Format a text file up to 1 MB.');
   await projectPath(root, rel);
-  const result = (await runFormatter(await fsp.realpath(root), [{ rel, text }], trusted, 15000)).results[0];
+  return (await runFormatter(await fsp.realpath(root), [{ rel, text }], trusted, 15000)).results[0];
+}
+async function formatProjectSource(root, rel, text, trusted, automatic = false) {
+  const result = await formatProjectResult(root, rel, text, trusted);
   if (result.status === 'unsupported' && automatic) return text;
   if (result.status === 'error' || result.status === 'unsupported') throw new Error(result.message || 'No formatter available.');
   return result.text ?? text;
@@ -116,4 +119,4 @@ class ProjectFormatter {
     } finally { this.busy.delete(root); }
   }
 }
-module.exports = { ProjectFormatter, formatProjectSource, unified };
+module.exports = { ProjectFormatter, formatProjectSource, formatProjectResult, supportsProjectFormat: rel => SUPPORTED.test(rel), unified };

@@ -851,7 +851,23 @@ class Hub extends EventEmitter {
   languageFormat(dir, rel, text, options, owner) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.languageTools.format(dir, rel, text, options, owner); }
   languageLocations(dir, rel, text, position, kind, owner) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.languageTools.locations(dir, rel, text, position, kind, owner); }
   languageClose(dir, rel, owner) { this._languageTools?.closeDocument(dir, rel, owner); }
-  formatSource(dir, rel, text, automatic) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return require('./project-format').formatProjectSource(dir, rel, text, this.qaTrusted(dir), automatic === true); }
+  get eslintTools() { return this._eslintTools ||= new (require('./eslint-tools').EslintTools)({ trusted: dir => this.isWorkspace(dir) && this.qaTrusted(dir) }); }
+  async projectEditorTools(dir) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return { ...await require('./editor-settings').editorToolSetup(dir), trusted: this.qaTrusted(dir) }; }
+  async editorFileSettings(dir, rel) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); const config = await require('./editor-settings').editorSettings(dir, rel); return { ...config, formatOnSave: config.formatOnSave ?? (this.store.data.settings.formatOnSave !== false) }; }
+  eslintAcquire(dir, rel) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.eslintTools.acquire(dir, rel); }
+  eslintDocument(dir, rel, text, owner, reason) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.eslintTools.document(dir, rel, text, owner, reason); }
+  eslintClose(dir, rel, owner) { this._eslintTools?.release(dir, rel, owner); }
+  eslintFix(dir, rel, text) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.eslintTools.fix(dir, rel, text); }
+  restartEslint(dir) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); this._eslintTools?.restart(dir); this.emit('eslint-revalidate', { project: dir }); return this.projectEditorTools(dir); }
+  prepareEditorSave(dir, rel, text, skipFormat = false) {
+    if (!this.isWorkspace(dir)) throw new Error('Unknown project');
+    return require('./editor-actions').editorAction(dir, rel, text, { automatic: true, formatOnSave: this.store.data.settings.formatOnSave !== false, trusted: this.qaTrusted(dir), skipFormat: skipFormat === true, fix: value => this.eslintTools.fix(dir, rel, value) });
+  }
+  async formatSource(dir, rel, text, automatic) {
+    if (!this.isWorkspace(dir)) throw new Error('Unknown project');
+    if (automatic === true) return (await this.prepareEditorSave(dir, rel, text)).text;
+    return (await require('./editor-actions').editorAction(dir, rel, text, { trusted: this.qaTrusted(dir), fix: value => this.eslintTools.fix(dir, rel, value) })).text;
+  }
   get projectFormatter() { return this._projectFormatter ||= new (require('./project-format').ProjectFormatter)({ trusted: (dir) => this.isWorkspace(dir) && this.qaTrusted(dir), write: (dir, rel, text, mtime) => this.writeFile(dir, rel, text, mtime) }); }
   previewFormat(dir, exclude) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.projectFormatter.preview(dir, exclude); }
   formatDiff(dir, token, rel) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.projectFormatter.diff(dir, token, rel); }
@@ -863,15 +879,16 @@ class Hub extends EventEmitter {
   async readFile(dir, rel) {
     if (!this.isWorkspace(dir)) throw new Error('Unknown project');
     const abs = await folderFiles.projectPath(dir, rel);
-    const st = fs.statSync(abs);
-    if (!st.isFile()) throw new Error(st.isDirectory() ? 'This is a folder. Expand it in the Explorer to open a file.' : 'This entry is not a regular file.');
     const raster = /\.(png|jpe?g|gif|webp|bmp|ico|avif)$/i.test(abs);
     const limit = (raster ? 16 : 1) * 1024 * 1024;
     // Oversized images need a metadata fallback, not a partial image payload.
-    const fd = fs.openSync(abs, 'r'); const buffer = Buffer.alloc(raster && st.size > limit ? 0 : Math.min(st.size, limit));
-    let bytes = 0;
-    try { while (bytes < buffer.length) { const read = fs.readSync(fd, buffer, bytes, buffer.length - bytes, bytes); if (!read) break; bytes += read; } }
-    finally { fs.closeSync(fd); }
+    const handle = await fs.promises.open(abs, 'r'); let st, buffer; let bytes = 0;
+    try {
+      st = await handle.stat();
+      if (!st.isFile()) throw new Error(st.isDirectory() ? 'This is a folder. Expand it in the Explorer to open a file.' : 'This entry is not a regular file.');
+      buffer = Buffer.allocUnsafe(raster && st.size > limit ? 0 : Math.min(st.size, limit));
+      while (bytes < buffer.length) { const { bytesRead } = await handle.read(buffer, bytes, buffer.length - bytes, bytes); if (!bytesRead) break; bytes += bytesRead; }
+    } finally { await handle.close(); }
     const buf = buffer.subarray(0, bytes);
     const binary = raster || buf.subarray(0, 8000).includes(0);
     return { rel: path.relative(dir, abs), size: st.size, binary, truncated: st.size > limit, content: binary ? '' : buf.toString('utf8'), mtime: st.mtimeMs,
@@ -945,6 +962,9 @@ class Hub extends EventEmitter {
     if (fs.existsSync(abs) && fs.statSync(abs).size === Buffer.byteLength(String(content)) && fs.readFileSync(abs).equals(Buffer.from(String(content)))) return { rel: path.relative(dir, abs), mtime: fs.statSync(abs).mtimeMs, unchanged: true };
     fs.mkdirSync(path.dirname(abs), { recursive: true });
     fs.writeFileSync(abs, String(content));
+    if (/(?:^|\/)(?:eslint\.config\.[cm]?[jt]s|\.eslintrc(?:\.[^/]+)?|package\.json)$|(?:^|\/)\.vscode\/settings\.json$/i.test(rel.replaceAll('\\', '/'))) {
+      this._eslintTools?.restart(dir); this.emit('eslint-revalidate', { project: dir });
+    }
     return { rel: path.relative(dir, abs), mtime: fs.statSync(abs).mtimeMs };
   }
 

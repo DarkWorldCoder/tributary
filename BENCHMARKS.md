@@ -24,6 +24,8 @@ Tributary, VS Code and Zed run the same generated project with **20,008 TypeScri
 
 [Method, settings and reproduction](docs/performance/EDITOR_COMPARISON.md) · [Every operation, source identity and process sample](docs/performance/editor-comparison.json). The earlier focus-failure cohort is retained separately and is not pooled into these results.
 
+The later asynchronous file-reader, project ESLint and formatter-selection changes postdate this frozen cohort. The table does not measure their latency or memory cost; functional validation is documented in [Project ESLint](docs/PROJECT_ESLINT.md).
+
 ## Historical Tributary allocation comparison
 
 ![Baseline and optimized allocation estimates and app-tree PSS](docs/media/editor-benchmarks.svg)

@@ -71,6 +71,25 @@ test('project formatter uses a project-local runtime, and untrusted config canno
   put(root, 'node_modules/prettier/index.cjs', `const p = require(${JSON.stringify(require.resolve('prettier'))}); module.exports = { ...p, format: async (...args) => (await p.format(...args)) + '// local runtime\\n' };`);
   assert.match(await formatProjectSource(root, 'main.js', 'const x=1;', true), /local runtime/);
 });
+test('each monorepo package uses its nearest local Prettier in a shared formatting preview', async () => {
+  const root = workspace();
+  for (const [folder, marker] of [['.', 'root-runtime'], ['packages/app', 'package-runtime']]) {
+    put(root, `${folder}/node_modules/prettier/package.json`, '{"name":"prettier","main":"index.cjs"}');
+    put(root, `${folder}/node_modules/prettier/index.cjs`, `const p = require(${JSON.stringify(require.resolve('prettier'))}); module.exports = { ...p, format: async (...args) => (await p.format(...args)) + '// ${marker}\\n' };`);
+  }
+  put(root, 'root.js', 'const a=1;'); put(root, 'packages/app/main.js', 'const a=1;');
+  const fmt = formatter(); const plan = await fmt.preview(root);
+  assert.match(fmt.diff(root, plan.token, 'root.js'), /root-runtime/);
+  assert.match(fmt.diff(root, plan.token, 'packages/app/main.js'), /package-runtime/);
+  assert.doesNotMatch(fmt.diff(root, plan.token, 'packages/app/main.js'), /root-runtime/);
+});
+test('Prettier plugins resolve from the file package rather than the workspace root', async () => {
+  const root = workspace(); put(root, 'packages/app/main.js', 'const value=1;');
+  put(root, 'packages/app/.prettierrc.json', '{"plugins":["prettier-plugin-fixture"]}');
+  put(root, 'packages/app/node_modules/prettier-plugin-fixture/package.json', '{"name":"prettier-plugin-fixture","main":"index.cjs"}');
+  put(root, 'packages/app/node_modules/prettier-plugin-fixture/index.cjs', `const babel=require(${JSON.stringify(require.resolve('prettier/plugins/babel'))}); module.exports={parsers:{babel:{...babel.parsers.babel,preprocess:text=>text+'\\n// package plugin\\n'}}};`);
+  assert.match(await formatProjectSource(root, 'packages/app/main.js', 'const value=1;', true), /package plugin/);
+});
 test('multiple workspace folders allow editing, keep idempotent saves clean, and can be removed', async () => {
   const root = workspace(); const extra = workspace(); const other = workspace(); const hub = await new Hub({ dataDir: mkdtemp('format-store'), home: mkdtemp('format-home'), secrets: new MemorySecrets() }).init();
   hub.addProject(root); hub.setProjectFolders(root, [extra, other, extra]); assert.deepEqual(hub.project(root).folders, [extra, other]);

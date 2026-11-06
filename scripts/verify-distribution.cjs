@@ -14,7 +14,7 @@ for (const file of ['core/index.js', 'core/path-command.js', 'core/path-prefix.j
   if (!entries.has('/' + file)) throw new Error(`Package is missing ${file}`);
 }
 if ([...entries].some((file) => /(?:^|\/)\.env(?:\.|$)/.test(file))) throw new Error('Environment files must never be packaged.');
-for (const file of ['core/format-worker.cjs', 'core/search-worker.cjs', 'core/local-engine-worker.cjs', 'core/files.js', 'core/directory-page.js', `node_modules/@lydell/node-pty-${platform === 'mac' ? 'darwin' : platform === 'win' ? 'win32' : 'linux'}-${arch}/package.json`]) {
+for (const file of ['core/format-worker.cjs', 'core/eslint-worker.cjs', 'core/search-worker.cjs', 'core/local-engine-worker.cjs', 'core/files.js', 'core/directory-page.js', `node_modules/@lydell/node-pty-${platform === 'mac' ? 'darwin' : platform === 'win' ? 'win32' : 'linux'}-${arch}/package.json`]) {
   if (!fs.existsSync(path.join(archive + '.unpacked', file))) throw new Error(`Unpacked runtime is missing ${file}`);
 }
 const binary = path.join(base, platform === 'mac' ? 'MacOS/Tributary' : platform === 'win' ? 'Tributary.exe' : 'tributary');
@@ -42,6 +42,13 @@ const code = String.raw`
       assert.ok(result.includes('const sample ='));
       const search = await runtime('./core/files').searchProject(dir, 's[a]mple', { regexp: true });
       assert.equal(search.matches.length, 1);
+      // Class-API fixture verifies packaged worker transport, not ESLint rules.
+      const lib = path.join(dir, 'node_modules/eslint'); fs.mkdirSync(lib, { recursive: true });
+      fs.writeFileSync(path.join(lib, 'package.json'), JSON.stringify({ name: 'eslint', version: '9.0.0', main: 'index.cjs' }));
+      fs.writeFileSync(path.join(lib, 'index.cjs'), 'exports.ESLint = class { async isPathIgnored() { return false; } async lintText() { return [{ messages: [], output: "const sample = true;" }]; } };');
+      const lint = new (runtime('./core/eslint-tools').EslintTools)({ trusted: () => true }); const owner = lint.acquire(dir, 'sample.js');
+      try { assert.equal((await lint.fix(dir, 'sample.js', 'var sample = true;')).output, 'const sample = true;'); }
+      finally { const child = lint.lanes.get(dir)?.child; const exited = child && child.exitCode === null ? new Promise(resolve => child.once('close', resolve)) : Promise.resolve(); lint.stopAll(); await exited; }
       await new Promise((resolve, reject) => {
         const owned = runtime('./core/local-engine-process').spawnOwnedRuntime(process.execPath, ['-e', 'console.log("owned-runtime-ready");setInterval(()=>{},1000)'], { cwd: dir });
         let ready = false; const timer = setTimeout(() => { owned.kill('SIGKILL'); reject(Error('Packaged engine guardian timed out')); }, 10000);
@@ -52,7 +59,7 @@ const code = String.raw`
     // ConPTY keeps a native helper thread alive after its shell exits on Windows.
     // This is a bounded test process: exit only after every assertion and cleanup
     // has completed, and flush the success marker before closing the process.
-    process.stdout.write('Packaged runtime, SQLite, native terminal and formatter verified for ' + process.platform + '/' + process.arch + '\n', () => process.exit(0));
+    process.stdout.write('Packaged runtime, SQLite, native terminal, formatter and lint transport verified for ' + process.platform + '/' + process.arch + '\n', () => process.exit(0));
   })().catch((error) => { process.stderr.write(String(error.stack || error) + '\n', () => process.exit(1)); });
 `;
 const result = spawnSync(binary, ['-e', code, archive, arch], { env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }, encoding: 'utf8', timeout: 45000, windowsHide: true });

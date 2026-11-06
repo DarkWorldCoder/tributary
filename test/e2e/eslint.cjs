@@ -1,0 +1,72 @@
+'use strict';
+// Requires a disposable project with real project-local eslint + typescript-eslint.
+// Example: TRIBUTARY_ESLINT_FIXTURE=/tmp/tributary-eslint-project-... xvfb-run -a node_modules/.bin/electron test/e2e/eslint.cjs --ozone-platform=x11
+const fs = require('node:fs'), path = require('node:path'), os = require('node:os'), assert = require('node:assert/strict');
+const { app } = require('electron'); const project = fs.realpathSync(process.env.TRIBUTARY_ESLINT_FIXTURE || '');
+if (!process.env.TRIBUTARY_ESLINT_FIXTURE || !fs.existsSync(path.join(project, 'node_modules/eslint/package.json'))) throw Error('Set TRIBUTARY_ESLINT_FIXTURE to a disposable installed ESLint/TypeScript project.');
+const root = fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-eslint-ui-')), profile = path.join(root, 'profile'), setup = path.join(root, 'setup-project'), extra = path.join(root, 'extra-folder'); fs.mkdirSync(setup); fs.mkdirSync(extra);
+const backup = new Map(); const put = (rel, text) => { const filename = path.join(project, rel); if (!backup.has(filename)) backup.set(filename, fs.existsSync(filename) ? fs.readFileSync(filename) : null); fs.mkdirSync(path.dirname(filename), { recursive: true }); fs.writeFileSync(filename, text); };
+const js = 'tributary-lint-e2e.js', ts = 'tributary-lint-e2e.ts', original = 'var value=missing;\n';
+put(js, original); put(ts, 'const value: number = 1;\n');
+put('eslint.config.mjs', `import tseslint from 'typescript-eslint'; export default [{files:['**/*.js'],rules:{'no-var':'error','no-undef':'error'}},{files:['**/*.ts'],languageOptions:{parser:tseslint.parser},plugins:{'@typescript-eslint':tseslint.plugin},rules:{'@typescript-eslint/no-unused-vars':'error'}}];`);
+put('.vscode/settings.json', '{"editor.formatOnSave":false,"editor.codeActionsOnSave":{"source.fixAll.eslint":"explicit"}}');
+fs.writeFileSync(path.join(setup, 'package.json'), '{"name":"setup-fixture","private":true,"packageManager":"pnpm@10.0.0"}'); fs.writeFileSync(path.join(setup, 'main.js'), 'const ready = true;\n');
+fs.writeFileSync(path.join(extra, 'package.json'), '{"name":"extra-fixture","private":true,"packageManager":"bun@1.0.0"}');
+process.env.TRIBUTARY_DATA_DIR = profile; const core = require('../../core'), drafts = require('../../core/drafts'); let hub;
+const seed = new core.Hub({ dataDir: profile, home: root, secrets: new core.MemorySecrets() }); seed.createThread(project, 'Real ESLint'); seed.createThread(setup, 'ESLint setup'); seed.setProjectFolders(setup, [extra]); seed.fileWatches.close(); seed.store.close();
+drafts.save(profile, 'files:' + project, { active: js, tabs: [{ rel: js, mode: 'edit', pinned: true }, { rel: ts, mode: 'edit', pinned: true }] });
+drafts.save(profile, 'files:' + setup, { active: 'main.js', tabs: [{ rel: 'main.js', mode: 'edit', pinned: true }] });
+core.Hub = class extends core.Hub { async init() { hub = this; this.agents = []; this.scanningAgents = false; this.emit('state'); return this; } };
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms)); const checks = [];
+async function until(fn, label) { const end = Date.now() + 18000; while (!await fn()) { if (Date.now() > end) throw Error('Timed out: ' + label); await delay(35); } }
+const deadline = setTimeout(() => app.exit(1), 120000); let started = false;
+app.on('browser-window-created', (_event, win) => {
+  const web = win.webContents, run = code => web.executeJavaScript(code).catch(error => { throw Error(error.message + '\nCode: ' + code.slice(0, 220)); });
+  const key = async (keyCode, modifiers = []) => { web.sendInputEvent({ type: 'keyDown', keyCode, modifiers }); web.sendInputEvent({ type: 'keyUp', keyCode, modifiers }); await delay(80); };
+  const text = () => run(`document.querySelector('.cm-content')?.cmTile.root.view.state.doc.toString() || ''`);
+  const focus = () => run(`document.querySelector('.cm-content').cmTile.root.view.focus();true`);
+  const marks = () => run(`[...document.querySelectorAll('.cm-lintRange-error')].map(e=>e.textContent).join('|')`);
+  const clickText = (selector, text) => run(`[...document.querySelectorAll(${JSON.stringify(selector)})].find(e=>e.textContent.trim()===${JSON.stringify(text)}).click();true`);
+  const selectProject = async selected => {
+    await run(`localStorage.removeItem('tributary.thread');localStorage.setItem('tributary.project',${JSON.stringify(JSON.stringify(selected))});localStorage.setItem('tributary.workspaceViews.v1',JSON.stringify({[${JSON.stringify(selected)}]:{layout:'editor',expanded:true,panel:{open:true,tab:'files'}}}));true`);
+    const loaded = new Promise(resolve => web.once('did-finish-load', resolve)); web.reload(); await loaded;
+    await until(() => run(`!!document.querySelector('.cm-content')`), 'editor');
+    await run(`document.querySelector('[aria-label="Projects and chats"][aria-expanded="true"]')?.click();true`);
+  };
+  web.once('did-finish-load', () => { if (started) return; started = true; (async () => {
+    await selectProject(project); await until(async () => (await marks()).includes('missing'), 'real ESLint underline');
+    assert.equal(await text(), original); assert.equal(fs.readFileSync(path.join(project, js), 'utf8'), original); checks.push('Opening reads real rules without rewriting the file; actual ESLint ranges underline identifiers');
+    await focus(); await key('F10', ['shift']); await until(() => run(`!!document.querySelector('[aria-label="Editor context menu"]')`), 'context menu');
+    await clickText('[role="menuitem"]', 'Fix ESLint problems'); await until(async () => (await text()).startsWith('let '), 'ESLint fix');
+    assert.equal(fs.readFileSync(path.join(project, js), 'utf8'), original); await focus(); await key('z', ['control']); await until(async () => await text() === original, 'native undo'); checks.push('Right-click fixes only the draft and native undo restores it');
+    const fix = hub.eslintFix.bind(hub); let releaseFix;
+    hub.eslintFix = async (...args) => { const result = await fix(...args); await new Promise(resolve => { releaseFix = resolve; }); return result; };
+    await focus(); await key('F10', ['shift']); await clickText('[role="menuitem"]', 'Fix ESLint problems'); await until(() => !!releaseFix, 'delayed real fix response');
+    await run(`{const v=document.querySelector('.cm-content').cmTile.root.view;v.dispatch({changes:{from:v.state.doc.length,insert:'// newer edit\\n'},userEvent:'input'});}true`);
+    releaseFix(); hub.eslintFix = fix; await delay(250); assert.equal(await text(), original + '// newer edit\n'); await focus(); await key('z', ['control']); await until(async () => await text() === original, 'newer edit undo'); checks.push('A delayed real fix response preserves newer typing instead of replacing it');
+    await focus(); await key('s', ['control']); await until(() => fs.readFileSync(path.join(project, js), 'utf8') === 'let value=missing;\n', 'independent fix on save'); checks.push('Project format-on-save false overrides global true while ESLint fix-on-save still runs');
+    await run(`document.querySelector('[data-file-path="${ts}"]').focus();true`); await key('Enter'); await until(async () => (await text()).includes(': number'), 'TypeScript file'); await until(async () => (await marks()).includes('value'), 'TypeScript plugin diagnostics'); checks.push('Real typescript-eslint parses typed syntax and renders its unused-variable rule');
+    await run(`document.querySelector('[data-file-path="${js}"]').focus();true`); await key('Enter'); await until(async () => (await text()).includes('missing'), 'JavaScript file');
+    await hub.writeFile(project, '.vscode/settings.json', '{"editor.formatOnSave":false,"eslint.run":"onSave"}');
+    await run(`{const v=document.querySelector('.cm-content').cmTile.root.view;v.dispatch({changes:{from:0,to:v.state.doc.length,insert:'let value=otherMissing;\\n'},userEvent:'input'});}true`);
+    await delay(850); assert.equal(await marks(), ''); await focus(); await key('s', ['control']); await until(async () => (await marks()).includes('otherMissing'), 'on-save diagnostics'); await delay(850); assert.ok((await marks()).includes('otherMissing')); checks.push('On-save diagnostics use the saved draft and remain visible after the typing debounce');
+    await hub.writeFile(project, 'eslint.config.mjs', `export default [{files:['**/*.js'],rules:{'no-var':'error'}}];`); await until(async () => !(await marks()).includes('otherMissing'), 'saved config refresh'); checks.push('Saving ESLint config revalidates an already-open file without reloading its editor');
+    await selectProject(setup); await key(',', ['control']); await until(() => run(`!!document.querySelector('[aria-label="Settings sections"]')`), 'settings'); await clickText('[aria-label="Settings sections"] button', 'Language tools');
+    await until(() => run(`document.querySelector('[aria-label="Project ESLint"]')?.textContent.includes('Not installed in this folder')`), 'setup status');
+    await run(`{const select=document.querySelector('[aria-label="Project ESLint"] select');select.value=${JSON.stringify(extra)};select.dispatchEvent(new Event('change',{bubbles:true}));}true`);
+    await until(() => run(`document.querySelector('[aria-label="Project ESLint"]')?.textContent.includes('bun ·')`), 'additional root setup');
+    await clickText('button', 'Install ESLint'); await until(() => run(`[...document.querySelectorAll('[role="dialog"]')].some(e=>e.textContent.includes('bun add --dev eslint') && e.textContent.includes(${JSON.stringify(extra)}))`), 'additional root install plan'); await clickText('button', 'Cancel');
+    await run(`{const select=document.querySelector('[aria-label="Project ESLint"] select');select.value=${JSON.stringify(setup)};select.dispatchEvent(new Event('change',{bubbles:true}));}true`);
+    await until(() => run(`document.querySelector('[aria-label="Project ESLint"]')?.textContent.includes('pnpm ·')`), 'main root setup'); checks.push('Additional workspace folders have their own setup status, manager and installation target');
+    await clickText('button', 'Install ESLint'); await until(() => run(`[...document.querySelectorAll('[role="dialog"]')].some(e=>e.textContent.includes('pnpm add --save-dev eslint'))`), 'review installation');
+    assert.ok(await run(`[...document.querySelectorAll('[role="dialog"]')].some(e=>e.textContent.includes(${JSON.stringify(setup)}))`));
+    assert.equal(fs.existsSync(path.join(setup, 'node_modules')), false); await clickText('button', 'Cancel'); checks.push('In-app install plan shows the detected package manager and exact target folder; opening/canceling does not install anything');
+    win.setSize(390, 844); await delay(200);
+    assert.ok(await run(`document.querySelector('[aria-label="Project ESLint"]').getBoundingClientRect().right <= innerWidth`)); fs.writeFileSync('/tmp/tributary-eslint-setup.png', (await web.capturePage()).toPNG()); checks.push('Project ESLint setup remains within the narrow settings panel');
+    const version = JSON.parse(fs.readFileSync(path.join(project, 'node_modules/eslint/package.json'))).version; const parser = JSON.parse(fs.readFileSync(path.join(project, 'node_modules/typescript-eslint/package.json'))).version;
+    console.log(JSON.stringify({ passed: true, eslint: version, typescriptEslint: parser, checks, scope: 'Linux source UI, real CodeMirror, current installed ESLint/TypeScript parser and real IPC. Installation preview only; no package download initiated by UI.' }));
+    clearTimeout(deadline); app.quit();
+  })().catch(async error => { console.error(error.stack); fs.writeFileSync('/tmp/tributary-eslint-ui-failure.png', (await web.capturePage()).toPNG()); app.exit(1); }); });
+});
+app.on('quit', () => { for (const [filename, text] of backup) { if (text === null) fs.rmSync(filename, { force: true }); else fs.writeFileSync(filename, text); } fs.rmSync(root, { recursive: true, force: true }); });
+require('../../desktop/main.js');

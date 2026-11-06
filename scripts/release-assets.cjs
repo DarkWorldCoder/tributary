@@ -25,5 +25,5 @@ const lines = files.map((file) => {
 fs.writeFileSync(path.join(directory, 'SHA256SUMS.txt'), lines.join('\n') + '\n');
 return files.length;
 }
-module.exports = { releaseAssets };
+module.exports = { releaseAssets, hashFile };
 if (require.main === module) console.log(`Verified ${releaseAssets(process.argv[2] || 'release-assets')} release files; SHA256SUMS.txt generated.`);

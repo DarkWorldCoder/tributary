@@ -4,6 +4,8 @@ This experiment exercises **Tributary, VS Code and Zed**, using the same generat
 
 The [completed cohort](editor-comparison.json) contains all nine passing instances, all 54 small-file and nine large-file observations, source/build fingerprints and 45 complete process-tree samples. [The results table](../../BENCHMARKS.md#cross-editor-large-project-navigation) includes observed ranges and the slow first Tributary search. Medians are descriptive; no observations are discarded as outliers.
 
+Asynchronous file loading, project-local ESLint and subsequent per-file formatter selection were added after this measured build. Their functional checks do not refresh this cohort or establish a performance improvement.
+
 ## What completion means
 
 - **Quick Open:** invoke the file picker, enter a unique filename, open it and confirm the complete source buffer through the X11 clipboard. The selected text must match the fixture exactly.

@@ -11,6 +11,9 @@ Tributary preview for macOS, Windows and Linux.
 
 In this update:
 
+- Read project `.vscode/settings.json` and language overrides; run project-local ESLint diagnostics, undoable right-click fixes and independent fix-on-save. Install/setup ESLint per workspace folder from Language tools.
+- Load files asynchronously while preserving dirty buffers; resolve nested monorepo Prettier runtimes and plugins from each file’s package.
+- Verify uploaded installer and checksum-file digests before publishing or accepting a completed retry. Workflow summaries link directly to the published downloads.
 - Hide and reopen the file explorer from the workbench toolbar or Ctrl/Cmd+Shift+E without closing files, losing undo history or leaving the focused layout.
 - Agent editor controls, independent split groups and live buffer edits, with line-ending normalization for CRLF/Unicode updates.
 - Project-rule formatting on save now writes requested CRLF/LF output correctly, keeps native undo and shows the saved file’s line endings.

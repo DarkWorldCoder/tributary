@@ -377,28 +377,16 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
   const decorations = React.useMemo(() => explorerDecorations(project, repository.git, docs.filter((item) => item.dirty).map((item) => item.rel)), [project, repository.git, docs]);
   const pin = (rel: string) => setDocs((all) => all.map((doc) => doc.rel === rel ? { ...doc, pinned: true } : doc));
   const saveDocument = async (doc: Doc | null, editorHistory: EditorHistory | null, strict = false, valid?: () => boolean) => {
-    const canFormat = !!doc && !!(formatParser(doc.rel) || nativeFormatTool(doc.rel) || configuredLanguage(s.st?.settings.languageServers, doc.rel));
     if (!doc || doc.binary || doc.truncated || saveBusy.current) return;
     saveBusy.current = true; setSaving(true);
     let text = doc.text;
     try {
       const editor = editorHistory?.path === doc.rel ? editorHistory : null;
-      const trusted = s.st?.projects.find((item) => item.path === s.project)?.trusted !== false;
-      if (s.st?.settings.formatOnSave !== false && canFormat && editor && (formatParser(doc.rel) || trusted)) {
-        let available = !!formatParser(doc.rel);
-        if (!available) {
-          const catalog = await s.hub.call<import('@/lib/language-tools').LanguageToolCatalog>('languageToolCatalog');
-          const tool = nativeFormatTool(doc.rel)?.toLowerCase() || '';
-          available = configuredLanguage(s.st?.settings.languageServers, doc.rel)
-            ? catalog.servers.some((entry) => entry.enabled && entry.available && configuredLanguage([entry], doc.rel))
-            : catalog.formatters.some((entry) => entry.available && !!entry.command && tool.includes(entry.command.toLowerCase()));
-        }
-        if (available) {
-          if (saveProject.current !== project || editor.text() !== editorText(doc.text)) { toast.message('Draft changed. Save again.'); return; }
-          const formatted = await editor.format(true, valid);
-          if (formatted === null) return;
-          text = formatted;
-        }
+      if (editor) {
+        if (saveProject.current !== project || editor.text() !== editorText(doc.text)) { toast.message('Draft changed. Save again.'); return; }
+        const prepared = await editor.format(true, valid);
+        if (prepared === null) return;
+        text = prepared;
       }
       if (valid && !valid()) return;
       if (saveProject.current !== project || editor && editor.text() !== editorText(text)) { toast.message('Draft changed. Save again.'); return; }
@@ -406,6 +394,7 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
       if (saveProject.current !== project) return;
       setDocs((all) => all.map((item) => item.rel === doc.rel ? { ...item, mtime: result.mtime, dirty: editorText(item.text) !== editorText(text), content: text, diskChanged: false, diskError: false } : item));
       s.refreshGit(project);
+      requestAnimationFrame(() => window.dispatchEvent(new CustomEvent('tributary:eslint-check', { detail: { project, path: doc.rel, reason: 'save' } })));
       return { saved: true, path: doc.rel, mtime: result.mtime };
     } catch (e) { if (strict) throw e; toast.error((e as Error).message); }
     finally { saveBusy.current = false; setSaving(false); }

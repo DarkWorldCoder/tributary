@@ -17,12 +17,14 @@ Format document, right-click formatting and Format on Save share the project-awa
 
 Prettier overrides and EditorConfig line-ending rules apply on save. The editor compares normalized buffer text while writing the formatter’s requested line endings to disk, so CRLF output does not cause a false “Draft changed” refusal or duplicate blank lines. A native UI regression covers CRLF save, changing the rules, repeat-save modification times and undo.
 
-1. Use the project's installed Prettier runtime when one is present inside the selected root; otherwise use bundled Prettier 3.9.10.
+1. Use the nearest file package’s installed Prettier runtime when one is present inside the selected root; otherwise use bundled Prettier 3.9.10. Plugins resolve from that file package, including nested monorepo dependencies.
 2. Resolve project Prettier config, overrides and EditorConfig. Trusted projects can load their config modules and installed plugins in a separate process with bounded input/output and a timeout. No packages are installed by formatting.
 3. Without a Prettier config, infer common indentation, quote, semicolon and trailing-comma preferences from the existing on-disk file. Preserve its line endings unless project rules override them. This is a conservative fallback, not an exact recreation of arbitrary hand formatting.
 4. Native formatters continue to handle their own languages and project config. Unsupported or unavailable formatters do not block an ordinary automatic save.
 
 No formatting happens just from opening a file. Identical file contents are not rewritten, so modification times stay unchanged. Consistent rules and formatter versions reduce formatting-only diffs; they cannot guarantee conflict-free Git merges.
+
+Project `.vscode/settings.json` and language overrides now control format-on-save, default formatter and independent ESLint fix-on-save. **Settings → Language tools → Project ESLint** provides local installation, configuration and restart controls. See [Project ESLint and editor settings](PROJECT_ESLINT.md) for supported settings, examples and trust/process limits.
 
 ## Format all files
 

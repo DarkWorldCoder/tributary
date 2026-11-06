@@ -39,7 +39,7 @@ export interface RaceCandidate {
 export interface RaceInfo { task: string; testCommand: string; agents: string[]; candidates: RaceCandidate[]; applied: string | null; base?: string; judge?: { agent: string; winner: string | null; messageId: string } }
 export interface AppNotification { id: string; ts: number; read: boolean; kind: 'done' | 'failed' | 'attention' | 'info' | 'permission'; threadId?: string; title: string; body?: string }
 export interface FileContent { rel: string; size: number; binary: boolean; truncated: boolean; content: string; mtime: number; base64?: string }
-export interface ProjectDiagnostic { rel: string; line: number; column: number; severity: 'error' | 'warning' | 'info'; message: string; source: string }
+export interface ProjectDiagnostic { rel: string; line: number; column: number; endLine?: number; endColumn?: number; severity: 'error' | 'warning' | 'info'; message: string; source: string }
 export interface ProjectCheckResult { toolId: string; label: string; command: string; code: number; stopped: boolean; startedAt: number; finishedAt: number; output: string; diagnostics: ProjectDiagnostic[] }
 export interface ProjectCheckState { running: boolean; toolId: string | null; result: ProjectCheckResult | null }
 export interface ProjectCheckCatalog extends ProjectCheckState { tools: { id: string; label: string; command: string; available: boolean }[] }
@@ -99,6 +99,7 @@ export interface HubEvents {
   'show-updates': undefined;
   'preview-server': { project: string; status: 'idle' | 'starting' | 'running' | 'stopping' | 'stopped' | 'failed'; command: string; url: string; output: string; error: string; code: number | null };
   'language-diagnostics': { project: string; rel: string; text: string; version: number; diagnostics: ProjectDiagnostic[] };
+  'eslint-revalidate': { project: string };
   debugger: import('./lib/debug-types').DebugState;
   'window-state': { maximized: boolean; fullscreen?: boolean; platform: string };
   'files-changed': { watchId: string; project: string; paths: string[]; error?: string };

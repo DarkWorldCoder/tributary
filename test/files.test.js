@@ -8,6 +8,20 @@ const path = require('node:path');
 const { readDirectory } = require('../core/files');
 const { Hub, MemorySecrets } = require('../core');
 
+test('a pending file read does not block another document and closes its descriptor after a read error', async t => {
+  const root = mkTmp('async-document'); fs.writeFileSync(path.join(root, 'slow.txt'), 'slow'); fs.writeFileSync(path.join(root, 'fast.txt'), 'fast');
+  const hub = new Hub({ dataDir: path.join(root, 'data'), secrets: new MemorySecrets() }); hub.addProject(root);
+  const open = fs.promises.open; let release, entered; const started = new Promise(resolve => { entered = resolve; }); const gate = new Promise(resolve => { release = resolve; }); let closes = 0;
+  t.after(() => { fs.promises.open = open; hub.store.close(); release(); });
+  fs.promises.open = async function(filename, ...args) {
+    const handle = await open.call(this, filename, ...args); if (filename !== path.join(root, 'slow.txt')) return handle;
+    return { stat: () => handle.stat(), async read() { entered(); await gate; throw Error('fixture read failed'); }, async close() { closes++; await handle.close(); } };
+  };
+  const slow = assert.rejects(hub.readFile(root, 'slow.txt'), /fixture read failed/); await started;
+  assert.equal((await hub.readFile(root, 'fast.txt')).content, 'fast'); assert.equal(closes, 0);
+  release(); await slow; assert.equal(closes, 1);
+});
+
 test('folder browser includes empty, ignored and deeply nested directories without Git', async (t) => {
   const root = mkTmp('files'); t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   fs.mkdirSync(path.join(root, 'empty')); fs.mkdirSync(path.join(root, 'dist')); fs.writeFileSync(path.join(root, 'dist', 'page.html'), '<h1>Preview</h1>');

@@ -9,13 +9,18 @@ process.stdin.on('data', (chunk) => { input += chunk; if (Buffer.byteLength(inpu
 process.stdin.on('end', async () => {
   try {
     const { root, files, trusted } = JSON.parse(input); process.chdir(root);
-    let prettier = bundledPrettier;
-    if (trusted) { try { const local = require.resolve('prettier', { paths: [root] }); const rel = path.relative(root, local); if (rel !== '..' && !rel.startsWith('..' + path.sep) && !path.isAbsolute(rel)) prettier = require(local); } catch {} }
     const results = []; const sources = new Set();
     const ignorePath = ['.gitignore', '.prettierignore'].map((name) => path.join(root, name)).filter((file) => fs.existsSync(file));
     for (const file of files) {
       try {
         const filename = path.join(root, file.rel);
+        process.chdir(path.dirname(filename));
+        let prettier = bundledPrettier;
+        if (trusted) {
+          let local;
+          try { local = require.resolve('prettier', { paths: [path.dirname(filename)] }); } catch (error) { if (error.code !== 'MODULE_NOT_FOUND') throw error; }
+          if (local) { local = fs.realpathSync(local); const rel = path.relative(root, local); if (rel !== '..' && !rel.startsWith('..' + path.sep) && !path.isAbsolute(rel)) { prettier = require(local); sources.add(local); } }
+        }
         let ancestor = path.dirname(filename);
         while (ancestor === root || ancestor.startsWith(root + path.sep)) {
           for (const name of ['.editorconfig', '.clang-format', '_clang-format', 'rustfmt.toml', '.rustfmt.toml', 'pyproject.toml', 'ruff.toml', '.ruff.toml', 'stylua.toml', '.stylua.toml', 'taplo.toml', '.taplo.toml']) { const config = path.join(ancestor, name); if (fs.existsSync(config)) sources.add(config); }
