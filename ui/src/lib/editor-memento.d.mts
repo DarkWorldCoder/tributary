@@ -1,6 +1,9 @@
-import type { EditorState, StateEffect, Transaction, TransactionSpec } from '@codemirror/state';
+import type { EditorState, EditorStateConfig, StateEffect, Transaction, TransactionSpec } from '@codemirror/state';
 import type { EditorView } from '@codemirror/view';
 type InputSelection = { start: number | null; end: number | null; direction: 'forward' | 'backward' | 'none' | null } | null;
+export type EditorTransfer = { text: string; json: unknown; top: number; left: number };
+export function captureEditorTransfer(view: EditorView): EditorTransfer;
+export function restoreEditorTransfer(saved: EditorTransfer | null | undefined, config: EditorStateConfig): EditorState;
 export type EditorMemento = { state: EditorState; scroll?: StateEffect<unknown>; replaceExpanded: boolean; findSelection: InputSelection; replaceSelection: InputSelection };
 export function captureEditorMemento(view: EditorView): EditorMemento;
 export function restoreEditorMemento(view: EditorView, memento: EditorMemento): void;

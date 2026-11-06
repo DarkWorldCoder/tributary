@@ -95,3 +95,23 @@ test('numbered group focus uses visual order, creates only the next group and re
   assert.equal(focusEditorGroupAt(reordered, 2).focused, 'editor-2');
   assert.equal(focusEditorGroupAt(first, 0), first);
 });
+
+test('moving a file preserves shared references, chooses the source neighbour and focuses the destination', async () => {
+  const { editorGroups, splitEditorGroup, moveGroupFile, restoreEditorGroups } = await groups;
+  const original = splitEditorGroup(editorGroups(['a.ts', 'b.ts', 'draft.ts'], 'b.ts'));
+  const moved = moveGroupFile(original, 'editor-1', 'editor-2', 'draft.ts');
+  assert.deepEqual(moved.groups.map(group => group.paths), [['a.ts', 'b.ts'], ['b.ts', 'draft.ts']]);
+  assert.equal(moved.focused, 'editor-2');
+  assert.equal(moved.groups[1].active, 'draft.ts');
+  assert.deepEqual(original.groups[0].paths, ['a.ts', 'b.ts', 'draft.ts']);
+  const existing = moveGroupFile(moved, 'editor-1', 'editor-2', 'b.ts');
+  assert.deepEqual(existing.groups[1].paths, ['b.ts', 'draft.ts']);
+  assert.equal(existing.groups[0].active, 'a.ts');
+  const empty = moveGroupFile(existing, 'editor-1', 'editor-2', 'a.ts');
+  assert.deepEqual(empty.groups[0].paths, []);
+  assert.equal(empty.groups[0].active, null);
+  assert.deepEqual(restoreEditorGroups(empty, ['a.ts', 'b.ts', 'draft.ts'], 'a.ts'), empty);
+  for (const args of [['missing', 'editor-2', 'a.ts'], ['editor-2', 'missing', 'a.ts'], ['editor-2', 'editor-2', 'a.ts'], ['editor-1', 'editor-2', 'absent.ts']]) {
+    assert.equal(moveGroupFile(empty, ...args), empty);
+  }
+});

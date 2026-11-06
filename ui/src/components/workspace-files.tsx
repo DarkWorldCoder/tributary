@@ -1,4 +1,4 @@
-import { editorGroups, selectGroupFile, focusEditorGroupAt, splitEditorGroup, closeGroupFiles, joinEditorGroup, restoreEditorGroups, type EditorGroup, type EditorGroups } from '@/lib/editor-groups.mjs';
+import { editorGroups, selectGroupFile, focusEditorGroupAt, splitEditorGroup, moveGroupFile, closeGroupFiles, joinEditorGroup, restoreEditorGroups, type EditorGroup, type EditorGroups } from '@/lib/editor-groups.mjs';
 import { createDirectorySession, type DirectorySession } from '@/lib/directory-session.mjs';
 import { useTreeViewport } from '@/hooks/use-tree-viewport';
 import { ProjectSearch } from '@/components/project-search';
@@ -24,16 +24,16 @@ import { Columns2, Rows2, FilePlus, FolderPlus, GitCompareArrows, Bug, Copy, Cir
 import type { PanelImperativeHandle } from 'react-resizable-panels';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem, ContextMenuSeparator } from '@/components/ui/context-menu';
+import { ContextMenu, ContextMenuTrigger, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuSub, ContextMenuSubTrigger, ContextMenuSubContent } from '@/components/ui/context-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from '@/components/ui/dropdown-menu';
 import { Empty, EmptyContent, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { DeferredCodeEditor as CodeEditor, type EditorHistory } from '@/components/deferred-code-editor';
+import { DeferredCodeEditor as CodeEditor, type EditorHistory, type EditorTransfer } from '@/components/deferred-code-editor';
 import { FileTypeIcon } from '@/components/file-type-icon';
 import { FolderTypeIcon } from '@/components/folder-type-icon';
 import { DirectoryTree } from '@/components/directory-tree';
@@ -156,6 +156,7 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
   const [groupStats, setGroupStats] = React.useState<Record<string, { rel: string; added?: number; removed?: number; binary?: boolean } | null>>({});
   const [groupHistories, setGroupHistories] = React.useState<Record<string, EditorHistory | null>>({});
   const historiesRef = React.useRef(groupHistories); historiesRef.current = groupHistories;
+  const transferRef = React.useRef<{ target: string; rel: string; snapshot: EditorTransfer } | null>(null);
   const saveBusy = React.useRef(false);
   const saveProject = React.useRef(project); saveProject.current = project;
   const [saving, setSaving] = React.useState(false);
@@ -481,6 +482,26 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
     updateGroups(state => splitEditorGroup({ ...state, focused: id }, direction));
     pendingGroupFocus.current = groupsRef.current.focused; focusEditorGroup();
   };
+  const moveFile = (sourceId: string, targetId: string, rel: string | null) => {
+    const next = moveGroupFile(groupsRef.current, sourceId, targetId, rel);
+    if (next === groupsRef.current) return;
+    const history = historiesRef.current[sourceId];
+    const target = groupsRef.current.groups.find(group => group.id === targetId);
+    const snapshot = history?.path === rel && target?.active !== rel ? history.snapshot() : null;
+    transferRef.current = snapshot && rel ? { target: targetId, rel, snapshot } : null;
+    setComparison(null); s.pauseFollowing();
+    ++sequence.current; setBusy(false); setOpening(null); setLine(undefined); setColumn(undefined);
+    setDocs(all => all.map(item => item.rel === rel && !item.pinned ? { ...item, pinned: true } : item));
+    updateGroups(() => next);
+    pendingGroupFocus.current = next.focused; focusEditorGroup();
+  };
+  const moveCurrent = React.useRef((offset: number) => {});
+  moveCurrent.current = (offset) => {
+    if (offset !== -1 && offset !== 1) return;
+    const state = groupsRef.current, index = state.groups.findIndex(group => group.id === state.focused);
+    const target = state.groups[index + offset];
+    if (target) moveFile(state.focused, target.id, state.groups[index].active);
+  };
   const joinGroup = (id: string) => { updateGroups(state => joinEditorGroup(state, id)); pendingGroupFocus.current = groupsRef.current.focused; focusEditorGroup(); };
   const focusAtIndex = (index: number) => {
     const next = focusEditorGroupAt(groupsRef.current, index);
@@ -496,9 +517,11 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
     if (!visible) return;
     const split = (event: Event) => splitCurrent.current((event as CustomEvent).detail === 'vertical' ? 'vertical' : 'horizontal');
     const focus = (event: Event) => numberedFocus.current((event as CustomEvent<number>).detail);
+    const move = (event: Event) => moveCurrent.current((event as CustomEvent<number>).detail);
+    window.addEventListener('tributary:move-editor', move);
     window.addEventListener('tributary:split-editor', split);
     window.addEventListener('tributary:focus-editor-group', focus);
-    return () => { window.removeEventListener('tributary:split-editor', split); window.removeEventListener('tributary:focus-editor-group', focus); };
+    return () => { window.removeEventListener('tributary:move-editor', move); window.removeEventListener('tributary:split-editor', split); window.removeEventListener('tributary:focus-editor-group', focus); };
   }, [visible]);
   const allDocs = docs;
   const renderGroup = (group: EditorGroup) => {
@@ -525,9 +548,12 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
             {docs.map((item) => <div key={item.rel} className="relative flex shrink-0"><ContextMenu><ContextMenuTrigger asChild><TabsTrigger key={item.rel} value={item.rel} data-file-path={item.rel} title={item.rel} aria-label={`${item.rel}${!item.pinned ? ', preview' : ''}${item.dirty ? ', unsaved' : ''}`} onDoubleClick={() => pin(item.rel)} className={cn('workspace-file-tab h-8 min-w-0 max-w-[min(16rem,100cqw)] flex-none justify-start rounded-none border-0 px-2.5 pr-8 text-[13px] font-normal after:hidden focus-visible:ring-inset max-sm:h-11 max-sm:pr-12', !item.pinned && 'italic')}>
               <FileTypeIcon path={item.rel} /><span className="truncate">{label(item.rel)}</span>
               {item.dirty && <Circle aria-hidden="true" className="size-2 fill-current" />}
-            </TabsTrigger></ContextMenuTrigger><ContextMenuContent onCloseAutoFocus={event => { if (pendingGroupFocus.current) event.preventDefault(); }}>
+            </TabsTrigger></ContextMenuTrigger><ContextMenuContent onCloseAutoFocus={event => { if (pendingGroupFocus.current || groupsRef.current.focused !== group.id) { event.preventDefault(); focusEditorGroup(); } }}>
                 <ContextMenuItem onSelect={() => { updateGroups(state => selectGroupFile(state, group.id, item.rel)); splitGroup('horizontal', group.id); }}><Columns2 />Split right</ContextMenuItem>
                 <ContextMenuItem onSelect={() => { updateGroups(state => selectGroupFile(state, group.id, item.rel)); splitGroup('vertical', group.id); }}><Rows2 />Split down</ContextMenuItem>
+                {groupLayout.groups.length > 1 && <ContextMenuSub><ContextMenuSubTrigger>Move into group</ContextMenuSubTrigger><ContextMenuSubContent>
+                  {groupLayout.groups.map((target, index) => target.id !== group.id && <ContextMenuItem key={target.id} onSelect={() => moveFile(group.id, target.id, item.rel)}>Group {index + 1}{target.active && <span className="ml-auto max-w-40 truncate text-xs text-muted-foreground">{label(target.active)}</span>}</ContextMenuItem>)}
+                </ContextMenuSubContent></ContextMenuSub>}
                 <ContextMenuSeparator /><ContextMenuItem onSelect={() => close([item.rel], false, group.id)}><X />Close</ContextMenuItem>
               </ContextMenuContent></ContextMenu><Button variant="ghost" size="icon-sm" className={cn(iconButton, "absolute right-0 top-0")} aria-label={`Close ${item.rel}`} onClick={() => close([item.rel], false, group.id)}><X /></Button></div>)}
           </TabsList>
@@ -535,13 +561,16 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
         <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" className={iconButton} aria-label="Split editor right" disabled={!doc} onClick={() => splitGroup('horizontal', group.id)}><Columns2 /></Button></TooltipTrigger><TooltipContent>Split editor right <ShortcutLabel action="split-editor" /></TooltipContent></Tooltip>
         {groupLayout.groups.length > 1 && <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" className={iconButton} aria-label="Close editor group" onClick={() => joinGroup(group.id)}><X /></Button></TooltipTrigger><TooltipContent>Close group · keep open files</TooltipContent></Tooltip>}
         <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon-sm" className={iconButton} aria-label="Open files menu" aria-busy={busy}>{showOpening ? <Spinner /> : <Ellipsis />}</Button></DropdownMenuTrigger>
-          <DropdownMenuContent onCloseAutoFocus={event => { if (pendingGroupFocus.current) event.preventDefault(); }} align="end" className="max-h-[70dvh] max-w-[calc(100vw-16px)] overflow-y-auto max-sm:[&_[role=menuitem]]:min-h-11">
+          <DropdownMenuContent onCloseAutoFocus={event => { if (pendingGroupFocus.current || groupsRef.current.focused !== group.id) { event.preventDefault(); focusEditorGroup(); } }} align="end" className="max-h-[70dvh] max-w-[calc(100vw-16px)] overflow-y-auto max-sm:[&_[role=menuitem]]:min-h-11">
             <DropdownMenuItem onSelect={() => s.openPanel('preview')}>Project tools & extensions</DropdownMenuItem>
             <DropdownMenuItem onSelect={() => setChecksOpen(true)}>Lint, type check & tests…</DropdownMenuItem>
             <DropdownMenuItem disabled={s.hub.platform === 'mock'} onSelect={() => setFormatAllOpen(true)}><WandSparkles />Format all files…</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem disabled={!doc} onSelect={() => splitGroup('horizontal', group.id)}><Columns2 />Split editor right<ShortcutLabel action="split-editor" /></DropdownMenuItem>
             <DropdownMenuItem disabled={!doc} onSelect={() => splitGroup('vertical', group.id)}><Rows2 />Split editor down</DropdownMenuItem>
+            {groupLayout.groups.length > 1 && <DropdownMenuSub><DropdownMenuSubTrigger disabled={!doc}>Move editor into group</DropdownMenuSubTrigger><DropdownMenuSubContent>
+              {groupLayout.groups.map((target, index) => target.id !== group.id && <DropdownMenuItem key={target.id} onSelect={() => moveFile(group.id, target.id, active)}>Group {index + 1}{target.active && <span className="ml-auto max-w-40 truncate text-xs text-muted-foreground">{label(target.active)}</span>}</DropdownMenuItem>)}
+            </DropdownMenuSubContent></DropdownMenuSub>}
             {groupLayout.groups.length > 1 && <DropdownMenuItem onSelect={() => updateGroups(state => ({ ...state, direction: state.direction === 'horizontal' ? 'vertical' : 'horizontal' }))}>Toggle editor layout</DropdownMenuItem>}
             <DropdownMenuSeparator />
             <DropdownMenuLabel>Open files</DropdownMenuLabel>
@@ -585,7 +614,7 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
                 {docs.map((item) => <TabsContent key={item.rel} value={item.rel} tabIndex={-1} className="h-full min-h-0">
                   {item.rel === active && (item.binary && !IMAGE.test(item.rel) ? <p className="p-6 text-center text-sm text-muted-foreground">Binary file · {item.size.toLocaleString()} bytes</p>
                     : item.mode === 'preview' && previewable(item.rel) ? <FilePreview doc={item} project={project} />
-                      : <CodeEditor active={visible} keepAlive={saving} onReview={() => void reviewSaved(item.rel)} onChangeStats={stats => setGroupStats(all => ({ ...all, [group.id]: stats }))} followChanges={s.following && active === item.rel} onHistoryChange={history => setGroupHistories(all => ({ ...all, [group.id]: history }))} onNavigate={s.pauseFollowing} onDiagnostics={updateLiveDiagnostics} project={project} path={item.rel} value={item.text} line={focused ? line : undefined} column={focused ? column : undefined} readOnly={item.truncated} diagnostics={!item.dirty && checkResult && item.mtime <= checkResult.startedAt ? checkResult.diagnostics.filter((d) => d.rel === item.rel) : []} wrap={item.wrap} onToggleWrap={toggleWrap} onCursorChange={(position) => setCursors((all) => all[`${group.id}:${item.rel}`]?.line === position.line && all[`${group.id}:${item.rel}`]?.column === position.column ? all : { ...all, [`${group.id}:${item.rel}`]: position })} onSave={save} onChange={(value) => { s.pauseFollowing(); setDocs((all) => all.map((current) => current.rel === item.rel ? { ...current, text: value, dirty: value !== current.content, pinned: true, recovered: false } : current)); }} />)}
+                      : <CodeEditor takeTransfer={() => { const saved = transferRef.current; if (!saved || saved.target !== group.id || saved.rel !== item.rel) return null; transferRef.current = null; return saved.snapshot; }} active={visible} keepAlive={saving} onReview={() => void reviewSaved(item.rel)} onChangeStats={stats => setGroupStats(all => ({ ...all, [group.id]: stats }))} followChanges={s.following && active === item.rel} onHistoryChange={history => setGroupHistories(all => ({ ...all, [group.id]: history }))} onNavigate={s.pauseFollowing} onDiagnostics={updateLiveDiagnostics} project={project} path={item.rel} value={item.text} line={focused ? line : undefined} column={focused ? column : undefined} readOnly={item.truncated} diagnostics={!item.dirty && checkResult && item.mtime <= checkResult.startedAt ? checkResult.diagnostics.filter((d) => d.rel === item.rel) : []} wrap={item.wrap} onToggleWrap={toggleWrap} onCursorChange={(position) => setCursors((all) => all[`${group.id}:${item.rel}`]?.line === position.line && all[`${group.id}:${item.rel}`]?.column === position.column ? all : { ...all, [`${group.id}:${item.rel}`]: position })} onSave={save} onChange={(value) => { s.pauseFollowing(); setDocs((all) => all.map((current) => current.rel === item.rel ? { ...current, text: value, dirty: value !== current.content, pinned: true, recovered: false } : current)); }} />)}
                 </TabsContent>)}
               </div>
               {!IMAGE.test(doc.rel) && <div className="workspace-file-footer flex min-w-0 shrink-0 items-center gap-1 border-t px-2">

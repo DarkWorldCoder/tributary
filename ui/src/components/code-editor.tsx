@@ -1,4 +1,4 @@
-import { captureEditorMemento, restoreEditorMemento, updateEditorMemento, updateParkedText, type EditorMemento } from '@/lib/editor-memento.mjs';
+import { captureEditorTransfer, restoreEditorTransfer, type EditorTransfer, captureEditorMemento, restoreEditorMemento, updateEditorMemento, updateParkedText, type EditorMemento } from '@/lib/editor-memento.mjs';
 import { configuredLanguage, serverCompletions } from '@/lib/language-tools';
 import { applyLspEdits, type LspEdit } from '@/lib/lsp-edits.mjs';
 import { changeGutter, setFileChanges } from '@/lib/change-gutter';
@@ -40,11 +40,12 @@ export async function languageFor(path: string, text = ''): Promise<Extension | 
 
 const undoKey = typeof navigator !== 'undefined' && /Mac/.test(navigator.platform) ? '⌘⌥Z' : 'Ctrl+Alt+Z';
 
-export type EditorHistory = { path: string; canUndo: boolean; canRedo: boolean; undo: () => void; redo: () => void; format: (automatic?: boolean) => Promise<string | null>; text: () => string | null };
+export type { EditorTransfer };
+export type EditorHistory = { path: string; canUndo: boolean; canRedo: boolean; undo: () => void; redo: () => void; format: (automatic?: boolean) => Promise<string | null>; text: () => string | null; snapshot: () => EditorTransfer | null };
 
 /** A real code editor (CodeMirror 6): multi-cursor, search, folding, bracket matching, undo history. */
-export function CodeEditor({ project: documentProject, active = true, keepAlive = false, path, value, onChange, onSave, readOnly, line, column, wrap = false, onCursorChange, onToggleWrap, diagnostics = [], onDiagnostics, onNavigate, onHistoryChange, onChangeStats, followChanges = false, onReview }: {
-  active?: boolean; keepAlive?: boolean; onReview?: () => void; project?: string; onChangeStats?: (stats: { rel: string; added?: number; removed?: number; binary?: boolean } | null) => void; followChanges?: boolean; path: string; value: string; onChange?: (v: string) => void; onSave?: () => void; readOnly?: boolean; line?: number; column?: number; wrap?: boolean; onCursorChange?: (position: { line: number; column: number }) => void; onToggleWrap?: () => void; diagnostics?: ProjectDiagnostic[]; onDiagnostics?: (diagnostics: ProjectDiagnostic[]) => void; onNavigate?: () => void; onHistoryChange?: (history: EditorHistory | null) => void;
+export function CodeEditor({ project: documentProject, active = true, keepAlive = false, path, value, onChange, onSave, readOnly, line, column, wrap = false, onCursorChange, onToggleWrap, diagnostics = [], onDiagnostics, onNavigate, onHistoryChange, onChangeStats, followChanges = false, onReview, takeTransfer }: {
+  takeTransfer?: () => EditorTransfer | null; active?: boolean; keepAlive?: boolean; onReview?: () => void; project?: string; onChangeStats?: (stats: { rel: string; added?: number; removed?: number; binary?: boolean } | null) => void; followChanges?: boolean; path: string; value: string; onChange?: (v: string) => void; onSave?: () => void; readOnly?: boolean; line?: number; column?: number; wrap?: boolean; onCursorChange?: (position: { line: number; column: number }) => void; onToggleWrap?: () => void; diagnostics?: ProjectDiagnostic[]; onDiagnostics?: (diagnostics: ProjectDiagnostic[]) => void; onNavigate?: () => void; onHistoryChange?: (history: EditorHistory | null) => void;
 }) {
   const host = React.useRef<HTMLDivElement>(null);
   const view = React.useRef<EditorView | null>(null);
@@ -126,9 +127,10 @@ export function CodeEditor({ project: documentProject, active = true, keepAlive 
       const canRedo = !v.state.readOnly && redoDepth(v.state) > 0;
       const key = `${canUndo}:${canRedo}`; if (key === historyKey) return; historyKey = key;
       const run = (command: typeof undoEdit) => { if (view.current === v && !v.state.readOnly) { command(v); v.focus(); } };
-      cb.current.onHistoryChange?.({ path, canUndo, canRedo, undo: () => run(undoEdit), redo: () => run(redoEdit), format: (automatic) => format.current(automatic), text: () => (view.current?.state ?? parked.current?.state)?.doc.toString() ?? null });
+      cb.current.onHistoryChange?.({ path, canUndo, canRedo, undo: () => run(undoEdit), redo: () => run(redoEdit), format: (automatic) => format.current(automatic), text: () => (view.current?.state ?? parked.current?.state)?.doc.toString() ?? null, snapshot: () => view.current === v ? captureEditorTransfer(v) : null });
     };
     const memento = parked.current;
+    let transferred = memento ? null : takeTransfer?.();
     latestScroll.current = memento?.scroll;
     if (memento) updateEditorMemento(memento, { effects: [ro.current.reconfigure([EditorState.readOnly.of(!!readOnly), EditorView.editable.of(!readOnly)]), wrapping.current.reconfigure(wrap ? EditorView.lineWrapping : [])] });
     // Clear this binding in cleanup: retained extension callbacks share its scope.
@@ -136,7 +138,7 @@ export function CodeEditor({ project: documentProject, active = true, keepAlive 
     let v: EditorView | null = new EditorView({
       parent: host.current!,
       scrollTo: memento?.scroll,
-      state: memento?.state ?? EditorState.create({
+      state: memento?.state ?? restoreEditorTransfer(transferred, {
         doc: value,
         extensions: [
           basicSetup, search({ top: true, createPanel: createEditorSearchPanel }), theme, EditorState.tabSize.of(editorSpacing(path, value).tabSize), indentUnit.of(editorSpacing(path, value).indentUnit), Prec.high(lintGutter()), keymap.of(lintKeymap), syntaxHighlighting(highlight), keymap.of([indentWithTab, { key: 'Mod-h', mac: 'Mod-Alt-f', scope: 'editor search-panel', run: (editor) => openEditorFind(editor, true) }, { key: 'Mod-s', preventDefault: true, run: () => { cb.current.onSave?.(); return true; } }, { key: 'Alt-z', run: () => { if (!cb.current.onToggleWrap) return false; cb.current.onToggleWrap(); return true; } }]),
@@ -166,6 +168,11 @@ export function CodeEditor({ project: documentProject, active = true, keepAlive 
     });
     view.current = v; parked.current = null;
     if (memento) restoreEditorMemento(v, memento);
+    else if (transferred?.text === value) {
+      const { top, left } = transferred;
+      v.requestMeasure({ read: () => null, write: () => { if (v) { v.scrollDOM.scrollTop = top; v.scrollDOM.scrollLeft = left; } } });
+    }
+    transferred = null; // The handoff must not retain a second serialized undo stack.
     reportHistory(v);
     const head = v.state.selection.main.head; const row = v.state.doc.lineAt(head);
     cb.current.onCursorChange?.({ line: row.number, column: head - row.from + 1 });

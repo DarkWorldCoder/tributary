@@ -42,3 +42,27 @@ test('parked changes map the scroll anchor and no-op revisions retain identity',
   assert.equal(saved.scroll.value, 37);
   assert.equal(saved.state.doc.toString().startsWith('prefix\n'), true);
 });
+
+test('moving between groups transfers undo and selection using fresh destination extensions', async () => {
+  const { captureEditorTransfer, restoreEditorTransfer } = await import('../ui/src/lib/editor-memento.mjs');
+  const { StateField } = await import('../ui/node_modules/@codemirror/state/dist/index.js');
+  const marker = StateField.define({ create: () => 'source callback owner', update: value => value });
+  const saved = fixture();
+  saved.state = saved.state.update({ effects: StateEffect.appendConfig.of(marker) }).state;
+  const snapshot = captureEditorTransfer({ state: saved.state, scrollDOM: { scrollTop: 42, scrollLeft: 13 } });
+  const text = saved.state.doc.toString();
+  let moved = restoreEditorTransfer(snapshot, { doc: text, extensions: [history(), EditorState.allowMultipleSelections.of(true), marker.init(() => 'destination callback owner')] });
+  assert.equal(moved.field(marker), 'destination callback owner');
+  assert.deepEqual(moved.selection.toJSON(), saved.state.selection.toJSON());
+  assert.equal(snapshot.top, 42); assert.equal(snapshot.left, 13);
+  const target = { get state() { return moved; }, dispatch(transaction) { moved = transaction.state; } };
+  assert.equal(undo(target), true); assert.ok(!moved.doc.toString().startsWith('// draft'));
+  assert.equal(redo(target), true); assert.equal(moved.doc.toString(), text);
+  const redoSnapshot = captureEditorTransfer({ state: moved, scrollDOM: { scrollTop: 0, scrollLeft: 0 } });
+  assert.equal(undo(target), true);
+  const withRedo = captureEditorTransfer({ state: moved, scrollDOM: { scrollTop: 0, scrollLeft: 0 } });
+  moved = restoreEditorTransfer(withRedo, { doc: moved.doc.toString(), extensions: [history()] });
+  assert.equal(redo(target), true); assert.equal(moved.doc.toString(), text);
+  const stale = restoreEditorTransfer(redoSnapshot, { doc: 'newer external content', extensions: [history()] });
+  assert.equal(stale.doc.toString(), 'newer external content'); assert.equal(undoDepth(stale), 0);
+});

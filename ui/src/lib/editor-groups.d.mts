@@ -5,5 +5,6 @@ export function selectGroupFile(state: EditorGroups, id: string, rel: string | n
 export function focusEditorGroupAt(state: EditorGroups, index: number): EditorGroups;
 export function splitEditorGroup(state: EditorGroups, direction?: EditorGroups['direction']): EditorGroups;
 export function closeGroupFiles(state: EditorGroups, id: string, paths: string[]): EditorGroups;
+export function moveGroupFile(state: EditorGroups, sourceId: string, targetId: string, rel: string | null): EditorGroups;
 export function joinEditorGroup(state: EditorGroups, id: string): EditorGroups;
 export function restoreEditorGroups(saved: unknown, paths: string[], active: string | null): EditorGroups;

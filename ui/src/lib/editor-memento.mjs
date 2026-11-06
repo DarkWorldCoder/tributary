@@ -1,6 +1,15 @@
-import { Transaction } from '@codemirror/state';
-import { isolateHistory } from '@codemirror/commands';
+import { EditorState, Transaction } from '@codemirror/state';
+import { historyField, isolateHistory } from '@codemirror/commands';
 import { minimalChange } from './text-change.mjs';
+
+// A group handoff must rebuild extensions with the destination's callbacks.
+// Serialize only text, selection and undo/redo; no source view or DOM crosses.
+export function captureEditorTransfer(view) {
+  return { text: view.state.doc.toString(), json: view.state.toJSON({ history: historyField }), top: view.scrollDOM.scrollTop, left: view.scrollDOM.scrollLeft };
+}
+export function restoreEditorTransfer(saved, config) {
+  return saved?.text === config.doc ? EditorState.fromJSON(saved.json, config, { history: historyField }) : EditorState.create(config);
+}
 
 // Only immutable editor state and value data cross the parked boundary. Never
 // retain a DOM node, view plugin instance, timer or EditorView in this record.

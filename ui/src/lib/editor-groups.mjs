@@ -31,6 +31,13 @@ export function closeGroupFiles(state, id, paths) {
     return { ...group, paths: remaining, active: removed.has(group.active) ? remaining[Math.min(index, remaining.length - 1)] ?? null : group.active };
   }) };
 }
+// Move only the tab reference. The shared document/draft owner stays unchanged.
+export function moveGroupFile(state, sourceId, targetId, rel) {
+  const source = state.groups.find(group => group.id === sourceId);
+  const target = state.groups.find(group => group.id === targetId);
+  if (!rel || sourceId === targetId || !source?.paths.includes(rel) || !target) return state;
+  return selectGroupFile(closeGroupFiles(state, sourceId, [rel]), targetId, rel);
+}
 export function joinEditorGroup(state, id) {
   if (state.groups.length === 1) return state;
   const index = state.groups.findIndex(group => group.id === id);
