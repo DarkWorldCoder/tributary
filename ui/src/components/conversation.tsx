@@ -1,3 +1,4 @@
+import { TranscriptBodies, TranscriptBody } from '@/components/transcript-body';
 import { LineChangeCount } from '@/components/line-change-count';
 import { AgentError } from '@/components/agent-error';
 import { ChatAttachments } from '@/components/chat-attachments';
@@ -177,7 +178,10 @@ function AgentQuestionCard({ r, agent }: { r: PermissionRequest; agent: Agent })
   </section>;
 }
 
+const EagerReplies = React.createContext<ReadonlySet<string>>(new Set());
+
 function ReplyContent({ m, agent }: { m: AgentMessage; agent: Agent }) {
+  const eagerReplies = React.useContext(EagerReplies);
   const s = useStore();
   const live = m.ok == null;
   const parts = replySegments(m.text || '', m.permissions, m.trace);
@@ -185,7 +189,7 @@ function ReplyContent({ m, agent }: { m: AgentMessage; agent: Agent }) {
     {!m.trace && <LegacyActivity m={m} />}
     {parts.map((part, index) => {
       if (part.kind === 'activity') return <Activity key={part.id} m={m} entries={part.entries} live={live && index === parts.length - 1} />;
-      if (part.kind === 'text') return <div key={`text:${index}`} className={cn(s.codeLayout && 'sidebar-timeline-item')}><Markdown text={part.text} /></div>;
+      if (part.kind === 'text') return <div key={`text:${index}`} className={cn(s.codeLayout && 'sidebar-timeline-item')}><TranscriptBody text={part.text} eager={live || s.fullTranscript || eagerReplies.has(m.id)} /></div>;
       const r = part.request;
       if (r.status === 'pending' && live && s.running) return <div key={r.id} className={cn(s.codeLayout && 'sidebar-timeline-item')} data-status="pending">{r.questions ? <AgentQuestionCard r={r} agent={agent} /> : <PermissionCard r={r} agent={agent} />}</div>;
       const label = r.status === 'allowed' ? 'Allowed once' : r.status === 'always' ? 'Always allowed' : r.status === 'rejected' ? 'Denied' : 'Cancelled';
@@ -546,7 +550,7 @@ export function Conversation() {
   const s = useStore(); const msgs = s.thread?.messages ?? [];
   const multipleTargets = new Set(msgs.filter((message) => message.role === 'user').map((message) => message.target)).size > 1;
   return (
-    <MessageScrollerProvider autoScroll defaultScrollPosition="end">
+    <TranscriptBodies key={s.thread?.id}><EagerReplies.Provider value={new Set(msgs.slice(-6).map(m => m.id))}><MessageScrollerProvider autoScroll defaultScrollPosition="end">
       <MessageScroller className="flex-1">
         <MessageScrollerViewport aria-label="Conversation" className="overflow-x-hidden">
           <MessageScrollerContent className={cn('mx-auto w-full max-w-3xl gap-0 px-4 py-6 sm:px-6', s.codeLayout && 'py-5 sm:px-4')}>
@@ -556,7 +560,7 @@ export function Conversation() {
               const prompt = m.role === 'assistant' ? lastUser : undefined;
               const race = m.role === 'assistant' && m.kind === 'race';
               return (
-                <MessageScrollerItem key={m.id} messageId={m.id} scrollAnchor={m.role === 'user'} className={cn('group/turn relative pb-8', s.codeLayout && 'pb-6')}>
+                <MessageScrollerItem key={m.id} windowed messageId={m.id} scrollAnchor={m.role === 'user'} className={cn('group/turn relative pb-8', s.codeLayout && 'pb-6')}>
                   {m.role === 'user' ? <UserTurn m={m} agent={agent} showTarget={!s.codeLayout || multipleTargets || !!m.team || (!!m.kind && m.kind !== 'chat')} /> : race ? <RaceTurn m={m} /> : <AgentTurn m={m} agent={agent} prompt={prompt} />}
                 </MessageScrollerItem>
               );
@@ -565,6 +569,6 @@ export function Conversation() {
         </MessageScrollerViewport>
         <MessageScrollerButton />
       </MessageScroller>
-    </MessageScrollerProvider>
+    </MessageScrollerProvider></EagerReplies.Provider></TranscriptBodies>
   );
 }

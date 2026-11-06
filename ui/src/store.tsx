@@ -56,6 +56,7 @@ function useStoreValue() {
   const [threadId, setThreadIdRaw] = useStored<string | null>('thread', null);
   const [thread, setThread] = React.useState<Thread | null>(null);
   const [git, setGit] = React.useState<GitInfo | null>(null);
+  const [fullTranscript, setFullTranscript] = useStored<boolean>('fullTranscript', false);
   const [agentId, setAgentId] = useStored<string | null>('agent', null);
   const [mode, setMode] = useStored<Mode>('mode', 'edit');
   const [gatewayId, setGatewayId] = useStored<string>('gateway', '');
@@ -294,7 +295,7 @@ function useStoreValue() {
     get draft() { return getDraft(); },
     home, goHome: () => { setHome(true); pauseFollowing(); }, startTask, document: activeDocument, setDocument, makeDocument,
     searchFilesOpen, setSearchFilesOpen, shortcutsOpen, setShortcutsOpen, panel, setPanel, openPanel, fileToOpen, openFile, editFile: (rel: string, line?: number, column?: number, project?: string) => openFile(rel, line, 'pinned', column, true, project), checksIntent, openChecks, debugOpen, setDebugOpen, debugLaunch, openDebugger: (rel?: string) => { if (rel) setDebugLaunch({ project: workdir, rel }); setDebugOpen(true); }, terminalOpen, teamOpen, setTeamOpen, roomOpen, setRoomOpen, recentOpen, setRecentOpen,
-    selectedModel, setSelectedModel, modelFor,
+    selectedModel, setSelectedModel, modelFor, fullTranscript, setFullTranscript,
     interfaceFont, setInterfaceFont, readingSize, setReadingSize, codingReadingSize, setCodingReadingSize, workbenchPalette, setWorkbenchPalette,
     uiDensity, setUiDensity, compactFolders, setCompactFolders, stickyFolders, setStickyFolders,
     following, toggleFollowing, pauseFollowing,

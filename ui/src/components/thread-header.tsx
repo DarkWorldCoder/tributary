@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -87,6 +87,7 @@ export function ThreadHeader({ compact = false }: { compact?: boolean }) {
               <DropdownMenuItem onClick={() => window.dispatchEvent(new Event('tributary:live'))}><Activity />Live activity<span className="ml-auto"><ShortcutLabel action="activity" /></span></DropdownMenuItem>
               <DropdownMenuItem onClick={() => s.setShortcutsOpen(true)}><Keyboard />Keyboard shortcuts<span className="ml-auto"><ShortcutLabel action="help" /></span></DropdownMenuItem>
               {t && <DropdownMenuItem onClick={() => { setTitle(t.title); setRename(true); }}><Pencil /> Rename chat</DropdownMenuItem>}
+              {t && <DropdownMenuCheckboxItem checked={s.fullTranscript} onCheckedChange={s.setFullTranscript}>Show all reply content</DropdownMenuCheckboxItem>}
               {t && <DropdownMenuItem onClick={exportThread}><Download /> Export chat</DropdownMenuItem>}
               {editors.length > 0 && (
                 <DropdownMenuSub>
