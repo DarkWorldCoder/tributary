@@ -1,0 +1,30 @@
+{
+  "date": "2026-11-06",
+  "sources": [
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/Window/createImageBitmap",
+      "captureSha256": "addb08cdda564cf789074efeecd5c03e248fd75a994589a19635523ec6bb68b8",
+      "captureBytes": 7302,
+      "scope": "Read options for EXIF orientation, alpha/color conversion, high-quality resize and Promise result; not every linked specification."
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas/convertToBlob",
+      "captureSha256": "c9b4302f0129ecacfc71a0ba3bdde89b1e5f110adba93111f55f9e68ecbb3b1a",
+      "captureBytes": 22571,
+      "scope": "Read encoding type/quality, asynchronous result and failure cases; not full browser implementation."
+    },
+    {
+      "url": "https://www.w3.org/TR/png-3/",
+      "scope": "Read selected animation chunk ordering/control and HDR-related chunk sections. Not the entire PNG specification."
+    },
+    {
+      "url": "https://html.spec.whatwg.org/multipage/canvas.html",
+      "scope": "Read the normative animated HTML image/default-frame rule for CanvasRenderingContext2D. Actual painted-frame capture is used for animation tests, rather than drawImage."
+    },
+    {
+      "url": "https://github.com/chromium/chromium/blob/152.0.7977.149/cc/tiles/software_image_decode_cache.cc",
+      "scope": "Previous-turn investigation read selected decode-cache ownership, pruning and dump implementation; unlocked cache entries are distinct from live V8 heap. Not the whole Chromium source."
+    }
+  ],
+  "application": "Display-sized static renditions, explicit bitmap/canvas disposal, separate full-image ownership and shared two-slot admission. Animated, unknown and high-precision PNG containers bypass flattening. Native memory and V8 heap are measured separately. No entire-book or production-GC certification."
+}

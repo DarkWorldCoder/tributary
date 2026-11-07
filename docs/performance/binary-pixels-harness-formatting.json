@@ -1,0 +1,8 @@
+{
+  "measuredNativeSha256": "14e70f07b99b8facb531bc5ab82d63d8621a537781a38a25c51929b8b074bf06",
+  "formattedNativeSha256": "567bad2efbd82820dc6ac8e2227e578ef5f786ab763c8680d608b95622678664",
+  "change": "Removed four trailing spaces from one otherwise empty line after measurement; no production code changed. The exact measured harness is preserved as deterministic gzip for fingerprint reproduction.",
+  "measuredArchive": "binary-pixels-measured-native.cjs.gz",
+  "verification": "Prettier Acorn parsed ASTs compare equal after excluding start/end/loc/range/tokens/__contentEnd source-position metadata.",
+  "normalizedAstSha256": "46e42e89c7aa5380f76d2d76f2dabe3f94d990772f529a5df1203aeb29ba4ec2"
+}

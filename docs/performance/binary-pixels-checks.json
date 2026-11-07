@@ -1,0 +1,34 @@
+{
+  "date": "2026-11-07",
+  "fullSuite": {
+    "tests": 684,
+    "passed": 684,
+    "failed": 0,
+    "skipped": 0,
+    "command": "npm test"
+  },
+  "focused": {
+    "tests": 42,
+    "passed": 42
+  },
+  "native": {
+    "cases": 4,
+    "groupedChecks": 45,
+    "report": "binary-pixels-verification.json"
+  },
+  "typescript": true,
+  "productionUIBuild": true,
+  "extensionBuild": true,
+  "sourceSha256": {
+    "core/hub.js": "f6fe31cb96acd22c4561c2fe4909ad379989a8c20cc56d9f380274c833f9df29",
+    "ui/src/types.ts": "ab5702c0596efc0ab66f43089a6ae4f57ff308599c1ac8183d18939f55d6600e",
+    "ui/src/components/markdown-image.tsx": "22ce22f3174b6ffd46a3f63b205389df617f28e40ca9dbffa055a505c50e4e7b",
+    "ui/src/hooks/use-image-resource.ts": "fafac182726bfb4cae60df724436177b4a989331c667cee1a565de56f2eee0d4",
+    "ui/src/lib/image-resources.mjs": "568d264d94bc24c2f2925c4cb39f8a65b3084aed8daaeacd3a6382fbedf2e8ac",
+    "ui/src/lib/image-rendition.mjs": "483fbbfd67cb8072be7cf646a459ead5664883b75baa141ec73fdf4fb504bf5b",
+    "test/files.test.js": "a8661c3ac475adb54008ee758a9afd8c0a0cd3f0b6a332696e57eb3e8d752eb3",
+    "test/image-resources.test.mjs": "8e16a496bd1c3750e00a6bee39549253449f69b7f28868e46b582922fe2761eb",
+    "test/image-rendition.test.mjs": "0d3827ef1f1a941c8f2c3a2824f6d5361b3c470c1c407f85309ee2a21e86b94a"
+  },
+  "scope": "Local source checks, native Linux/Xvfb correctness, and build validation. Memory is measured separately in binary-pixels-memory.json and binary-pixels-long.json. No installer, other-OS, continuous peak or input-to-paint claim."
+}

@@ -1,0 +1,23 @@
+{
+  "date": "2026-11-07",
+  "sources": [
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/OffscreenCanvas/transferToImageBitmap#description",
+      "scope": "API behavior, consumption versus non-consuming drawing, explicit close, and allocation cautions; page prose read through Jina. Not linked full specification.",
+      "captureSha256": "9082b38318e9ab9f81d754e884bab62582fdea79fde5d905b9282521b0dec12e"
+    },
+    {
+      "url": "https://developer.mozilla.org/en-US/docs/Web/API/ImageBitmap/close",
+      "scope": "Description and zero-dimension disposal example read in MDN via web tool."
+    },
+    {
+      "url": "https://www.electronjs.org/docs/latest/api/context-bridge#parameter--error--return-type-support",
+      "scope": "Read API functions, copied values, supported cloneable return types and isolation boundaries; not full Electron bridge implementation."
+    },
+    {
+      "url": "https://www.electronjs.org/docs/latest/api/ipc-renderer#ipcrendererinvokechannel-args",
+      "scope": "Read invoke serialization and Promise response contract; no zero-copy guarantee inferred."
+    }
+  ],
+  "decision": "Keep shared gallery surfaces until last owner closes; zero displayed canvas backing on cleanup. Long-lived browser-cache benefit requires measurement."
+}

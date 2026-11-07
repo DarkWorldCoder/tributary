@@ -897,19 +897,25 @@ class Hub extends EventEmitter {
     if (!this.isWorkspace(dir)) throw new Error('Unknown project');
     const abs = await folderFiles.projectPath(dir, rel);
     const raster = /\.(png|jpe?g|gif|webp|bmp|ico|avif)$/i.test(abs);
+    const bytesOnly = raster && options?.bytesOnly === true;
     const limit = (raster ? 16 : 1) * 1024 * 1024;
     // Oversized images need a metadata fallback, not a partial image payload.
     const handle = await fs.promises.open(abs, 'r'); let st, buffer; let bytes = 0;
     try {
       st = await handle.stat();
       if (!st.isFile()) throw new Error(st.isDirectory() ? 'This is a folder. Expand it in the Explorer to open a file.' : 'This entry is not a regular file.');
-      buffer = Buffer.allocUnsafe(raster && (options?.metadataOnly === true || st.size > limit) ? 0 : Math.min(st.size, limit));
+      const capacity = raster && (options?.metadataOnly === true || st.size > limit) ? 0 : Math.min(st.size, limit);
+      // A binary response owns its exact allocation, never a shared Buffer pool.
+      buffer = bytesOnly ? Buffer.allocUnsafeSlow(capacity) : Buffer.allocUnsafe(capacity);
       while (bytes < buffer.length) { const { bytesRead } = await handle.read(buffer, bytes, buffer.length - bytes, bytes); if (!bytesRead) break; bytes += bytesRead; }
     } finally { await handle.close(); }
     const buf = buffer.subarray(0, bytes);
     const binary = raster || buf.subarray(0, 8000).includes(0);
+    const payload = bytesOnly && options?.metadataOnly !== true && st.size <= limit
+      ? buf.byteOffset === 0 && buf.byteLength === buf.buffer.byteLength ? buf.buffer : buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
+      : undefined; // A file shortened during the read must not expose its unwritten tail.
     return { rel: path.relative(dir, abs), size: st.size, binary, truncated: st.size > limit, content: binary ? '' : buf.toString('utf8'), mtime: st.mtimeMs,
-      base64: raster && options?.metadataOnly !== true && st.size <= limit ? buf.toString('base64') : undefined };
+      ...(payload === undefined ? {} : { bytes: payload }), base64: raster && !bytesOnly && options?.metadataOnly !== true && st.size <= limit ? buf.toString('base64') : undefined };
   }
 
   // ---- memory

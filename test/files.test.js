@@ -196,6 +196,38 @@ test('image reads keep complete bounded payloads separate from text and binary f
   const vector = await hub.readFile(root, 'vector.svg'); assert.equal(vector.binary, false); assert.match(vector.content, /<svg/);
 });
 
+test('opt-in raster bytes own exact backing storage without base64, retain limits and preserve legacy/text reads', async t => {
+  const root = mkTmp('image-bytes'); const hub = new Hub({ dataDir: path.join(root, 'data'), secrets: new MemorySecrets() }); hub.addProject(root);
+  t.after(() => { hub.fileWatches.close(); hub.store.close(); fs.rmSync(root, { recursive: true, force: true }); });
+  for (const size of [3, 600000]) {
+    const input = Buffer.alloc(size); for (let at = 0; at < size; at++) input[at] = at % 251;
+    fs.writeFileSync(path.join(root, 'image.png'), input);
+    const file = await hub.readFile(root, 'image.png', { bytesOnly: true });
+    assert.ok(file.bytes instanceof ArrayBuffer); assert.equal(file.bytes.byteLength, size); assert.equal(file.base64, undefined); assert.equal(file.content, '');
+    assert.deepEqual(Buffer.from(structuredClone(file).bytes), input, 'a binary bridge clone preserves all source bytes and no pool tail');
+    assert.equal((await hub.readFile(root, 'image.png')).base64, input.toString('base64'));
+    const metadata = await hub.readFile(root, 'image.png', { bytesOnly: true, metadataOnly: true }); assert.equal(metadata.bytes, undefined); assert.equal(metadata.base64, undefined);
+  }
+  fs.writeFileSync(path.join(root, 'oversized.png'), Buffer.alloc(16 * 1024 ** 2 + 1));
+  const large = await hub.readFile(root, 'oversized.png', { bytesOnly: true }); assert.equal(large.truncated, true); assert.equal(large.bytes, undefined); assert.equal(large.base64, undefined);
+  fs.writeFileSync(path.join(root, 'main.ts'), 'source'); const text = await hub.readFile(root, 'main.ts', { bytesOnly: true }); assert.equal(text.content, 'source'); assert.equal(text.bytes, undefined);
+  const outside = mkTmp('image-bytes-outside'); t.after(() => fs.rmSync(outside, { recursive: true, force: true })); fs.writeFileSync(path.join(outside, 'image.png'), 'private'); fs.symlinkSync(path.join(outside, 'image.png'), path.join(root, 'escape.png'));
+  await assert.rejects(hub.readFile(root, 'escape.png', { bytesOnly: true }), /outside project/); await assert.rejects(hub.readFile(outside, 'image.png', { bytesOnly: true }), /Unknown project/);
+});
+
+test('binary raster short reads expose only written bytes and close on errors', async t => {
+  const root = mkTmp('short-image'); fs.writeFileSync(path.join(root, 'image.png'), Buffer.from([7, 8, 9]));
+  const hub = new Hub({ dataDir: path.join(root, 'data'), secrets: new MemorySecrets() }); hub.addProject(root);
+  const open = fs.promises.open; let closed = 0, fail = false;
+  t.after(() => { fs.promises.open = open; hub.fileWatches.close(); hub.store.close(); fs.rmSync(root, { recursive: true, force: true }); });
+  fs.promises.open = async function(filename, ...args) {
+    const handle = await open.call(this, filename, ...args); if (filename !== path.join(root, 'image.png')) return handle;
+    return { async stat() { const value = await handle.stat(); return { ...value, size: 4000, isFile: () => true }; }, read(...args) { if (fail) throw Error('fixture image read failure'); return handle.read(...args); }, async close() { closed++; await handle.close(); } };
+  };
+  const value = await hub.readFile(root, 'image.png', { bytesOnly: true }); assert.equal(value.bytes.byteLength, 3); assert.deepEqual([...new Uint8Array(value.bytes)], [7, 8, 9]); assert.equal(closed, 1);
+  fail = true; await assert.rejects(hub.readFile(root, 'image.png', { bytesOnly: true }), /fixture image read failure/); assert.equal(closed, 2);
+});
+
 test('explorer creates files and folders without overwrites or symlink escapes', async (t) => {
   const base = mkTmp('create-entry'); const root = path.join(base, 'project'); const outside = path.join(base, 'outside'); fs.mkdirSync(root); fs.mkdirSync(outside);
   const hub = new Hub({ dataDir: path.join(base, 'data'), secrets: new MemorySecrets() }); hub.addProject(root);

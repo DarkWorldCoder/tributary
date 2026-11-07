@@ -1,0 +1,775 @@
+{
+  "error": "Error: Timed out: gallery image 0\n    at until (/home/ayushniroula/Desktop/projects/tributary/scripts/performance/native-rendition-images.cjs:29:120)\n    at async reveal (/home/ayushniroula/Desktop/projects/tributary/scripts/performance/native-rendition-images.cjs:42:5)\n    at async /home/ayushniroula/Desktop/projects/tributary/scripts/performance/native-rendition-images.cjs:120:45",
+  "config": {
+    "surface": "chat",
+    "count": 4,
+    "diagnostic": false,
+    "noBitmap": true,
+    "verify": true,
+    "repo": "/home/ayushniroula/Desktop/projects/tributary",
+    "project": "/tmp/tributary-rendition-matrix-bGCSDI/project",
+    "images": [
+      {
+        "rel": "image-0.png",
+        "width": 1536,
+        "height": 1536,
+        "pixel": [
+          65,
+          105,
+          98,
+          255
+        ]
+      },
+      {
+        "rel": "image-1.png",
+        "width": 2048,
+        "height": 512,
+        "pixel": [
+          246,
+          155,
+          157,
+          255
+        ]
+      },
+      {
+        "rel": "image-2.png",
+        "width": 512,
+        "height": 2048,
+        "pixel": [
+          159,
+          90,
+          3,
+          255
+        ]
+      },
+      {
+        "rel": "image-3.png",
+        "width": 32,
+        "height": 32,
+        "pixel": [
+          14,
+          53,
+          116,
+          255
+        ]
+      }
+    ],
+    "profile": "/tmp/tributary-rendition-matrix-bGCSDI/profile",
+    "optimized": true,
+    "output": "/tmp/tributary-rendition-matrix-bGCSDI/result.json",
+    "failureOutput": "/tmp/tributary-owned-pixels-verification.json.failure.json",
+    "evidence": "/tmp/tributary-owned-pixels-verification-chat-4-no-bitmap.png"
+  },
+  "phases": [
+    {
+      "label": "initial",
+      "natural": {
+        "heap": {
+          "backingStorageSize": 12243178,
+          "embedderHeapUsedSize": 9185880,
+          "totalSize": 33566720,
+          "usedSize": 23836864
+        },
+        "processTree": {
+          "startedAt": 1794017362334,
+          "finishedAt": 1794017362588,
+          "rootPid": 1321995,
+          "rootStarted": "6286285",
+          "complete": true,
+          "processTreeChanged": false,
+          "issues": [],
+          "processes": [
+            {
+              "pid": 1321995,
+              "ppid": 1321927,
+              "started": "6286285",
+              "role": "main",
+              "rssKiB": 205476,
+              "pssKiB": 126103,
+              "privateKiB": 97904,
+              "privateHugetlbKiB": 0,
+              "sharedHugetlbKiB": 0,
+              "swapPssKiB": 0
+            },
+            {
+              "pid": 1322043,
+              "ppid": 1321995,
+              "started": "6286303",
+              "role": "zygote",
+              "rssKiB": 55544,
+              "pssKiB": 13250,
+              "privateKiB": 828,
+              "privateHugetlbKiB": 0,
+              "sharedHugetlbKiB": 0,
+              "swapPssKiB": 0
+            },
+            {
+              "pid": 1322046,
+              "ppid": 1321995,
+              "started": "6286303",
+              "role": "zygote",
+              "rssKiB": 55700,
+              "pssKiB": 11421,
+              "privateKiB": 276,
+              "privateHugetlbKiB": 0,
+              "sharedHugetlbKiB": 0,
+              "swapPssKiB": 0
+            },
+            {
+              "pid": 1322325,
+              "ppid": 1321995,
+              "started": "6286419",
+              "role": "utility",
+              "rssKiB": 81364,
+              "pssKiB": 27900,
+              "privateKiB": 13792,
+              "privateHugetlbKiB": 0,
+              "sharedHugetlbKiB": 0,
+              "swapPssKiB": 0
+            },
+            {
+              "pid": 1322317,
+              "ppid": 1322043,
+              "started": "6286418",
+              "role": "gpu-process",
+              "rssKiB": 184288,
+              "pssKiB": 95445,
+              "privateKiB": 35436,
+              "privateHugetlbKiB": 0,
+              "sharedHugetlbKiB": 0,
+              "swapPssKiB": 0
+            },
+            {
+              "pid": 1322095,
+              "ppid": 1322046,
+              "started": "6286316",
+              "role": "zygote",
+              "rssKiB": 13872,
+              "pssKiB": 4171,
+              "privateKiB": 268,
+              "privateHugetlbKiB": 0,
+              "sharedHugetlbKiB": 0,
+              "swapPssKiB": 0
+            },
+            {
+              "pid": 1322396,
+              "ppid": 1322095,
+              "started": "6286452",
+              "role": "renderer",
+              "rssKiB": 228616,
+              "pssKiB": 156621,
+              "privateKiB": 113988,
+              "privateHugetlbKiB": 0,
+              "sharedHugetlbKiB": 0,
+              "swapPssKiB": 0
+            }
+          ],
+          "totals": {
+            "rssKiB": 824860,
+            "pssKiB": 434911,
+            "privateKiB": 262492,
+            "privateHugetlbKiB": 0,
+            "sharedHugetlbKiB": 0,
+            "swapPssKiB": 0
+          },
+          "observedTotals": {
+            "rssKiB": 824860,
+            "pssKiB": 434911,
+            "privateKiB": 262492,
+            "privateHugetlbKiB": 0,
+            "sharedHugetlbKiB": 0,
+            "swapPssKiB": 0
+          },
+          "scope": "Linux process-tree sample, not atomic. PSS apportions shared pages; summed RSS double-counts sharing. Hugetlb is separate. Detached/reparented helpers, external model runtimes and display-server/GPU-driver allocations outside these processes are excluded. No forced GC."
+        },
+        "state": {
+          "fileObjects": 0,
+          "base64Chars": 0,
+          "dataUrlChars": 0,
+          "liveUrls": 4,
+          "createdUrls": 4,
+          "revokedUrls": 0,
+          "canvasElements": 0,
+          "liveBitmaps": 0,
+          "imageElements": 4,
+          "tiles": 4
+        },
+        "geometry": {
+          "top": 105,
+          "height": 1158,
+          "tiles": [
+            {
+              "label": "Expand image: gallery-0",
+              "width": 256,
+              "height": 256,
+              "top": 240.5
+            },
+            {
+              "label": "Expand image: gallery-1",
+              "width": 614,
+              "height": 153.5,
+              "top": 528.5
+            },
+            {
+              "label": "Expand image: gallery-2",
+              "width": 96,
+              "height": 256,
+              "top": 714
+            },
+            {
+              "label": "Expand image: gallery-3",
+              "width": 96,
+              "height": 96,
+              "top": 1002
+            }
+          ]
+        }
+      },
+      "retained": null
+    },
+    {
+      "label": "walked-forward",
+      "natural": {
+        "heap": {
+          "backingStorageSize": 26280034,
+          "embedderHeapUsedSize": 7852032,
+          "totalSize": 47214592,
+          "usedSize": 36692968
+        },
+        "processTree": {
+          "startedAt": 1794017365437,
+          "finishedAt": 1794017365698,
+          "rootPid": 1321995,
+          "rootStarted": "6286285",
+          "complete": true,
+          "processTreeChanged": false,
+          "issues": [],
+          "processes": [
+            {
+              "pid": 1321995,
+              "ppid": 1321927,
+              "started": "6286285",
+              "role": "main",
+              "rssKiB": 219288,
+              "pssKiB": 139570,
+              "privateKiB": 111148,
+              "privateHugetlbKiB": 0,
+              "sharedHugetlbKiB": 0,
+              "swapPssKiB": 0
+            },
+            {
+              "pid": 1322043,
+              "ppid": 1321995,
+              "started": "6286303",
+              "role": "zygote",
+              "rssKiB": 55544,
+              "pssKiB": 13250,
+              "privateKiB": 828,
+              "privateHugetlbKiB": 0,
+              "sharedHugetlbKiB": 0,
+              "swapPssKiB": 0
+            },
+            {
+              "pid": 1322046,
+              "ppid": 1321995,
+              "started": "6286303",
+              "role": "zygote",
+              "rssKiB": 55700,
+              "pssKiB": 11420,
+              "privateKiB": 276,
+              "privateHugetlbKiB": 0,
+              "sharedHugetlbKiB": 0,
+              "swapPssKiB": 0
+            },
+            {
+              "pid": 1322325,
+              "ppid": 1321995,
+              "started": "6286419",
+              "role": "utility",
+              "rssKiB": 81544,
+              "pssKiB": 27885,
+              "privateKiB": 13748,
+              "privateHugetlbKiB": 0,
+              "sharedHugetlbKiB": 0,
+              "swapPssKiB": 0
+            },
+            {
+              "pid": 1322317,
+              "ppid": 1322043,
+              "started": "6286418",
+              "role": "gpu-process",
+              "rssKiB": 185092,
+              "pssKiB": 95329,
+              "privateKiB": 34496,
+              "privateHugetlbKiB": 0,
+              "sharedHugetlbKiB": 0,
+              "swapPssKiB": 0
+            },
+            {
+              "pid": 1322095,
+              "ppid": 1322046,
+              "started": "6286316",
+              "role": "zygote",
+              "rssKiB": 13872,
+              "pssKiB": 4171,
+              "privateKiB": 268,
+              "privateHugetlbKiB": 0,
+              "sharedHugetlbKiB": 0,
+              "swapPssKiB": 0
+            },
+            {
+              "pid": 1322396,
+              "ppid": 1322095,
+              "started": "6286452",
+              "role": "renderer",
+              "rssKiB": 302956,
+              "pssKiB": 229683,
+              "privateKiB": 185896,
+              "privateHugetlbKiB": 0,
+              "sharedHugetlbKiB": 0,
+              "swapPssKiB": 0
+            }
+          ],
+          "totals": {
+            "rssKiB": 913996,
+            "pssKiB": 521308,
+            "privateKiB": 346660,
+            "privateHugetlbKiB": 0,
+            "sharedHugetlbKiB": 0,
+            "swapPssKiB": 0
+          },
+          "observedTotals": {
+            "rssKiB": 913996,
+            "pssKiB": 521308,
+            "privateKiB": 346660,
+            "privateHugetlbKiB": 0,
+            "sharedHugetlbKiB": 0,
+            "swapPssKiB": 0
+          },
+          "scope": "Linux process-tree sample, not atomic. PSS apportions shared pages; summed RSS double-counts sharing. Hugetlb is separate. Detached/reparented helpers, external model runtimes and display-server/GPU-driver allocations outside these processes are excluded. No forced GC."
+        },
+        "state": {
+          "fileObjects": 0,
+          "base64Chars": 0,
+          "dataUrlChars": 0,
+          "liveUrls": 3,
+          "createdUrls": 6,
+          "revokedUrls": 3,
+          "canvasElements": 0,
+          "liveBitmaps": 0,
+          "imageElements": 3,
+          "tiles": 4
+        },
+        "geometry": {
+          "top": 482,
+          "height": 1158,
+          "tiles": [
+            {
+              "label": "Expand image: gallery-0",
+              "width": 256,
+              "height": 256,
+              "top": 240.5
+            },
+            {
+              "label": "Expand image: gallery-1",
+              "width": 614,
+              "height": 153.5,
+              "top": 528.5
+            },
+            {
+              "label": "Expand image: gallery-2",
+              "width": 96,
+              "height": 256,
+              "top": 714
+            },
+            {
+              "label": "Expand image: gallery-3",
+              "width": 96,
+              "height": 96,
+              "top": 1002
+            }
+          ]
+        }
+      },
+      "retained": null
+    },
+    {
+      "label": "returned-start",
+      "natural": {
+        "heap": {
+          "backingStorageSize": 8648911,
+          "embedderHeapUsedSize": 4364176,
+          "totalSize": 39337984,
+          "usedSize": 26385020
+        },
+        "processTree": {
+          "startedAt": 1794017367377,
+          "finishedAt": 1794017367598,
+          "rootPid": 1321995,
+          "rootStarted": "6286285",
+          "complete": true,
+          "processTreeChanged": false,
+          "issues": [],
+          "processes": [
+            {
+              "pid": 1321995,
+              "ppid": 1321927,
+              "started": "6286285",
+              "role": "main",
+              "rssKiB": 221316,
+              "pssKiB": 141553,
+              "privateKiB": 113108,
+              "privateHugetlbKiB": 0,
+              "sharedHugetlbKiB": 0,
+              "swapPssKiB": 0
+            },
+            {
+              "pid": 1322043,
+              "ppid": 1321995,
+              "started": "6286303",
+              "role": "zygote",
+              "rssKiB": 55544,
+              "pssKiB": 13251,
+              "privateKiB": 828,
+              "privateHugetlbKiB": 0,
+              "sharedHugetlbKiB": 0,
+              "swapPssKiB": 0
+            },
+            {
+              "pid": 1322046,
+              "ppid": 1321995,
+              "started": "6286303",
+              "role": "zygote",
+              "rssKiB": 55700,
+              "pssKiB": 11421,
+              "privateKiB": 276,
+              "privateHugetlbKiB": 0,
+              "sharedHugetlbKiB": 0,
+              "swapPssKiB": 0
+            },
+            {
+              "pid": 1322325,
+              "ppid": 1321995,
+              "started": "6286419",
+              "role": "utility",
+              "rssKiB": 81544,
+              "pssKiB": 27882,
+              "privateKiB": 13748,
+              "privateHugetlbKiB": 0,
+              "sharedHugetlbKiB": 0,
+              "swapPssKiB": 0
+            },
+            {
+              "pid": 1322317,
+              "ppid": 1322043,
+              "started": "6286418",
+              "role": "gpu-process",
+              "rssKiB": 187044,
+              "pssKiB": 106569,
+              "privateKiB": 55044,
+              "privateHugetlbKiB": 0,
+              "sharedHugetlbKiB": 0,
+              "swapPssKiB": 0
+            },
+            {
+              "pid": 1322095,
+              "ppid": 1322046,
+              "started": "6286316",
+              "role": "zygote",
+              "rssKiB": 13872,
+              "pssKiB": 4171,
+              "privateKiB": 268,
+              "privateHugetlbKiB": 0,
+              "sharedHugetlbKiB": 0,
+              "swapPssKiB": 0
+            },
+            {
+              "pid": 1322396,
+              "ppid": 1322095,
+              "started": "6286452",
+              "role": "renderer",
+              "rssKiB": 273976,
+              "pssKiB": 209988,
+              "privateKiB": 175508,
+              "privateHugetlbKiB": 0,
+              "sharedHugetlbKiB": 0,
+              "swapPssKiB": 0
+            }
+          ],
+          "totals": {
+            "rssKiB": 888996,
+            "pssKiB": 514835,
+            "privateKiB": 358780,
+            "privateHugetlbKiB": 0,
+            "sharedHugetlbKiB": 0,
+            "swapPssKiB": 0
+          },
+          "observedTotals": {
+            "rssKiB": 888996,
+            "pssKiB": 514835,
+            "privateKiB": 358780,
+            "privateHugetlbKiB": 0,
+            "sharedHugetlbKiB": 0,
+            "swapPssKiB": 0
+          },
+          "scope": "Linux process-tree sample, not atomic. PSS apportions shared pages; summed RSS double-counts sharing. Hugetlb is separate. Detached/reparented helpers, external model runtimes and display-server/GPU-driver allocations outside these processes are excluded. No forced GC."
+        },
+        "state": {
+          "fileObjects": 0,
+          "base64Chars": 0,
+          "dataUrlChars": 0,
+          "liveUrls": 3,
+          "createdUrls": 7,
+          "revokedUrls": 4,
+          "canvasElements": 0,
+          "liveBitmaps": 0,
+          "imageElements": 3,
+          "tiles": 4
+        },
+        "geometry": {
+          "top": 0,
+          "height": 1158,
+          "tiles": [
+            {
+              "label": "Expand image: gallery-0",
+              "width": 256,
+              "height": 256,
+              "top": 240.5
+            },
+            {
+              "label": "Expand image: gallery-1",
+              "width": 614,
+              "height": 153.5,
+              "top": 528.5
+            },
+            {
+              "label": "Expand image: gallery-2",
+              "width": 96,
+              "height": 256,
+              "top": 714
+            },
+            {
+              "label": "Expand image: gallery-3",
+              "width": 96,
+              "height": 96,
+              "top": 1002
+            }
+          ]
+        }
+      },
+      "retained": null
+    },
+    {
+      "label": "returned-bottom",
+      "natural": {
+        "heap": {
+          "backingStorageSize": 8660418,
+          "embedderHeapUsedSize": 5247656,
+          "totalSize": 39337984,
+          "usedSize": 27784896
+        },
+        "processTree": {
+          "startedAt": 1794017368624,
+          "finishedAt": 1794017368863,
+          "rootPid": 1321995,
+          "rootStarted": "6286285",
+          "complete": true,
+          "processTreeChanged": false,
+          "issues": [],
+          "processes": [
+            {
+              "pid": 1321995,
+              "ppid": 1321927,
+              "started": "6286285",
+              "role": "main",
+              "rssKiB": 215604,
+              "pssKiB": 135810,
+              "privateKiB": 107332,
+              "privateHugetlbKiB": 0,
+              "sharedHugetlbKiB": 0,
+              "swapPssKiB": 0
+            },
+            {
+              "pid": 1322043,
+              "ppid": 1321995,
+              "started": "6286303",
+              "role": "zygote",
+              "rssKiB": 55544,
+              "pssKiB": 13251,
+              "privateKiB": 828,
+              "privateHugetlbKiB": 0,
+              "sharedHugetlbKiB": 0,
+              "swapPssKiB": 0
+            },
+            {
+              "pid": 1322046,
+              "ppid": 1321995,
+              "started": "6286303",
+              "role": "zygote",
+              "rssKiB": 55700,
+              "pssKiB": 11418,
+              "privateKiB": 276,
+              "privateHugetlbKiB": 0,
+              "sharedHugetlbKiB": 0,
+              "swapPssKiB": 0
+            },
+            {
+              "pid": 1322325,
+              "ppid": 1321995,
+              "started": "6286419",
+              "role": "utility",
+              "rssKiB": 81544,
+              "pssKiB": 27884,
+              "privateKiB": 13748,
+              "privateHugetlbKiB": 0,
+              "sharedHugetlbKiB": 0,
+              "swapPssKiB": 0
+            },
+            {
+              "pid": 1322317,
+              "ppid": 1322043,
+              "started": "6286418",
+              "role": "gpu-process",
+              "rssKiB": 165876,
+              "pssKiB": 86013,
+              "privateKiB": 35100,
+              "privateHugetlbKiB": 0,
+              "sharedHugetlbKiB": 0,
+              "swapPssKiB": 0
+            },
+            {
+              "pid": 1322095,
+              "ppid": 1322046,
+              "started": "6286316",
+              "role": "zygote",
+              "rssKiB": 13872,
+              "pssKiB": 4171,
+              "privateKiB": 268,
+              "privateHugetlbKiB": 0,
+              "sharedHugetlbKiB": 0,
+              "swapPssKiB": 0
+            },
+            {
+              "pid": 1322396,
+              "ppid": 1322095,
+              "started": "6286452",
+              "role": "renderer",
+              "rssKiB": 264220,
+              "pssKiB": 200812,
+              "privateKiB": 166912,
+              "privateHugetlbKiB": 0,
+              "sharedHugetlbKiB": 0,
+              "swapPssKiB": 0
+            }
+          ],
+          "totals": {
+            "rssKiB": 852360,
+            "pssKiB": 479359,
+            "privateKiB": 324464,
+            "privateHugetlbKiB": 0,
+            "sharedHugetlbKiB": 0,
+            "swapPssKiB": 0
+          },
+          "observedTotals": {
+            "rssKiB": 852360,
+            "pssKiB": 479359,
+            "privateKiB": 324464,
+            "privateHugetlbKiB": 0,
+            "sharedHugetlbKiB": 0,
+            "swapPssKiB": 0
+          },
+          "scope": "Linux process-tree sample, not atomic. PSS apportions shared pages; summed RSS double-counts sharing. Hugetlb is separate. Detached/reparented helpers, external model runtimes and display-server/GPU-driver allocations outside these processes are excluded. No forced GC."
+        },
+        "state": {
+          "fileObjects": 0,
+          "base64Chars": 0,
+          "dataUrlChars": 0,
+          "liveUrls": 3,
+          "createdUrls": 8,
+          "revokedUrls": 5,
+          "canvasElements": 0,
+          "liveBitmaps": 0,
+          "imageElements": 3,
+          "tiles": 4
+        },
+        "geometry": {
+          "top": 482,
+          "height": 1158,
+          "tiles": [
+            {
+              "label": "Expand image: gallery-0",
+              "width": 256,
+              "height": 256,
+              "top": 240.5
+            },
+            {
+              "label": "Expand image: gallery-1",
+              "width": 614,
+              "height": 153.5,
+              "top": 528.5
+            },
+            {
+              "label": "Expand image: gallery-2",
+              "width": 96,
+              "height": 256,
+              "top": 714
+            },
+            {
+              "label": "Expand image: gallery-3",
+              "width": 96,
+              "height": 96,
+              "top": 1002
+            }
+          ]
+        }
+      },
+      "retained": null
+    }
+  ],
+  "state": {
+    "fileObjects": 0,
+    "base64Chars": 0,
+    "dataUrlChars": 0,
+    "liveUrls": 3,
+    "createdUrls": 20,
+    "revokedUrls": 17,
+    "canvasElements": 0,
+    "liveBitmaps": 0,
+    "imageElements": 3,
+    "tiles": 4
+  },
+  "geometry": {
+    "top": 482,
+    "height": 1158,
+    "tiles": [
+      {
+        "label": "Expand image: gallery-0",
+        "width": 256,
+        "height": 256,
+        "top": 240.5
+      },
+      {
+        "label": "Expand image: gallery-1",
+        "width": 614,
+        "height": 153.5,
+        "top": 528.5
+      },
+      {
+        "label": "Expand image: gallery-2",
+        "width": 96,
+        "height": 256,
+        "top": 714
+      },
+      {
+        "label": "Expand image: gallery-3",
+        "width": 96,
+        "height": 96,
+        "top": 1002
+      }
+    ]
+  },
+  "focus": {
+    "label": null,
+    "tag": "BODY"
+  }
+}

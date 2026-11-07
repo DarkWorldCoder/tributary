@@ -56,6 +56,16 @@ test('SVG Blob resources preserve UTF-8 source while unsupported types fail expl
   await assert.rejects(imageBlobUrl({ ...file, content: 'é'.repeat(524289) }, 'large.svg'), /limit/, 'SVG size is UTF-8 bytes, not character count');
 });
 
+test('binary bridge payloads preserve exact Blob bytes without accessing base64 and retain size/cancellation guards', async t => {
+  const bytes = Uint8Array.from({ length: 600000 }, (_, at) => at % 251);
+  const input = { ...file, bytes: bytes.buffer }; Object.defineProperty(input, 'base64', { get() { throw Error('Binary reads must not use base64'); } });
+  const url = await imageBlobUrl(input, 'image.png'); t.after(() => URL.revokeObjectURL(url));
+  const response = await fetch(url); assert.equal(response.headers.get('content-type'), 'image/png'); assert.deepEqual(new Uint8Array(await response.arrayBuffer()), bytes);
+  assert.equal(await imageBlobUrl(input, 'image.png', () => false), null);
+  for (const invalid of [new ArrayBuffer(0), new ArrayBuffer(16 * 1024 ** 2 + 1), {}, new Uint8Array(3)]) await assert.rejects(imageBlobUrl({ ...file, bytes: invalid }, 'image.png'), /unavailable|limit/);
+  await assert.rejects(imageBlobUrl({ ...file, bytes: bytes.buffer, truncated: true }, 'image.png'), /limit/);
+});
+
 test('admission failure does not retain excess owners and queued disposal drains to zero', async () => {
   const gates = [], revoked = [];
   const manager = createImageResources(() => new Promise(resolve => gates.push(resolve)), async () => 'blob:owned', url => revoked.push(url));
@@ -64,4 +74,32 @@ test('admission failure does not retain excess owners and queued disposal drains
   assert.equal(gates.length, 2); for (const owner of owners) owner.release();
   for (const resolve of gates) resolve(file); await flush();
   assert.deepEqual(manager.state(), { entries: 0, owners: 0, active: 0, queued: 0, urls: 0 }); assert.deepEqual(revoked, []);
+});
+
+test('card and original resources have separate ownership but share read/decode admission', async () => {
+  const kinds = [], revoked = [];
+  const resources = createImageResources(async () => file, async (_file,_rel,_alive,kind) => { kinds.push(kind); return { src: 'blob:' + kind, ...(kind === 'gallery' ? {width:1536,height:1536} : {}) }; }, url=>revoked.push(url));
+  const card=resources.acquire('/project','image.png',1,'gallery'), other=resources.acquire('/project','image.png',1,'gallery'), original=resources.acquire('/project','image.png',1);
+  await flush();assert.deepEqual(kinds.sort(),['gallery','original']);assert.equal(card.snapshot().width,1536);assert.equal(original.snapshot().width,undefined);
+  original.release();assert.deepEqual(revoked,['blob:original']);assert.equal(other.snapshot().src,'blob:gallery');card.release();other.release();assert.deepEqual(revoked,['blob:original','blob:gallery']);
+  assert.throws(()=>resources.acquire('/project','image.png',1,'unsupported'),/rendition/);
+});
+
+test('duplicate cards share decoded pixels and last release closes them independently of originals', async () => {
+  let closes=0,reads=0;const bitmap={width:512,height:512,close(){closes++;}},revoked=[];
+  const manager=createImageResources(async()=>{reads++;return file;},async(_file,_rel,_alive,kind)=>kind==='gallery'?{src:null,bitmap,width:1536,height:1536}:'blob:original',url=>revoked.push(url));
+  const a=manager.acquire('/project','image.png',1,'gallery'),b=manager.acquire('/project','image.png',1,'gallery'),original=manager.acquire('/project','image.png',1);
+  await flush();assert.equal(reads,2);assert.equal(a.snapshot().bitmap,bitmap);assert.equal(b.snapshot().bitmap,bitmap);assert.equal(a.snapshot().src,null);
+  original.release();assert.deepEqual(revoked,['blob:original']);assert.equal(closes,0);
+  a.release();assert.equal(closes,0);b.release();b.release();assert.equal(closes,1);assert.equal(b.snapshot().bitmap,undefined);
+  assert.deepEqual(manager.state(),{entries:0,owners:0,active:0,queued:0,urls:0});
+});
+test('late decoded surfaces are closed once and never published to a replacement lease', async()=>{
+  const gates=[],closed=[];const manager=createImageResources(async()=>file,()=>new Promise(resolve=>gates.push(resolve)));
+  const old=manager.acquire('/project','image.png',1,'gallery');await tick();old.release();
+  const current=manager.acquire('/project','image.png',1,'gallery');await tick();
+  const bitmap=id=>({width:512,height:512,close(){closed.push(id);}});
+  const stale=bitmap('old'),fresh=bitmap('new');gates[0]({src:null,bitmap:stale});gates[1]({src:null,bitmap:fresh});await flush();
+  assert.deepEqual(closed,['old']);assert.equal(current.snapshot().bitmap,fresh);assert.equal(old.snapshot().bitmap,undefined);
+  current.release();assert.deepEqual(closed,['old','new']);assert.equal(manager.state().active,0);
 });
