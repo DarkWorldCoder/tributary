@@ -3,7 +3,10 @@
 // use this IPC channel. No prompts, response buffering, registry or downloads.
 const fs = require('node:fs'), path = require('node:path');
 const { spawn } = require('node:child_process');
-let runtime = null, directory = null, timer = null, stopping = false;
+let runtime = null, directory = null, cleanupDirectory = false, timer = null, stopping = false;
+function cleanup() {
+  if (cleanupDirectory && path.isAbsolute(directory) && path.basename(directory).startsWith('local-engine-')) try { process.chdir(path.dirname(directory)); fs.rmSync(directory, { recursive: true, force: true }); } catch {}
+}
 function stop(force = false) {
   stopping = true;
   if (!runtime) { process.exit(0); return; }
@@ -18,6 +21,7 @@ process.on('message', message => {
   if (message?.type === 'stop') { stop(message.force === true); return; }
   if (message?.type !== 'start' || runtime || stopping) return;
   directory = message.cwd;
+  cleanupDirectory = message.cleanupDirectory === true;
   try {
     runtime = spawn(message.executable, message.args, { cwd: directory, windowsHide: true, shell: false, stdio: ['ignore', 'pipe', 'pipe'] });
     runtime.stdout.pipe(process.stdout); runtime.stderr.pipe(process.stderr);
@@ -27,8 +31,8 @@ process.on('message', message => {
       clearTimeout(timer);
       // The manager creates this private directory, which contains only its
       // ephemeral key. Clean it even when the manager itself has disappeared.
-      if (path.isAbsolute(directory) && path.basename(directory).startsWith('local-engine-')) try { process.chdir(path.dirname(directory)); fs.rmSync(directory, { recursive: true, force: true }); } catch {}
+      cleanup();
       process.exit(stopping ? 0 : code || 1);
     });
-  } catch (error) { console.error(error.message); process.exit(1); }
+  } catch (error) { console.error(error.message); cleanup(); process.exit(1); }
 });

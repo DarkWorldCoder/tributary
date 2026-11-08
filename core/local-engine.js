@@ -71,7 +71,7 @@ class LocalEngine extends EventEmitter {
       const port = await freePort(config.port); this.abort.signal.throwIfAborted(); this.config = { ...config, port };
       this.apiKey = key; this.baseUrl = `http://127.0.0.1:${port}/v1`; this.model = 'tributary-' + crypto.createHash('sha256').update(config.modelPath).digest('hex').slice(0, 16);
       const args = ['--model', config.modelPath, '--alias', this.model, '--offline', '--host', '127.0.0.1', '--port', String(port), '--api-key-file', keyFile, '--no-webui', '--n-gpu-layers', '0', '--threads', String(config.threads), '--threads-batch', String(config.threads), '--ctx-size', String(config.context), '--parallel', '1', '--batch-size', '128', '--ubatch-size', '64', '--cache-ram', '0', '--sleep-idle-seconds', String(config.idleSeconds)];
-      const child = this.spawnImpl(config.serverPath, args, { cwd: directory, shell: false, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] }); this.child = child;
+      const child = this.spawnImpl(config.serverPath, args, { cwd: directory, cleanupDirectory: true, shell: false, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] }); this.child = child;
       let spawnError;
       this.closed = new Promise(resolve => {
         child.once('error', error => { spawnError = error; });

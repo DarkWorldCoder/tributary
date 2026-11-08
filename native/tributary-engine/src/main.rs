@@ -3,6 +3,8 @@ use std::fs;
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 
+mod runtime;
+
 // This process owns its directory handles and a bounded lexical result prefix.
 // It emits nothing until traversal succeeds; unsupported names use the JS path.
 struct Scan<'a> {
@@ -124,10 +126,9 @@ fn quoted(output: &mut impl Write, text: &str) -> io::Result<()> {
     output.write_all(b"\"")
 }
 
-fn main_scan() -> io::Result<()> {
-    let mut args: Vec<_> = std::env::args_os().skip(1).collect();
+fn main_scan(mut args: Vec<std::ffi::OsString>) -> io::Result<()> {
     if args.len() == 1 && args[0] == "--identity" {
-        return writeln!(io::stdout().lock(), "{{\"protocol\":1,\"arch\":\"{}\",\"os\":\"{}\"}}", std::env::consts::ARCH, std::env::consts::OS);
+        return writeln!(io::stdout().lock(), "{{\"protocol\":1,\"runtime\":1,\"arch\":\"{}\",\"os\":\"{}\"}}", std::env::consts::ARCH, std::env::consts::OS);
     }
     if args.last().is_some_and(|arg| arg == "--parent-pipe") {
         args.pop();
@@ -166,7 +167,16 @@ fn main_scan() -> io::Result<()> {
 }
 
 fn main() {
-    if main_scan().is_err() {
+    let mut args = std::env::args_os().skip(1).peekable();
+    if args.peek().is_some_and(|arg| arg == "guard-runtime") {
+        args.next();
+        let code = match runtime::run(args) {
+            Ok(code) => code,
+            Err(error) => { eprintln!("Could not own the local runtime: {error}"); 1 }
+        };
+        std::process::exit(code);
+    }
+    if main_scan(args.collect()).is_err() {
         // The bridge falls back to the complete JS implementation. No partial
         // prefix is accepted after a failed or unsupported traversal.
         eprintln!("Native discovery could not complete this request.");

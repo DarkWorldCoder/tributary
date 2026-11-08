@@ -4,13 +4,13 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { listPackage } = require('@electron/asar');
-const [platform, arch] = process.argv.slice(2);
+const [platform, arch, output = 'release'] = process.argv.slice(2);
 if (!['mac', 'win', 'linux'].includes(platform) || !['x64', 'arm64'].includes(arch)) throw new Error('Pass platform and architecture.');
-const base = path.resolve('release', platform === 'mac' ? `mac${arch === 'arm64' ? '-arm64' : ''}/Tributary.app/Contents` : `${platform === 'win' ? 'win' : 'linux'}${arch === 'arm64' ? '-arm64' : ''}-unpacked`);
+const base = path.resolve(output, platform === 'mac' ? `mac${arch === 'arm64' ? '-arm64' : ''}/Tributary.app/Contents` : `${platform === 'win' ? 'win' : 'linux'}${arch === 'arm64' ? '-arm64' : ''}-unpacked`);
 const resources = path.join(base, platform === 'mac' ? 'Resources' : 'resources');
 const archive = path.join(resources, 'app.asar');
 const entries = new Set(listPackage(archive).map((name) => name.replaceAll('\\', '/')));
-for (const file of ['core/index.js', 'core/path-command.js', 'core/path-prefix.js', 'core/native-engine.js', 'core/native-engine/discovery.cjs', 'core/native-engine/transport.cjs', 'server/lan-host.js', 'desktop/main.js', 'ui/dist/index.html', 'node_modules/jsonc-parser/package.json', 'node_modules/prettier/package.json', 'LICENSE']) {
+for (const file of ['core/index.js', 'core/path-command.js', 'core/path-prefix.js', 'core/native-engine.js', 'core/native-engine/discovery.cjs', 'core/native-engine/transport.cjs', 'core/native-engine/runtime.cjs', 'core/local-engine-process.js', 'server/lan-host.js', 'desktop/main.js', 'ui/dist/index.html', 'node_modules/jsonc-parser/package.json', 'node_modules/prettier/package.json', 'LICENSE']) {
   if (!entries.has('/' + file)) throw new Error(`Package is missing ${file}`);
 }
 if ([...entries].some((file) => /(?:^|\/)\.env(?:\.|$)/.test(file))) throw new Error('Environment files must never be packaged.');
@@ -20,6 +20,10 @@ for (const file of ['core/format-worker.cjs', 'core/eslint-worker.cjs', 'core/se
 const binary = path.join(base, platform === 'mac' ? 'MacOS/Tributary' : platform === 'win' ? 'Tributary.exe' : 'tributary');
 const engine = path.join(resources, 'native-engine', 'tributary-engine' + (platform === 'win' ? '.exe' : ''));
 if (!fs.statSync(engine).isFile()) throw new Error('Package is missing the native discovery engine.');
+const notices = require('./native-licenses.cjs').nativeLicenses(path.resolve('native/tributary-engine'));
+for (const file of notices.files) {
+  if (!fs.readFileSync(path.join(resources, 'native-engine/licenses', file)).equals(fs.readFileSync(path.join(notices.root, file)))) throw Error('Packaged native license differs: ' + file);
+}
 const code = String.raw`
   const assert = require('node:assert/strict'); const fs = require('node:fs'); const os = require('node:os'); const path = require('node:path');
   const runtime = require('node:module').createRequire(path.join(process.argv[1], 'package.json'));
@@ -43,7 +47,7 @@ const code = String.raw`
       const engine = process.argv[3];
       assert.equal(runtime('./core/native-engine').engineBinary(), engine);
       const identity = JSON.parse(require('node:child_process').execFileSync(engine, ['--identity'], { encoding: 'utf8', timeout: 10000, windowsHide: true }));
-      assert.deepEqual(identity, { protocol: 1, arch: process.arch === 'x64' ? 'x86_64' : 'aarch64', os: { linux: 'linux', darwin: 'macos', win32: 'windows' }[process.platform] });
+      assert.deepEqual(identity, { protocol: 1, runtime: 1, arch: process.arch === 'x64' ? 'x86_64' : 'aarch64', os: { linux: 'linux', darwin: 'macos', win32: 'windows' }[process.platform] });
       assert.equal(runtime('./core/native-engine').engineBinary({ resourcesPath: path.dirname(path.dirname(engine)) }), engine);
       const nativeFiles = await runtime('./core/native-engine/discovery.cjs').nativeScan(engine, dir, 'sample', { limit: 10 });
       assert.deepEqual(nativeFiles, { files: ['sample.js'], total: 1, visited: 1, unreadable: 0, limited: false });
@@ -63,7 +67,7 @@ const code = String.raw`
         const owned = runtime('./core/local-engine-process').spawnOwnedRuntime(process.execPath, ['-e', 'console.log("owned-runtime-ready");setInterval(()=>{},1000)'], { cwd: dir });
         let ready = false; const timer = setTimeout(() => { owned.kill('SIGKILL'); reject(Error('Packaged engine guardian timed out')); }, 10000);
         owned.stdout.on('data', chunk => { if (String(chunk).includes('owned-runtime-ready')) { ready = true; owned.kill('SIGTERM'); } });
-        owned.once('error', reject); owned.once('close', code => { clearTimeout(timer); try { assert.equal(code, 0); assert.ok(ready && owned.runtimePid); assert.throws(() => process.kill(owned.runtimePid, 0)); resolve(); } catch (error) { reject(error); } });
+        owned.once('error', reject); owned.once('close', code => { clearTimeout(timer); try { assert.equal(code, 0); assert.equal(owned.backend, 'native'); assert.ok(ready && owned.runtimePid); assert.throws(() => process.kill(owned.runtimePid, 0)); resolve(); } catch (error) { reject(error); } });
       });
     } finally { fs.rmSync(dir, { recursive: true, force: true }); }
     // ConPTY keeps a native helper thread alive after its shell exits on Windows.

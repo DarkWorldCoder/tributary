@@ -5,7 +5,14 @@ edition = "2021"
 rust-version = "1.86"
 publish = false
 license = "MIT"
-description = "Bounded native file discovery for the Tributary workbench"
+description = "Bounded file discovery and owned local runtimes for Tributary"
+
+[dependencies]
+shared_child = { version = "=1.1.2", default-features = false }
+
+[target.'cfg(unix)'.dependencies]
+libc = "=0.2.177"
+signal-hook = "=0.3.18"
 
 [profile.release]
 lto = "thin"

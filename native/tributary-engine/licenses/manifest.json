@@ -1,0 +1,73 @@
+{
+  "packages": [
+    {
+      "name": "errno",
+      "version": "0.3.14",
+      "checksum": "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "licenses": {
+        "errno-0.3.14/LICENSE-MIT": "8764a597675778ddfd4e25f81b08a05dbcf089ac05662df7613fe67f150e3aa2",
+        "errno-0.3.14/LICENSE-APACHE": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+      }
+    },
+    {
+      "name": "libc",
+      "version": "0.2.177",
+      "checksum": "2874a2af47a2325c2001a6e6fad9b16a53b802102b528163885171cf92b15976",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "licenses": {
+        "libc-0.2.177/LICENSE-MIT": "a8d47ff51ca256f56a8932dba07660672dbfe3004257ca8de708aac1415937a1",
+        "libc-0.2.177/LICENSE-APACHE": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a"
+      }
+    },
+    {
+      "name": "shared_child",
+      "version": "1.1.2",
+      "checksum": "607549934f6cc26b89cfecfdc46fa90f1e5d1536a68349b0c3a4f9d1c0d37959",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "licenses": {
+        "shared_child-1.1.2/LICENSE": "8f71659370c5268d9a1dc962a46232540e8fca63462586d8efaa95aab492a208"
+      }
+    },
+    {
+      "name": "signal-hook",
+      "version": "0.3.18",
+      "checksum": "d881a16cf4426aa584979d30bd82cb33429027e42122b169753d6ef1085ed6e2",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "licenses": {
+        "signal-hook-0.3.18/LICENSE-MIT": "503558bfefe66ca15e4e3f7955b3cb0ec87fd52f29bf24b336af7bd00e946d5c",
+        "signal-hook-0.3.18/LICENSE-APACHE": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+      }
+    },
+    {
+      "name": "signal-hook-registry",
+      "version": "1.4.8",
+      "checksum": "c4db69cba1110affc0e9f7bcd48bbf87b3f4fc7c61fc9155afd4c469eb3d6c1b",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "licenses": {
+        "signal-hook-registry-1.4.8/LICENSE-MIT": "503558bfefe66ca15e4e3f7955b3cb0ec87fd52f29bf24b336af7bd00e946d5c",
+        "signal-hook-registry-1.4.8/LICENSE-APACHE": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2"
+      }
+    },
+    {
+      "name": "windows-link",
+      "version": "0.2.1",
+      "checksum": "f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "licenses": {
+        "windows-link-0.2.1/license-mit": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+        "windows-link-0.2.1/license-apache-2.0": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+      }
+    },
+    {
+      "name": "windows-sys",
+      "version": "0.61.2",
+      "checksum": "ae137229bcbd6cdf0f7b80a31df61766145077ddf49416a728b02cb3921ff3fc",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "licenses": {
+        "windows-sys-0.61.2/license-mit": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+        "windows-sys-0.61.2/license-apache-2.0": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b"
+      }
+    }
+  ]
+}

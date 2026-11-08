@@ -40,10 +40,11 @@ app.on('browser-window-created', (_event, win) => {
     await run(`document.querySelector('[aria-label="Choose GGUF model file"]').click();true`); await until(() => run(`document.querySelector('#engine-model').value===${JSON.stringify(model)}`), 'chosen model');
     await shot('stopped'); await click('Start engine');
     await until(() => run(`!![...document.querySelectorAll('button')].find(e=>e.textContent.trim()==='Stop engine'&&!e.disabled)`), 'engine running');
+    assert.equal(hub.localEngine.child.backend, 'native', 'This gate must use the built native owner, not silently fall back.');
     assert.equal(await run(`document.querySelector('#local-model-key').disabled && document.querySelector('#local-model-key').value===''`), true);
     assert.equal(await run(`document.querySelector('#local-parallel-requests').disabled && document.querySelector('#local-parallel-requests').value==='1'`), true);
     await until(() => run(`document.querySelector('[aria-label="App-managed CPU engine"]').textContent.includes('Sleeping')`), 'idle status'); await shot('sleeping');
-    checks.push('File chooser results, start, private managed credentials and metadata-only sleep status use the real desktop bridge');
+    checks.push('File chooser results, checked native ownership, private managed credentials and metadata-only sleep status use the real desktop bridge');
     win.setMinimumSize(300, 400); win.setSize(390, 850); await delay(200); assert.equal(await run(`document.documentElement.scrollWidth<=innerWidth`), true); await shot('narrow'); win.setSize(1280, 850);
     await click('Start local chat'); await until(() => run(`!!document.querySelector('textarea[aria-label="Message"]')`), 'chat composer');
     win.focus(); web.focus(); await run(`{const e=document.querySelector('textarea[aria-label="Message"]');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(e,'Hello owned local model');e.dispatchEvent(new Event('input',{bubbles:true}));e.focus();}true`);

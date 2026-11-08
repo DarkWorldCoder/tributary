@@ -79,6 +79,8 @@ jobs:
         run: node native/tributary-engine/transport-parity.cjs
       - run: npx --prefix ui tsc --noEmit -p ui/tsconfig.json
       - run: npm run build:ui:clean
+      - name: Verify owned native and compatibility runtime lifecycle
+        run: node --test test/runtime-owner.test.cjs test/local-engine.test.js
       - name: Set Git identity for disposable test repositories
         run: |
           git config --global user.name "Tributary CI"
