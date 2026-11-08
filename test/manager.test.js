@@ -37,12 +37,15 @@ const worker = (id, log) => agent(id, `let s = ''; process.stdin.on('data', (d) 
   if (part === 'c') fs.appendFileSync('a.txt', 'c\\n');
   if (part === 'd') fs.writeFileSync('bad.txt', 'oops\\n');
   const finish = () => { fs.appendFileSync(${JSON.stringify(log)}, 'end ' + part + ' ' + Date.now() + '\\n'); ${reply('built it')} };
-  // Prove overlap with a barrier instead of assuming another process starts within 600 ms.
+  // Prove overlap with a barrier, then hold the states the throttled activity
+  // listener must observe. Fast workers may otherwise finish between samples.
   const deadline = Date.now() + 15000;
   const ready = () => {
     const started = fs.readFileSync(${JSON.stringify(log)}, 'utf8');
-    if (part !== 'a' && part !== 'b' || started.includes('start a ') && started.includes('start b ')) { setTimeout(finish, 20); return; }
-    if (Date.now() > deadline) { console.error('Independent workers did not start concurrently'); process.exitCode = 1; return; }
+    const parallel = part !== 'a' && part !== 'b' || started.includes('start a ') && started.includes('start b ') && fs.existsSync(${JSON.stringify(log + '.working-observed')});
+    const dependency = part !== 'c' || fs.existsSync(${JSON.stringify(log + '.done-observed')});
+    if (parallel && dependency) { finish(); return; }
+    if (Date.now() > deadline) { console.error('Worker overlap/activity barrier was not acknowledged'); process.exitCode = 1; return; }
     setTimeout(ready, 20);
   };
   ready();
@@ -64,7 +67,11 @@ test('the manager splits the work, workers build pieces in parallel, and only pa
   hub.agents = [agent('boss', reply(`Plan:\n\`\`\`json\n${JSON.stringify(PLAN)}\n\`\`\``)), worker('w1', log), worker('w2', log)];
   const t = hub.createThread(proj, 'Build the feature');
   const seen = new Set();
-  hub.on('activity', (a) => { for (const e of a) if (e.kind === 'manager') for (const w of e.workers) seen.add(`${w.task || w.role}:${w.state}`); });
+  hub.on('activity', (a) => { for (const e of a) if (e.kind === 'manager') for (const w of e.workers) {
+    const key = `${w.task || w.role}:${w.state}`;
+    if (!seen.has(key) && w.task === 'Write a' && ['working', 'done'].includes(w.state)) fs.writeFileSync(`${log}.${w.state}-observed`, '');
+    seen.add(key);
+  } });
   const result = await hub.runTeam(t.id, { recipe: 'manager', task: 'Build the feature', roles: { planner: 'boss', workers: ['w1', 'w2'] },
     testCommand: `node -e "process.exit(require('fs').existsSync('bad.txt') ? 1 : 0)"` });
 
