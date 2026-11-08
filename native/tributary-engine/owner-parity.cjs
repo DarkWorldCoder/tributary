@@ -7,7 +7,10 @@ if (process.argv[2] === '--parent') {
   const { spawn } = require('node:child_process');
   const args = ['scan-files', process.argv[4], 'entry-', '2000', 'true'];
   if (process.argv[5] !== 'control') args.push('--parent-pipe');
-  const child = spawn(process.argv[3], args, { stdio: ['pipe', 'inherit', 'ignore'], windowsHide: true });
+  // Isolate the pipe lifeline in both modes. libuv otherwise puts Windows
+  // children in a kill-on-parent-exit job, which would kill the control too.
+  // This fixture detaches only the worker; production transport stays owned.
+  const child = spawn(process.argv[3], args, { detached: true, stdio: ['pipe', 'inherit', 'ignore'], windowsHide: true });
   child.once('error', error => { console.error(error); process.exit(1); });
   // Deliberately never read stdout, while retaining the owner's input pipe.
   child.once('spawn', () => setTimeout(() => {
