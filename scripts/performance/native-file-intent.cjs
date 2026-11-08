@@ -15,9 +15,10 @@ const core = require('../../core'), drafts = require('../../core/drafts'), crypt
 const Base = core.Hub, seed = new Base({ dataDir: profile, home: root, secrets: new core.MemorySecrets() });
 seed.createThread(project, 'File opening ownership'); seed.project(project).folders = [extra]; seed.store.save(true); seed.fileWatches.close(); seed.store.close();
 drafts.save(profile, 'files:' + project, { active: 'main.ts', tabs: [{ rel: 'main.ts', mode: 'edit', pinned: true }] });
-let inFlight = 0; const fileReads = [];
+let inFlight = 0; const fileReads = [], watchCalls = [];
 core.Hub = class extends Base {
   async init() { this.agents = []; this.scanningAgents = false; this.emit('state'); return this; }
+  watchFiles(project, files, id) { watchCalls.push({ project, files: [...files], id: id ?? null }); return super.watchFiles(project, files, id); }
   async readFile(dir, rel) {
     inFlight++;
     try { const file = await super.readFile(dir, rel); fileReads.push({ rel, characters: file.content?.length || 0, binaryBytes: file.bytes?.byteLength || 0 }); return file; }
@@ -52,7 +53,7 @@ app.on('browser-window-created', (_event, win) => {
       fs.writeFileSync(path.join(project, rel), files[rel]);
     }
     await delay(200); await frames(); await until(() => inFlight === 0, 'initial reads settle');
-    const trafficStart = fileReads.length, perFileTraffic = [];
+    const trafficStart = fileReads.length, watchStart = watchCalls.length, perFileTraffic = [];
     for (const rel of trafficFiles) {
       const start = fileReads.length; await open(rel); await frames(); await until(() => inFlight === 0, 'reads settle for ' + rel);
       perFileTraffic.push({ rel, reads: fileReads.length - start });
@@ -62,7 +63,9 @@ app.on('browser-window-created', (_event, win) => {
     assert.equal(fs.readFileSync(path.join(extra, 'extra.ts'), 'utf8'), 'export const extra = 3;\n');
     fs.writeFileSync(output, JSON.stringify({ date: new Date().toISOString(), passed: true, opens: 20, counts: delta(before, after), perOpen, runtime: process.versions,
       sources: JSON.parse(fs.readFileSync(path.join(ui, 'probe-sources.json'))), runtimeHostSha256: crypto.createHash('sha256').update(fs.readFileSync(__filename)).digest('hex'),
+      runtimeBackendHashes: Object.fromEntries(['core/file-watch.js', 'core/hub.js', 'core/files.js', 'desktop/main.js'].map(rel => [rel, crypto.createHash('sha256').update(fs.readFileSync(path.join(__dirname, '../..', rel))).digest('hex')])),
       traffic: { opens: trafficFiles.length, reads: traffic.length, characters: traffic.reduce((sum, file) => sum + file.characters, 0), perFile: perFileTraffic, calls: traffic },
+      watchTraffic: watchCalls.slice(watchStart),
       checks: ['20 real file-open actions reached the selected editors', 'requests reach a previously unmounted secondary workspace folder and return to the main folder', '12 new source files opened; actual file-read responses counted separately', 'source bytes unchanged'],
       scope: 'Isolated native Electron, actual production store/actions/file panes plus test-build render counters. No providers. Not a paint, heap, whole-app RAM or cross-platform comparison.' }, null, 2) + '\n');
     clearTimeout(deadline); app.quit();

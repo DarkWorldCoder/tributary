@@ -178,7 +178,7 @@ const API = {
   memoryHistory: (p) => hub.memoryHistory(p),
   memoryVersion: (p, id) => hub.memoryVersion(p, id),
   teamRuns: (id) => hub.teamRuns(id),
-  watchFiles: (p, files) => hub.watchFiles(p, files),
+  watchFiles: (p, files, id) => hub.watchFiles(p, files, id),
   unwatchFiles: (id) => hub.unwatchFiles(id),
   connectorReport: (p) => hub.connectorReport(p),
   uiSkills: () => hub.uiSkills(), uiSkill: (id) => hub.uiSkill(id),
@@ -238,6 +238,7 @@ function attach(webview, extUri) {
       await hub.withHistoryOperation(async () => {
       if (!Object.prototype.hasOwnProperty.call(API, msg.method)) throw new Error(`Unknown method ${msg.method}`);
       if (['fileSearch', 'fileSearchClose'].includes(msg.method) && !searchOwners.has(msg.args?.[0])) throw new Error('Unknown file search owner');
+      if (msg.method === 'watchFiles' && msg.args?.[2] !== undefined && !fileWatches.has(msg.args[2])) throw new Error('Unknown live file view');
       const result = await API[msg.method](...(msg.args || []));
       if (msg.method === 'fileSearchAcquire') { if (disposed) hub.fileSearchClose(result); else searchOwners.add(result); }
       if (msg.method === 'fileSearchClose') searchOwners.delete(msg.args?.[0]);

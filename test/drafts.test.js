@@ -140,12 +140,14 @@ test('draft failures release admission and report errors while a newer ready sna
   assert.deepEqual(errors, ['async failure', 'sync failure']); writer.dispose();
 });
 
-test('active acknowledgement does not bypass the newest typing debounce', async () => {
+test('active acknowledgement does not bypass the newest typing debounce', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
   const { draftWriter } = await lib; const calls = []; let release;
   const writer = draftWriter({ call: (...args) => { calls.push(args); return calls.length === 1 ? new Promise(resolve => { release = resolve; }) : undefined; } }, 'composer', { delay: 40 });
   writer.set('one'); writer.flush(); await null; writer.set('two'); release();
   await new Promise(resolve => setImmediate(resolve)); assert.equal(calls.length, 1);
-  await new Promise(resolve => setTimeout(resolve, 65)); assert.equal(calls.length, 2); assert.equal(calls[1][2], 'two'); writer.dispose();
+  t.mock.timers.tick(39); assert.equal(calls.length, 1);
+  t.mock.timers.tick(1); assert.equal(calls.length, 2); assert.equal(calls[1][2], 'two'); writer.dispose();
 });
 
 test('reentrant draft updates are serialized and writers for different keys remain independent', async () => {

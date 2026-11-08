@@ -5,6 +5,8 @@ const { sample } = require('./app-memory.cjs');
 const repo = path.resolve(__dirname, '../..'), [baseline, candidate, output] = process.argv.slice(2), flags = process.argv.slice(5);
 for (const value of [baseline, candidate, output]) assert.ok(value && path.isAbsolute(value), 'Use absolute baseline/candidate snapshot directories and report path.');
 const resume = flags.includes('--resume'), limitAt = flags.indexOf('--case-limit'), limit = limitAt < 0 ? 4 : Number(flags[limitAt + 1]); assert.ok(Number.isInteger(limit) && limit > 0 && limit <= 12);
+const workloadAt = flags.indexOf('--workload'), selection = workloadAt < 0 ? 'all' : flags[workloadAt + 1]; assert.ok(['all', 'small', 'large'].includes(selection));
+const workloads = selection === 'all' ? ['small', 'large'] : [selection];
 assert.equal(fs.existsSync(output), resume, 'Use --resume only for an existing incomplete report.');
 const digest = bytes => crypto.createHash('sha256').update(bytes).digest('hex'), roots = { baseline, candidate };
 const manifests = Object.fromEntries(Object.entries(roots).map(([mode, dir]) => [mode, JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json')))]));
@@ -14,10 +16,11 @@ function fingerprint() {
   return Object.fromEntries([...new Set(names)].sort().map(name => [name, digest(fs.readFileSync(path.join(repo, name)))]));
 }
 const sourceHashes = fingerprint();
-const report = resume ? JSON.parse(fs.readFileSync(output)) : { complete: false, createdAt: new Date().toISOString(), roots, manifests, sourceHashes, runs: [], batches: [],
+const report = resume ? JSON.parse(fs.readFileSync(output)) : { complete: false, createdAt: new Date().toISOString(), roots, manifests, sourceHashes, workloads, runs: [], batches: [],
   collectionProtocol: 'External collector outside app process tree. Every checkpoint requires a complete process-tree sample; choose the first complete attempt from at most three, 50 ms apart. All incomplete attempts are retained. Compact checkpoint totals alone return to the app; detailed observations stay outside it.',
-  scope: 'Three alternating fresh native pairs per workload: 24 small or large synthetic TypeScript files via the actual read-only agent/editor bridge. Ordinary frozen UI, no renderer/read counters, debugger or forced GC. Times are editor API calls and two-frame readiness, not provider CLI/HTTP round trips; externally collected process-tree PSS checkpoints are observations, not continuous peaks. Not the Quick Open workflow, VS Code, cold-start or real-model RAM. Local tests/builds/other performance cohorts do not overlap.' };
+  scope: 'Three alternating fresh native pairs per selected workload (' + workloads.join(', ') + '): 24 synthetic TypeScript files via the actual read-only agent/editor bridge. Ordinary frozen UI, no renderer/read counters, debugger or forced GC. Times are editor API calls and two-frame readiness, not provider CLI/HTTP round trips; externally collected process-tree PSS checkpoints are observations, not continuous peaks. Not the Quick Open workflow, VS Code, cold-start or real-model RAM. Local tests/builds/other performance cohorts do not overlap.' };
 assert.deepEqual(report.roots, roots); assert.deepEqual(report.manifests, manifests); assert.deepEqual(report.sourceHashes, sourceHashes); assert.equal(report.complete, false);
+assert.deepEqual(report.workloads || ['small', 'large'], workloads);
 const verify = () => { assert.deepEqual(fingerprint(), report.sourceHashes, 'Host/source changed'); for (const [mode, dir] of Object.entries(roots)) for (const [rel, hash] of Object.entries(manifests[mode])) assert.equal(digest(fs.readFileSync(path.join(dir, rel))), hash, 'Snapshot changed: ' + mode + '/' + rel); };
 if (resume) for (const row of report.runs.filter(row => !row.passed && !row.excluded)) {
   if (Number.isInteger(row.pid)) try { process.kill(row.pid, 0); throw Error('Previous child may still be live: ' + row.pid); } catch (error) { if (error.code !== 'ESRCH') throw error; }
@@ -81,10 +84,10 @@ async function run(mode, workload, repeat) {
 }
 (async () => {
   let count = 0;
-  for (let repeat = 0; repeat < 3; repeat++) for (const workload of ['small', 'large']) for (const mode of repeat % 2 ? ['candidate', 'baseline'] : ['baseline', 'candidate']) {
+  for (let repeat = 0; repeat < 3; repeat++) for (const workload of workloads) for (const mode of repeat % 2 ? ['candidate', 'baseline'] : ['baseline', 'candidate']) {
     if (report.runs.some(row => row.mode === mode && row.workload === workload && row.repeat === repeat && row.passed && !row.excluded)) continue;
     if (count >= limit) { verify(); save(); console.log('Batch complete; resume remaining cases.'); return; }
     await run(mode, workload, repeat); count++;
   }
-  verify(); report.complete = true; save(); console.log('All twelve cases complete.');
+  verify(); report.complete = true; save(); console.log('All ' + (workloads.length * 6) + ' cases complete.');
 })().catch(error => { report.error = error.stack; save(); console.error(error.stack); process.exitCode = 1; });

@@ -9,7 +9,7 @@ const root = fileURLToPath(new URL('../../', import.meta.url)), output = process
 if (!output || !path.isAbsolute(output) || !output.startsWith('/tmp/tributary-file-intent-')) throw Error('Use an absolute /tmp/tributary-file-intent-* build directory.');
 const files = ['ui/src/store.tsx', 'ui/src/components/workspace-files.tsx', 'scripts/performance/file-intent-probe.mjs', 'scripts/performance/native-file-intent.cjs'];
 const hashes = () => Object.fromEntries(files.map(file => [file, createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex')]));
-files.push(...['ui/src/lib/file-request.mjs', 'ui/src/hooks/use-file-request.ts'].filter(file => fs.existsSync(path.join(root, file))));
+files.push(...['ui/src/lib/file-request.mjs', 'ui/src/hooks/use-file-request.ts', 'ui/src/lib/file-watch-session.mjs'].filter(file => fs.existsSync(path.join(root, file))));
 const before = hashes(), helper = `function countFileIntentRender(name: string) { const p = ((globalThis as any).__fileIntentProbe ??= { counts: {} }); p.counts[name] = (p.counts[name] || 0) + 1; }\n`;
 const components = { 'composer.tsx': 'Composer', 'conversation.tsx': 'Conversation', 'thread-header.tsx': 'ThreadHeader', 'developer-rail.tsx': 'DeveloperRail' };
 const instrumented = [];

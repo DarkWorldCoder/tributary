@@ -1,4 +1,5 @@
 import { useFileRequest } from '@/hooks/use-file-request';
+import { createFileWatchSession, type FileWatchSession } from '@/lib/file-watch-session.mjs';
 import { fileSearch, type FileSearchResult } from '@/lib/file-search.mjs';
 import type { EditorCommand } from '@/components/agent-workbench';
 import { editorGroups, selectGroupFile, focusEditorGroupAt, splitEditorGroup, moveGroupFile, closeGroupFiles, joinEditorGroup, restoreEditorGroups, type EditorGroup, type EditorGroups } from '@/lib/editor-groups.mjs';
@@ -363,9 +364,11 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
   }, [visible, restoring, s.codeLayout, s.thread?.id, indexVersion, index, busy, active, project, openDoc, fileToOpen]);
 
   const watched = JSON.stringify([...new Set([...(active ? [active] : []), ...docs.map((doc) => doc.rel)])].slice(0, 24).sort());
+  const watchedRef = React.useRef(watched); watchedRef.current = watched;
+  const fileWatch = React.useRef<FileWatchSession | null>(null);
   React.useEffect(() => {
     if (!visible) return;
-    let disposed = false; let watchId = '';
+    let disposed = false;
     const refreshing = new Set<string>(); const again = new Map<string, boolean>();
     const refresh = async (rel: string, force = false) => {
       if (refreshing.has(rel)) { again.set(rel, force || again.get(rel) || false); return; }
@@ -379,20 +382,15 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
       } catch { if (!disposed) setDocs((all) => all.map((doc) => doc.rel === rel ? { ...doc, diskError: true } : doc)); }
       finally { refreshing.delete(rel); if (again.has(rel) && !disposed) { const force = again.get(rel); again.delete(rel); void refresh(rel, force); } }
     };
-    const off = s.hub.on('files-changed', (event) => {
-      if (disposed || event.project !== project || event.watchId !== watchId) return;
-      if (event.error) { setLive('Live updates unavailable'); return; }
-      if (event.paths.includes('')) { setDirectoryRevision((value) => value + 1); load(); }
-      for (const rel of event.paths.filter(Boolean)) void refresh(rel, true);
+    const session = createFileWatchSession(s.hub, project, {
+      onStatus: setLive,
+      onPaths: (paths, force) => { for (const rel of paths) void refresh(rel, force); },
+      onDirectory: () => { setDirectoryRevision((value) => value + 1); load(); },
     });
-    s.hub.call<string>('watchFiles', project, JSON.parse(watched)).then((id) => {
-      if (disposed) s.hub.call('unwatchFiles', id).catch(() => {});
-      // Subscribe first, then catch up once. Reads started before registration
-      // would still need a second pass to cover changes in the subscription gap.
-      else { watchId = id; setLive('Live updates'); for (const rel of JSON.parse(watched) as string[]) void refresh(rel); }
-    }).catch(() => { if (!disposed) { setLive('Live updates unavailable'); for (const rel of JSON.parse(watched) as string[]) void refresh(rel); } });
-    return () => { disposed = true; if (typeof off === 'function') off(); if (watchId) s.hub.call('unwatchFiles', watchId).catch(() => {}); };
-  }, [visible, project, watched, s.hub, read, load, watchRevision]);
+    fileWatch.current = session; session.set(JSON.parse(watchedRef.current));
+    return () => { disposed = true; session.dispose(); fileWatch.current = null; };
+  }, [visible, project, s.hub, read, load, watchRevision]);
+  React.useEffect(() => { fileWatch.current?.set(JSON.parse(watched)); }, [watched]);
 
   const doc = docs.find(item => item.rel === active) ?? null;
   const decorations = React.useMemo(() => explorerDecorations(project, repository.git, docs.filter((item) => item.dirty).map((item) => item.rel)), [project, repository.git, docs]);

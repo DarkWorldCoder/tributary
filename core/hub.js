@@ -134,7 +134,7 @@ class Hub extends EventEmitter {
   extensionAppearance(theme, icons) { return this.extensionPacks.appearance(theme, icons); }
   async removeExtensionPack(id) { await this.extensionPacks.remove(id); const patch = {}; for (const key of ['extensionTheme', 'extensionIcons']) if (String(this.store.data.settings[key] || '').startsWith(`${id}:`)) patch[key] = ''; this.setSettings(patch); }
 
-  watchFiles(project, files) { if (!this.isWorkspace(project)) throw new Error('Unknown project'); return this.fileWatches.start(project, files); }
+  watchFiles(project, files, id) { if (!this.isWorkspace(project)) throw new Error('Unknown project'); return id === undefined ? this.fileWatches.start(project, files) : this.fileWatches.replace(id, project, files); }
   unwatchFiles(id) { this.fileWatches.stop(id); }
   agent(id) { return this.allAgents().find((a) => a.id === id); }
   names() { return Object.fromEntries(this.allAgents().map((a) => [a.id, a.name])); }
