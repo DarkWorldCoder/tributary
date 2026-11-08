@@ -29,12 +29,15 @@ const changes = StateField.define<RangeSet<FileChangeMarker>>({
   },
 });
 
-export function changeGutter(onReview: () => void): Extension {
-  return [changes, gutter({ class: 'cm-file-change-gutter', markers: (view) => view.state.field(changes), domEventHandlers: { mousedown(view, line) { let found = false; view.state.field(changes).between(line.from, line.from, () => { found = true; }); if (found) onReview(); return found; } } }), EditorView.baseTheme({
+// Style modules live for the document; reuse this static theme across editor mounts.
+const gutterTheme = EditorView.baseTheme({
     '.cm-file-change-gutter': { width: '7px', cursor: 'pointer' },
     '.cm-file-change-gutter .cm-gutterElement': { padding: '0 2px' },
     '.cm-file-change': { position: 'relative', display: 'block', height: '100%', width: '3px' },
     '.cm-file-added': { background: 'var(--success)' },
     '.cm-file-removed::after': { content: '""', position: 'absolute', top: '0', left: '-2px', borderTop: '4px solid transparent', borderBottom: '4px solid transparent', borderLeft: '5px solid var(--destructive)' },
-  })];
+  });
+
+export function changeGutter(onReview: () => void): Extension {
+  return [changes, gutter({ class: 'cm-file-change-gutter', markers: (view) => view.state.field(changes), domEventHandlers: { mousedown(view, line) { let found = false; view.state.field(changes).between(line.from, line.from, () => { found = true; }); if (found) onReview(); return found; } } }), gutterTheme];
 }
