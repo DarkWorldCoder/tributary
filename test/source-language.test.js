@@ -1,6 +1,17 @@
 'use strict';
 const test = require('node:test'); const assert = require('node:assert/strict');
 const identity = import('../ui/src/lib/source-language.mjs'); const grammars = import('../ui/src/lib/source-grammar.mjs');
+test('worker and editor loaders share same-realm code grammars without admitting editor-only modes', async () => {
+ const { codeGrammar } = await import('../ui/src/lib/code-grammar.mjs'); const { sourceGrammar } = await grammars;
+ for (const path of ['main.js', 'view.jsx', 'main.ts', 'view.tsx', 'main.py', 'main.rs', 'main.go', 'Main.java', 'main.c', 'main.cpp', 'page.php', 'README.md']) {
+  const [worker, editor] = await Promise.all([codeGrammar(path), sourceGrammar(path)]);
+  assert.ok(worker, path); assert.equal(worker, editor, path);
+ }
+ assert.equal(await codeGrammar('same-family.mts'), await sourceGrammar('main.ts'));
+ for (const path of ['query.sql', 'main.rb', 'main.sh', 'main.lua', '.env.local', 'main.kt', 'settings.jsonc']) {
+  assert.equal(await codeGrammar(path), null, path); assert.ok(await sourceGrammar(path), path);
+ }
+});
 test('source identity handles TypeScript variants, config names, containers and executable shebangs', async () => {
  const { sourceLanguage } = await identity;
  for (const [path, text, id] of [['src/view.tsx', '', 'tsx'], ['src/app.mts', '', 'typescript'], ['C:\\project\\Dockerfile.dev', '', 'dockerfile'], ['Containerfile', '', 'dockerfile'], ['CMakeLists.txt', '', 'cmake'], ['tsconfig.build.json', '', 'jsonc'], ['.env.local', '', 'dotenv'], ['.env', '', 'dotenv'], ['.env.production', '', 'dotenv'], ['config.env', '', 'dotenv'], ['settings.ini', '', 'properties'], ['.prettierrc', 'semi: true', 'yaml'], ['script', '#!/usr/bin/env -S python3 -u\nprint(1)', 'python'], ['cli', '#!/usr/bin/env node\nconsole.log(1)', 'javascript'], ['unrecognized', 'some text', 'text']]) assert.equal(sourceLanguage(path, text).id, id, path);
