@@ -1,3 +1,4 @@
+import { useFileRequest } from '@/hooks/use-file-request';
 import { fileSearch, type FileSearchResult } from '@/lib/file-search.mjs';
 import type { EditorCommand } from '@/components/agent-workbench';
 import { editorGroups, selectGroupFile, focusEditorGroupAt, splitEditorGroup, moveGroupFile, closeGroupFiles, joinEditorGroup, restoreEditorGroups, type EditorGroup, type EditorGroups } from '@/lib/editor-groups.mjs';
@@ -106,7 +107,8 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
   const currentOwner = s.st?.projects.find((item) => item.path === project) || (project === s.workdir ? s.st?.projects.find((item) => item.path === s.project) : undefined);
   const lastOwner = React.useRef(currentOwner); if (currentOwner) lastOwner.current = currentOwner;
   const owner = currentOwner || lastOwner.current;
-  const roots = [project, ...(owner?.folders || [])].filter((root, index, all) => all.indexOf(root) === index);
+  const roots = React.useMemo(() => [project, ...(owner?.folders || [])].filter((root, index, all) => all.indexOf(root) === index), [project, owner?.folders]);
+  const fileToOpen = useFileRequest(s.fileRequests, roots);
   const [expandedRoots, setExpandedRoots] = React.useState(new Set([project]));
   const [rootFolders, setRootFolders] = React.useState<Record<string, Set<string>>>({});
   const toggleRoot = (folder: string) => setExpandedRoots((all) => { const next = new Set(all); if (next.has(folder)) next.delete(folder); else next.add(folder); return next; });
@@ -118,7 +120,7 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
   const folderSelectId = React.useId();
   const selected = roots.includes(root) ? root : project;
   const choose = (next: string) => { setRoot(next); setKept((all) => all.includes(next) ? all : [...all, next]); };
-  React.useEffect(() => { const target = s.fileToOpen?.project; if (target && roots.includes(target)) choose(target); }, [s.fileToOpen]);
+  React.useEffect(() => { const target = fileToOpen?.project; if (target && roots.includes(target)) choose(target); }, [fileToOpen]);
   React.useEffect(() => {
     if (!visible || selected === project) return;
     const selectAgentRoot = (event: Event) => { const request = (event as CustomEvent<EditorCommand>).detail; if (!request.claimed && request.project === project && request.valid()) choose(project); };
@@ -134,6 +136,7 @@ export function FilesTab({ project, visible }: { project: string; visible: boole
 function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, toggleRoot, rootFolders, toggleBranch, onFolderRemoved }: { onFolderRemoved: (folder: string, restore: () => Promise<void>) => void; project: string; visible: boolean; warm: boolean; owner: string; roots: string[]; expandedRoots: Set<string>; toggleRoot: (root: string) => void; rootFolders: Record<string, Set<string>>; toggleBranch: (root: string, rel: string) => void }) {
   const { platform } = useShortcutPreferences();
   const s = useStore();
+  const fileToOpen = useFileRequest(s.fileRequests, project);
   const debugVisible = s.debugOpen && visible && project === s.workdir;
   const runInTerminal = useRunInTerminal();
   const [index] = React.useState(createExplorerIndex);
@@ -327,7 +330,7 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
     finally { if (id === sequence.current) { setBusy(false); setOpening(null); } }
   }, [read]);
   React.useEffect(() => {
-    const request = s.fileToOpen;
+    const request = fileToOpen;
     if (!visible || restoring || !request || request.project !== project || handledIntent.current === request.n) return;
     handledIntent.current = request.n; const focusOwner = document.activeElement;
     const opened = openDoc(request.rel, request.intent, request.line, request.column, request.following, request.editor);
@@ -335,21 +338,21 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
     void opened.then(() => {
       if (!request.following && handledIntent.current === request.n) focusOpenedFile(focusOwner, request.rel, generation);
     });
-  }, [s.fileToOpen, visible, restoring, project, openDoc]);
+  }, [fileToOpen, visible, restoring, project, openDoc]);
 
   // A Write tool can announce a path before the file exists. Keep following that
   // intent while it is current; a click or a project switch cancels the retry.
   React.useEffect(() => {
-    if (!error || !visible || !s.following || !s.fileToOpen?.following || s.fileToOpen.rel !== error.rel || s.fileToOpen.project !== project) return;
+    if (!error || !visible || !s.following || !fileToOpen?.following || fileToOpen.rel !== error.rel || fileToOpen.project !== project) return;
     const timer = setTimeout(() => void openDoc(error.rel, error.intent, error.line, undefined, true, true), 400);
     return () => clearTimeout(timer);
-  }, [error, visible, s.following, s.fileToOpen, project, openDoc]);
+  }, [error, visible, s.following, fileToOpen, project, openDoc]);
 
   const autoOpened = React.useRef<string | null>(null);
   React.useEffect(() => {
     const id = s.thread?.id;
     if (!visible || restoring || !s.codeLayout || !id || autoOpened.current === id || !index.files || busy) return;
-    if (s.fileToOpen?.project === project && !active) return;
+    if (fileToOpen?.project === project && !active) return;
     autoOpened.current = id;
     if (active) return;
     const recorded = s.thread?.messages.flatMap((message) => message.role === 'assistant' ? message.files.filter((file) => !file.external).map((file) => file.rel) : []).at(-1);
@@ -357,7 +360,7 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
       || index.files.find((file) => /^readme\.md$/i.test(file))
       || index.files.find((file) => /\.(tsx?|jsx?|py|rs|go|java|html|css)$/i.test(file) && !/(^|\/)(node_modules|dist|build|fixtures|test|tests)\//.test(file));
     if (entry) void openDoc(entry);
-  }, [visible, restoring, s.codeLayout, s.thread?.id, indexVersion, index, busy, active, project, openDoc, s.fileToOpen]);
+  }, [visible, restoring, s.codeLayout, s.thread?.id, indexVersion, index, busy, active, project, openDoc, fileToOpen]);
 
   const watched = JSON.stringify([...new Set([...(active ? [active] : []), ...docs.map((doc) => doc.rel)])].slice(0, 24).sort());
   React.useEffect(() => {
@@ -376,8 +379,6 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
       } catch { if (!disposed) setDocs((all) => all.map((doc) => doc.rel === rel ? { ...doc, diskError: true } : doc)); }
       finally { refreshing.delete(rel); if (again.has(rel) && !disposed) { const force = again.get(rel); again.delete(rel); void refresh(rel, force); } }
     };
-    // Also catch changes made while this project was inactive.
-    for (const rel of JSON.parse(watched) as string[]) void refresh(rel);
     const off = s.hub.on('files-changed', (event) => {
       if (disposed || event.project !== project || event.watchId !== watchId) return;
       if (event.error) { setLive('Live updates unavailable'); return; }
@@ -386,8 +387,10 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
     });
     s.hub.call<string>('watchFiles', project, JSON.parse(watched)).then((id) => {
       if (disposed) s.hub.call('unwatchFiles', id).catch(() => {});
+      // Subscribe first, then catch up once. Reads started before registration
+      // would still need a second pass to cover changes in the subscription gap.
       else { watchId = id; setLive('Live updates'); for (const rel of JSON.parse(watched) as string[]) void refresh(rel); }
-    }).catch(() => { if (!disposed) setLive('Live updates unavailable'); });
+    }).catch(() => { if (!disposed) { setLive('Live updates unavailable'); for (const rel of JSON.parse(watched) as string[]) void refresh(rel); } });
     return () => { disposed = true; if (typeof off === 'function') off(); if (watchId) s.hub.call('unwatchFiles', watchId).catch(() => {}); };
   }, [visible, project, watched, s.hub, read, load, watchRevision]);
 

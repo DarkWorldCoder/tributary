@@ -4,6 +4,7 @@ import { createMockHub } from './mock';
 import { applyPatch } from '@/lib/message-patch.mjs';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useWorkspaceView } from '@/hooks/use-workspace-view';
+import { createFileRequests } from '@/lib/file-request.mjs';
 import { followedFile } from '@/lib/workbench-navigation.mjs';
 import { draftWriter } from '@/lib/drafts.mjs';
 import type { Agent, AgentMessage, GitInfo, HubBridge, HubState, Message, Mode, Thread, ThreadSummary, TaskInput, SavedDocument } from './types';
@@ -81,7 +82,7 @@ function useStoreValue() {
   const setWorkspaceLayout = React.useCallback((layout: 'editor' | 'chat') => updateView({ layout }), [updateView]);
   const setWorkspaceExpanded = React.useCallback((expanded: boolean) => updateView({ expanded }), [updateView]);
   const [review, setReview] = React.useState<{ open: boolean; rel: string | null; diff: string }>({ open: false, rel: null, diff: '' });
-  const [fileToOpen, setFileToOpen] = React.useState<{ rel: string; line?: number; column?: number; editor?: boolean; following?: boolean; intent: 'preview' | 'pinned'; project: string | null; n: number } | null>(null);
+  const [fileRequests] = React.useState(createFileRequests);
   const [followThread, setFollowThread] = React.useState<string | null>(null);
   const pauseFollowing = React.useCallback(() => setFollowThread(null), []);
   const [checksIntent, setChecksIntent] = React.useState<{ project: string; n: number } | null>(null);
@@ -253,15 +254,15 @@ function useStoreValue() {
   const openPanel = React.useCallback((tab: PanelTab) => { setPanel({ open: true, tab }); }, [setPanel]);
   const fileIntentId = React.useRef(0);
   const openChecks = React.useCallback(() => { const project = workdirRef.current; if (!project) return; setChecksIntent({ project, n: ++fileIntentId.current }); setPanel({ open: true, tab: 'files' }); }, [setPanel]);
-  const openFile = React.useCallback((rel: string, line?: number, intent: 'preview' | 'pinned' = 'preview', column?: number, editor = false, project = workdirRef.current) => { pauseFollowing(); setFileToOpen({ rel, line, column, editor, intent, project, n: ++fileIntentId.current }); setPanel({ open: true, tab: 'files' }); }, [setPanel, pauseFollowing]);
+  const openFile = React.useCallback((rel: string, line?: number, intent: 'preview' | 'pinned' = 'preview', column?: number, editor = false, project = workdirRef.current) => { pauseFollowing(); fileRequests.publish({ rel, line, column, editor, intent, project, n: ++fileIntentId.current }); setPanel({ open: true, tab: 'files' }); }, [setPanel, pauseFollowing, fileRequests]);
   const following = !!thread && followThread === thread.id;
   const followed = React.useRef('');
   const followTarget = following ? followedFile(thread, workdir) : null;
   React.useEffect(() => {
     if (!following || !followTarget || !panel.open || panel.tab !== 'files') return;
     const key = `${thread?.id}:${followTarget.key}`; if (followed.current === key) return; followed.current = key;
-    setFileToOpen({ rel: followTarget.rel, following: true, editor: true, intent: 'preview', project: workdirRef.current, n: ++fileIntentId.current });
-  }, [following, followTarget?.key, panel.open, panel.tab, thread?.id]);
+    fileRequests.publish({ rel: followTarget.rel, following: true, editor: true, intent: 'preview', project: workdirRef.current, n: ++fileIntentId.current });
+  }, [following, followTarget?.key, panel.open, panel.tab, thread?.id, fileRequests]);
   const toggleFollowing = () => { if (following) pauseFollowing(); else if (thread) { followed.current = ''; openPanel('files'); setFollowThread(thread.id); } };
 
   const openReview = React.useCallback(async (rel?: string | null) => {
@@ -294,7 +295,7 @@ function useStoreValue() {
     hub, loaded, st, threadsBy, project, workdir, thread, git, agentId, agent, mode, gatewayId, theme, review, settings, palette, ready, running,
     get draft() { return getDraft(); },
     home, goHome: () => { setHome(true); pauseFollowing(); }, startTask, document: activeDocument, setDocument, makeDocument,
-    searchFilesOpen, setSearchFilesOpen, shortcutsOpen, setShortcutsOpen, panel, setPanel, openPanel, fileToOpen, openFile, editFile: (rel: string, line?: number, column?: number, project?: string) => openFile(rel, line, 'pinned', column, true, project), checksIntent, openChecks, debugOpen, setDebugOpen, debugLaunch, openDebugger: (rel?: string) => { if (rel) setDebugLaunch({ project: workdir, rel }); setDebugOpen(true); }, terminalOpen, teamOpen, setTeamOpen, roomOpen, setRoomOpen, recentOpen, setRecentOpen,
+    searchFilesOpen, setSearchFilesOpen, shortcutsOpen, setShortcutsOpen, panel, setPanel, openPanel, fileRequests, openFile, editFile: (rel: string, line?: number, column?: number, project?: string) => openFile(rel, line, 'pinned', column, true, project), checksIntent, openChecks, debugOpen, setDebugOpen, debugLaunch, openDebugger: (rel?: string) => { if (rel) setDebugLaunch({ project: workdir, rel }); setDebugOpen(true); }, terminalOpen, teamOpen, setTeamOpen, roomOpen, setRoomOpen, recentOpen, setRecentOpen,
     selectedModel, setSelectedModel, modelFor, fullTranscript, setFullTranscript,
     interfaceFont, setInterfaceFont, readingSize, setReadingSize, codingReadingSize, setCodingReadingSize, workbenchPalette, setWorkbenchPalette,
     uiDensity, setUiDensity, compactFolders, setCompactFolders, stickyFolders, setStickyFolders,

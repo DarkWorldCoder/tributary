@@ -55,7 +55,7 @@ app.on('browser-window-created', (_event, win) => {
       state = await bridge.call('undo', { path: state.path, revision: state.revision }); assert.equal(state.content, normalized);
       state = await bridge.call('redo', { path: state.path, revision: state.revision }); assert.equal(state.content, multiEdit);
       await bridge.call('save_editor', { path: state.path, revision: state.revision });
-      assert.equal(fs.readFileSync(path.join(project, 'crlf.ts'), 'utf8'), multiEdit);
+      assert.equal(fs.readFileSync(path.join(project, 'crlf.ts'), 'utf8'), multiEdit.replaceAll('\n', '\r\n'), 'saving a normalized editor buffer preserves the original file line endings');
       const remote = '// remote 😀\r\nconst label = "नयाँ";\r\n'; fs.writeFileSync(path.join(project, 'crlf.ts'), remote);
       await until(() => run(`document.querySelector('[aria-label="Edit crlf.ts"]').cmTile.root.view.state.doc.toString()===${JSON.stringify(remote.replaceAll('\r\n', '\n'))}`), 'remote CRLF normalization');
       await run(`{const v=document.querySelector('[aria-label="Edit crlf.ts"]').cmTile.root.view;v.dispatch({changes:{from:v.state.doc.length,insert:'// local after remote\\n'}})};true`);
