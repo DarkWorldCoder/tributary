@@ -11,6 +11,7 @@ struct Scan<'a> {
     show_hidden: bool,
     limit: usize,
     files: BinaryHeap<String>,
+    scratch: String,
     total: u64,
     visited: u64,
     unreadable: u64,
@@ -20,14 +21,43 @@ fn skipped(name: &str) -> bool {
     matches!(name, ".git" | "node_modules" | ".venv" | "venv" | "target" | "dist" | "build" | ".next")
 }
 
+fn append_relative(output: &mut String, rel: &str, name: &str) {
+    if !rel.is_empty() {
+        output.push_str(rel);
+        output.push('/');
+    }
+    output.push_str(name);
+}
+
+fn relative_name(rel: &str, name: &str) -> String {
+    let mut output = String::with_capacity(rel.len() + usize::from(!rel.is_empty()) + name.len());
+    append_relative(&mut output, rel, name);
+    output
+}
+
 impl Scan<'_> {
-    fn accept(&mut self, name: String) {
+    fn accept(&mut self, rel: &str, name: &str) {
         self.total += 1;
-        if self.files.len() < self.limit {
-            self.files.push(name);
-        } else if self.files.peek().is_some_and(|largest| name < *largest) {
-            *self.files.peek_mut().unwrap() = name;
+        let full = self.files.len() == self.limit;
+        // Compare the virtual relative path before allocating an owned result.
+        if full && self.files.peek().is_some_and(|largest| {
+            rel.bytes().chain((!rel.is_empty()).then_some(b'/')).chain(name.bytes()).cmp(largest.bytes()).is_ge()
+        }) {
+            return;
         }
+        let file = relative_name(rel, name);
+        if full {
+            *self.files.peek_mut().unwrap() = file;
+        } else {
+            self.files.push(file);
+        }
+    }
+
+    fn matches(&mut self, rel: &str, name: &str) -> bool {
+        self.scratch.clear();
+        append_relative(&mut self.scratch, rel, name);
+        self.scratch.make_ascii_lowercase();
+        self.scratch.contains(self.needle)
     }
 
     fn walk(&mut self, rel: &str, depth: usize) -> io::Result<()> {
@@ -51,7 +81,7 @@ impl Scan<'_> {
             Err(error) => return Err(error),
         };
         let local_needle = !self.needle.contains('/');
-        let parent_matches = local_needle && rel.to_ascii_lowercase().contains(self.needle);
+        let parent_matches = local_needle && self.matches("", rel);
         for entry in directory {
             let entry = entry?;
             self.visited += 1;
@@ -64,17 +94,16 @@ impl Scan<'_> {
             if kind.is_symlink() || !self.show_hidden && name.starts_with('.') { continue; }
             if kind.is_dir() {
                 if !skipped(name) {
-                    let child = if rel.is_empty() { name.to_owned() } else { format!("{rel}/{name}") };
+                    let child = relative_name(rel, name);
                     self.walk(&child, depth + 1)?;
                 }
             } else if kind.is_file() {
                 if local_needle {
-                    if parent_matches || name.to_ascii_lowercase().contains(self.needle) {
-                        self.accept(if rel.is_empty() { name.to_owned() } else { format!("{rel}/{name}") });
+                    if parent_matches || self.matches("", name) {
+                        self.accept(rel, name);
                     }
-                } else {
-                    let file = if rel.is_empty() { name.to_owned() } else { format!("{rel}/{name}") };
-                    if file.to_ascii_lowercase().contains(self.needle) { self.accept(file); }
+                } else if self.matches(rel, name) {
+                    self.accept(rel, name);
                 }
             }
         }
@@ -121,7 +150,7 @@ fn main_scan() -> io::Result<()> {
     if needle.is_empty() || !needle.is_ascii() || needle.len() > 512 || !(1..=2000).contains(&limit) || !(args[4] == "true" || args[4] == "false") {
         return Err(io::Error::other("unsupported request"));
     }
-    let mut scan = Scan { base: fs::canonicalize(Path::new(&args[1]))?, needle, show_hidden: args[4] == "true", limit, files: BinaryHeap::new(), total: 0, visited: 0, unreadable: 0 };
+    let mut scan = Scan { base: fs::canonicalize(Path::new(&args[1]))?, needle, show_hidden: args[4] == "true", limit, files: BinaryHeap::new(), scratch: String::new(), total: 0, visited: 0, unreadable: 0 };
     scan.walk("", 0)?;
     let files = scan.files.into_sorted_vec();
     let mut output = io::BufWriter::new(io::stdout().lock());
@@ -142,5 +171,44 @@ fn main() {
         // prefix is accepted after a failed or unsupported traversal.
         eprintln!("Native discovery could not complete this request.");
         std::process::exit(2);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn scanner(needle: &str, limit: usize) -> Scan<'_> {
+        Scan { base: PathBuf::new(), needle, show_hidden: true, limit, files: BinaryHeap::new(), scratch: String::new(), total: 0, visited: 0, unreadable: 0 }
+    }
+
+    #[test]
+    fn borrowed_admission_preserves_the_complete_lexical_prefix_and_total() {
+        let paths = [("", "A.rs"), ("", "a.rs"), ("a", "file.rs"), ("a-", "file.rs"), ("a/b", "file.rs"), ("a", "file.rs~"), ("", "quote\".rs"), ("a", "line\n.rs")];
+        let mut expected: Vec<_> = paths.iter().map(|(rel, name)| if rel.is_empty() { name.to_string() } else { format!("{rel}/{name}") }).collect();
+        expected.sort();
+        for limit in [1, 2, 7, 2000] {
+            for reverse in [false, true] {
+                let mut scan = scanner("rs", limit);
+                for index in 0..paths.len() {
+                    let (rel, name) = paths[if reverse { paths.len() - 1 - index } else { index }];
+                    scan.accept(rel, name);
+                }
+                assert_eq!(scan.total, paths.len() as u64);
+                assert_eq!(scan.files.into_sorted_vec(), expected[..expected.len().min(limit)]);
+            }
+        }
+    }
+
+    #[test]
+    fn reusable_matching_preserves_ascii_case_and_path_boundary_behavior() {
+        let paths = [("", "Source.TS"), ("Src/Mixed", "Target.RS"), ("A", "B.rs"), ("", "other"), ("", "line\n.TS")];
+        for needle in ["source", "src/mixed/target", "a/b", "b.rs", ".ts", "\n.", "missing", "SOURCE"] {
+            let mut scan = scanner(needle, 1);
+            for (rel, name) in paths {
+                let path = if rel.is_empty() { name.to_string() } else { format!("{rel}/{name}") };
+                assert_eq!(scan.matches(rel, name), path.to_ascii_lowercase().contains(needle));
+            }
+        }
     }
 }
