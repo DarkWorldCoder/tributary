@@ -9,7 +9,7 @@ const check = signal => { if (signal?.aborted) throw aborted(); };
 
 // Visit the complete searchable tree; retain only the smallest result prefix.
 // Directory buffers and open handles scale with depth, never folder width.
-async function scanFileNames(root, query, { showHidden = true, limit = 2000, signal } = {}, io = fs) {
+async function scanFileNamesJS(root, query, { showHidden = true, limit = 2000, signal } = {}, io = fs) {
   if (typeof query !== 'string' || query.length > 512) throw new Error('Invalid file search.');
   if (!Number.isSafeInteger(limit) || limit < 1 || limit > 2000) throw new Error('Invalid file search limit.');
   check(signal);
@@ -84,6 +84,18 @@ async function scanFileNames(root, query, { showHidden = true, limit = 2000, sig
   return { files: files.sort(), total, visited, unreadable, limited: total > files.length };
 }
 
+async function scanFileNames(root, query, options = {}, io = fs) {
+  // Injected IO keeps the deterministic JS path used by callers/tests. Native
+  // discovery is optional, complete-or-fallback, and shares the same lease.
+  if (io === fs) {
+    check(options?.signal);
+    const result = await require('./native-engine').discoverFiles(root, query, options);
+    if (result) return result;
+    check(options?.signal);
+  }
+  return scanFileNamesJS(root, query, options, io);
+}
+
 // A renderer owns a lease, not a detached fire-and-forget directory walk.
 // At most two walks run; queued requests hold only bounded query metadata.
 class FileSearches {
@@ -121,4 +133,4 @@ class FileSearches {
     }
   }
 }
-module.exports = { scanFileNames, FileSearches };
+module.exports = { scanFileNames, scanFileNamesJS, FileSearches };

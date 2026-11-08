@@ -64,6 +64,19 @@ jobs:
         run: node scripts/release-version.cjs prepare
       - run: npm ci
       - run: npm ci --prefix ui
+      - name: Prepare native discovery toolchain
+        run: rustup toolchain install 1.86.0 --profile minimal --target x86_64-unknown-linux-gnu
+      - name: Build bounded native discovery engine
+        run: npm run build:native
+        env:
+          RUSTUP_TOOLCHAIN: '1.86.0'
+      - name: Verify native discovery parity and crash ownership
+        run: |
+          node native/tributary-engine/parity.cjs
+          node native/tributary-engine/owner-parity.cjs
+      - name: Verify native worker admission and termination
+        if: runner.os != 'Windows'
+        run: node native/tributary-engine/transport-parity.cjs
       - run: npx --prefix ui tsc --noEmit -p ui/tsconfig.json
       - run: npm run build:ui:clean
       - name: Set Git identity for disposable test repositories
@@ -83,12 +96,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { runner: macos-15-intel, platform: mac, arch: x64 }
-          - { runner: macos-15, platform: mac, arch: arm64 }
-          - { runner: windows-2025, platform: win, arch: x64 }
-          - { runner: windows-11-arm, platform: win, arch: arm64 }
-          - { runner: ubuntu-24.04, platform: linux, arch: x64 }
-          - { runner: ubuntu-24.04-arm, platform: linux, arch: arm64 }
+          - { runner: macos-15-intel, platform: mac, arch: x64, rust_target: x86_64-apple-darwin }
+          - { runner: macos-15, platform: mac, arch: arm64, rust_target: aarch64-apple-darwin }
+          - { runner: windows-2025, platform: win, arch: x64, rust_target: x86_64-pc-windows-msvc }
+          - { runner: windows-11-arm, platform: win, arch: arm64, rust_target: aarch64-pc-windows-msvc }
+          - { runner: ubuntu-24.04, platform: linux, arch: x64, rust_target: x86_64-unknown-linux-gnu }
+          - { runner: ubuntu-24.04-arm, platform: linux, arch: arm64, rust_target: aarch64-unknown-linux-gnu }
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -104,6 +117,19 @@ jobs:
         run: node scripts/release-version.cjs prepare
       - run: npm ci
       - run: npm ci --prefix ui
+      - name: Prepare native discovery toolchain
+        run: rustup toolchain install 1.86.0 --profile minimal --target ${{ matrix.rust_target }}
+      - name: Build bounded native discovery engine
+        run: npm run build:native
+        env:
+          RUSTUP_TOOLCHAIN: '1.86.0'
+      - name: Verify native discovery parity and crash ownership
+        run: |
+          node native/tributary-engine/parity.cjs
+          node native/tributary-engine/owner-parity.cjs
+      - name: Verify native worker admission and termination
+        if: runner.os != 'Windows'
+        run: node native/tributary-engine/transport-parity.cjs
       - run: npm run build:ui:clean
       - name: Package preview installers
         run: npx electron-builder --${{ matrix.platform }} --${{ matrix.arch }} --publish never

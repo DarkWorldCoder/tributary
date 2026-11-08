@@ -33,7 +33,7 @@ async function imageResource(file, rel, current = () => true, rendition = 'origi
   if (!current()) return null;
   if (mime === 'image/svg+xml' && blob.size > 1024 ** 2) throw new Error('Image exceeds preview limit.');
   file = null; // The bridge response is not part of the pixel lease.
-  const preview = rendition === 'gallery' && bytes ? await galleryRendition(blob, bytes, mime, current) : null;
+  const preview = rendition !== 'original' && bytes ? await galleryRendition(blob, bytes, mime, current, globalThis, rendition) : null;
   if (!current()) { preview?.bitmap.close(); return null; }
   return preview ? { src: null, ...preview } : { src: URL.createObjectURL(blob) };
 }
@@ -50,7 +50,7 @@ export function createImageResources(read, create = imageResource, revoke = url 
     while (active < 2 && queue.length) {
       const entry = queue.shift(); if (!alive(entry)) continue;
       active++;
-      void Promise.resolve().then(() => alive(entry) ? read(entry.project, entry.rel) : null).then(async file => {
+      void Promise.resolve().then(() => alive(entry) ? read(entry.project, entry.rel, entry.source) : null).then(async file => {
         if (!file || !alive(entry)) return;
         const { size, mtime } = file;
         const pending = create(file, entry.rel, () => alive(entry), entry.rendition);
@@ -65,12 +65,13 @@ export function createImageResources(read, create = imageResource, revoke = url 
     }
   };
   return {
-    acquire(project, rel, revision, rendition = 'original') {
-      if (!['original', 'gallery'].includes(rendition)) throw new Error('Invalid image rendition.');
-      const key = JSON.stringify([project, rel, revision, rendition]); let entry = entries.get(key);
+    acquire(project, rel, revision, rendition = 'original', source = 'file') {
+      if (!['original', 'gallery', 'thumbnail'].includes(rendition)) throw new Error('Invalid image rendition.');
+      if (!['file', 'attachment'].includes(source)) throw new Error('Invalid image source.');
+      const key = JSON.stringify([project, rel, revision, rendition, source]); let entry = entries.get(key);
       if (!entry) {
         if (entries.size >= 128) throw new Error('Too many image previews. Close an unused preview.');
-        entry = { key, project, rel, rendition, refs: 0, src: null, listeners: new Set(), snapshot: { src: null, loading: true, error: '' } };
+        entry = { key, project, rel, rendition, source, refs: 0, src: null, listeners: new Set(), snapshot: { src: null, loading: true, error: '' } };
         entries.set(key, entry); queue.push(entry);
       }
       entry.refs++; pump(); let released = false; const listeners = new Set();

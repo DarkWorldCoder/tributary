@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createImageVisibility, imagePlaceholder } from '../ui/src/lib/image-visibility.mjs';
+import { createImageVisibility, imagePlaceholder, observeImage } from '../ui/src/lib/image-visibility.mjs';
 
 test('one observer tracks entering and leaving images and releases only closed targets', () => {
   const made = [];
@@ -46,4 +46,15 @@ test('placeholder intrinsic dimensions cap height without upscaling or keeping f
   assert.deepEqual(imagePlaceholder(1000, 4000), { width: 64, height: 256, viewBox: '0 0 1000 4000' });
   assert.deepEqual(imagePlaceholder(32, 32), { width: 32, height: 32, viewBox: '0 0 32 32' });
   for (const [w, h] of [[0, 1], [1, 0], [NaN, 1], [1, Infinity]]) assert.equal(imagePlaceholder(w, h), null);
+});
+
+test('shared document observation serves multiple preview kinds and releases only their own subscriptions', t => {
+  const original = globalThis.IntersectionObserver, observers = [];
+  class Observer { constructor(callback) { this.callback = callback; this.targets = new Set(); this.disconnected = false; observers.push(this); } observe(target) { this.targets.add(target); } unobserve(target) { this.targets.delete(target); } disconnect() { this.disconnected = true; this.targets.clear(); } }
+  globalThis.IntersectionObserver = Observer; t.after(() => { if (original === undefined) delete globalThis.IntersectionObserver; else globalThis.IntersectionObserver = original; });
+  const document = {}, otherDocument = {}, gallery = { ownerDocument: document }, attachment = { ownerDocument: document }, other = { ownerDocument: otherDocument }, seen = [];
+  const a = observeImage(gallery, near => seen.push(['gallery', near])), b = observeImage(attachment, near => seen.push(['attachment', near])), c = observeImage(other, () => {});
+  assert.equal(observers.length, 2); assert.equal(observers[0].targets.size, 2); observers[0].callback([{ target: gallery, isIntersecting: true }, { target: attachment, isIntersecting: true }]);assert.deepEqual(seen,[['gallery',true],['attachment',true]]);
+  a();assert.equal(observers[0].disconnected,false);assert.equal(observers[0].targets.size,1);b();assert.equal(observers[0].disconnected,true);c();assert.equal(observers[1].disconnected,true);
+  observers[0].callback([{target:attachment,isIntersecting:false}]);assert.equal(seen.length,2);
 });

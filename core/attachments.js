@@ -28,13 +28,35 @@ function add(dataDir, files) {
     const { file, ...publicMeta } = meta; return publicMeta;
   });
 }
-function read(dataDir, id) {
+function locate(dataDir, id) {
   if (typeof id !== 'string' || !/^[a-f0-9-]{36}$/.test(id)) throw new Error('Invalid attachment.');
-  const dir = directory(dataDir); const meta = JSON.parse(fs.readFileSync(path.join(dir, id + '.json'), 'utf8'));
+  const dir = directory(dataDir), metadata = path.join(dir, id + '.json'), stat = fs.lstatSync(metadata);
+  if (!stat.isFile() || stat.size > 4096) throw new Error('Invalid attachment metadata.');
+  const meta = JSON.parse(fs.readFileSync(metadata, 'utf8'));
   if (meta.id !== id || !new RegExp(`^${id}\\.[a-z0-9]{1,12}$`).test(meta.file)) throw new Error('Invalid attachment metadata.');
-  const file = path.join(dir, meta.file); const stat = fs.lstatSync(file); if (!stat.isFile() || stat.size > MAX_FILE) throw new Error('Attachment is unavailable.');
+  return { meta, file: path.join(dir, meta.file) };
+}
+function read(dataDir, id) {
+  const { meta, file } = locate(dataDir, id); const stat = fs.lstatSync(file); if (!stat.isFile() || stat.size > MAX_FILE) throw new Error('Attachment is unavailable.');
   const bytes = fs.readFileSync(file); const { file: stored, ...publicMeta } = meta;
   return { ...publicMeta, path: file, base64: bytes.toString('base64') };
+}
+async function preview(dataDir, id, { preview: kind, bytesOnly = false } = {}) {
+  if (!['image', 'text'].includes(kind)) throw new Error('Invalid attachment preview.');
+  const { meta, file } = locate(dataDir, id);
+  if (kind === 'text' ? meta.mime !== 'text/plain' : !['image/png', 'image/jpeg', 'image/gif', 'image/webp'].includes(meta.mime)) throw new Error('This attachment has no supported preview.');
+  // Stored attachments are regular private files, never links to user paths.
+  const entry = await fs.promises.lstat(file); if (!entry.isFile()) throw new Error('Attachment is unavailable.');
+  const handle = await fs.promises.open(file, fs.constants.O_RDONLY | (fs.constants.O_NOFOLLOW || 0));
+  let stat, buffer, written = 0;
+  try {
+    stat = await handle.stat(); if (!stat.isFile() || stat.size > MAX_FILE) throw new Error('Attachment is unavailable.');
+    buffer = Buffer.allocUnsafeSlow(Math.min(stat.size, kind === 'text' ? 256 * 1024 : MAX_FILE));
+    while (written < buffer.length) { const { bytesRead } = await handle.read(buffer, written, buffer.length - written, written); if (!bytesRead) break; written += bytesRead; }
+  } finally { await handle.close(); }
+  const publicMeta = { id: meta.id, name: meta.name, mime: meta.mime }, bytes = buffer.subarray(0, written);
+  if (kind === 'text') return { ...publicMeta, size: stat.size, content: bytes.toString('utf8'), truncated: stat.size > written };
+  return { ...publicMeta, size: stat.size, ...(bytesOnly === true ? { bytes: bytes.byteOffset === 0 && bytes.byteLength === bytes.buffer.byteLength ? bytes.buffer : bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) } : { base64: bytes.toString('base64') }) };
 }
 function resolve(dataDir, ids = []) {
   if (!Array.isArray(ids) || ids.length > 8) throw new Error('Attach up to 8 files.');
@@ -42,4 +64,4 @@ function resolve(dataDir, ids = []) {
   if (files.reduce((n, file) => n + file.size, 0) > MAX_TOTAL) throw new Error('Attachments exceed 32 MB.');
   return files;
 }
-module.exports = { add, read, resolve, imageMime };
+module.exports = { add, read, preview, resolve, imageMime };

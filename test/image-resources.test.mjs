@@ -103,3 +103,12 @@ test('late decoded surfaces are closed once and never published to a replacement
   assert.deepEqual(closed,['old']);assert.equal(current.snapshot().bitmap,fresh);assert.equal(old.snapshot().bitmap,undefined);
   current.release();assert.deepEqual(closed,['old','new']);assert.equal(manager.state().active,0);
 });
+
+test('file and attachment namespaces share admission but never share source bodies or consume closed queued previews', async () => {
+  const reads=[],gates=[],revoked=[];
+  const manager=createImageResources((project,rel,source)=>new Promise(resolve=>{reads.push({project,rel,source});gates.push(()=>resolve({...file,from:source}));}),async input=>'blob:'+input.from,url=>revoked.push(url));
+  const disk=manager.acquire('same-id','media.png',1,'thumbnail','file'),attachment=manager.acquire('same-id','media.png',1,'thumbnail','attachment'),duplicate=manager.acquire('same-id','media.png',1,'thumbnail','attachment');
+  const queued=manager.acquire('queued','media.png',1,'thumbnail','attachment');await tick();assert.equal(reads.length,2);assert.deepEqual(reads.map(r=>r.source),['file','attachment']);assert.equal(manager.state().queued,1);queued.release();gates.forEach(release=>release());await flush();
+  assert.equal(disk.snapshot().src,'blob:file');assert.equal(duplicate.snapshot().src,'blob:attachment');attachment.release();assert.deepEqual(revoked,[]);duplicate.release();assert.deepEqual(revoked,['blob:attachment']);disk.release();assert.deepEqual(revoked,['blob:attachment','blob:file']);assert.equal(reads.length,2);assert.equal(manager.state().entries,0);
+  assert.throws(()=>manager.acquire('id','media.png',1,'thumbnail','other'),/source/);
+});

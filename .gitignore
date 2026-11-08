@@ -20,3 +20,6 @@ coverage/
 
 # Optional Python benchmark/chart helpers
 __pycache__/
+
+# Native discovery engine build output
+native/tributary-engine/target/

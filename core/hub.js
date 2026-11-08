@@ -413,7 +413,7 @@ class Hub extends EventEmitter {
 
   // ---- run a turn
   addAttachments(files) { return attachments.add(this.dataDir, files); }
-  readAttachment(id) { const { path, ...file } = attachments.read(this.dataDir, id); return file; }
+  readAttachment(id, options) { if (options?.preview !== undefined) return attachments.preview(this.dataDir, id, options); const { path, ...file } = attachments.read(this.dataDir, id); return file; }
 
   async send(input) {
     const t = this.thread(input.threadId); if (!t) throw new Error('Thread not found');

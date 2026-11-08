@@ -33,3 +33,11 @@ export function imagePlaceholder(width, height) {
   const scale = Math.min(1, 256 / height);
   return { width: width * scale, height: height * scale, viewBox: `0 0 ${width} ${height}` };
 }
+
+const documents = new WeakMap();
+export function observeImage(element, listener) {
+  const document = element.ownerDocument;
+  let visibility = documents.get(document);
+  if (!visibility) { visibility = createImageVisibility(); documents.set(document, visibility); }
+  return visibility.observe(element, listener);
+}

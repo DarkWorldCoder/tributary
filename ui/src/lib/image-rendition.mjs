@@ -28,7 +28,7 @@ export function renditionSize(width, height, pixelRatio = 1) {
   return scale < 1 ? { width: Math.max(1, Math.round(width * scale)), height: Math.max(1, Math.round(height * scale)) } : null;
 }
 
-export async function galleryRendition(blob, bytes, mime, current = () => true, environment = globalThis) {
+export async function galleryRendition(blob, bytes, mime, current = () => true, environment = globalThis, layout = 'gallery') {
   if (!current() || !staticRaster(bytes, mime)) return null;
   if (mime === 'image/png') {
     const header = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength), width = header.getUint32(16), height = header.getUint32(20);
@@ -40,8 +40,13 @@ export async function galleryRendition(blob, bytes, mime, current = () => true, 
     original = await environment.createImageBitmap(blob);
     if (!current() || original.width <= 64 && original.height <= 64) return null;
     const dimensions = renditionSize(original.width, original.height, environment.devicePixelRatio);
-    if (dimensions) {
+    if (layout === 'thumbnail') {
+      const side = Math.min(original.width, original.height), density = Math.max(2, Math.min(4, Number.isFinite(environment.devicePixelRatio) ? environment.devicePixelRatio : 2)), target = Math.max(1, Math.round(Math.min(side, 48 * density)));
+      resized = await environment.createImageBitmap(original, Math.floor((original.width - side) / 2), Math.floor((original.height - side) / 2), side, side, { resizeWidth: target, resizeHeight: target, resizeQuality: 'high' });
+    } else if (dimensions) {
       resized = await environment.createImageBitmap(original, { resizeWidth: dimensions.width, resizeHeight: dimensions.height, resizeQuality: 'high' });
+    }
+    if (resized) {
       if (!current()) return null;
     }
     const pixels = resized || original;

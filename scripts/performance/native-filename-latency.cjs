@@ -7,6 +7,11 @@ for (const value of [project, output, moduleFile]) assert.ok(value && path.isAbs
 const fixture = JSON.parse(fs.readFileSync(process.env.TRIBUTARY_FILENAME_CASES, 'utf8'));
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-filename-latency-')); process.env.TRIBUTARY_DATA_DIR = profile;
 const core = require('../../core'), { FileSearches } = require('../../core/filename-search'), { scanFileNames } = require(moduleFile);
+let nativeResults = 0;
+if (process.env.TRIBUTARY_FILENAME_REQUIRE_NATIVE === '1') {
+  const bridge = require('../../core/native-engine/discovery.cjs'), original = bridge.nativeScan;
+  bridge.nativeScan = async (...args) => { const value = await original(...args); assert.ok(value, 'Measured native query must not silently use JS fallback'); nativeResults++; return value; };
+}
 const seed = new core.Hub({ dataDir: profile, home: profile, secrets: new core.MemorySecrets() }); seed.createThread(project, 'Filename responsiveness'); seed.fileWatches.close(); seed.store.close();
 require('../../core/drafts').save(profile, 'files:' + project, { active: 'main.ts', tabs: [{ rel: 'main.ts', mode: 'edit', pinned: true }] });
 let hub, initialIndexComplete = false; const scans = [];
@@ -70,7 +75,8 @@ app.on('browser-window-created', (_event, win) => {
     key('a', ['control']); key('Backspace'); await until(() => run(`document.querySelector('.file-picker input').value===''`), 'clear input');
     const replacement = fixture[1]; observations.push({ ...await search(replacement), replacement: true }); key('Escape');
     await until(() => hub._fileSearches.owners.size === 0 && hub._fileSearches.active === 0, 'released searches');
-    const report = { observations, scans, exact: true, ownersAfterClose: hub._fileSearches.owners.size, activeAfterClose: hub._fileSearches.active, scope: 'Linux source Electron, same compiled UI and 40,008 nested searchable source files, native text input to exact current result DOM including debounce/IPC. Visible result DOM is not hardware input-to-paint. Initial Explorer index completes before measurement. No provider/model calls, diagnostic GC or whole-app RAM measurement.' };
+    if (process.env.TRIBUTARY_FILENAME_REQUIRE_NATIVE === '1') assert.ok(nativeResults >= fixture.length + 1, 'All current query results used the native engine');
+    const report = { observations, scans, nativeResults, exact: true, ownersAfterClose: hub._fileSearches.owners.size, activeAfterClose: hub._fileSearches.active, scope: 'Linux source Electron, same compiled UI and 40,008 nested searchable source files, native text input to exact current result DOM including debounce/IPC. Visible result DOM is not hardware input-to-paint. Initial Explorer index completes before measurement. No provider/model calls, diagnostic GC or whole-app RAM measurement.' };
     fs.writeFileSync(output, JSON.stringify(report, null, 2) + '\n'); clearTimeout(deadline); app.quit();
   })().catch(error => { console.error(error.stack); app.exit(1); }); });
 });

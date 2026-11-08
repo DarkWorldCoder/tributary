@@ -29,8 +29,8 @@ test('renditions preserve aspect, at least two-pixel density, denser screens and
 });
 function environment(options = {}) {
   const closed = [], calls = []; let created = 0;
-  const env = { devicePixelRatio: 1, async createImageBitmap(input, settings) {
-    const kind = ++created === 1 ? 'original' : 'resized'; calls.push({kind,settings});
+  const env = { devicePixelRatio: 1, async createImageBitmap(input, ...parameters) {
+    const settings = parameters.at(-1), kind = ++created === 1 ? 'original' : 'resized'; calls.push({kind,settings,crop:parameters.length===5?parameters.slice(0,4):undefined});
     if (options.fail === kind) throw Error('Unsupported decoder');
     if (options.wait === kind) await options.gate;
     return { width: kind === 'original' ? options.width || 1536 : settings.resizeWidth, height: kind === 'original' ? options.height || 1536 : settings.resizeHeight, close() { closed.push(kind); } };
@@ -84,4 +84,14 @@ test('cancellation after transfer closes the produced surface as well as decoder
   let alive=true;const fixture=environment({transfer(){alive=false;}});
   assert.equal(await galleryRendition(source,png(),'image/png',()=>alive,fixture.env),null);
   assert.deepEqual(fixture.closed,['surface','resized','original']);
+});
+
+test('attachment thumbnails crop the oriented center at display density without upscaling or retaining decoder pixels', async () => {
+  for (const [width,height,crop,target] of [[2048,512,[768,0,512,512],96],[512,2048,[0,768,512,512],96],[40,400,[0,180,40,40],40]]) {
+    const fixture=environment({width,height}), result=await galleryRendition(source,png(),'image/png',()=>true,fixture.env,'thumbnail');
+    assert.deepEqual(fixture.calls.find(c=>c.kind==='resized').crop,crop);assert.equal(result.bitmap.width,target);assert.equal(result.bitmap.height,target);assert.equal(result.width,width);assert.equal(result.height,height);
+    assert.deepEqual(fixture.closed,['resized','original']);result.bitmap.close();assert.deepEqual(fixture.closed,['resized','original','surface']);
+  }
+  const dense=environment({width:2048,height:512});dense.env.devicePixelRatio=3.3;const result=await galleryRendition(source,png(),'image/png',()=>true,dense.env,'thumbnail');assert.equal(result.bitmap.width,158);result.bitmap.close();
+  const animated=environment();assert.equal(await galleryRendition(source,png(chunk('acTL',8)),'image/png',()=>true,animated.env,'thumbnail'),null);assert.equal(animated.calls.length,0);
 });

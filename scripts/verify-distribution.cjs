@@ -10,7 +10,7 @@ const base = path.resolve('release', platform === 'mac' ? `mac${arch === 'arm64'
 const resources = path.join(base, platform === 'mac' ? 'Resources' : 'resources');
 const archive = path.join(resources, 'app.asar');
 const entries = new Set(listPackage(archive).map((name) => name.replaceAll('\\', '/')));
-for (const file of ['core/index.js', 'core/path-command.js', 'core/path-prefix.js', 'server/lan-host.js', 'desktop/main.js', 'ui/dist/index.html', 'node_modules/jsonc-parser/package.json', 'node_modules/prettier/package.json', 'LICENSE']) {
+for (const file of ['core/index.js', 'core/path-command.js', 'core/path-prefix.js', 'core/native-engine.js', 'core/native-engine/discovery.cjs', 'core/native-engine/transport.cjs', 'server/lan-host.js', 'desktop/main.js', 'ui/dist/index.html', 'node_modules/jsonc-parser/package.json', 'node_modules/prettier/package.json', 'LICENSE']) {
   if (!entries.has('/' + file)) throw new Error(`Package is missing ${file}`);
 }
 if ([...entries].some((file) => /(?:^|\/)\.env(?:\.|$)/.test(file))) throw new Error('Environment files must never be packaged.');
@@ -18,6 +18,8 @@ for (const file of ['core/format-worker.cjs', 'core/eslint-worker.cjs', 'core/se
   if (!fs.existsSync(path.join(archive + '.unpacked', file))) throw new Error(`Unpacked runtime is missing ${file}`);
 }
 const binary = path.join(base, platform === 'mac' ? 'MacOS/Tributary' : platform === 'win' ? 'Tributary.exe' : 'tributary');
+const engine = path.join(resources, 'native-engine', 'tributary-engine' + (platform === 'win' ? '.exe' : ''));
+if (!fs.statSync(engine).isFile()) throw new Error('Package is missing the native discovery engine.');
 const code = String.raw`
   const assert = require('node:assert/strict'); const fs = require('node:fs'); const os = require('node:os'); const path = require('node:path');
   const runtime = require('node:module').createRequire(path.join(process.argv[1], 'package.json'));
@@ -38,6 +40,14 @@ const code = String.raw`
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-package-'));
     try {
       fs.writeFileSync(path.join(dir, 'sample.js'), 'const sample={ok:true};');
+      const engine = process.argv[3];
+      assert.equal(runtime('./core/native-engine').engineBinary(), engine);
+      const identity = JSON.parse(require('node:child_process').execFileSync(engine, ['--identity'], { encoding: 'utf8', timeout: 10000, windowsHide: true }));
+      assert.deepEqual(identity, { protocol: 1, arch: process.arch === 'x64' ? 'x86_64' : 'aarch64', os: { linux: 'linux', darwin: 'macos', win32: 'windows' }[process.platform] });
+      assert.equal(runtime('./core/native-engine').engineBinary({ resourcesPath: path.dirname(path.dirname(engine)) }), engine);
+      const nativeFiles = await runtime('./core/native-engine/discovery.cjs').nativeScan(engine, dir, 'sample', { limit: 10 });
+      assert.deepEqual(nativeFiles, { files: ['sample.js'], total: 1, visited: 1, unreadable: 0, limited: false });
+      assert.deepEqual(await runtime('./core/filename-search').scanFileNames(dir, 'sample', { limit: 10 }), nativeFiles);
       const result = await runtime('./core/project-format').formatProjectSource(dir, 'sample.js', 'const sample={ok:true};', true);
       assert.ok(result.includes('const sample ='));
       const search = await runtime('./core/files').searchProject(dir, 's[a]mple', { regexp: true });
@@ -59,10 +69,10 @@ const code = String.raw`
     // ConPTY keeps a native helper thread alive after its shell exits on Windows.
     // This is a bounded test process: exit only after every assertion and cleanup
     // has completed, and flush the success marker before closing the process.
-    process.stdout.write('Packaged runtime, SQLite, native terminal, formatter and lint transport verified for ' + process.platform + '/' + process.arch + '\n', () => process.exit(0));
+    process.stdout.write('Packaged runtime, SQLite, native discovery, terminal, formatter and lint transport verified for ' + process.platform + '/' + process.arch + '\n', () => process.exit(0));
   })().catch((error) => { process.stderr.write(String(error.stack || error) + '\n', () => process.exit(1)); });
 `;
-const result = spawnSync(binary, ['-e', code, archive, arch], { env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }, encoding: 'utf8', timeout: 45000, windowsHide: true });
+const result = spawnSync(binary, ['-e', code, archive, arch, engine], { env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }, encoding: 'utf8', timeout: 45000, windowsHide: true });
 if (result.stdout) process.stdout.write(result.stdout);
 if (result.stderr) process.stderr.write(result.stderr);
 if (result.error) throw result.error;

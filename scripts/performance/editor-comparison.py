@@ -8,7 +8,7 @@ spec = importlib.util.spec_from_file_location('x11_input', Path(__file__).with_n
 x11 = importlib.util.module_from_spec(spec); spec.loader.exec_module(x11)
 parser = argparse.ArgumentParser(); parser.add_argument('--output', required=True); parser.add_argument('--runs', type=int, default=3); parser.add_argument('--files', type=int, default=20000); parser.add_argument('--apps', default='tributary,code,zed'); args = parser.parse_args()
 repo = Path(__file__).resolve().parents[2]; root = Path(tempfile.mkdtemp(prefix='tributary-editor-comparison-')); project = root/'project'; project.mkdir()
-report = {'complete':False,'date':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'runs':[],'rejected':[],'temporaryDirectory':str(root),'method': 'External X11 keystrokes, same 1280x900 display and generated project committed into a clean Git working tree. Isolated app data/config/cache/home and unavailable session bus; no installed third-party extensions or AI generation. VS Code AI features and its TypeScript language-feature extension are disabled; Zed external language servers are disabled; Tributary agent discovery is disabled. Built-in language work and rendering backends differ. Warm OS page cache, 20 seconds settling after initial buffer verification. Picker visibility is observed through a changed top-center display region, then its exact query is confirmed through clipboard and its image is settled in 120ms polling intervals. Timings include these verification/settling costs; they are deliberately coarse workflow observations. Completion is checked by copying the actual source buffer/selected line through X11 clipboard, polling at 50ms with additional asynchronous clipboard overhead. These are coarse end-to-end navigation workflow observations, not frame/paint, exact input latency, cold startup, production p95 or semantic LSP throughput. Xvfb software graphics: Zed uses emulated Vulkan and warns of poor performance; this is not a hardware-GPU ranking. No debugger, profiler or forced GC. Failed small pilots are excluded; every final cohort case must pass. Large-file completion requires exact first and final nonempty source lines after native EOF navigation. Repeated same-buffer verification controls are recorded without subtracting them. App-tree PSS is sampled separately after work; reparented/external helpers, display-server allocations and GPU VRAM are outside its boundary.'}
+report = {'complete':False,'date':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'runs':[],'rejected':[],'temporaryDirectory':str(root),'method': 'External X11 keystrokes, same 1280x900 display and generated project committed into a clean Git working tree. Isolated app data/config/cache/home and unavailable session bus; no installed third-party extensions or AI generation. VS Code AI features and its TypeScript language-feature extension are disabled; Zed external language servers are disabled; Tributary agent discovery is disabled. Built-in language work and rendering backends differ. Warm OS page cache, 20 seconds settling after initial buffer verification. Picker visibility is observed through a changed top-center display region, then its exact query is confirmed through clipboard and its image is settled in 120ms polling intervals. Timings include these verification/settling costs; they are deliberately coarse workflow observations. After Enter, actual keyboard focus must transfer to the source without a mouse click that could dismiss a pending asynchronous selection. Completion is checked by copying the actual source buffer/selected line through X11 clipboard, polling at 50ms with additional asynchronous clipboard overhead. These are coarse end-to-end navigation workflow observations, not frame/paint, exact input latency, cold startup, production p95 or semantic LSP throughput. Xvfb software graphics: Zed uses emulated Vulkan and warns of poor performance; this is not a hardware-GPU ranking. No debugger, profiler or forced GC. Failed small pilots are excluded; every final cohort case must pass. Large-file completion requires exact first and final nonempty source lines after native EOF navigation. Repeated same-buffer verification controls are recorded without subtracting them. App-tree PSS is sampled separately after work; reparented/external helpers, display-server allocations and GPU VRAM are outside its boundary.'}
 def write_report(): Path(args.output).write_text(json.dumps(report,indent=2)+'\n')
 def command_version(command):
     result = subprocess.run(command,text=True,capture_output=True,timeout=15); return result.stdout.strip()
@@ -16,7 +16,9 @@ report['versions'] = {'code':command_version(['code','--version']), 'zed':comman
 report['hardware'] = {'platform':platform.platform(),'machine':platform.machine(),'cpu':next((line.split(':',1)[1].strip() for line in Path('/proc/cpuinfo').read_text().splitlines() if line.startswith('model name')),'unknown'),'logicalCpus':os.cpu_count(),'totalMemoryKiB':int(next(line.split()[1] for line in Path('/proc/meminfo').read_text().splitlines() if line.startswith('MemTotal:')))}
 def fingerprint():
     names=subprocess.check_output(['git','-C',str(repo),'ls-files','--cached','--others','--exclude-standard','-z']).decode().split('\0')
-    files=[repo/name for name in sorted(set(names)) if name and (name.startswith(('core/','desktop/','ui/src/')) or name in ['package.json','package-lock.json','ui/package.json','ui/package-lock.json','ui/vite.config.ts','scripts/performance/editor-comparison.py','scripts/performance/x11-input.py','scripts/performance/native-comparison.cjs']) and (repo/name).is_file()]
+    files=[repo/name for name in sorted(set(names)) if name and (name.startswith(('core/','desktop/','ui/src/')) or name in ['package.json','package-lock.json','ui/package.json','ui/package-lock.json','ui/vite.config.ts','scripts/performance/editor-comparison.py','scripts/performance/x11-input.py','scripts/performance/native-comparison.cjs','native/tributary-engine/Cargo.toml','native/tributary-engine/Cargo.lock','native/tributary-engine/src/main.rs']) and (repo/name).is_file()]
+    engine=repo/'native/tributary-engine/target/release/tributary-engine'
+    if engine.is_file():files.append(engine)
     return {str(file.relative_to(repo)):hashlib.sha256(file.read_bytes()).hexdigest() for file in files}
 def build_hash():
     digest=hashlib.sha256()
@@ -57,7 +59,9 @@ def until_buffer(expected,timeout=30):
     end=time.monotonic()+timeout
     value=None
     while time.monotonic()<end:
-        value=copy_all(editor=True)
+        # Enter must transfer keyboard focus itself. Clicking the source here
+        # can dismiss a picker whose asynchronous selection is still pending.
+        value=copy_all()
         if value==expected: p.key('Right');return
         time.sleep(.05)
     raise RuntimeError(f'Buffer verification timed out: length={len(value) if value else None}, prefix={value[:80] if value else None!r}')
@@ -81,8 +85,9 @@ def query_text(text):
         time.sleep(.05)
     raise RuntimeError('Picker query was not acknowledged')
 def open_file(filename,expected):
-    settle();start=time.perf_counter();picker('p');query_text(filename);p.key('Return');until_buffer(expected,15)
-    return (time.perf_counter()-start)*1000
+    settle();start=time.perf_counter();picker('p');shown=time.perf_counter();query_text(filename);queried=time.perf_counter();p.key('Return');until_buffer(expected,15);finished=time.perf_counter()
+    workflow_phases.append({'file':filename,'pickerMs':(shown-start)*1000,'queryVerificationMs':(queried-shown)*1000,'selectionVerificationMs':(finished-queried)*1000,'totalMs':(finished-start)*1000})
+    return (finished-start)*1000
 
 try:
     for repeat in range(args.runs):
@@ -104,7 +109,8 @@ try:
             assert fingerprint()==report['sources'] and build_hash()==report['uiBuildSha256'], 'Source/build changed'
             if appname!='tributary':configuration=json.loads(settings.read_text())
             print('Starting',appname,repeat,flush=True);log=(profile/'app.log').open('w');child=subprocess.Popen(cmd,env=env,stdout=log,stderr=log,start_new_session=True)
-            row={'app':appname,'repeat':repeat,'pid':child.pid,'loadAverage':os.getloadavg(),'configuration':configuration,'quickOpenMs':[],'largeFileOpenMs':[],'passed':False};report['runs'].append(row);write_report()
+            workflow_phases=[]
+            row={'app':appname,'repeat':repeat,'pid':child.pid,'loadAverage':os.getloadavg(),'configuration':configuration,'workflowPhases':workflow_phases,'quickOpenMs':[],'largeFileOpenMs':[],'passed':False};report['runs'].append(row);write_report()
             try:
                 time.sleep(3)
                 end=time.monotonic()+45;windows=[]
@@ -124,7 +130,6 @@ try:
                 # Verify both ends of the large document using native navigation.
                 settle();start=time.perf_counter();picker('p');query_text('large.ts');p.key('Return')
                 def selected_line(last=False):
-                    x11.click(p);time.sleep(.03)
                     p.key('End' if last else 'Home',('Control_L',))
                     if last:p.key('Up')
                     p.key('Home');p.key('End',('Shift_L',));p.key('c',('Control_L',));time.sleep(.025)

@@ -330,8 +330,10 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
     const request = s.fileToOpen;
     if (!visible || restoring || !request || request.project !== project || handledIntent.current === request.n) return;
     handledIntent.current = request.n; const focusOwner = document.activeElement;
-    void openDoc(request.rel, request.intent, request.line, request.column, request.following, request.editor).then(() => {
-      if (!request.following && handledIntent.current === request.n) focusEditorGroup(focusOwner);
+    const opened = openDoc(request.rel, request.intent, request.line, request.column, request.following, request.editor);
+    const generation = sequence.current;
+    void opened.then(() => {
+      if (!request.following && handledIntent.current === request.n) focusOpenedFile(focusOwner, request.rel, generation);
     });
   }, [s.fileToOpen, visible, restoring, project, openDoc]);
 
@@ -481,6 +483,37 @@ function FolderFiles({ project, visible, warm, owner, roots, expandedRoots, togg
   const iconButton = 'workbench-action shrink-0 [&_svg]:size-4';
 
   const pendingGroupFocus = React.useRef<string | null>(null);
+  const fileFocusFrame = React.useRef<number | null>(null);
+  React.useEffect(() => () => { if (fileFocusFrame.current !== null) cancelAnimationFrame(fileFocusFrame.current); fileFocusFrame.current = null; }, [project]);
+  const focusOpenedFile = (expected: Element | null, rel: string, generation: number) => {
+    if (fileFocusFrame.current !== null) cancelAnimationFrame(fileFocusFrame.current);
+    const deadline = performance.now() + 2000;
+    const attempt = () => {
+      fileFocusFrame.current = null;
+      if (!root.current?.isConnected || saveProject.current !== project || sequence.current !== generation || performance.now() > deadline) return;
+      const group = root.current.querySelector<HTMLElement>(`[data-editor-group="${groupsRef.current.focused}"]`);
+      if (!group?.offsetParent) return;
+      const retry = () => { fileFocusFrame.current = requestAnimationFrame(attempt); };
+      const modal = document.querySelector('[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]');
+      if (modal && modal !== expected?.closest('.file-picker')) return;
+      // An exiting scope can undo a focus made before it is removed.
+      if (document.querySelector('[role="dialog"], [role="alertdialog"]')) { retry(); return; }
+      const current = document.activeElement, tab = group.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]');
+      const previousEditor = current?.closest('.cm-editor') && current.closest('[data-editor-group]') === group;
+      if (current && current !== expected && current !== document.body && current !== document.documentElement && current !== tab && !previousEditor && !current.matches('[data-radix-focus-guard]')) return;
+      const doc = docsRef.current.find(item => item.rel === rel);
+      if (!doc || tab?.dataset.filePath !== rel) { retry(); return; }
+      const target = doc.mode === 'edit' && !doc.binary
+        ? [...group.querySelectorAll<HTMLElement>('.cm-content')].find(element => element.getAttribute('aria-label') === `Edit ${rel}`)
+        : tab;
+      // React can commit the active tab before constructing its editor view.
+      // Wait for this file, never focus the previous view found in the group.
+      if (!target?.offsetParent) { retry(); return; }
+      target.focus({ preventScroll: true });
+      if (document.activeElement !== target && !target.contains(document.activeElement)) retry();
+    };
+    fileFocusFrame.current = requestAnimationFrame(attempt);
+  };
   const focusEditorGroup = (expected?: Element | null) => {
     requestAnimationFrame(() => requestAnimationFrame(() => {
       const current = document.activeElement;
