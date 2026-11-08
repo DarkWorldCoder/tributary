@@ -1,8 +1,18 @@
 'use strict';
 // Comparison host: real Tributary app, clean profile, real shared benchmark files.
-const fs = require('node:fs'), path = require('node:path'); const { app } = require('electron');
+const fs = require('node:fs'), path = require('node:path'); const { app, BrowserWindow } = require('electron');
 const project = process.env.TRIBUTARY_COMPARE_PROJECT, profile = process.env.TRIBUTARY_COMPARE_PROFILE;
 if (!project || !profile || !path.isAbsolute(project) || !path.isAbsolute(profile)) throw Error('Use the comparison driver.');
+// Compare frozen UI builds without copying bundles during an experiment. The
+// production app has no alternate-build path; only this isolated host does.
+const uiRoot = process.env.TRIBUTARY_COMPARE_UI_ROOT;
+if (uiRoot) {
+  if (!path.isAbsolute(uiRoot) || !fs.statSync(path.join(uiRoot, 'index.html')).isFile()) throw Error('Invalid comparison UI directory.');
+  const loadFile = BrowserWindow.prototype.loadFile;
+  BrowserWindow.prototype.loadFile = function (file, ...args) {
+    return loadFile.call(this, path.resolve(file) === path.resolve(__dirname, '../../ui/dist/index.html') ? path.join(uiRoot, 'index.html') : file, ...args);
+  };
+}
 process.env.TRIBUTARY_DATA_DIR = profile;
 const core = require('../../core'), drafts = require('../../core/drafts');
 const seed = new core.Hub({ dataDir: profile, home: profile, secrets: new core.MemorySecrets() }); seed.createThread(project, 'Large project navigation'); seed.fileWatches.close(); seed.store.close();

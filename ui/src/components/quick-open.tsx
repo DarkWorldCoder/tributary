@@ -2,7 +2,8 @@ import * as React from 'react';
 import { flushSync } from 'react-dom';
 import { fileSearch, type FileSearchResult } from '@/lib/file-search.mjs';
 import { Search, X } from 'lucide-react';
-import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { QuickOpenDialog } from '@/components/quick-open-dialog';
 import { FileTypeIcon } from '@/components/file-type-icon';
 import { SearchLabel } from '@/components/search-label';
 import { readRecentFiles } from '@/lib/recent-work.mjs';
@@ -84,11 +85,19 @@ export function QuickOpen() {
       pendingPick.current = { query: raw, project };
     }
   };
-  return <CommandDialog open={open} onOpenChange={(value) => { if (!value) pendingPick.current = null; setOpen(value); }} onOpenAutoFocus={(event) => { event.preventDefault(); input.current?.focus({ preventScroll: true }); }} onCloseAutoFocus={(event) => {
+  return <QuickOpenDialog open={open} onOpenChange={(value) => { if (!value) pendingPick.current = null; setOpen(value); }} onOpenAutoFocus={(event) => { event.preventDefault(); input.current?.focus({ preventScroll: true }); }} onCloseAutoFocus={(event) => {
     event.preventDefault();
     if (opened.current) { input.current?.focus({ preventScroll: true }); return; }
     const previous = returnFocus.current; returnFocus.current = null;
     const current = document.activeElement;
+    const modal = [...document.querySelectorAll<HTMLElement>('[role="dialog"][data-state="open"]:not(.file-picker), [role="alertdialog"][data-state="open"]')].at(-1);
+    if (modal) {
+      // Its initial focus attempt may have happened while this native modal
+      // still made the rest of the page inert. Preserve an existing owner, or
+      // give the newer dialog a safe focus target now that inertness is gone.
+      if (!current || current === document.body || current === document.documentElement || current.closest('.file-picker')) modal.focus({ preventScroll: true });
+      return;
+    }
     // A newer action (for example Find in Files) already owns focus.
     if (current instanceof HTMLElement && current !== document.body && current !== document.documentElement && !current.closest('.file-picker')) return;
     if (selected.current) {
@@ -114,5 +123,5 @@ export function QuickOpen() {
       })}</CommandGroup>}
     </CommandList>
     <div className="sr-only"><span>↑ ↓ to navigate · Enter to open</span><span>Esc to close</span></div>
-  </CommandDialog>;
+  </QuickOpenDialog>;
 }

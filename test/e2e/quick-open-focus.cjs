@@ -62,8 +62,43 @@ app.on('browser-window-created',(_event,win)=>{
    assert.equal(await run(`document.activeElement===document.querySelector('.file-picker input')`),true,'late file loading cannot steal a new picker focus');
    assert.equal(await run(`document.querySelector('.file-picker input').value`),'bench');key('Escape');
    await until(()=>run(`!!document.activeElement?.closest('.cm-editor')`),'cancel restores replacement editor focus');
+   await show();await query('bench0001.ts');
+   await run(`(()=>{const d=document.querySelector('.file-picker');d.close();d.showModal();d.querySelector('input').focus();})()`);await delay(40);
+   assert.equal(await run(`!!document.querySelector('.file-picker:modal')`),true,'a queued close event cannot dismiss an already reopened native modal');
+   assert.equal(await run(`document.querySelector('.file-picker').matches(':modal')`),true,'the browser owns modal inertness');
+   await run(`document.querySelector('[data-editor-group][data-focused="true"] .cm-content').focus();true`);
+   assert.equal(await run(`document.activeElement===document.querySelector('.file-picker input')`),true,'background source cannot receive focus while modal');
+   for(let round=0;round<12;round++){key('Tab',round<6?[]:['shift']);await delay(15);assert.equal(await run(`!!document.activeElement?.closest('.file-picker')`),true,'Tab wraps at both ends inside the modal');}
+   web.debugger.attach('1.3');
+   const {root:dom}=await web.debugger.sendCommand('DOM.getDocument',{depth:0});
+   const node=async selector=>(await web.debugger.sendCommand('DOM.querySelector',{nodeId:dom.nodeId,selector})).nodeId;
+   const modalAX=await web.debugger.sendCommand('Accessibility.getPartialAXTree',{nodeId:await node('.file-picker'),fetchRelatives:false});
+   assert.ok(modalAX.nodes.some(item=>item.role?.value==='dialog'&&item.name?.value==='Quick Open'&&item.properties?.some(property=>property.name==='modal'&&property.value.value===true)),'accessibility tree exposes a named modal');
+   const backgroundAX=await web.debugger.sendCommand('Accessibility.getPartialAXTree',{nodeId:await node('[data-editor-group][data-focused="true"] .cm-content'),fetchRelatives:false});
+   assert.equal(backgroundAX.nodes[0].ignored,true,'background editor is excluded from the modal accessibility tree');web.debugger.detach();
+   fs.writeFileSync('/tmp/tributary-native-picker-desktop.png',(await web.capturePage()).toPNG());
+   web.sendInputEvent({type:'mouseDown',x:4,y:300,button:'left',clickCount:1,modifiers:['control']});web.sendInputEvent({type:'mouseUp',x:4,y:300,button:'left',clickCount:1,modifiers:['control']});await delay(30);
+   assert.equal(await run(`!!document.querySelector('.file-picker')`),true,'Control-click backdrop preserves context-menu behavior');
+   // Dragging out from inside must not count as a backdrop press.
+   const box=await run(`(()=>{const b=document.querySelector('.file-picker input').getBoundingClientRect();return{x:b.x+20,y:b.y+10};})()`);
+   web.sendInputEvent({type:'mouseDown',...box,button:'left',clickCount:1});web.sendInputEvent({type:'mouseMove',x:4,y:300});web.sendInputEvent({type:'mouseUp',x:4,y:300,button:'left',clickCount:1});await delay(30);
+   assert.equal(await run(`!!document.querySelector('.file-picker')`),true,'dragging outside does not dismiss');
+   win.setSize(440,760);await delay(150);
+   const narrow=await run(`(()=>{const b=document.querySelector('.file-picker').getBoundingClientRect();return{left:b.left,right:b.right,width:b.width,viewport:innerWidth};})()`);
+   assert.ok(narrow.left>=0&&narrow.right<=narrow.viewport&&narrow.width<=600,'picker remains within a narrow viewport');
+   fs.writeFileSync('/tmp/tributary-native-picker-narrow.png',(await web.capturePage()).toPNG());
+   web.sendInputEvent({type:'mouseDown',x:4,y:300,button:'left',clickCount:1});web.sendInputEvent({type:'mouseUp',x:4,y:300,button:'left',clickCount:1});
+   await until(()=>run(`!document.querySelector('.file-picker')&&!!document.activeElement?.closest('.cm-editor')`),'backdrop press closes and restores focus');
+   win.setSize(1280,840);await delay(150);await show();
+   // Simulate a new application dialog arriving while a picker is open.
+   await run(`document.querySelector('button[aria-label="Settings"]').click();true`);
+   await until(()=>run(`!!document.querySelector('[aria-label="Find a settings section"]')`),'newer settings dialog mounts');
+   await run(`document.querySelector('[aria-label="Close Quick Open"]').click();true`);
+   await until(()=>run(`document.activeElement?.closest('[role="dialog"]')?.querySelector('[aria-label="Find a settings section"]')`),'newer modal owns focus after picker closes');
+   await delay(50);assert.equal(await run(`!!document.activeElement?.closest('[role="dialog"]')?.querySelector('[aria-label="Find a settings section"]')`),true,'picker cleanup cannot steal newer modal focus');
+   await run(`document.querySelector('[aria-label="Close settings"]').click();true`);
    for(const [file,text] of Object.entries(contents))assert.equal(fs.readFileSync(path.join(project,file),'utf8'),text);
-   console.log(JSON.stringify({passed:true,reopenCycles:18,checks:['Immediate shortcut/character burst stays in Quick Open without waiting for a frame','Early Enter waits for current results rather than opening an old recent file','Closing, changing the query and no matches cannot consume a stale queued selection','First visible Quick Open frame owns input focus','Fast reopen never sends the first character into source','Selected files receive keyboard focus','Cancellation restores editor focus','Late file reads cannot steal an open picker focus','No fixture file changes'],scope:'Linux source Electron, native input insertion, actual CodeMirror, isolated real files and delayed search/read; no provider or installer claim.'}));
+   console.log(JSON.stringify({passed:true,reopenCycles:18,checks:['Immediate shortcut/character burst stays in Quick Open without waiting for a frame','Early Enter waits for current results rather than opening an old recent file','Closing, changing the query and no matches cannot consume a stale queued selection','First visible Quick Open frame owns input focus','Fast reopen never sends the first character into source','Selected files receive keyboard focus','Cancellation restores editor focus','Late file reads cannot steal an open picker focus','Queued native close cannot dismiss an already reopened modal','Browser modal inertness and Tab containment','Named modal and ignored background in Chromium accessibility tree','Desktop and narrow geometry captured','Drag-out preserves picker; backdrop press closes it','Backdrop Control-click preserves context-menu behavior','Newer application modal keeps focus','No fixture file changes'],scope:'Linux source Electron, native keyboard/mouse input, Chromium accessibility tree, actual CodeMirror, isolated real files and delayed search/read; no provider, screen-reader or installer claim.'}));
    clearTimeout(deadline);app.quit();
  })().catch(async error=>{console.error(error.stack);fs.writeFileSync('/tmp/tributary-picker-focus-failure.png',(await web.capturePage()).toPNG());app.exit(1);});});
 });

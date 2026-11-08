@@ -6,8 +6,10 @@ import argparse, hashlib, importlib.util, json, os, platform, signal, statistics
 from pathlib import Path
 spec = importlib.util.spec_from_file_location('x11_input', Path(__file__).with_name('x11-input.py'))
 x11 = importlib.util.module_from_spec(spec); spec.loader.exec_module(x11)
-parser = argparse.ArgumentParser(); parser.add_argument('--output', required=True); parser.add_argument('--runs', type=int, default=3); parser.add_argument('--files', type=int, default=20000); parser.add_argument('--apps', default='tributary,code,zed'); args = parser.parse_args()
+parser = argparse.ArgumentParser(); parser.add_argument('--output', required=True); parser.add_argument('--runs', type=int, default=3); parser.add_argument('--files', type=int, default=20000); parser.add_argument('--apps', default='tributary,code,zed'); parser.add_argument('--tributary-ui-root'); args = parser.parse_args()
 repo = Path(__file__).resolve().parents[2]; root = Path(tempfile.mkdtemp(prefix='tributary-editor-comparison-')); project = root/'project'; project.mkdir()
+ui_root = Path(args.tributary_ui_root).resolve() if args.tributary_ui_root else repo/'ui/dist'
+if not (ui_root/'index.html').is_file(): raise ValueError('Missing comparison UI build')
 report = {'complete':False,'date':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'runs':[],'rejected':[],'temporaryDirectory':str(root),'method': 'External X11 keystrokes, same 1280x900 display and generated project committed into a clean Git working tree. Isolated app data/config/cache/home and unavailable session bus; no installed third-party extensions or AI generation. VS Code AI features and its TypeScript language-feature extension are disabled; Zed external language servers are disabled; Tributary agent discovery is disabled. Built-in language work and rendering backends differ. Warm OS page cache, 20 seconds settling after initial buffer verification. Picker visibility is observed through a changed top-center display region, then its exact query is confirmed through clipboard and its image is settled in 120ms polling intervals. Timings include these verification/settling costs; they are deliberately coarse workflow observations. After Enter, actual keyboard focus must transfer to the source without a mouse click that could dismiss a pending asynchronous selection. Completion is checked by copying the actual source buffer/selected line through X11 clipboard, polling at 50ms with additional asynchronous clipboard overhead. These are coarse end-to-end navigation workflow observations, not frame/paint, exact input latency, cold startup, production p95 or semantic LSP throughput. Xvfb software graphics: Zed uses emulated Vulkan and warns of poor performance; this is not a hardware-GPU ranking. No debugger, profiler or forced GC. Failed small pilots are excluded; every final cohort case must pass. Large-file completion requires exact first and final nonempty source lines after native EOF navigation. Repeated same-buffer verification controls are recorded without subtracting them. App-tree PSS is sampled separately after work; reparented/external helpers, display-server allocations and GPU VRAM are outside its boundary.'}
 def write_report(): Path(args.output).write_text(json.dumps(report,indent=2)+'\n')
 def command_version(command):
@@ -22,10 +24,10 @@ def fingerprint():
     return {str(file.relative_to(repo)):hashlib.sha256(file.read_bytes()).hexdigest() for file in files}
 def build_hash():
     digest=hashlib.sha256()
-    for file in sorted((repo/'ui/dist').rglob('*')):
-        if file.is_file():digest.update(str(file.relative_to(repo/'ui/dist')).encode()+b'\0'+hashlib.sha256(file.read_bytes()).digest())
+    for file in sorted(ui_root.rglob('*')):
+        if file.is_file():digest.update(str(file.relative_to(ui_root)).encode()+b'\0'+hashlib.sha256(file.read_bytes()).digest())
     return digest.hexdigest()
-report['sources']=fingerprint();report['uiBuildSha256']=build_hash()
+report['sources']=fingerprint();report['uiBuildSha256']=build_hash();report['uiBuildDirectory']=str(ui_root)
 
 manifest = hashlib.sha256(); fixture_bytes = 0
 for i in range(args.files):
@@ -96,7 +98,7 @@ try:
             profile=root/f'{repeat}-{appname}';profile.mkdir();env=os.environ.copy();env.pop('WAYLAND_DISPLAY',None);env.update({'XDG_CONFIG_HOME':str(profile/'config'),'XDG_DATA_HOME':str(profile/'data'),'XDG_CACHE_HOME':str(profile/'cache'),'LIBGL_ALWAYS_SOFTWARE':'1','XDG_SESSION_TYPE':'x11','HOME':str(profile/'home'),'DBUS_SESSION_BUS_ADDRESS':'unix:path=/tmp/tributary-no-session-bus'})
             (profile/'home').mkdir();configuration={'agentDiscovery':False,'layout':'editor','expanded':True,'theme':'dark'}
             if appname=='tributary':
-                env.update({'TRIBUTARY_COMPARE_PROJECT':str(project),'TRIBUTARY_COMPARE_PROFILE':str(profile/'app')});cmd=[str(repo/'node_modules/.bin/electron'),str(repo/'scripts/performance/native-comparison.cjs'),'--ozone-platform=x11']
+                env.update({'TRIBUTARY_COMPARE_PROJECT':str(project),'TRIBUTARY_COMPARE_PROFILE':str(profile/'app'),'TRIBUTARY_COMPARE_UI_ROOT':str(ui_root)});configuration['uiBuildDirectory']=str(ui_root);cmd=[str(repo/'node_modules/.bin/electron'),str(repo/'scripts/performance/native-comparison.cjs'),'--ozone-platform=x11']
             elif appname=='code':
                 settings=profile/'app/User/settings.json';settings.parent.mkdir(parents=True);settings.write_text(json.dumps({'security.workspace.trust.enabled':False,'telemetry.telemetryLevel':'off','update.mode':'none','workbench.startupEditor':'none','extensions.autoUpdate':False,'editor.formatOnSave':False,'window.titleBarStyle':'custom','editor.minimap.enabled':False,'chat.disableAIFeatures':True,'workbench.colorTheme':'Default Dark Modern'}))
                 cmd=['/usr/share/code/code','--user-data-dir',str(profile/'app'),'--extensions-dir',str(profile/'extensions'),'--disable-extensions','--disable-extension','vscode.typescript-language-features','--skip-welcome','--disable-workspace-trust','--new-window','--ozone-platform=x11',str(project),str(project/'bench0000.ts')]
