@@ -37,6 +37,7 @@ export function AppUpdatesCard() {
     : state?.status === 'current' ? 'You’re up to date.'
     : state?.status === 'available' ? `Version ${state.latestVersion} is available.`
     : state?.status === 'downloading' ? 'Downloading your update…'
+    : state?.status === 'error' ? state.latestVersion ? `Version ${state.latestVersion} is available. Try the update again.` : 'Couldn’t check for updates.'
     : state?.status === 'ready' ? state.installerOpened ? state.appImage ? 'Replace your current AppImage with the verified download after closing Tributary.' : 'Installer opened. Follow its instructions, then reopen Tributary.' : 'Download verified. Ready to install.'
     : 'Check for a newer version of Tributary.';
   return <section aria-label="App updates" className="space-y-4 rounded-lg border p-4 text-sm">
@@ -51,7 +52,7 @@ export function AppUpdatesCard() {
     </div>
     {(error || state?.error) && <p role="alert" className="text-xs leading-5 text-destructive">{error || state?.error}</p>}
     <div className="flex flex-wrap gap-2">
-      {!!state?.latestVersion && ['available', 'error'].includes(state.status) && <Button size="sm" disabled={busy} onClick={() => void action('downloadUpdate')}><Download />Download update</Button>}
+      {!!state?.latestVersion && ['available', 'error'].includes(state.status) && <Button size="sm" disabled={busy} onClick={() => void action('downloadUpdate')}><Download />{state.status === 'error' ? 'Retry download' : 'Download update'}</Button>}
       {state?.status === 'ready' && <AlertDialog><AlertDialogTrigger asChild><Button size="sm" disabled={busy}>{state.appImage ? 'Show downloaded AppImage' : 'Open installer'}</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Install Tributary {state.latestVersion}?</AlertDialogTitle><AlertDialogDescription>Save your editor changes and stop running work first. {state.appImage ? 'We’ll show the verified AppImage so you can replace the current one after closing Tributary.' : 'Your system installer will open. Follow its instructions to update, then reopen Tributary.'} Tributary will not close automatically.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => void action('installUpdate')}>Continue</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>}
       <Button size="sm" variant="ghost" onClick={() => void s.hub.call('openUpdateDownloads').catch(() => toast.error('Could not open release downloads'))}>Release downloads<ExternalLink /></Button>
     </div>

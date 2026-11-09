@@ -129,3 +129,63 @@ test('authentication and transport failures have useful redacted errors', async 
   updater.fetch = async () => { throw new Error('fetch failed Authorization: Bearer this_is_a_secret'); };
   await updater.check(); assert.ok(!JSON.stringify(updater.state()).includes('this_is_a_secret'));
 });
+
+test('Chromium update transport exposes one redirect and strips API credentials before the next request', async t => {
+  const { EventEmitter } = require('node:events'); const { PassThrough } = require('node:stream');
+  const { createUpdateFetch } = require('../desktop/update-fetch'); const calls = [];
+  const net = { request(options) {
+    const request = new EventEmitter(); calls.push({ options, request });
+    request.abort = () => { request.aborted = true; };
+    request.end = () => queueMicrotask(() => {
+      if (calls.length === 1) request.emit('redirect', 302, 'GET', 'https://release-assets.githubusercontent.com/installer', {});
+      else { const response = new PassThrough(); Object.assign(response, { statusCode: 200, headers: { 'content-type': ['application/octet-stream'] }, complete: true }); request.emit('response', response); response.end(bytes); }
+    });
+    return request;
+  } };
+  const { updater } = fixture(t, { fetch: createUpdateFetch(net) });
+  const response = await updater.request('https://api.github.com/repos/DarkWorldCoder/tributary/releases/assets/10', 'private-token', new AbortController().signal, 'application/octet-stream');
+  assert.deepEqual(Buffer.from(await response.arrayBuffer()), bytes);
+  assert.equal(calls.length, 2); assert.equal(calls[0].request.aborted, true);
+  assert.equal(calls[0].options.headers.Authorization, 'Bearer private-token');
+  assert.equal(calls[1].options.headers.Authorization, undefined);
+  assert.equal(calls[1].options.redirect, 'manual'); assert.equal(calls[1].options.credentials, 'omit');
+});
+
+test('Chromium update transport cancels both a pending request and a streamed response', async () => {
+  const { EventEmitter } = require('node:events'); const { PassThrough } = require('node:stream');
+  const { createUpdateFetch } = require('../desktop/update-fetch');
+  for (const streaming of [false, true]) {
+    let request, incoming;
+    const fetch = createUpdateFetch({ request() {
+      request = new EventEmitter(); request.abort = () => { request.aborted = true; };
+      request.end = () => { if (streaming) queueMicrotask(() => { incoming = new PassThrough(); Object.assign(incoming, { statusCode: 200, headers: {} }); request.emit('response', incoming); incoming.write('partial'); }); };
+      return request;
+    } });
+    const controller = new AbortController(); const result = fetch('https://github.com/installer', { signal: controller.signal });
+    if (streaming) {
+      const response = await result; const reading = response.arrayBuffer(); controller.abort();
+      await assert.rejects(reading, { name: 'AbortError' }); assert.equal(incoming.destroyed, true);
+    } else { controller.abort(); await assert.rejects(result, { name: 'AbortError' }); }
+    assert.equal(request.aborted, true);
+  }
+});
+
+test('Chromium installer buffering is bounded in bytes while the disk consumer is paused', async () => {
+  const { EventEmitter } = require('node:events'); const { Readable } = require('node:stream');
+  const { createUpdateFetch } = require('../desktop/update-fetch'); let produced = 0, request;
+  const total = 4 * 1024 * 1024;
+  const fetch = createUpdateFetch({ request() {
+    request = new EventEmitter(); request.abort = () => {};
+    request.end = () => queueMicrotask(() => {
+      const response = new Readable({ highWaterMark: 16 * 1024, read() {
+        if (produced >= total) { this.push(null); return; }
+        produced += 1024; this.push(Buffer.alloc(1024));
+      } });
+      Object.assign(response, { statusCode: 200, headers: {}, complete: true }); request.emit('response', response);
+    }); return request;
+  } });
+  const response = await fetch('https://github.com/installer');
+  await new Promise(resolve => setImmediate(resolve)); await new Promise(resolve => setImmediate(resolve));
+  assert.ok(produced <= 96 * 1024, `Paused consumer buffered ${produced} bytes`);
+  assert.equal((await response.arrayBuffer()).byteLength, total);
+});

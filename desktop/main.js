@@ -406,7 +406,7 @@ app.whenReady().then(async () => {
   Menu.setApplicationMenu(process.platform === 'darwin' ? Menu.buildFromTemplate([{ role: 'appMenu', submenu: [{ role: 'about' }, { label: 'Check for Updates…', click: () => send('show-updates') }, { type: 'separator' }, { role: 'services' }, { type: 'separator' }, { role: 'hide' }, { role: 'hideOthers' }, { role: 'unhide' }, { type: 'separator' }, { role: 'quit' }] }, { role: 'editMenu' }, { role: 'viewMenu' }, { role: 'windowMenu' }]) : null);
   const dataDir = app.getPath('userData');
   hub = new Hub({ dataDir, secrets: new DesktopSecrets(path.join(dataDir, 'secrets.json'), safeStorage), approvals: true, historyCache: true });
-  updates = new (require('./updates').AppUpdates)({ app, secrets: hub.secrets, fetch: net.fetch.bind(net), shell,
+  updates = new (require('./updates').AppUpdates)({ app, secrets: hub.secrets, fetch: require('./update-fetch').createUpdateFetch(net), shell,
     beforeInstall: () => {
       if (hub.running.size || [...hub.projectChecks.jobs.values()].some((job) => job.child) || [...(hub.debugger?.sessions?.values() || [])].some((session) => ['starting', 'running', 'paused'].includes(session.status)) || [...previewServers.jobs.values()].some((job) => job.child)) throw new Error('Stop agents, checks, debugging and preview servers before opening the installer.');
       if (lanHost?.state().running) throw new Error('Stop hosting the project room before opening the installer.');
