@@ -869,7 +869,7 @@ class Hub extends EventEmitter {
     if (automatic === true) return (await this.prepareEditorSave(dir, rel, text)).text;
     return (await require('./editor-actions').editorAction(dir, rel, text, { trusted: this.qaTrusted(dir), fix: value => this.eslintTools.fix(dir, rel, value) })).text;
   }
-  get projectFormatter() { return this._projectFormatter ||= new (require('./project-format').ProjectFormatter)({ trusted: (dir) => this.isWorkspace(dir) && this.qaTrusted(dir), write: (dir, rel, text, mtime) => this.writeFile(dir, rel, text, mtime) }); }
+  get projectFormatter() { return this._projectFormatter ||= this.store.projectFormatter = new (require('./project-format').ProjectFormatter)({ trusted: (dir) => this.isWorkspace(dir) && this.qaTrusted(dir), write: (dir, rel, text, mtime) => this.writeFile(dir, rel, text, mtime) }); }
   previewFormat(dir, exclude) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.projectFormatter.preview(dir, exclude); }
   formatDiff(dir, token, rel) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.projectFormatter.diff(dir, token, rel); }
   applyFormat(dir, token, selected, exclude, undo) { if (!this.isWorkspace(dir)) throw new Error('Unknown project'); return this.projectFormatter.apply(dir, token, selected, exclude, undo === true); }

@@ -47,7 +47,7 @@ class Store {
   isLoaded() { return true; }
   readThread(t) { return t; }
   summary(t) { const m = t.messages || []; for (let i = m.length - 1; i >= 0; i--) if (m[i].role === 'assistant') return { count: m.length, last: statusSummary(m[i]) }; return { count: m.length, last: null }; }
-  close() { if (this.timer) this.save(true); }
+  close() { this.projectFormatter?.close(); if (this.timer) this.save(true); }
 }
 
 const SEP = '\u0000';
@@ -343,6 +343,7 @@ class SqliteStore {
 
   close() {
     if (this.closed) return;
+    this.projectFormatter?.close();
     this.historyCache?.close();
     if (this.poll) clearInterval(this.poll);
     this.poll = null;

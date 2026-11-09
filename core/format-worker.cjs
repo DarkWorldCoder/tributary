@@ -55,7 +55,9 @@ process.stdin.on('end', async () => {
         const statementLines = baseline.split(/\r?\n/).filter((line) => /^\s*(?:const|let|var|return|throw|import|export)\b/.test(line));
         const semi = !statementLines.length || statementLines.filter((line) => /;\s*$/.test(line)).length >= statementLines.length / 2;
         const inferred = configFile ? {} : { useTabs: indent.startsWith('\t'), tabWidth: indent.length === 4 ? 4 : 2, singleQuote: single > quoteSample.length / 2, semi,
-          jsxSingleQuote: /[\w:-]+='[^']*'/.test(baseline) && !/[\w:-]+="[^"]*"/.test(baseline), trailingComma: /,\s*\r?\n\s*\)/.test(baseline) ? 'all' : /,\s*\r?\n\s*[}\]]/.test(baseline) ? 'es5' : 'none' };
+          // Only the character before '=' is needed to recognize an attribute.
+          // Re-scanning every suffix of a long name/comment is quadratic.
+          jsxSingleQuote: /[\w:-]='[^']*'/.test(baseline) && !/[\w:-]="[^"]*"/.test(baseline), trailingComma: /,\s*\r?\n\s*\)/.test(baseline) ? 'all' : /,\s*\r?\n\s*[}\]]/.test(baseline) ? 'es5' : 'none' };
         const text = await prettier.format(file.text, { filepath: filename, endOfLine: baseline.includes('\r\n') ? 'crlf' : 'lf', ...inferred, ...options });
         results.push({ rel: file.rel, text });
       } catch (error) { results.push({ rel: file.rel, status: 'error', message: String(error.message).slice(0, 300) }); }

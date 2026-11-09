@@ -51,10 +51,28 @@ function unified(before, after, rel) {
   ].join('\n');
 }
 class ProjectFormatter {
-  constructor({ trusted, write }) { this.trusted = trusted; this.write = write; this.plans = new Map(); this.busy = new Set(); }
-  prune() { for (const [id, plan] of this.plans) if (Date.now() - plan.created > TTL) this.plans.delete(id); }
+  constructor({ trusted, write }) { this.trusted = trusted; this.write = write; this.plans = new Map(); this.busy = new Set(); this.timer = null; this.expiresAt = null; this.closed = false; }
+  close() { this.closed = true; clearTimeout(this.timer); this.timer = null; this.expiresAt = null; this.plans.clear(); }
+  prune() {
+    const now = Date.now();
+    for (const [id, plan] of this.plans) if (now - plan.created > TTL) this.plans.delete(id);
+    this.scheduleExpiry(now);
+  }
+  scheduleExpiry(now = Date.now()) {
+    let next = Infinity;
+    for (const plan of this.plans.values()) next = Math.min(next, plan.created + TTL + 1);
+    if (this.timer && this.expiresAt === next) return;
+    clearTimeout(this.timer); this.timer = null; this.expiresAt = null;
+    if (this.closed || !Number.isFinite(next)) return;
+    this.expiresAt = next;
+    // Expired previews contain both source revisions. Release them even when
+    // the user never formats again; a timer must not keep the app/CLI alive.
+    this.timer = setTimeout(() => { this.timer = null; this.expiresAt = null; this.prune(); }, Math.max(1, next - now));
+    this.timer.unref?.();
+  }
   plan(root, token) { this.prune(); const plan = this.plans.get(token); if (!plan || plan.root !== root) throw new Error('Formatting preview expired. Scan again.'); return plan; }
   async preview(root, exclude = []) {
+    if (this.closed) throw new Error('Project formatter is closed.');
     if (!Array.isArray(exclude) || exclude.length > 2000 || exclude.some((rel) => typeof rel !== 'string')) throw new Error('Invalid unsaved file list.');
     if (!this.trusted(root)) throw new Error('Trust this project before formatting all files.');
     this.prune(); if (this.busy.has(root)) throw new Error('A formatting scan is already running for this project.'); this.busy.add(root);
@@ -87,7 +105,8 @@ class ProjectFormatter {
       while (this.plans.size >= 2) this.plans.delete(this.plans.keys().next().value);
       const config = [];
       for (const source of result.sources || []) { const filename = await fsp.realpath(source); if ((await fsp.stat(filename)).size > 1024 * 1024) throw new Error('Formatting config is too large.'); config.push({ filename, hash: hash(await fsp.readFile(filename)) }); }
-      const token = crypto.randomUUID(); this.plans.set(token, { root, created: Date.now(), changed, config, applied: new Map() });
+      if (this.closed) throw new Error('Project formatter is closed.');
+      const token = crypto.randomUUID(); this.plans.set(token, { root, created: Date.now(), changed, config, applied: new Map() }); this.scheduleExpiry();
       return { token, rows, limited, scanned: files.length };
     } finally { this.busy.delete(root); }
   }

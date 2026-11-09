@@ -133,6 +133,8 @@ jobs:
         if: runner.os != 'Windows'
         run: node native/tributary-engine/transport-parity.cjs
       - run: npm run build:ui:clean
+      - name: Verify owned native and compatibility runtime lifecycle
+        run: node --test test/runtime-owner.test.cjs test/local-engine.test.js
       - name: Package preview installers
         run: npx electron-builder --${{ matrix.platform }} --${{ matrix.arch }} --publish never
         env:
@@ -143,7 +145,7 @@ jobs:
         with:
           name: tributary-${{ matrix.platform }}-${{ matrix.arch }}
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 1
           compression-level: 0
           path: |
             release/*.dmg

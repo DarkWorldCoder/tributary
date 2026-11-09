@@ -8,6 +8,92 @@ const put = (root, rel, text) => { fs.mkdirSync(path.dirname(path.join(root, rel
 const read = (root, rel) => fs.readFileSync(path.join(root, rel), 'utf8');
 const workspace = () => { const root = mkdtemp('format-project'); execFileSync('git', ['init', '-q', root]); return root; };
 const formatter = () => new ProjectFormatter({ trusted: () => true, write: async (root, rel, text, mtime) => { assert.equal(fs.statSync(path.join(root, rel)).mtimeMs, mtime); fs.writeFileSync(path.join(root, rel), text); } });
+test('formatting previews release expired source revisions without another formatter call', async (t) => {
+  t.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: 1000000 });
+  const root = workspace(); put(root, 'main.js', 'const value=1;');
+  const fmt = formatter(); const preview = await fmt.preview(root);
+  assert.equal(fmt.plans.size, 1); assert.match(fmt.diff(root, preview.token, 'main.js'), /\+const value = 1;/);
+  t.mock.timers.tick(600000);
+  // Preserve the existing inclusive ten-minute validity boundary. Reading the
+  // diff does not renew a preview's lifetime or shorten its undo window.
+  assert.match(fmt.diff(root, preview.token, 'main.js'), /\+const value = 1;/);
+  t.mock.timers.tick(1);
+  assert.equal(fmt.plans.size, 0); assert.equal(fmt.timer, null);
+  assert.throws(() => fmt.diff(root, preview.token, 'main.js'), /expired/);
+  assert.equal(read(root, 'main.js'), 'const value=1;');
+});
+test('expiring one formatting project preserves the other project and its undo', async (t) => {
+  t.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: 1000000 });
+  const first = workspace(); const second = workspace();
+  put(first, 'main.js', 'const first=1;'); put(second, 'main.js', 'const second=2;');
+  const fmt = formatter(); const one = await fmt.preview(first);
+  t.mock.timers.tick(1000); const two = await fmt.preview(second);
+  await fmt.apply(second, two.token, ['main.js']); assert.match(read(second, 'main.js'), /const second = 2;/);
+  t.mock.timers.tick(599001);
+  assert.equal(fmt.plans.size, 1); assert.throws(() => fmt.diff(first, one.token, 'main.js'), /expired/);
+  assert.equal((await fmt.apply(second, two.token, ['main.js'], [], true)).rows[0].status, 'restored');
+  assert.equal(read(second, 'main.js'), 'const second=2;');
+  t.mock.timers.tick(1000); assert.equal(fmt.plans.size, 0); assert.equal(fmt.timer, null);
+});
+test('replacement and capacity eviction do not let an old expiry delete a newer preview', async (t) => {
+  t.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: 1000000 });
+  const roots = Array.from({ length: 3 }, () => { const root = workspace(); put(root, 'main.js', 'const value=1;'); return root; });
+  const fmt = formatter(); const old = await fmt.preview(roots[0]);
+  t.mock.timers.tick(1000); const replacement = await fmt.preview(roots[0]);
+  assert.throws(() => fmt.diff(roots[0], old.token, 'main.js'), /expired/);
+  t.mock.timers.tick(1000); await fmt.preview(roots[1]);
+  t.mock.timers.tick(598001); assert.match(fmt.diff(roots[0], replacement.token, 'main.js'), /\+const value = 1;/);
+  const third = await fmt.preview(roots[2]);
+  assert.equal(fmt.plans.size, 2); assert.throws(() => fmt.diff(roots[0], replacement.token, 'main.js'), /expired/);
+  t.mock.timers.tick(2000); assert.equal(fmt.plans.size, 1);
+  assert.match(fmt.diff(roots[2], third.token, 'main.js'), /\+const value = 1;/);
+  t.mock.timers.tick(598001); assert.equal(fmt.plans.size, 0); assert.equal(fmt.timer, null);
+});
+test('an already admitted formatting write settles safely across preview expiry', async (t) => {
+  t.mock.timers.enable({ apis: ['Date', 'setTimeout'], now: 1000000 });
+  const root = workspace(); put(root, 'main.js', 'const value=1;');
+  let begin, finish; const writing = new Promise(resolve => { begin = resolve; }); const gate = new Promise(resolve => { finish = resolve; });
+  const fmt = new ProjectFormatter({ trusted: () => true, write: async (root, rel, text) => { begin(); await gate; put(root, rel, text); } });
+  const preview = await fmt.preview(root); const applying = fmt.apply(root, preview.token, ['main.js']); await writing;
+  t.mock.timers.tick(600001); assert.equal(fmt.plans.size, 0);
+  finish(); assert.equal((await applying).rows[0].status, 'formatted');
+  assert.match(read(root, 'main.js'), /const value = 1;/); assert.equal(fmt.plans.size, 0);
+  await assert.rejects(fmt.apply(root, preview.token, ['main.js'], [], true), /expired/);
+});
+test('a formatting preview expiry timer does not keep a CLI process alive', () => {
+  const root = workspace(); put(root, 'main.js', 'const value=1;');
+  const script = `const {ProjectFormatter}=require(${JSON.stringify(require.resolve('../core/project-format'))});new ProjectFormatter({trusted:()=>true,write:async()=>{}}).preview(${JSON.stringify(root)}).then(result=>console.log(result.rows[0].status)).catch(error=>{console.error(error);process.exitCode=1;});`;
+  assert.equal(execFileSync(process.execPath, ['-e', script], { timeout: 10000, encoding: 'utf8' }).trim(), 'changed');
+});
+test('closing the Hub store releases formatting previews and their expiry owner', async (t) => {
+  const root = workspace(); put(root, 'main.js', 'const value=1;');
+  const hub = new Hub({ dataDir: mkdtemp('format-close-data'), home: mkdtemp('format-close-home'), secrets: new MemorySecrets() });
+  t.after(() => { hub.fileWatches.close(); hub.store.close(); });
+  hub.addProject(root); await hub.previewFormat(root);
+  const fmt = hub.projectFormatter; assert.equal(fmt.plans.size, 1); assert.ok(fmt.timer); assert.equal(fmt.timer.hasRef(), false);
+  hub.store.close(); hub.store.close();
+  assert.equal(fmt.plans.size, 0); assert.equal(fmt.timer, null);
+  await assert.rejects(fmt.preview(root), /closed/);
+});
+test('JSON fallback store close also releases formatter cache ownership', async () => {
+  const { Store } = require('../core/store'); const root = workspace(); put(root, 'main.js', 'const value=1;');
+  const fmt = formatter(); await fmt.preview(root);
+  const store = new Store(path.join(mkdtemp('format-json-data'), 'hub.json'), { threads: [] }); store.projectFormatter = fmt;
+  store.close(); assert.equal(fmt.plans.size, 0); assert.equal(fmt.timer, null); assert.equal(fmt.closed, true);
+});
+test('a preview completing after owner close cannot recreate the cache or expiry timer', async () => {
+  const root = workspace(); put(root, 'main.js', 'const value=1;');
+  const fmt = formatter(); const pending = fmt.preview(root); fmt.close();
+  await assert.rejects(pending, /closed/); assert.equal(fmt.plans.size, 0); assert.equal(fmt.timer, null); assert.equal(fmt.busy.size, 0);
+});
+test('fallback JSX quote detection handles long source tokens and preserves attribute quote style', async () => {
+  const root = workspace(); const comment = '// ' + 'A'.repeat(512 * 1024) + '\n';
+  for (const [name, attribute, expected] of [['single', "data-long-name='hello'", "data-long-name='hello'"], ['double', 'xml:lang="hello"', 'xml:lang="hello"'], ['mixed', "data-name='hello' title=\"world\"", 'data-name="hello" title="world"']]) {
+    const rel = name + '.jsx'; const text = comment + `const element=<div ${attribute}/>;\n`; put(root, rel, text);
+    const formatted = await formatProjectSource(root, rel, text, true);
+    assert.ok(formatted.startsWith(comment)); assert.ok(formatted.includes(expected)); assert.equal(read(root, rel), text);
+  }
+});
 test('formatting respects project configuration, overrides, EditorConfig and existing line endings', async () => {
   const root = workspace(); put(root, '.prettierrc.json', JSON.stringify({ singleQuote: true, semi: false, overrides: [{ files: '*.ts', options: { tabWidth: 4 } }] }));
   put(root, '.editorconfig', 'root = true\n[*]\nindent_style = space\nindent_size = 2\nend_of_line = crlf\n');
