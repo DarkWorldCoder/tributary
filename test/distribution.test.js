@@ -2,7 +2,28 @@
 const test = require('node:test'); const assert = require('node:assert/strict');
 const fs = require('node:fs'); const os = require('node:os'); const path = require('node:path'); const crypto = require('node:crypto');
 const { releaseAssets } = require('../scripts/release-assets.cjs');
+const { execFileSync } = require('node:child_process');
+const { nativeLicenses } = require('../scripts/native-licenses.cjs');
 const pkg = require('../package.json');
+
+test('native license bytes survive a Windows-style Git checkout without weakening verification', (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-notice-checkout-')); t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const repository = path.join(dir, 'repo'); const crate = 'native/tributary-engine'; fs.mkdirSync(path.join(repository, crate), { recursive: true });
+  fs.copyFileSync(path.join(__dirname, '..', crate, 'Cargo.lock'), path.join(repository, crate, 'Cargo.lock'));
+  fs.cpSync(path.join(__dirname, '..', crate, 'licenses'), path.join(repository, crate, 'licenses'), { recursive: true });
+  const git = (...args) => execFileSync('git', ['-c', 'core.autocrlf=true', '-c', 'core.safecrlf=false', ...args], { cwd: repository, stdio: 'pipe', windowsHide: true });
+  git('init', '-q'); git('add', '--all');
+  const converted = path.join(dir, 'converted'); fs.mkdirSync(converted);
+  git('checkout-index', '--all', `--prefix=${converted.replaceAll('\\', '/')}/`);
+  assert.throws(() => nativeLicenses(path.join(converted, crate)), /Native license text changed/);
+  fs.copyFileSync(path.join(__dirname, '..', '.gitattributes'), path.join(repository, '.gitattributes')); git('add', '.gitattributes');
+  const preserved = path.join(dir, 'preserved'); fs.mkdirSync(preserved);
+  git('checkout-index', '--all', `--prefix=${preserved.replaceAll('\\', '/')}/`);
+  const notices = nativeLicenses(path.join(preserved, crate));
+  for (const file of notices.files) assert.deepEqual(fs.readFileSync(path.join(notices.root, file)), fs.readFileSync(path.join(repository, crate, 'licenses', file)));
+  const license = path.join(notices.root, 'errno-0.3.14/LICENSE-MIT'); fs.appendFileSync(license, '\nmodified');
+  assert.throws(() => nativeLicenses(path.join(preserved, crate)), /Native license text changed/);
+});
 
 test('release publication requires all six platform/architecture builds and hashes exact download bytes', (t) => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tributary-release-')); t.after(() => fs.rmSync(dir, { recursive: true, force: true }));

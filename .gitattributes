@@ -1,0 +1,2 @@
+# Native notice hashes cover the original dependency archive bytes on every OS.
+native/tributary-engine/licenses/** -text
