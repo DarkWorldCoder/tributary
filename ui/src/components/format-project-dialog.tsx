@@ -9,7 +9,14 @@ import { FileDiff } from '@/components/file-diff';
 type Row = { rel: string; status: string; message?: string };
 type Preview = { token: string; rows: Row[]; limited: boolean; scanned: number };
 type Applied = { rows: Row[]; undoable: string[] };
-export function FormatProjectDialog({ open, onOpenChange, project, getUnsaved, onApplied }: { open: boolean; onOpenChange: (open: boolean) => void; project: string; getUnsaved: () => string[]; onApplied: () => void }) {
+type Props = { open: boolean; onOpenChange: (open: boolean) => void; project: string; getUnsaved: () => string[]; onApplied: () => void };
+export function FormatProjectDialog(props: Props) {
+  // The portal owns preview state, so closing releases it after Radix's exit/focus cleanup.
+  return <Dialog open={props.open} onOpenChange={props.onOpenChange}><DialogContent className="flex max-h-[90dvh] flex-col sm:max-w-6xl">
+    <FormatProjectContent key={props.project} {...props} />
+  </DialogContent></Dialog>;
+}
+function FormatProjectContent({ open, onOpenChange, project, getUnsaved, onApplied }: Props) {
   const s = useStore(); const callbacks = React.useRef({ getUnsaved, onApplied }); callbacks.current = { getUnsaved, onApplied };
   const generation = React.useRef(0); const [preview, setPreview] = React.useState<Preview | null>(null);
   const [selected, setSelected] = React.useState<string[]>([]); const [active, setActive] = React.useState(''); const [diff, setDiff] = React.useState<string | null>(null);
@@ -31,16 +38,19 @@ export function FormatProjectDialog({ open, onOpenChange, project, getUnsaved, o
   }, [open, preview, active, project, s.hub]);
   const apply = async (undo = false) => {
     if (!preview || busy) return; setBusy(true); setError('');
+    const id = generation.current; const didApply = callbacks.current.onApplied;
     try {
       const result = await s.hub.call<Applied>('applyFormat', project, preview.token, undo ? applied?.undoable || [] : selected, callbacks.current.getUnsaved(), undo);
-      setApplied(result); setSelected([]); callbacks.current.onApplied();
-    } catch (error) { setError((error as Error).message); }
-    finally { setBusy(false); }
+      // An admitted write still refreshes its original project if this dialog closes or changes.
+      didApply();
+      if (id === generation.current) { setApplied(result); setSelected([]); }
+    } catch (error) { if (id === generation.current) setError((error as Error).message); }
+    finally { if (id === generation.current) setBusy(false); }
   };
   const changed = preview?.rows.filter((row) => row.status === 'changed') || [];
   const unchanged = preview?.rows.filter((row) => row.status === 'unchanged').length || 0;
   const skipped = preview?.rows.filter((row) => !['changed', 'unchanged'].includes(row.status)) || [];
-  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="flex max-h-[90dvh] flex-col sm:max-w-6xl">
+  return <>
     <DialogHeader><DialogTitle>Format all files</DialogTitle><DialogDescription className="break-all">{project}</DialogDescription></DialogHeader>
     <p className="text-xs text-muted-foreground">Uses project formatting rules. Unsaved, ignored and generated files are skipped. Review before applying.</p>
     {error && <p role="alert" className="text-[13px] text-destructive">{error.replace(/^Error invoking remote method '[^']*': (Error: )?/, '')}</p>}
@@ -57,5 +67,5 @@ export function FormatProjectDialog({ open, onOpenChange, project, getUnsaved, o
     </>}
     {applied && <div role="status" className="text-[13px]"><p>{applied.rows.filter((row) => row.status === 'formatted').length} formatted · {applied.rows.filter((row) => row.status === 'restored').length} restored · {applied.rows.filter((row) => ['error', 'conflict'].includes(row.status)).length} kept or unavailable</p>{applied.rows.filter((row) => row.message).map((row) => <p key={row.rel} className="mt-1 text-xs text-muted-foreground">{row.rel}: {row.message}</p>)}</div>}
     <DialogFooter className="flex-wrap gap-2"><Button variant="ghost" disabled={busy} onClick={() => void scan()}><RefreshCw />Rescan</Button>{!!applied?.undoable.length && <Button variant="outline" disabled={busy} onClick={() => void apply(true)}><Undo2 />Undo formatting</Button>}<Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button><Button disabled={busy || !selected.length || !!applied} onClick={() => void apply()}><WandSparkles />{busy && preview ? 'Applying…' : `Apply to ${selected.length} files`}</Button></DialogFooter>
-  </DialogContent></Dialog>;
+  </>;
 }
