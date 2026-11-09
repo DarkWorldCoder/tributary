@@ -2,6 +2,22 @@
 
 Measure a specific workload. Keep allocation traffic, retained heap, process memory and bundle size separate.
 
+## Rust bridge: short summary
+
+- Discovery allocation requests fell 33–66% across the recorded cases.
+- Fifteen of 18 CLI case medians improved; three were slower.
+- Idle app + CPU-model PSS fell 456.803 → 439.785 MiB in a six-app comparison.
+
+These are separate Linux source-build workloads. [Discovery evidence](docs/performance/RUST_DISCOVERY_ALLOCATIONS.md) and [runtime ownership evidence](docs/performance/RUST_RUNTIME_GUARDIAN_INTEGRATION.md) retain the methods and limits. They do not refresh the historical cross-editor comparison below.
+
+Verify the published archive hashes and recalculate these numbers without running a new benchmark:
+
+```sh
+python3 scripts/performance/verify-published-benchmarks.py
+```
+
+The reports link raw observations, measurement drivers and exact measured source. Slower cases and the rejected incomplete process sample remain available.
+
 ## Cross-editor large-project navigation
 
 Tributary, VS Code and Zed run the same generated project with **20,008 TypeScript files** and a **40,001-line source file**. Three fresh instances per editor run serially in rotated order. Each instance opens six distinct small files and verifies the complete source; the large-file task verifies the first and final nonempty lines using native keyboard navigation. Process memory is sampled separately after the work.

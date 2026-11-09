@@ -1,0 +1,350 @@
+{
+  "complete": true,
+  "rows": [
+    {
+      "order": "ascending",
+      "query": "source-",
+      "limit": 100,
+      "base": {
+        "elapsedMs": 32.75180899999998,
+        "kernelMaxRssKiB": 2088,
+        "allocations": 120135,
+        "cumulativeRequestedBytes": 2399639,
+        "peakLiveRequestedBytes": 16530
+      },
+      "cand": {
+        "elapsedMs": 21.49750400000005,
+        "kernelMaxRssKiB": 2072,
+        "allocations": 41818,
+        "cumulativeRequestedBytes": 725391,
+        "peakLiveRequestedBytes": 15262
+      }
+    },
+    {
+      "order": "ascending",
+      "query": "group",
+      "limit": 100,
+      "base": {
+        "elapsedMs": 27.746305000000007,
+        "kernelMaxRssKiB": 2024,
+        "allocations": 100151,
+        "cumulativeRequestedBytes": 2080053,
+        "peakLiveRequestedBytes": 16528
+      },
+      "cand": {
+        "elapsedMs": 29.980977000000053,
+        "kernelMaxRssKiB": 2068,
+        "allocations": 41817,
+        "cumulativeRequestedBytes": 725357,
+        "peakLiveRequestedBytes": 15244
+      }
+    },
+    {
+      "order": "ascending",
+      "query": "/group3/",
+      "limit": 100,
+      "base": {
+        "elapsedMs": 22.895932000000016,
+        "kernelMaxRssKiB": 2160,
+        "allocations": 120150,
+        "cumulativeRequestedBytes": 2620205,
+        "peakLiveRequestedBytes": 16531
+      },
+      "cand": {
+        "elapsedMs": 20.057576999999924,
+        "kernelMaxRssKiB": 2028,
+        "allocations": 40528,
+        "cumulativeRequestedBytes": 690576,
+        "peakLiveRequestedBytes": 15271
+      }
+    },
+    {
+      "order": "ascending",
+      "query": "target-",
+      "limit": 100,
+      "base": {
+        "elapsedMs": 26.503371000000016,
+        "kernelMaxRssKiB": 2152,
+        "allocations": 60155,
+        "cumulativeRequestedBytes": 994439,
+        "peakLiveRequestedBytes": 9970
+      },
+      "cand": {
+        "elapsedMs": 24.999029999999948,
+        "kernelMaxRssKiB": 2172,
+        "allocations": 40117,
+        "cumulativeRequestedBytes": 673828,
+        "peakLiveRequestedBytes": 9914
+      }
+    },
+    {
+      "order": "ascending",
+      "query": "missing-needle",
+      "limit": 100,
+      "base": {
+        "elapsedMs": 27.603313999999955,
+        "kernelMaxRssKiB": 2064,
+        "allocations": 60129,
+        "cumulativeRequestedBytes": 993598,
+        "peakLiveRequestedBytes": 9465
+      },
+      "cand": {
+        "elapsedMs": 23.14231000000018,
+        "kernelMaxRssKiB": 2068,
+        "allocations": 40107,
+        "cumulativeRequestedBytes": 673315,
+        "peakLiveRequestedBytes": 9497
+      }
+    },
+    {
+      "order": "ascending",
+      "query": "source-",
+      "limit": 2000,
+      "base": {
+        "elapsedMs": 46.32119499999999,
+        "kernelMaxRssKiB": 2280,
+        "allocations": 120139,
+        "cumulativeRequestedBytes": 2491800,
+        "peakLiveRequestedBytes": 138611
+      },
+      "cand": {
+        "elapsedMs": 37.66974899999991,
+        "kernelMaxRssKiB": 2156,
+        "allocations": 49879,
+        "cumulativeRequestedBytes": 1035091,
+        "peakLiveRequestedBytes": 112643
+      }
+    },
+    {
+      "order": "descending",
+      "query": "source-",
+      "limit": 100,
+      "base": {
+        "elapsedMs": 41.52615000000014,
+        "kernelMaxRssKiB": 2152,
+        "allocations": 120135,
+        "cumulativeRequestedBytes": 2399691,
+        "peakLiveRequestedBytes": 16532
+      },
+      "cand": {
+        "elapsedMs": 33.15479400000004,
+        "kernelMaxRssKiB": 2084,
+        "allocations": 41818,
+        "cumulativeRequestedBytes": 725443,
+        "peakLiveRequestedBytes": 15264
+      }
+    },
+    {
+      "order": "descending",
+      "query": "group",
+      "limit": 100,
+      "base": {
+        "elapsedMs": 36.29435400000011,
+        "kernelMaxRssKiB": 2088,
+        "allocations": 100151,
+        "cumulativeRequestedBytes": 2080105,
+        "peakLiveRequestedBytes": 16530
+      },
+      "cand": {
+        "elapsedMs": 29.889764000000014,
+        "kernelMaxRssKiB": 2060,
+        "allocations": 41817,
+        "cumulativeRequestedBytes": 725409,
+        "peakLiveRequestedBytes": 15246
+      }
+    },
+    {
+      "order": "descending",
+      "query": "/group3/",
+      "limit": 100,
+      "base": {
+        "elapsedMs": 36.79144199999973,
+        "kernelMaxRssKiB": 2024,
+        "allocations": 120150,
+        "cumulativeRequestedBytes": 2620257,
+        "peakLiveRequestedBytes": 16533
+      },
+      "cand": {
+        "elapsedMs": 32.710099999999784,
+        "kernelMaxRssKiB": 2184,
+        "allocations": 40528,
+        "cumulativeRequestedBytes": 690628,
+        "peakLiveRequestedBytes": 15273
+      }
+    },
+    {
+      "order": "descending",
+      "query": "target-",
+      "limit": 100,
+      "base": {
+        "elapsedMs": 33.450272999999925,
+        "kernelMaxRssKiB": 2024,
+        "allocations": 60155,
+        "cumulativeRequestedBytes": 994491,
+        "peakLiveRequestedBytes": 9972
+      },
+      "cand": {
+        "elapsedMs": 23.825002999999924,
+        "kernelMaxRssKiB": 2160,
+        "allocations": 40117,
+        "cumulativeRequestedBytes": 673880,
+        "peakLiveRequestedBytes": 9916
+      }
+    },
+    {
+      "order": "descending",
+      "query": "missing-needle",
+      "limit": 100,
+      "base": {
+        "elapsedMs": 28.944194000000152,
+        "kernelMaxRssKiB": 2152,
+        "allocations": 60129,
+        "cumulativeRequestedBytes": 993650,
+        "peakLiveRequestedBytes": 9467
+      },
+      "cand": {
+        "elapsedMs": 25.77631799999972,
+        "kernelMaxRssKiB": 2072,
+        "allocations": 40107,
+        "cumulativeRequestedBytes": 673367,
+        "peakLiveRequestedBytes": 9499
+      }
+    },
+    {
+      "order": "descending",
+      "query": "source-",
+      "limit": 2000,
+      "base": {
+        "elapsedMs": 31.597667999999885,
+        "kernelMaxRssKiB": 2276,
+        "allocations": 120139,
+        "cumulativeRequestedBytes": 2491852,
+        "peakLiveRequestedBytes": 138613
+      },
+      "cand": {
+        "elapsedMs": 33.26589400000012,
+        "kernelMaxRssKiB": 2200,
+        "allocations": 49879,
+        "cumulativeRequestedBytes": 1035143,
+        "peakLiveRequestedBytes": 112645
+      }
+    },
+    {
+      "order": "shuffled",
+      "query": "source-",
+      "limit": 100,
+      "base": {
+        "elapsedMs": 35.74848899999961,
+        "kernelMaxRssKiB": 2144,
+        "allocations": 120135,
+        "cumulativeRequestedBytes": 2399587,
+        "peakLiveRequestedBytes": 16528
+      },
+      "cand": {
+        "elapsedMs": 24.626772999999957,
+        "kernelMaxRssKiB": 2024,
+        "allocations": 41818,
+        "cumulativeRequestedBytes": 725339,
+        "peakLiveRequestedBytes": 15260
+      }
+    },
+    {
+      "order": "shuffled",
+      "query": "group",
+      "limit": 100,
+      "base": {
+        "elapsedMs": 25.886774000000514,
+        "kernelMaxRssKiB": 2032,
+        "allocations": 100151,
+        "cumulativeRequestedBytes": 2080001,
+        "peakLiveRequestedBytes": 16526
+      },
+      "cand": {
+        "elapsedMs": 24.401693999999225,
+        "kernelMaxRssKiB": 2068,
+        "allocations": 41817,
+        "cumulativeRequestedBytes": 725305,
+        "peakLiveRequestedBytes": 15242
+      }
+    },
+    {
+      "order": "shuffled",
+      "query": "/group3/",
+      "limit": 100,
+      "base": {
+        "elapsedMs": 27.718886999999995,
+        "kernelMaxRssKiB": 2280,
+        "allocations": 120150,
+        "cumulativeRequestedBytes": 2620153,
+        "peakLiveRequestedBytes": 16529
+      },
+      "cand": {
+        "elapsedMs": 20.770289999999477,
+        "kernelMaxRssKiB": 2068,
+        "allocations": 40528,
+        "cumulativeRequestedBytes": 690524,
+        "peakLiveRequestedBytes": 15269
+      }
+    },
+    {
+      "order": "shuffled",
+      "query": "target-",
+      "limit": 100,
+      "base": {
+        "elapsedMs": 28.645337999999356,
+        "kernelMaxRssKiB": 2024,
+        "allocations": 60155,
+        "cumulativeRequestedBytes": 994387,
+        "peakLiveRequestedBytes": 9968
+      },
+      "cand": {
+        "elapsedMs": 23.144443000000138,
+        "kernelMaxRssKiB": 2044,
+        "allocations": 40117,
+        "cumulativeRequestedBytes": 673776,
+        "peakLiveRequestedBytes": 9912
+      }
+    },
+    {
+      "order": "shuffled",
+      "query": "missing-needle",
+      "limit": 100,
+      "base": {
+        "elapsedMs": 24.0286959999994,
+        "kernelMaxRssKiB": 2088,
+        "allocations": 60129,
+        "cumulativeRequestedBytes": 993546,
+        "peakLiveRequestedBytes": 9463
+      },
+      "cand": {
+        "elapsedMs": 25.03095199999916,
+        "kernelMaxRssKiB": 2064,
+        "allocations": 40107,
+        "cumulativeRequestedBytes": 673263,
+        "peakLiveRequestedBytes": 9495
+      }
+    },
+    {
+      "order": "shuffled",
+      "query": "source-",
+      "limit": 2000,
+      "base": {
+        "elapsedMs": 45.826615999999376,
+        "kernelMaxRssKiB": 2216,
+        "allocations": 120139,
+        "cumulativeRequestedBytes": 2491748,
+        "peakLiveRequestedBytes": 138609
+      },
+      "cand": {
+        "elapsedMs": 38.94142599999941,
+        "kernelMaxRssKiB": 2184,
+        "allocations": 49879,
+        "cumulativeRequestedBytes": 1035039,
+        "peakLiveRequestedBytes": 112641
+      }
+    }
+  ],
+  "ordinaryRuns": 180,
+  "allocationRuns": 36,
+  "scope": "Every exact wire/result check passed. Five alternating fresh uninstrumented CLI pairs per case; allocation diagnostics are separate. No full-app, GUI, whole-RAM, cross-editor, cold-cache or other-platform claim."
+}

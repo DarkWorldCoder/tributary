@@ -1,0 +1,12 @@
+{
+  "commit": "4fbedc196b33efcc45519d24e7b83163bc909374",
+  "verifiedRemoteMain": "4fbedc196b33efcc45519d24e7b83163bc909374",
+  "files": [
+    "native/tributary-engine/src/main.rs",
+    "scripts/build-native.cjs"
+  ],
+  "documentationExcluded": true,
+  "parserExperimentExcluded": true,
+  "heldRefreshExcluded": true,
+  "installerOutcome": "Pending/not verified; no installer availability claim."
+}

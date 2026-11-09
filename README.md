@@ -107,7 +107,7 @@ The Rust bridge handles bounded file discovery and local-runtime ownership. It s
 - **15 of 18 file-scan medians improved**; three were slower.
 - **About 17 MiB less idle app/model memory** in a six-app CPU-model comparison.
 
-These measurements were recorded locally on Linux source builds. The [benchmark guide](BENCHMARKS.md) covers earlier published comparisons; these results do not establish a general editor ranking. Installer support depends on the release version.
+These are separate Linux source-build workloads. [Real results, raw data and methods](BENCHMARKS.md) include slower cases and measurement limits. They do not establish a general editor ranking. Installer support depends on the release version.
 
 ## Build and contribute
 

@@ -1,0 +1,110 @@
+{
+  "source": {
+    "root": "/tmp/tributary-runtime-publication-n9zndl_k",
+    "baselineCommit": "4fbedc196b33efcc45519d24e7b83163bc909374",
+    "ownedSourceHashes": {
+      ".github/workflows/distribution.yml": "01f951908c674c4c1e6b0540ee760d77500c6ceb8c668e47c9e40f8799578278",
+      "core/local-engine.js": "ef1694910839b2fecf96605865121a99a5f49b80eb31519890601a3cc2cceac5",
+      "core/local-engine-process.js": "646dba40ff714ac5957b008bbe1f1fe81aa145e39b1fa1fd1cb31a60c4a9d284",
+      "core/local-engine-worker.cjs": "ad13c4d96a3e4e3b51bceea60321517d9ec3f79db0a5fd884d033d03467031cf",
+      "core/native-engine/runtime.cjs": "f6a1d554c1674a78b00c1a063e5a6d4df95045ae8ae0d08c3106bdc9991dcb69",
+      "native/tributary-engine/Cargo.toml": "1229d22518075defc77baab29dea904e11fb19afbc18831affbea5c9a23b54d3",
+      "native/tributary-engine/Cargo.lock": "b5b2cf0a455ead47561fa8b7d21f8be4ff4d2a396321a0e18b003c0ec214fbf9",
+      "native/tributary-engine/src/main.rs": "7e6ca838cee85c93e9c6c7e80f48dfa9e71c577c1b8210b277422664709c57ad",
+      "native/tributary-engine/src/runtime.rs": "d73651753b239eefd9c443de69eee90aea6e26ffd3a39a40a988743ef3af1f37",
+      "scripts/build-native.cjs": "0e3c08259946e9839e1a3a7287e1e38c2afe62847c23e1ef0c9ca51be4303ee8",
+      "scripts/native-licenses.cjs": "735e27c4a560c0e8f8230f61bc252af39a9d1a2b05858845b3da603b088a8b72",
+      "scripts/verify-distribution.cjs": "77f1f9f289d3897d9c904f8758a6cf97312c9165eac8f806e595b8dfb7084ee9",
+      "test/runtime-owner.test.cjs": "ffa7c3d0be0dc66862bcd8b95a1dae3060c00e980f6e141379110ea9aaf8657a",
+      "test/runtime-owner-parent.cjs": "06d380fcca777c8eccf9bd3b5a081ade1ec14baafb498165345d2b5cf3f2c11d",
+      "test/fake-runtime-helper.cjs": "8f017749f0330acc757537c27ff788d424cdfcd5bf236c7f18c9985a81151d0b",
+      "test/e2e/local-engine-asar.cjs": "17831a3d182369a71bd92573fef16121b01358e0787293884ed561321b3fde79",
+      "test/e2e/local-engine-ui.cjs": "650fa43159a0bdfc03a28f65112c5219ee5997627e80caa16831167445bd192e",
+      "native/tributary-engine/licenses/manifest.json": "50584471aa6ba625aa3e8df441ca9cd4fef1d8e55454dd6a8eed62a766e830af",
+      "native/tributary-engine/licenses/errno-0.3.14/LICENSE-MIT": "8764a597675778ddfd4e25f81b08a05dbcf089ac05662df7613fe67f150e3aa2",
+      "native/tributary-engine/licenses/errno-0.3.14/LICENSE-APACHE": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "native/tributary-engine/licenses/signal-hook-registry-1.4.8/LICENSE-MIT": "503558bfefe66ca15e4e3f7955b3cb0ec87fd52f29bf24b336af7bd00e946d5c",
+      "native/tributary-engine/licenses/signal-hook-registry-1.4.8/LICENSE-APACHE": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "native/tributary-engine/licenses/libc-0.2.177/LICENSE-MIT": "a8d47ff51ca256f56a8932dba07660672dbfe3004257ca8de708aac1415937a1",
+      "native/tributary-engine/licenses/libc-0.2.177/LICENSE-APACHE": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "native/tributary-engine/licenses/windows-link-0.2.1/license-mit": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "native/tributary-engine/licenses/windows-link-0.2.1/license-apache-2.0": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
+      "native/tributary-engine/licenses/signal-hook-0.3.18/LICENSE-MIT": "503558bfefe66ca15e4e3f7955b3cb0ec87fd52f29bf24b336af7bd00e946d5c",
+      "native/tributary-engine/licenses/signal-hook-0.3.18/LICENSE-APACHE": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "native/tributary-engine/licenses/windows-sys-0.61.2/license-mit": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "native/tributary-engine/licenses/windows-sys-0.61.2/license-apache-2.0": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
+      "native/tributary-engine/licenses/shared_child-1.1.2/LICENSE": "8f71659370c5268d9a1dc962a46232540e8fca63462586d8efaa95aab492a208",
+      "package.json": "27b8d4290444bd4f879179e5950bd4bf1b1d93450466975bb913d79d8443fdcf"
+    },
+    "nativeBinarySha256": "1603b662bae0cd5efeaac18ff2cfdc8b5937c4a296f045d53ca5f04436827028",
+    "rootPackageSha256WithHeldWork": "2a99c4466a72444e6b2efa81c1b5ec4ac8dca86308b6e115ba28068336a6610b",
+    "scope": "Clean main export plus only integrated native ownership/packaging/tests/licenses. No README, docs, benchmark reports or held refresh implementation/tests. Existing dependencies symlinked; exact current native executable/notices copied, not rebuilt.",
+    "postMeasurementFormatting": [
+      {
+        "path": "native/tributary-engine/src/runtime.rs",
+        "beforeSha256": "2dff8dcd23ff13fa533a1306a2447b68b79ddd1e27db3347976b3b79e67dc8ee",
+        "afterSha256": "d73651753b239eefd9c443de69eee90aea6e26ffd3a39a40a988743ef3af1f37",
+        "onlyRemovedTrailingBlankLines": true
+      },
+      {
+        "path": "test/runtime-owner.test.cjs",
+        "beforeSha256": "6f8c78407a9a295fd45300244f43847b6705afab9fc7c431ec26ddebb78c7163",
+        "afterSha256": "ffa7c3d0be0dc66862bcd8b95a1dae3060c00e980f6e141379110ea9aaf8657a",
+        "onlyRemovedTrailingBlankLines": true
+      }
+    ],
+    "formatOnlyRebuildIdenticalBinary": true
+  },
+  "commit": {
+    "commit": "c532d741265c1563341572fdc5d85598def9ac7e",
+    "parent": "4fbedc196b33efcc45519d24e7b83163bc909374",
+    "files": [
+      ".github/workflows/distribution.yml",
+      "core/local-engine-process.js",
+      "core/local-engine-worker.cjs",
+      "core/local-engine.js",
+      "core/native-engine/runtime.cjs",
+      "native/tributary-engine/Cargo.lock",
+      "native/tributary-engine/Cargo.toml",
+      "native/tributary-engine/licenses/errno-0.3.14/LICENSE-APACHE",
+      "native/tributary-engine/licenses/errno-0.3.14/LICENSE-MIT",
+      "native/tributary-engine/licenses/libc-0.2.177/LICENSE-APACHE",
+      "native/tributary-engine/licenses/libc-0.2.177/LICENSE-MIT",
+      "native/tributary-engine/licenses/manifest.json",
+      "native/tributary-engine/licenses/shared_child-1.1.2/LICENSE",
+      "native/tributary-engine/licenses/signal-hook-0.3.18/LICENSE-APACHE",
+      "native/tributary-engine/licenses/signal-hook-0.3.18/LICENSE-MIT",
+      "native/tributary-engine/licenses/signal-hook-registry-1.4.8/LICENSE-APACHE",
+      "native/tributary-engine/licenses/signal-hook-registry-1.4.8/LICENSE-MIT",
+      "native/tributary-engine/licenses/windows-link-0.2.1/license-apache-2.0",
+      "native/tributary-engine/licenses/windows-link-0.2.1/license-mit",
+      "native/tributary-engine/licenses/windows-sys-0.61.2/license-apache-2.0",
+      "native/tributary-engine/licenses/windows-sys-0.61.2/license-mit",
+      "native/tributary-engine/src/main.rs",
+      "native/tributary-engine/src/runtime.rs",
+      "package.json",
+      "scripts/build-native.cjs",
+      "scripts/native-licenses.cjs",
+      "scripts/verify-distribution.cjs",
+      "test/e2e/local-engine-asar.cjs",
+      "test/e2e/local-engine-ui.cjs",
+      "test/fake-runtime-helper.cjs",
+      "test/runtime-owner-parent.cjs",
+      "test/runtime-owner.test.cjs"
+    ],
+    "allCommittedBlobsVerified": true,
+    "docsReadmeBenchmarksAndHeldRefreshExcluded": true
+  },
+  "workflowRuns": [
+    {
+      "conclusion": "",
+      "databaseId": 42498883096,
+      "headSha": "c532d741265c1563341572fdc5d85598def9ac7e",
+      "name": "Distribution",
+      "status": "in_progress",
+      "url": "https://github.com/DarkWorldCoder/tributary/actions/runs/42498883096"
+    }
+  ],
+  "docsAndReportsPublished": false,
+  "recordedAt": "2026-11-08T16:20:12Z"
+}

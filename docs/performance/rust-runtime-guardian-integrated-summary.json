@@ -1,0 +1,511 @@
+{
+  "complete": true,
+  "apps": 6,
+  "completeSamples": 180,
+  "rows": [
+    {
+      "mode": "legacy",
+      "repeat": 0,
+      "phases": {
+        "desktop-baseline": {
+          "treePssKiB": 325726,
+          "treePrivateKiB": 186260,
+          "guardianPssKiB": 0,
+          "nativePssKiB": 0,
+          "nativeAnonPssKiB": 0,
+          "nativeFilePssKiB": 0,
+          "engineStatus": "stopped"
+        },
+        "after-first-generation": {
+          "treePssKiB": 1046647,
+          "treePrivateKiB": 876324,
+          "guardianPssKiB": 33546,
+          "nativePssKiB": 629320,
+          "nativeAnonPssKiB": 140236,
+          "nativeFilePssKiB": 489084,
+          "engineStatus": "ready"
+        },
+        "after-idle": {
+          "treePssKiB": 470363,
+          "treePrivateKiB": 322932,
+          "guardianPssKiB": 33586,
+          "nativePssKiB": 77464,
+          "nativeAnonPssKiB": 62456,
+          "nativeFilePssKiB": 15008,
+          "engineStatus": "sleeping"
+        },
+        "after-catalog": {
+          "treePssKiB": 484249,
+          "treePrivateKiB": 331868,
+          "guardianPssKiB": 33555,
+          "nativePssKiB": 77464,
+          "nativeAnonPssKiB": 62456,
+          "nativeFilePssKiB": 15008,
+          "engineStatus": "sleeping"
+        },
+        "after-second-generation": {
+          "treePssKiB": 1060599,
+          "treePrivateKiB": 897280,
+          "guardianPssKiB": 33561,
+          "nativePssKiB": 634988,
+          "nativeAnonPssKiB": 145904,
+          "nativeFilePssKiB": 489084,
+          "engineStatus": "ready"
+        },
+        "after-stop": {
+          "treePssKiB": 407253,
+          "treePrivateKiB": 256176,
+          "guardianPssKiB": 0,
+          "nativePssKiB": 0,
+          "nativeAnonPssKiB": 0,
+          "nativeFilePssKiB": 0,
+          "engineStatus": "stopped"
+        }
+      },
+      "rejectedSamples": 1
+    },
+    {
+      "mode": "integrated",
+      "repeat": 0,
+      "phases": {
+        "desktop-baseline": {
+          "treePssKiB": 325768,
+          "treePrivateKiB": 187992,
+          "guardianPssKiB": 0,
+          "nativePssKiB": 0,
+          "nativeAnonPssKiB": 0,
+          "nativeFilePssKiB": 0,
+          "engineStatus": "stopped"
+        },
+        "after-first-generation": {
+          "treePssKiB": 1026331,
+          "treePrivateKiB": 865172,
+          "guardianPssKiB": 626,
+          "nativePssKiB": 629388,
+          "nativeAnonPssKiB": 140228,
+          "nativeFilePssKiB": 489160,
+          "engineStatus": "ready"
+        },
+        "after-idle": {
+          "treePssKiB": 450340,
+          "treePrivateKiB": 311652,
+          "guardianPssKiB": 626,
+          "nativePssKiB": 77536,
+          "nativeAnonPssKiB": 62452,
+          "nativeFilePssKiB": 15084,
+          "engineStatus": "sleeping"
+        },
+        "after-catalog": {
+          "treePssKiB": 465137,
+          "treePrivateKiB": 321832,
+          "guardianPssKiB": 626,
+          "nativePssKiB": 77535,
+          "nativeAnonPssKiB": 62452,
+          "nativeFilePssKiB": 15083,
+          "engineStatus": "sleeping"
+        },
+        "after-second-generation": {
+          "treePssKiB": 1042337,
+          "treePrivateKiB": 887632,
+          "guardianPssKiB": 626,
+          "nativePssKiB": 635060,
+          "nativeAnonPssKiB": 145900,
+          "nativeFilePssKiB": 489160,
+          "engineStatus": "ready"
+        },
+        "after-stop": {
+          "treePssKiB": 407561,
+          "treePrivateKiB": 255932,
+          "guardianPssKiB": 0,
+          "nativePssKiB": 0,
+          "nativeAnonPssKiB": 0,
+          "nativeFilePssKiB": 0,
+          "engineStatus": "stopped"
+        }
+      },
+      "rejectedSamples": 0
+    },
+    {
+      "mode": "integrated",
+      "repeat": 1,
+      "phases": {
+        "desktop-baseline": {
+          "treePssKiB": 326345,
+          "treePrivateKiB": 187680,
+          "guardianPssKiB": 0,
+          "nativePssKiB": 0,
+          "nativeAnonPssKiB": 0,
+          "nativeFilePssKiB": 0,
+          "engineStatus": "stopped"
+        },
+        "after-first-generation": {
+          "treePssKiB": 1038120,
+          "treePrivateKiB": 867428,
+          "guardianPssKiB": 626,
+          "nativePssKiB": 629356,
+          "nativeAnonPssKiB": 140232,
+          "nativeFilePssKiB": 489124,
+          "engineStatus": "ready"
+        },
+        "after-idle": {
+          "treePssKiB": 452197,
+          "treePrivateKiB": 313272,
+          "guardianPssKiB": 626,
+          "nativePssKiB": 77504,
+          "nativeAnonPssKiB": 62456,
+          "nativeFilePssKiB": 15048,
+          "engineStatus": "sleeping"
+        },
+        "after-catalog": {
+          "treePssKiB": 468917,
+          "treePrivateKiB": 323880,
+          "guardianPssKiB": 626,
+          "nativePssKiB": 77504,
+          "nativeAnonPssKiB": 62456,
+          "nativeFilePssKiB": 15048,
+          "engineStatus": "sleeping"
+        },
+        "after-second-generation": {
+          "treePssKiB": 1044651,
+          "treePrivateKiB": 888460,
+          "guardianPssKiB": 626,
+          "nativePssKiB": 635027,
+          "nativeAnonPssKiB": 145904,
+          "nativeFilePssKiB": 489123,
+          "engineStatus": "ready"
+        },
+        "after-stop": {
+          "treePssKiB": 408438,
+          "treePrivateKiB": 256944,
+          "guardianPssKiB": 0,
+          "nativePssKiB": 0,
+          "nativeAnonPssKiB": 0,
+          "nativeFilePssKiB": 0,
+          "engineStatus": "stopped"
+        }
+      },
+      "rejectedSamples": 0
+    },
+    {
+      "mode": "legacy",
+      "repeat": 1,
+      "phases": {
+        "desktop-baseline": {
+          "treePssKiB": 327015,
+          "treePrivateKiB": 188704,
+          "guardianPssKiB": 0,
+          "nativePssKiB": 0,
+          "nativeAnonPssKiB": 0,
+          "nativeFilePssKiB": 0,
+          "engineStatus": "stopped"
+        },
+        "after-first-generation": {
+          "treePssKiB": 1043629,
+          "treePrivateKiB": 874556,
+          "guardianPssKiB": 33864,
+          "nativePssKiB": 629313,
+          "nativeAnonPssKiB": 140228,
+          "nativeFilePssKiB": 489084,
+          "engineStatus": "ready"
+        },
+        "after-idle": {
+          "treePssKiB": 467766,
+          "treePrivateKiB": 321140,
+          "guardianPssKiB": 33863,
+          "nativePssKiB": 77460,
+          "nativeAnonPssKiB": 62452,
+          "nativeFilePssKiB": 15008,
+          "engineStatus": "sleeping"
+        },
+        "after-catalog": {
+          "treePssKiB": 483853,
+          "treePrivateKiB": 332636,
+          "guardianPssKiB": 33845,
+          "nativePssKiB": 77460,
+          "nativeAnonPssKiB": 62452,
+          "nativeFilePssKiB": 15008,
+          "engineStatus": "sleeping"
+        },
+        "after-second-generation": {
+          "treePssKiB": 1060553,
+          "treePrivateKiB": 897928,
+          "guardianPssKiB": 33852,
+          "nativePssKiB": 634984,
+          "nativeAnonPssKiB": 145900,
+          "nativeFilePssKiB": 489084,
+          "engineStatus": "ready"
+        },
+        "after-stop": {
+          "treePssKiB": 408141,
+          "treePrivateKiB": 256284,
+          "guardianPssKiB": 0,
+          "nativePssKiB": 0,
+          "nativeAnonPssKiB": 0,
+          "nativeFilePssKiB": 0,
+          "engineStatus": "stopped"
+        }
+      },
+      "rejectedSamples": 0
+    },
+    {
+      "mode": "legacy",
+      "repeat": 2,
+      "phases": {
+        "desktop-baseline": {
+          "treePssKiB": 316663,
+          "treePrivateKiB": 182732,
+          "guardianPssKiB": 0,
+          "nativePssKiB": 0,
+          "nativeAnonPssKiB": 0,
+          "nativeFilePssKiB": 0,
+          "engineStatus": "stopped"
+        },
+        "after-first-generation": {
+          "treePssKiB": 1036879,
+          "treePrivateKiB": 872248,
+          "guardianPssKiB": 33439,
+          "nativePssKiB": 629332,
+          "nativeAnonPssKiB": 140236,
+          "nativeFilePssKiB": 489096,
+          "engineStatus": "ready"
+        },
+        "after-idle": {
+          "treePssKiB": 460709,
+          "treePrivateKiB": 318692,
+          "guardianPssKiB": 33418,
+          "nativePssKiB": 77448,
+          "nativeAnonPssKiB": 62456,
+          "nativeFilePssKiB": 14992,
+          "engineStatus": "sleeping"
+        },
+        "after-catalog": {
+          "treePssKiB": 477526,
+          "treePrivateKiB": 327488,
+          "guardianPssKiB": 33387,
+          "nativePssKiB": 77445,
+          "nativeAnonPssKiB": 62456,
+          "nativeFilePssKiB": 14989,
+          "engineStatus": "sleeping"
+        },
+        "after-second-generation": {
+          "treePssKiB": 1047110,
+          "treePrivateKiB": 893368,
+          "guardianPssKiB": 33382,
+          "nativePssKiB": 634994,
+          "nativeAnonPssKiB": 145904,
+          "nativeFilePssKiB": 489090,
+          "engineStatus": "ready"
+        },
+        "after-stop": {
+          "treePssKiB": 394635,
+          "treePrivateKiB": 247220,
+          "guardianPssKiB": 0,
+          "nativePssKiB": 0,
+          "nativeAnonPssKiB": 0,
+          "nativeFilePssKiB": 0,
+          "engineStatus": "stopped"
+        }
+      },
+      "rejectedSamples": 0
+    },
+    {
+      "mode": "integrated",
+      "repeat": 2,
+      "phases": {
+        "desktop-baseline": {
+          "treePssKiB": 315584,
+          "treePrivateKiB": 179752,
+          "guardianPssKiB": 0,
+          "nativePssKiB": 0,
+          "nativeAnonPssKiB": 0,
+          "nativeFilePssKiB": 0,
+          "engineStatus": "stopped"
+        },
+        "after-first-generation": {
+          "treePssKiB": 1027213,
+          "treePrivateKiB": 859048,
+          "guardianPssKiB": 626,
+          "nativePssKiB": 629367,
+          "nativeAnonPssKiB": 140232,
+          "nativeFilePssKiB": 489135,
+          "engineStatus": "ready"
+        },
+        "after-idle": {
+          "treePssKiB": 440356,
+          "treePrivateKiB": 303740,
+          "guardianPssKiB": 626,
+          "nativePssKiB": 77345,
+          "nativeAnonPssKiB": 62456,
+          "nativeFilePssKiB": 14889,
+          "engineStatus": "sleeping"
+        },
+        "after-catalog": {
+          "treePssKiB": 456942,
+          "treePrivateKiB": 315236,
+          "guardianPssKiB": 626,
+          "nativePssKiB": 77346,
+          "nativeAnonPssKiB": 62456,
+          "nativeFilePssKiB": 14890,
+          "engineStatus": "sleeping"
+        },
+        "after-second-generation": {
+          "treePssKiB": 1031718,
+          "treePrivateKiB": 880176,
+          "guardianPssKiB": 626,
+          "nativePssKiB": 635040,
+          "nativeAnonPssKiB": 145904,
+          "nativeFilePssKiB": 489136,
+          "engineStatus": "ready"
+        },
+        "after-stop": {
+          "treePssKiB": 394368,
+          "treePrivateKiB": 245104,
+          "guardianPssKiB": 0,
+          "nativePssKiB": 0,
+          "nativeAnonPssKiB": 0,
+          "nativeFilePssKiB": 0,
+          "engineStatus": "stopped"
+        }
+      },
+      "rejectedSamples": 0
+    }
+  ],
+  "summary": {
+    "legacy": {
+      "desktop-baseline": {
+        "treePssKiB": 325726,
+        "treePrivateKiB": 186260,
+        "guardianPssKiB": 0,
+        "nativePssKiB": 0,
+        "nativeAnonPssKiB": 0,
+        "nativeFilePssKiB": 0
+      },
+      "after-first-generation": {
+        "treePssKiB": 1043629,
+        "treePrivateKiB": 874556,
+        "guardianPssKiB": 33546,
+        "nativePssKiB": 629320,
+        "nativeAnonPssKiB": 140236,
+        "nativeFilePssKiB": 489084
+      },
+      "after-idle": {
+        "treePssKiB": 467766,
+        "treePrivateKiB": 321140,
+        "guardianPssKiB": 33586,
+        "nativePssKiB": 77460,
+        "nativeAnonPssKiB": 62456,
+        "nativeFilePssKiB": 15008
+      },
+      "after-catalog": {
+        "treePssKiB": 483853,
+        "treePrivateKiB": 331868,
+        "guardianPssKiB": 33555,
+        "nativePssKiB": 77460,
+        "nativeAnonPssKiB": 62456,
+        "nativeFilePssKiB": 15008
+      },
+      "after-second-generation": {
+        "treePssKiB": 1060553,
+        "treePrivateKiB": 897280,
+        "guardianPssKiB": 33561,
+        "nativePssKiB": 634988,
+        "nativeAnonPssKiB": 145904,
+        "nativeFilePssKiB": 489084
+      },
+      "after-stop": {
+        "treePssKiB": 407253,
+        "treePrivateKiB": 256176,
+        "guardianPssKiB": 0,
+        "nativePssKiB": 0,
+        "nativeAnonPssKiB": 0,
+        "nativeFilePssKiB": 0
+      }
+    },
+    "integrated": {
+      "desktop-baseline": {
+        "treePssKiB": 325768,
+        "treePrivateKiB": 187680,
+        "guardianPssKiB": 0,
+        "nativePssKiB": 0,
+        "nativeAnonPssKiB": 0,
+        "nativeFilePssKiB": 0
+      },
+      "after-first-generation": {
+        "treePssKiB": 1027213,
+        "treePrivateKiB": 865172,
+        "guardianPssKiB": 626,
+        "nativePssKiB": 629367,
+        "nativeAnonPssKiB": 140232,
+        "nativeFilePssKiB": 489135
+      },
+      "after-idle": {
+        "treePssKiB": 450340,
+        "treePrivateKiB": 311652,
+        "guardianPssKiB": 626,
+        "nativePssKiB": 77504,
+        "nativeAnonPssKiB": 62456,
+        "nativeFilePssKiB": 15048
+      },
+      "after-catalog": {
+        "treePssKiB": 465137,
+        "treePrivateKiB": 321832,
+        "guardianPssKiB": 626,
+        "nativePssKiB": 77504,
+        "nativeAnonPssKiB": 62456,
+        "nativeFilePssKiB": 15048
+      },
+      "after-second-generation": {
+        "treePssKiB": 1042337,
+        "treePrivateKiB": 887632,
+        "guardianPssKiB": 626,
+        "nativePssKiB": 635040,
+        "nativeAnonPssKiB": 145904,
+        "nativeFilePssKiB": 489136
+      },
+      "after-stop": {
+        "treePssKiB": 407561,
+        "treePrivateKiB": 255932,
+        "guardianPssKiB": 0,
+        "nativePssKiB": 0,
+        "nativeAnonPssKiB": 0,
+        "nativeFilePssKiB": 0
+      }
+    }
+  },
+  "pairs": [
+    {
+      "repeat": 0,
+      "treePssDeltaKiB": {
+        "desktop-baseline": 42,
+        "after-first-generation": -20316,
+        "after-idle": -20023,
+        "after-catalog": -19112,
+        "after-second-generation": -18262,
+        "after-stop": 308
+      }
+    },
+    {
+      "repeat": 1,
+      "treePssDeltaKiB": {
+        "desktop-baseline": -670,
+        "after-first-generation": -5509,
+        "after-idle": -15569,
+        "after-catalog": -14936,
+        "after-second-generation": -15902,
+        "after-stop": 297
+      }
+    },
+    {
+      "repeat": 2,
+      "treePssDeltaKiB": {
+        "desktop-baseline": -1079,
+        "after-first-generation": -9666,
+        "after-idle": -20353,
+        "after-catalog": -20584,
+        "after-second-generation": -15392,
+        "after-stop": -267
+      }
+    }
+  ],
+  "scope": "Final integrated native-engine guardian versus frozen legacy Electron Node-mode guardian. Actual source desktop, bridge/Hub, real pinned llama.cpp/Qwen CPU model and actual composer/model-picker actions. Three alternating fresh pairs; same two-second idle/context/batch/CPU settings, two real capped generations, six boundaries and five complete process-tree PSS samples each. No forced GC, profiler, heap snapshot, debugger or concurrent local tests/builds/performance cohorts. Installed-agent discovery and automatic update polling disabled equally only in the fixture. Candidate uses the unmodified clean publication path, including capability negotiation; only the legacy control overrides the launcher. No held refresh code or local README/docs/reports. Settled PSS is not continuous peak or whole-machine RAM; no cross-platform, installed release, coding-quality, throughput or cross-editor speed claim."
+}
