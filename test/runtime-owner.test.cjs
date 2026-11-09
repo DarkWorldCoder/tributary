@@ -166,6 +166,17 @@ test('fragmented startup metadata is removed once and runtime payload is preserv
   assert.equal(Buffer.concat(out).toString('utf8'), payload); assert.deepEqual(errors, []); assert.throws(() => process.kill(owner.runtimePid, 0));
 });
 
+test('runtime exit before the fragmented header completes preserves both output streams', async t => {
+  const payload = '{"runtimePid":123456}\nनमस्ते\n', warning = 'runtime diagnostic\n';
+  const { owner, closed, state, errors, fallbackCounter } = controlled(t, 'exit-before-meta', `process.stdout.write(${JSON.stringify(payload)});process.stderr.write(${JSON.stringify(warning)});process.exitCode=7`);
+  const out = [], err = []; owner.stdout.on('data', chunk => out.push(chunk)); owner.stderr.on('data', chunk => err.push(chunk));
+  assert.equal((await closed)[0], 1);
+  assert.equal(owner.backend, 'native'); assert.ok(owner.runtimePid); assert.equal(fallbackCounter.calls, 0);
+  assert.equal(fs.readFileSync(path.join(state, 'closed-before-header'), 'utf8'), 'true');
+  assert.equal(Buffer.concat(out).toString('utf8'), payload); assert.equal(Buffer.concat(err).toString('utf8'), warning);
+  assert.deepEqual(errors, []); assert.throws(() => process.kill(owner.runtimePid, 0)); assert.throws(() => process.kill(owner.pid, 0));
+});
+
 test('invalid, oversized and truncated runtime metadata never create a second model owner', async t => {
   for (const mode of ['bad-meta', 'large-meta', 'partial-meta']) {
     const { owner, closed, state, fallbackCounter, errors } = controlled(t, mode);
