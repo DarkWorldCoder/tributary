@@ -141,5 +141,6 @@ npm run vscode:install                         # Companion VS Code extension
 - **Your data:** files stay local; prompts and selected context go to the assistant/provider you choose. [Security](SECURITY.md).
 - **Open source:** [MIT](LICENSE). Third-party components keep their own licenses. Tributary is independent of the agents and editors it integrates with.
 - **Ideas or bugs?** [Open an issue](https://github.com/DarkWorldCoder/tributary/issues).
+- **Sharing Tributary?** [Social preview images](docs/media/social/README.md) include ready-to-use PNGs and editable SVGs.
 
 <sub>The short intro/demo/quick-start structure takes cues from <a href="https://github.com/anthropics/claude-code">Claude Code</a>, <a href="https://github.com/zed-industries/zed">Zed</a> and <a href="https://github.com/anomalyco/opencode">OpenCode</a>. The Tributary mascots and SVG artwork are original; product screenshots show Tributary.</sub>
